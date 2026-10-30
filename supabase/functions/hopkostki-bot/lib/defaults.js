@@ -1,4 +1,4 @@
-// Domyślna konfiguracja bota. Wszystko poniżej można zmienić w panelu (https://notkairo.github.io/Entuzjasci-Hopkostki/).
+// Domyślna konfiguracja bota. Wszystko poniżej można zmienić w panelu (https://e7que.github.io/Entuzjasci-Hopkostki/).
 // Zapisana konfiguracja jest scalana z tymi wartościami, więc nowe opcje pojawiają się automatycznie.
 
 export const ACTIONS = ['ban', 'unban', 'kick', 'timeout', 'untimeout', 'warn'];

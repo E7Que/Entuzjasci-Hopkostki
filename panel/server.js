@@ -1,5 +1,5 @@
 // Opcjonalny LOKALNY wrapper na panel — panel działa też bez tego, prosto pod
-// https://notkairo.github.io/Entuzjasci-Hopkostki/ (patrz README).
+// https://e7que.github.io/Entuzjasci-Hopkostki/ (patrz README).
 // Ten serwer tylko serwuje pliki z ./public i przekazuje resztę żądań 1:1 do bota na Supabase —
 // hasło panelu wpisuje się w przeglądarce (tak samo jak w wersji hostowanej), więc nie trzeba
 // go tu konfigurować.

@@ -114,6 +114,12 @@ test('adres panelu w funkcji przekierowuje na GitHub Pages, a API wpuszcza tylko
 
   const stranger = await s.handle(new Request(`${BASE}/status`, { headers: { origin: 'https://evil.example', 'x-panel-password': 'tajne' } }));
   assert.equal(stranger.headers.get('access-control-allow-origin'), null);
+
+  // Konto na GitHubie zmieniło nazwę (NotKairo → E7Que): strona jest teraz na e7que.github.io, a starą
+  // domenę może zająć ktoś inny, więc nie jest już wpuszczana.
+  assert.equal(origin, 'https://e7que.github.io');
+  const old = await s.handle(new Request(`${BASE}/status`, { headers: { origin: 'https://notkairo.github.io', 'x-panel-password': 'tajne' } }));
+  assert.equal(old.headers.get('access-control-allow-origin'), null);
 });
 
 test('API panelu: usuwanie ostrzeżenia i ręczne odbanowanie', async () => {

@@ -22,7 +22,7 @@ export function createRest(token, { fetchImpl = fetch, base = API } = {}) {
     }
     const headers = {
       Authorization: `Bot ${token}`,
-      'User-Agent': 'DiscordBot (https://github.com/NotKairo/Entuzjasci-Hopkostki, 2.0)',
+      'User-Agent': 'DiscordBot (https://github.com/E7Que/Entuzjasci-Hopkostki, 2.0)',
     };
     if (reason) headers['X-Audit-Log-Reason'] = encodeURIComponent(reason.slice(0, 512));
 

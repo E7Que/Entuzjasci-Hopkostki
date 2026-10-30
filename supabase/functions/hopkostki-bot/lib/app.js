@@ -14,8 +14,10 @@ import { getApp } from './moderation.js';
 import { verifyDiscordRequest, ed25519Supported, safeEqual } from './verify.js';
 
 // Supabase nie serwuje stron HTML z funkcji Edge (text/html zamienia na text/plain), więc sama strona
-// panelu stoi na GitHub Pages, a tutaj zostaje jej API.
-export const PANEL_SITE = 'https://notkairo.github.io/Entuzjasci-Hopkostki/';
+// panelu stoi na GitHub Pages, a tutaj zostaje jej API. Adres strony zależy od nazwy konta na GitHubie
+// (po zmianie NotKairo → E7Que strona przeniosła się na e7que.github.io, bez przekierowania), a zapytania
+// panelu bot przyjmuje tylko z tej domeny.
+export const PANEL_SITE = 'https://e7que.github.io/Entuzjasci-Hopkostki/';
 const PANEL_ORIGINS = new Set([new URL(PANEL_SITE).origin]);
 
 const json = (body, status = 200, headers = {}) =>

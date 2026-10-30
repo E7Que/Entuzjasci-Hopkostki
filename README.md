@@ -45,7 +45,7 @@ na żądanie rola bota potrzebuje też **Łączenie** i **Przenoszenie członkó
 Nic nie instalujesz, wystarczy otworzyć w przeglądarce:
 
 ```
-https://notkairo.github.io/Entuzjasci-Hopkostki/
+https://e7que.github.io/Entuzjasci-Hopkostki/
 ```
 
 Stary adres `…/functions/v1/hopkostki-bot/panel/` przekierowuje tutaj. Supabase nie pozwala funkcjom Edge
