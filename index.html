@@ -403,7 +403,7 @@
       <section id="view-tickety" class="view">
         <header class="view-head">
           <h2>Tickety</h2>
-          <p class="muted">Osoba klika przycisk w panelu ticketów, a bot tworzy prywatny kanał widoczny tylko dla niej i obsługi (bez pingowania roli — obsługa i tak go widzi). W tickecie są przyciski Zamknij, Przejmij i Dodaj osobę. Po zamknięciu kanał NIE jest usuwany — trafia do archiwum i znika dla wszystkich poza obsługą (nawet dla autora), a zapis rozmowy trafia od razu do logów, w DM do autora i na sam kanał (z przyciskiem „Usuń kanał z archiwum” dla obsługi).</p>
+          <p class="muted">Osoba wybiera rodzaj ticketu w panelu (np. Zgłoszenie albo Partnerstwo), wypełnia formularz, a bot tworzy prywatny kanał widoczny tylko dla niej i obsługi (bez pingowania roli — obsługa i tak go widzi). W tickecie są przyciski Zamknij, Przejmij i Dodaj osobę. Po zamknięciu kanał NIE jest usuwany — trafia do archiwum i znika dla wszystkich poza obsługą (nawet dla autora), a zapis rozmowy trafia od razu do logów, w DM do autora i na sam kanał (z przyciskiem „Usuń kanał z archiwum” dla obsługi).</p>
         </header>
         <div id="tickets-warning" class="banner warn hidden"></div>
         <div class="grid two">
@@ -415,7 +415,7 @@
             <label class="field"><span>Kanał logów ticketów (zapisy rozmów)</span><select data-path="tickets.logChannelId" data-channel-select="none"></select></label>
             <div class="field"><span>Obsługa (widzi wszystkie tickety)</span><div data-picker-slot="cfg:tickets.supportRoleIds"></div></div>
             <div class="grid two tight">
-              <label class="field"><span>Nazwa kanału ({numer}, {nick})</span><input type="text" data-path="tickets.nameTemplate" maxlength="90"></label>
+              <label class="field"><span>Nazwa kanału ({numer}, {nick}, {typ})</span><input type="text" data-path="tickets.nameTemplate" maxlength="90"></label>
               <label class="field"><span>Otwartych naraz na osobę</span><input type="number" min="1" max="5" data-path="tickets.maxOpen"></label>
             </div>
             <label class="toggle"><input type="checkbox" data-path="tickets.dmTranscript"><span></span>Wysyłaj zapis rozmowy autorowi w DM</label>
@@ -424,7 +424,7 @@
           </div>
           <div class="card">
             <h3>Panel ticketów</h3>
-            <p class="muted small">Wiadomość z przyciskami, którą bot wysyła na wybrany kanał. Każdy przycisk to osobny rodzaj ticketu. Jeśli wpiszesz pytanie, przed otwarciem pojawi się okienko do opisania sprawy.</p>
+            <p class="muted small">Wiadomość z przyciskami, którą bot wysyła na wybrany kanał. Każdy przycisk to osobny rodzaj ticketu (np. Zgłoszenie i Partnerstwo) z własnym formularzem — do 5 pól, które osoba wypełnia w okienku przed otwarciem ticketu. Pole „Link do serwera Discord” musi być działającym zaproszeniem, a obsługa dostaje w tickecie nazwę i prawdziwą liczbę członków tego serwera; pole „Liczba” przyjmuje tylko liczbę. Po zmianach zapisz i kliknij „Wyślij panel”, żeby zaktualizować wiadomość.</p>
             <label class="field"><span>Tytuł</span><input type="text" data-path="tickets.panel.title" maxlength="200"></label>
             <label class="field"><span>Opis</span><textarea data-path="tickets.panel.description" rows="3" maxlength="1500"></textarea></label>
             <label class="field"><span>Kolor</span>
