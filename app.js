@@ -20,7 +20,7 @@ const RULE_ACTIONS = { alert: 'Alert', timeout: 'Timeout', kick: 'Kick', ban: 'B
 const PLACEHOLDERS = ['{uzytkownik}', '{nick}', '{moderator}', '{moderatorNick}', '{powod}', '{czas}', '{serwer}', '{sprawa}', '{typ}'];
 const ACTIVITY_LABELS = { custom: 'Własny opis', playing: 'Gra w', listening: 'Słucha', watching: 'Ogląda', competing: 'Rywalizuje w' };
 const PRESENCE_PLACEHOLDERS = ['{czlonkowie}', '{online}', '{serwer}', '{ostrzezenia}', '{sprawy}'];
-const VIEWS = ['pulpit', 'ustawienia', 'uprawnienia', 'czlonkowie', 'logi', 'bump', 'spolecznosc', 'tickety', 'glosowe', 'wiadomosci', 'embedy', 'ostrzezenia', 'sprawy', 'bany'];
+const VIEWS = ['pulpit', 'ustawienia', 'uprawnienia', 'czlonkowie', 'logi', 'bump', 'spolecznosc', 'tickety', 'glosowe', 'wiadomosci', 'embedy', 'ostrzezenia', 'sprawy', 'bany', 'dostep'];
 const MEMBER_VARS = ['{uzytkownik}', '{nick}', '{serwer}', '{liczba}'];
 const TICKET_VARS = ['{uzytkownik}', '{nick}', '{numer}', '{typ}'];
 const BUMP_VARS = ['{uzytkownik}', '{nick}', '{liczba}', '{nastepny}', '{godzina}'];
@@ -58,6 +58,7 @@ const LOG_EVENT_GROUPS = {
 };
 const BUTTON_STYLES = { niebieski: 'Niebieski', szary: 'Szary', zielony: 'Zielony', czerwony: 'Czerwony' };
 const PANEL_PASSWORD_KEY = 'hopkostki-panel-password';
+const PANEL_SESSION_KEY = 'hopkostki-panel-session';
 const SAMPLE = { targetId: '111', target: 'hurownik_og', modId: '222', mod: 'dfgbh65', reason: 'Wielokrotne łamanie zasad' };
 
 const state = {
@@ -158,14 +159,43 @@ function clearPanelPassword() {
   } catch {}
 }
 
+// Sesja moderatora z kodu /login — w localStorage, więc zostaje po zamknięciu karty (do wylogowania albo
+// wygaśnięcia). Bot i tak sprawdza na bieżąco role tej osoby.
+function getPanelSession() {
+  try {
+    return localStorage.getItem(PANEL_SESSION_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+function setPanelSession(token) {
+  try {
+    localStorage.setItem(PANEL_SESSION_KEY, token);
+  } catch {
+    /* zablokowany storage — po odświeżeniu trzeba będzie wygenerować nowy kod */
+  }
+}
+function clearPanelSession() {
+  try {
+    localStorage.removeItem(PANEL_SESSION_KEY);
+  } catch {}
+}
+const isLoggedIn = () => Boolean(getPanelSession() || getPanelPassword());
+
 async function api(path, options = {}) {
+  const session = getPanelSession();
   const res = await fetch(API_BASE + path.replace(/^\/+/, ''), {
     ...options,
-    headers: { 'Content-Type': 'application/json', 'x-panel-password': getPanelPassword(), ...(options.headers ?? {}) },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(session ? { 'x-panel-session': session } : { 'x-panel-password': getPanelPassword() }),
+      ...(options.headers ?? {}),
+    },
   });
   const data = await res.json().catch(() => ({}));
   if (res.status === 401) {
     clearPanelPassword();
+    clearPanelSession();
     showLoginGate(data.error || 'Złe hasło panelu.');
     throw new Error(data.error || 'Wymagane logowanie.');
   }
@@ -217,6 +247,7 @@ function revealApp() {
 
 $('#login-form').addEventListener('submit', async (event) => {
   event.preventDefault();
+  clearPanelSession();
   setPanelPassword($('#login-password').value);
   $('#login-submit').disabled = true;
   try {
@@ -229,21 +260,47 @@ $('#login-form').addEventListener('submit', async (event) => {
   }
 });
 
-$('#logout-btn').addEventListener('click', () => {
+// Login i hasło z /login (wpisane albo z przycisku „Zaloguj się do panelu”) → sesja tej osoby.
+async function loginWithCredentials(login, password) {
+  $('#login-mod-submit').disabled = true;
+  try {
+    clearPanelPassword();
+    clearPanelSession();
+    const { token } = await api('/login', { method: 'POST', body: JSON.stringify({ login, password }) });
+    setPanelSession(token);
+    $('#login-mod-password').value = '';
+    await init();
+  } catch (error) {
+    $('#login-error').textContent = error.message;
+  } finally {
+    $('#login-mod-submit').disabled = false;
+  }
+}
+$('#login-mod-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  loginWithCredentials($('#login-name').value, $('#login-mod-password').value);
+});
+
+$('#logout-btn').addEventListener('click', async () => {
+  if (getPanelSession()) await api('/logout', { method: 'POST', body: '{}' }).catch(() => {});
   clearPanelPassword();
+  clearPanelSession();
+  state.me = null;
   showLoginGate();
 });
 
 // ---------- Start ----------
 let started = false;
 async function start() {
-  let [{ config, defaults }, guild, { commands }] = await Promise.all([
+  let [{ config, defaults }, guild, { commands }, { me }] = await Promise.all([
     api('/config'),
     api('/guild').catch(() => EMPTY_GUILD),
     api('/commands').catch(() => ({ commands: [] })),
+    api('/me'),
   ]);
+  state.me = me;
   // Każda komenda ma mieć własną listę ról — brakujące (np. nowe komendy) bot uzupełnia według uprawnień Discorda.
-  if (guild.roles?.length && commands.some((c) => !Array.isArray(config.commandPermissions?.[c.name]))) {
+  if (canEdit('uprawnienia') && guild.roles?.length && commands.some((c) => !Array.isArray(config.commandPermissions?.[c.name]))) {
     const filled = await api('/permissions/defaults', { method: 'POST', body: '{}' }).catch(() => null);
     if (filled?.config) config = filled.config;
   }
@@ -255,6 +312,7 @@ async function start() {
   state.commandMeta = commands.map((c) => ({ ...c, description: stripEmoji(c.description) }));
   if (!state.msg) state.msg = { editingId: null, data: blankMessage() };
   revealApp();
+  applyAccess();
   renderConfigUi();
   route();
   if (!started) {
@@ -269,8 +327,8 @@ async function init() {
   try {
     await start();
   } catch (error) {
-    // Hasło zostało już wyczyszczone i pokazany ekran logowania przez api() — nie ma sensu tu dobijać.
-    if (getPanelPassword()) {
+    // Hasło/sesja zostały już wyczyszczone i pokazany ekran logowania przez api() — nie ma sensu tu dobijać.
+    if (isLoggedIn()) {
       showConnectionError(error.message);
       setTimeout(init, 10_000);
     }
@@ -278,35 +336,132 @@ async function init() {
 }
 
 function boot() {
-  if (getPanelPassword()) init();
+  // Przycisk z /login (#login=…&haslo=…): logujemy od razu i usuwamy dane z paska adresu i historii.
+  // Sam #login=… (gdy hasło było już wygenerowane wcześniej) tylko wpisuje login.
+  if (location.hash.startsWith('#login=')) {
+    const params = new URLSearchParams(location.hash.slice(1));
+    history.replaceState(null, '', location.pathname + location.search);
+    showLoginGate();
+    $('#login-name').value = params.get('login') ?? '';
+    if (params.get('haslo')) loginWithCredentials(params.get('login'), params.get('haslo'));
+    else $('#login-mod-password').focus();
+    return;
+  }
+  if (isLoggedIn()) init();
   else showLoginGate();
+}
+
+// Co może zmieniać zalogowana osoba: hasło panelu i administratorzy — wszystko, moderacja — części odblokowane
+// rolami. Resztę widzi z kłódką, tylko podglądowo; „Dostęp do panelu” widzi wyłącznie pełny dostęp.
+function canEdit(view) {
+  if (!state.me || state.me.full || view === 'pulpit') return true;
+  return view !== 'dostep' && state.me.sections.includes(view);
+}
+const canSee = (view) => view !== 'dostep' || !state.me || state.me.full;
+// Części, w których prawie wszystko to dane z bota (bez dostępu nie ma czego pokazać).
+const DATA_VIEWS = ['sprawy', 'bany', 'wiadomosci'];
+const viewLabel = (view) => $(`#nav a[data-view="${view}"]`)?.textContent.trim() ?? view;
+
+function applyAccess() {
+  $$('#nav a').forEach((a) => {
+    a.hidden = !canSee(a.dataset.view);
+    const locked = !canEdit(a.dataset.view);
+    a.classList.toggle('locked', locked);
+    a.title = locked ? 'Tylko podgląd — nie możesz tego zmieniać' : '';
+  });
+  $('#password-card').hidden = !state.me?.full;
+  $('#supabase-link').hidden = !state.me?.full;
+  $('#role-perms-card').hidden = !state.me?.full;
+  $('#setup-run').hidden = !canEdit('ustawienia');
+  const chip = $('#me-chip');
+  const user = state.me?.kind === 'session' ? state.me.user : null;
+  chip.classList.toggle('hidden', !user);
+  if (user) {
+    chip.innerHTML = `${user.avatar ? `<img src="${esc(user.avatar)}" alt="">` : ''}<span>Zalogowano jako <strong>${esc(user.tag)}</strong><small>${
+      state.me.full ? 'pełny dostęp (administrator)' : `może zmieniać ${state.me.sections.length} z ${VIEWS.length - 2} części panelu`
+    }</small></span>`;
+  }
+  renderAccessCard();
+}
+
+// Pulpit: co ta osoba może zmieniać, a co widzi tylko podglądowo, i do kiedy ważny jest jej login.
+function renderAccessCard() {
+  const card = $('#access-card');
+  card.classList.toggle('hidden', state.me?.kind !== 'session');
+  if (state.me?.kind !== 'session') return;
+  const views = VIEWS.filter((v) => v !== 'pulpit' && v !== 'dostep');
+  const expires = state.me.expiresAt ? `Login ważny do ${esc(fullDate(state.me.expiresAt))} (${relTime(state.me.expiresAt)}) — potem wpisz /login na Discordzie, żeby dostać nowy.` : '';
+  $('#access-summary').innerHTML = `
+    <p class="muted small">${state.me.full ? 'Masz pełny dostęp (administrator serwera).' : 'Co możesz zmieniać zależy od Twoich ról na serwerze — bot sprawdza je na bieżąco.'} ${expires}</p>
+    <ul class="access-list">${views
+      .map((v) => {
+        const ok = canEdit(v);
+        return `<li class="${ok ? 'ok' : 'locked'}"><span>${ok ? '✅' : '🔒'}</span><a href="#${v}">${esc(viewLabel(v))}</a><small>${ok ? 'możesz zmieniać' : 'tylko podgląd'}</small></li>`;
+      })
+      .join('')}</ul>`;
+}
+
+// Zablokowana część: baner z kłódką (i rolami, które ją odblokowują), a zawartość tylko do podglądu.
+function applyViewLock(view) {
+  const section = $(`#view-${view}`);
+  if (!section) return;
+  const locked = !canEdit(view);
+  section.classList.toggle('locked', locked);
+  let banner = $('.lock-banner', section);
+  if (!locked) {
+    banner?.remove();
+    [...section.children].forEach((el) => el.removeAttribute('inert'));
+    return;
+  }
+  const roleIds = state.config?.panelAccess?.roles?.[view] ?? [];
+  const roles = roleIds.map((id) => roleLabel(id).name);
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.className = 'banner lock-banner';
+    section.querySelector('.view-head').after(banner);
+  }
+  banner.innerHTML = `🔒 <strong>Tylko podgląd</strong> — tej części panelu nie możesz zmieniać${DATA_VIEWS.includes(view) ? ', a jej dane są ukryte' : ''}. ${
+    roles.length ? `Odblokowują ją role: ${roles.map((n) => `<strong>${esc(n)}</strong>`).join(', ')}.` : 'Odblokowuje ją tylko administracja serwera.'
+  }`;
+  [...section.children].forEach((el) => el.toggleAttribute('inert', el !== banner && !el.classList.contains('view-head')));
 }
 
 // ---------- Nawigacja ----------
 function route() {
   const hash = location.hash.slice(1);
-  state.view = VIEWS.includes(hash) ? hash : 'pulpit';
+  state.view = VIEWS.includes(hash) && canSee(hash) ? hash : 'pulpit';
   $$('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${state.view}`));
   $$('#nav a').forEach((a) => a.classList.toggle('active', a.dataset.view === state.view));
+  applyViewLock(state.view);
+  // Dane z bota tylko tam, gdzie wolno (inaczej bot i tak odmówi).
+  const open = canEdit(state.view);
   if (state.view === 'pulpit') refreshStatus();
-  if (state.view === 'ostrzezenia') loadWarns();
-  if (state.view === 'sprawy') loadCases();
-  if (state.view === 'bany') loadBans();
+  if (state.view === 'ostrzezenia' && open) loadWarns();
+  if (state.view === 'sprawy' && open) loadCases();
+  if (state.view === 'bany' && open) loadBans();
   if (state.view === 'embedy') renderPreview();
-  if (state.view === 'uprawnienia') renderPermissions();
-  if (state.view === 'glosowe') loadVoice();
-  if (state.view === 'tickety') loadTickets();
+  if (state.view === 'uprawnienia') {
+    renderPermissions();
+    renderRolePermissions();
+  }
+  if (state.view === 'glosowe' && open) loadVoice();
+  if (state.view === 'tickety' && open) loadTickets();
+  if (state.view === 'dostep') loadLogins();
   if (state.view === 'bump') {
     renderBumpPreview();
-    loadBump();
+    if (open) loadBump();
   }
-  if (state.view === 'spolecznosc') loadGiveaways();
+  if (state.view === 'spolecznosc' && open) loadGiveaways();
   if (state.view === 'wiadomosci') {
     renderMessageEditor();
-    loadSentMessages();
+    if (open) loadSentMessages();
   }
 }
-window.addEventListener('hashchange', route);
+window.addEventListener('hashchange', () => {
+  // Przycisk z /login otwarty w karcie, w której panel już działa (zmienia się tylko #, bez przeładowania).
+  if (location.hash.startsWith('#login=')) boot();
+  else route();
+});
 
 // ---------- Status / pulpit ----------
 async function refreshStatus() {
@@ -1259,6 +1414,109 @@ document.addEventListener('click', (event) => {
     field.dispatchEvent(new Event('input', { bubbles: true }));
     renderEmojiButtons();
   });
+});
+
+// ---------- Dostęp do panelu (loginy moderacji z /login) ----------
+async function loadLogins() {
+  try {
+    const { logins, sections } = await api('/access/logins');
+    const access = (x) =>
+      x.full ? 'Wszystko (administrator)' : x.sections.length ? esc(x.sections.map((key) => sections[key] ?? key).join(', ')) : '<span class="muted">nic — przy następnym wejściu zostanie wylogowany</span>';
+    $('#logins-table').innerHTML = logins.length
+      ? `<thead><tr><th>Osoba</th><th>Może zmieniać</th><th>Utworzony</th><th>Wygasa</th><th>Zalogowania</th><th></th></tr></thead><tbody>${logins
+          .map(
+            (x) => `<tr>
+          <td><strong>${esc(x.userTag ?? x.userId)}</strong><span class="note">login: ${esc(x.login)}</span></td>
+          <td>${access(x)}</td>
+          <td>${relTime(x.createdAt)}</td>
+          <td>${relTime(x.expiresAt)}</td>
+          <td>${x.sessions ? `${x.sessions} ${plural(x.sessions, ['przeglądarka', 'przeglądarki', 'przeglądarek'])}${x.lastSeenAt ? `<span class="note">ostatnio ${relTime(x.lastSeenAt)}</span>` : ''}` : '<span class="muted">teraz nie jest zalogowany(-a)</span>'}</td>
+          <td><button type="button" class="btn danger small" data-login-revoke="${x.id}">Wymuś nowy login</button></td>
+        </tr>`,
+          )
+          .join('')}</tbody>`
+      : '<tr><td class="empty">Nikt nie ma teraz aktywnego loginu z /login.</td></tr>';
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+$('#logins-refresh').addEventListener('click', loadLogins);
+$('#logins-table').addEventListener('click', async (event) => {
+  const id = event.target.closest('[data-login-revoke]')?.dataset.loginRevoke;
+  if (!id || !confirm('Unieważnić ten login? Hasło przestanie działać, a ta osoba zostanie wylogowana — żeby wrócić, wpisze /login jeszcze raz.')) return;
+  try {
+    await api(`/access/logins/${id}`, { method: 'DELETE' });
+    toast('Login unieważniony');
+    loadLogins();
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+});
+$('#logins-revoke-all').addEventListener('click', async () => {
+  if (!confirm('Unieważnić wszystkie loginy z /login (także Twój, jeśli tak się zalogowałeś)? Każdy będzie musiał wpisać /login jeszcze raz. Logowanie hasłem panelu zostaje.')) return;
+  try {
+    const { removed } = await api('/access/logins', { method: 'DELETE' });
+    toast(`Unieważniono loginy: ${removed}`);
+    loadLogins();
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+});
+
+// ---------- Uprawnienia ról w samym Discordzie ----------
+const ROLE_PERMS = [
+  ['KICK_MEMBERS', 'Wyrzucanie', 1n << 1n],
+  ['BAN_MEMBERS', 'Banowanie', 1n << 2n],
+  ['MODERATE_MEMBERS', 'Wyciszanie (timeout)', 1n << 40n],
+  ['MANAGE_MESSAGES', 'Usuwanie wiadomości', 1n << 13n],
+  ['MANAGE_NICKNAMES', 'Zmiana pseudonimów', 1n << 27n],
+  ['MANAGE_ROLES', 'Zarządzanie rolami', 1n << 28n],
+  ['MANAGE_CHANNELS', 'Zarządzanie kanałami', 1n << 4n],
+  ['MANAGE_GUILD_EXPRESSIONS', 'Emoji i naklejki', 1n << 30n],
+  ['MENTION_EVERYONE', '@everyone i @here', 1n << 17n],
+  ['MOVE_MEMBERS', 'Przenoszenie z głosowych', 1n << 24n],
+  ['VIEW_AUDIT_LOG', 'Dziennik zdarzeń', 1n << 7n],
+];
+const roleBits = (role) => BigInt(role.permissions ?? 0);
+
+function renderRolePermissions() {
+  if (!state.me?.full) return;
+  const roles = state.guild.roles.filter((r) => !hasBit(r.permissions, ADMINISTRATOR_BIT) && ROLE_PERMS.some(([, , bit]) => (roleBits(r) & bit) === bit));
+  $('#role-perms-table').innerHTML = roles.length
+    ? `<thead><tr><th>Rola</th>${ROLE_PERMS.map(([, label]) => `<th>${esc(label)}</th>`).join('')}</tr></thead><tbody>${roles
+        .map(
+          (r) => `<tr>
+        <td><span class="role-dot" style="background:${esc(r.color !== '#000000' ? r.color : '#99aab5')}"></span>${esc(r.name)}${r.assignable ? '' : '<span class="note">wyżej niż bot — tylko w ustawieniach serwera</span>'}</td>
+        ${ROLE_PERMS.map(
+          ([key, , bit]) =>
+            `<td class="center"><input type="checkbox" data-role-perm="${esc(key)}" data-role-id="${r.id}" ${(roleBits(r) & bit) === bit ? 'checked' : ''} ${r.assignable ? '' : 'disabled'} aria-label="${esc(r.name)}: ${esc(key)}"></td>`,
+        ).join('')}
+      </tr>`,
+        )
+        .join('')}</tbody>`
+    : '<tr><td class="empty">Żadna rola (poza administracją) nie ma tych uprawnień.</td></tr>';
+}
+$('#role-perms-table').addEventListener('change', async (event) => {
+  const box = event.target.closest('[data-role-perm]');
+  if (!box) return;
+  const role = state.guild.roles.find((r) => r.id === box.dataset.roleId);
+  const [, label] = ROLE_PERMS.find(([key]) => key === box.dataset.rolePerm);
+  if (!confirm(`${box.checked ? 'Nadać' : 'Odebrać'} roli ${role.name} uprawnienie „${label}” w Discordzie? Zmiana działa od razu na serwerze.`)) {
+    box.checked = !box.checked;
+    return;
+  }
+  box.disabled = true;
+  try {
+    const { role: updated } = await api(`/roles/${role.id}/permissions`, { method: 'POST', body: JSON.stringify({ permission: box.dataset.rolePerm, value: box.checked }) });
+    role.permissions = updated.permissions;
+    toast(`${role.name}: ${box.checked ? 'nadano' : 'odebrano'} „${label}”`);
+  } catch (error) {
+    box.checked = !box.checked;
+    toast(error.message, 'error');
+  } finally {
+    box.disabled = !role.assignable;
+    renderPermissionMatrix();
+  }
 });
 
 // ---------- Tickety ----------
