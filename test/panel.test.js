@@ -138,7 +138,7 @@ test('API panelu: usuwanie ostrzeżenia i ręczne odbanowanie', async () => {
 test('lokalny panel serwuje frontend i przekazuje resztę żądań do bota z hasłem przeglądarki', async () => {
   const seen = [];
   const upstream = http.createServer((req, res) => {
-    seen.push({ method: req.method, url: req.url, password: req.headers['x-panel-password'] });
+    seen.push({ method: req.method, url: req.url, password: req.headers['x-panel-password'], session: req.headers['x-panel-session'] });
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true }));
   });
@@ -157,11 +157,15 @@ test('lokalny panel serwuje frontend i przekazuje resztę żądań do bota z has
 
     // Wszystko inne: przekazane 1:1 do bota razem z hasłem, jakie wysłała przeglądarka.
     assert.deepEqual(await (await fetch(`${base}/cases?page=2`, { headers: { 'x-panel-password': 'tajne' } })).json(), { ok: true });
-    assert.deepEqual(seen[0], { method: 'GET', url: '/functions/v1/hopkostki-bot/panel/cases?page=2', password: 'tajne' });
+    assert.deepEqual(seen[0], { method: 'GET', url: '/functions/v1/hopkostki-bot/panel/cases?page=2', password: 'tajne', session: undefined });
 
     const write = await fetch(`${base}/config`, { method: 'PUT', body: '{}', headers: { 'x-panel-password': 'inne' } });
     assert.equal(write.status, 200, 'proxy nie blokuje zapisów — hasło sprawdza sam bot');
     assert.equal(seen[1].password, 'inne');
+
+    // Sesja moderatora z kodu /login też idzie do bota (to on sprawdza jej role).
+    await fetch(`${base}/tickets`, { headers: { 'x-panel-session': 'token-sesji' } });
+    assert.equal(seen[2].session, 'token-sesji');
 
     const evil = await new Promise((resolve) => {
       http.get({ host: '127.0.0.1', port: panel.address().port, path: '/', headers: { Host: 'evil.example.com' } }, (res) => resolve(res.statusCode));

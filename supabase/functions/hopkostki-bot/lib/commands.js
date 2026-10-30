@@ -20,9 +20,10 @@ import {
 } from './moderation.js';
 import { VIEWS, renderView } from './views.js';
 import { COMMUNITY_COMMANDS } from './communityCommands.js';
+import { PANEL_SECTIONS, PANEL_SITE, issueLogin } from './access.js';
 
 // ---------- Budowanie opcji ----------
-const T = { SUB: 1, STRING: 3, INTEGER: 4, USER: 6, CHANNEL: 7, ROLE: 8 };
+const T = { SUB: 1, STRING: 3, INTEGER: 4, BOOLEAN: 5, USER: 6, CHANNEL: 7, ROLE: 8 };
 const CH = { TEXT: 0, ANNOUNCEMENT: 5, FORUM: 15 };
 const GUILD_ONLY = { contexts: [0] };
 
@@ -800,6 +801,65 @@ function lockCommand(name, description, locked) {
   };
 }
 
+// ---------- Logowanie do panelu ----------
+// Działa tylko na kanale wybranym w panelu („Dostęp do panelu”); login i hasło widzi tylko ta osoba. O tym, co
+// odblokowuje, decydują jej role — dlatego komenda jest otwarta dla wszystkich (permission: null).
+function accessSummary(access) {
+  if (access.full) return '✅ **Możesz zmieniać:** wszystko (administrator)';
+  const locked = Object.keys(PANEL_SECTIONS).filter((key) => !access.sections.includes(key));
+  return [
+    `✅ **Możesz zmieniać:** ${access.sections.map((key) => PANEL_SECTIONS[key]).join(', ')}`,
+    ...(locked.length ? [`🔒 **Tylko podgląd:** ${locked.map((key) => PANEL_SECTIONS[key]).join(', ')}`] : []),
+  ].join('\n');
+}
+
+const login = {
+  permission: null,
+  defer: 'ephemeral',
+  data: {
+    name: 'login',
+    description: '🔑 Twój login i hasło do panelu bota (tylko na kanale do logowania)',
+    ...GUILD_ONLY,
+    options: [{ type: T.BOOLEAN, name: 'nowy', description: '🔄 Wygeneruj nowe hasło — stare i wszystkie zalogowania przestaną działać' }],
+  },
+  async execute(ix, bot) {
+    const config = await bot.store.getConfig();
+    const { enabled, channelId } = config.panelAccess;
+    if (!enabled) throw new ActionError('Logowanie do panelu jest wyłączone — administrator może je włączyć w panelu (zakładka „Dostęp do panelu”).');
+    if (!channelId) throw new ActionError('Administrator nie wybrał jeszcze kanału do logowania (panel → zakładka „Dostęp do panelu”).');
+    if (ix.channelId !== channelId) throw new ActionError(`Login do panelu wygenerujesz tylko na kanale <#${channelId}>.`);
+    const { login: issued, password, access } = await issueLogin(bot, ix, config, { renew: ix.opt('nowy') === true });
+    if (!issued) throw new ActionError('Żadna z Twoich ról nie odblokowuje panelu — poproś administrację o dostęp.');
+    const expires = `${discordTimestamp(issued.expiresAt, 'f')} (${discordTimestamp(issued.expiresAt, 'R')})`;
+    const description = password
+      ? [
+          `**Login:** \`${issued.login}\``,
+          `**Hasło:** ||\`${password}\`|| — kliknij, żeby odsłonić`,
+          `**Ważny do:** ${expires} — potem wpisz \`/login\` jeszcze raz.`,
+          '',
+          accessSummary(access),
+          '',
+          '-# Hasło pokazuję tylko teraz. Nie dawaj go nikomu. Gdyby ktoś je zobaczył, wpisz `/login nowy:True` — dostaniesz nowe, a stare od razu przestanie działać. Dostęp zależy od Twoich ról — po odebraniu roli panel sam się zamknie.',
+        ]
+      : [
+          `Masz już aktywny login **\`${issued.login}\`**, ważny do ${expires}.`,
+          'Hasło pokazuję tylko raz, przy generowaniu. Nie pamiętasz go albo ktoś mógł je zobaczyć? Wpisz `/login nowy:True` — dostaniesz nowe, a stare i wszystkie zalogowania nim przestaną działać.',
+          '',
+          accessSummary(access),
+        ];
+    const fragment = password ? `login=${encodeURIComponent(issued.login)}&haslo=${password}` : `login=${encodeURIComponent(issued.login)}`;
+    return ix.edit({
+      embeds: [{ color: embeds.COLORS.info, title: '🔑 Twój login do panelu', description: description.join('\n'), footer: { text: embeds.BRAND } }],
+      components: [
+        {
+          type: 1,
+          components: [{ type: 2, style: 5, label: password ? 'Zaloguj się do panelu' : 'Otwórz panel', url: `${PANEL_SITE}#${fragment}` }],
+        },
+      ],
+    });
+  },
+};
+
 // ---------- Pomoc ----------
 const pomoc = {
   permission: null,
@@ -840,6 +900,7 @@ const pomoc = {
                 '`/historia` · `/sprawy` · `/sprawa`',
                 '`/notatka dodaj` · `/notatka lista`',
                 '`/nick` · `/rola dodaj` · `/rola usun`',
+                '`/login` — Twój login i hasło do panelu bota (na kanale do logowania)',
               ].join('\n'),
             },
             {
@@ -888,6 +949,7 @@ export const COMMANDS = [
   lockCommand('lock', '🔒 Zablokuj pisanie na kanale (np. podczas kłótni)', true),
   lockCommand('unlock', '🔓 Odblokuj pisanie na kanale', false),
   ...COMMUNITY_COMMANDS,
+  login,
   pomoc,
 ];
 

@@ -61,14 +61,15 @@ function serveStatic(res, name) {
 }
 
 export function createPanelServer({ botUrl = DEFAULT_BOT_URL, host = '127.0.0.1', fetchImpl = fetch } = {}) {
-  // Przezroczysty proxy: to samo hasło (nagłówek x-panel-password), które przeglądarka wysyła sama,
-  // idzie prosto do bota na Supabase pod tę samą względną ścieżkę (/status, /config, /guild, …).
+  // Przezroczysty proxy: to samo hasło (nagłówek x-panel-password) albo sesja z kodu /login
+  // (x-panel-session), które przeglądarka wysyła sama, idą prosto do bota na Supabase pod tę samą
+  // względną ścieżkę (/status, /config, /guild, …).
   async function proxy(req, res, url) {
     const target = `${botUrl.replace(/\/+$/, '')}/panel${url.pathname}${url.search}`;
     try {
       const body = ['GET', 'HEAD'].includes(req.method) ? undefined : await readBody(req);
       const headers = { 'Content-Type': 'application/json' };
-      if (req.headers['x-panel-password']) headers['x-panel-password'] = req.headers['x-panel-password'];
+      for (const name of ['x-panel-password', 'x-panel-session']) if (req.headers[name]) headers[name] = req.headers[name];
       const upstream = await fetchImpl(target, { method: req.method, headers, body });
       const text = await upstream.text();
       sendText(res, upstream.status, 'application/json; charset=utf-8', text || '{}');

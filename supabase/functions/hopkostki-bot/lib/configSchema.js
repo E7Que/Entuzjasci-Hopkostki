@@ -5,6 +5,7 @@ import { DEFAULT_CONFIG } from './defaults.js';
 import { isValidUnit } from './duration.js';
 import { COMMAND_MAP } from './commands.js';
 import { cleanEmoji } from './messages.js';
+import { LOGIN_DAYS } from './access.js';
 
 const SNOWFLAKE = /^\d{15,25}$/;
 const EVERYONE = 'everyone';
@@ -144,6 +145,8 @@ function cleanValue(path, input, current, def) {
     return Number.isFinite(n) ? Math.min(1440, Math.max(30, n)) : current;
   }
   if (path === 'tickets.types') return cleanTicketTypes(input, current);
+  if (path.startsWith('panelAccess.roles.')) return Array.isArray(input) ? cleanRoleIds(input) : current;
+  if (path === 'panelAccess.loginDays') return LOGIN_DAYS.includes(Number(input)) ? Number(input) : current;
   if (path === 'tickets.maxOpen') {
     const n = Math.floor(Number(input));
     return Number.isFinite(n) ? Math.min(5, Math.max(1, n)) : current;

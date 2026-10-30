@@ -6,6 +6,22 @@ import { mergeWithDefaults, sanitizeConfig } from './configSchema.js';
 
 const ms = (value) => (value === null || value === undefined ? null : new Date(value).getTime());
 
+// Bez skrótu tokenu — ten zostaje w bazie.
+const mapPanelSession = (r) => ({
+  id: r.id,
+  kind: r.kind,
+  login: r.login,
+  loginId: r.login_id,
+  userId: r.user_id,
+  userTag: r.user_tag,
+  roles: r.roles ?? [],
+  admin: r.admin,
+  createdAt: ms(r.created_at),
+  expiresAt: ms(r.expires_at),
+  checkedAt: ms(r.checked_at),
+  lastSeenAt: ms(r.last_seen_at),
+});
+
 function mapCase(r) {
   return {
     id: r.id,
@@ -818,6 +834,85 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
 
     async listAfk() {
       return (await query('select * from bot.afk')).map((r) => ({ userId: r.user_id, reason: r.reason, since: ms(r.since) }));
+    },
+
+    // ---------- Logowanie do panelu (loginy z /login i sesje przeglądarki) ----------
+    // ttlMs — ważność od teraz, expiresAt — konkretna chwila (sesja kończy się razem ze swoim loginem).
+    async addPanelLogin({ kind, login = null, loginId = null, tokenHash, userId, userTag, roles = [], admin = false, ttlMs, expiresAt }) {
+      const row = await one(
+        `insert into bot.panel_sessions (kind, login, login_id, token_hash, user_id, user_tag, roles, admin, expires_at)
+         values ($1::text, $2::text, $3::int, $4::text, $5::text, $6::text, $7::text::jsonb, $8::boolean,
+                 coalesce($9::timestamptz, now() + make_interval(secs => $10::double precision)))
+         returning *`,
+        [kind, login, loginId, tokenHash, userId, userTag ?? null, JSON.stringify(roles), admin, expiresAt ? new Date(expiresAt).toISOString() : null, (ttlMs ?? 0) / 1000],
+      );
+      return mapPanelSession(row);
+    },
+
+    // Aktywny login o tej nazwie — razem ze skrótem hasła (do sprawdzenia przy logowaniu).
+    async findPanelLogin(login) {
+      const row = await one(`select * from bot.panel_sessions where kind = 'login' and login = $1::text and expires_at > now()`, [login]);
+      return row ? { ...mapPanelSession(row), tokenHash: row.token_hash } : null;
+    },
+
+    async getPanelLoginForUser(userId) {
+      const row = await one(
+        `select * from bot.panel_sessions where kind = 'login' and user_id = $1::text and expires_at > now() order by id desc limit 1`,
+        [userId],
+      );
+      return row ? mapPanelSession(row) : null;
+    },
+
+    // Wygasły login o tej nazwie (jeszcze nie sprzątnięty przez crona) nie blokuje nowego.
+    async freePanelLoginName(login) {
+      await query(`delete from bot.panel_sessions where kind = 'login' and login = $1::text and expires_at <= now()`, [login]);
+    },
+
+    async getPanelSession(tokenHash) {
+      const row = await one(`select * from bot.panel_sessions where kind = 'session' and token_hash = $1::text and expires_at > now()`, [tokenHash]);
+      return row ? mapPanelSession(row) : null;
+    },
+
+    // Odświeżone role (checked = sprawdzone teraz w Discordzie) i/lub ostatnia aktywność.
+    async touchPanelSession(id, { roles, admin, checked = false } = {}) {
+      const row = await one(
+        `update bot.panel_sessions set last_seen_at = now(),
+           roles = coalesce($2::text::jsonb, roles),
+           admin = coalesce($3::boolean, admin),
+           checked_at = case when $4::boolean then now() else checked_at end
+         where id = $1::int returning *`,
+        [id, roles ? JSON.stringify(roles) : null, admin ?? null, checked],
+      );
+      return row ? mapPanelSession(row) : null;
+    },
+
+    // Aktywne loginy z liczbą zalogowanych przeglądarek i ostatnią aktywnością.
+    async listPanelLogins() {
+      const rows = await query(
+        `select l.*,
+           (select count(*)::int from bot.panel_sessions s where s.login_id = l.id and s.expires_at > now()) as sessions,
+           (select max(s.last_seen_at) from bot.panel_sessions s where s.login_id = l.id) as session_seen_at
+         from bot.panel_sessions l
+         where l.kind = 'login' and l.expires_at > now()
+         order by l.created_at desc limit 100`,
+      );
+      return rows.map((r) => ({ ...mapPanelSession(r), sessions: r.sessions, lastSeenAt: ms(r.session_seen_at) }));
+    },
+
+    // { id } — jeden wpis, { userId, kind } — np. login tej osoby, {} — wszystko. Usunięcie loginu kończy też
+    // jego sesje (kaskada w bazie).
+    async deletePanelLogins({ id, userId, kind } = {}) {
+      const rows = await query(
+        `delete from bot.panel_sessions
+         where ($1::int is null or id = $1::int) and ($2::text is null or user_id = $2::text) and ($3::text is null or kind = $3::text)
+         returning id`,
+        [id ?? null, userId ?? null, kind ?? null],
+      );
+      return rows.length;
+    },
+
+    async prunePanelSessions() {
+      await query('delete from bot.panel_sessions where expires_at < now()');
     },
 
     async stats() {

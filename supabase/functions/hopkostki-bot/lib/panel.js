@@ -1,5 +1,6 @@
 // API panelu konfiguracyjnego. Strona panelu (GitHub Pages albo lokalny wrapper) wysyła tu żądania
-// z nagłówkiem x-panel-password — samo API działa na Supabase razem z botem.
+// z nagłówkiem x-panel-password (pełny dostęp) albo x-panel-session (moderator zalogowany loginem z /login —
+// tylko części panelu odblokowane jego rolami) — samo API działa na Supabase razem z botem.
 
 import { DEFAULT_CONFIG } from './defaults.js';
 import { getApp, getGuildContext, unbanUser, sendModLog, describeError, ActionError } from './moderation.js';
@@ -12,12 +13,75 @@ import { sendPanelMessage, editPanelMessage, deletePanelMessage } from './messag
 import { sendTicketPanel, closeTicket } from './tickets.js';
 import { ensureIntentFlags, membersIntentOn, contentIntentOn } from './members.js';
 import { endGiveaway } from './community.js';
+import { PANEL_SECTIONS, PASSWORD_AUTH, allowedConfigInput, sectionAccess } from './access.js';
 
 const TEXT_CHANNELS = new Set([0, 5]);
 const byPosition = (a, b) => a.position - b.position;
 const ok = (body) => ({ status: 200, body });
 const fail = (status, error) => ({ status, body: { error } });
 const hex = (n) => `#${Number(n ?? 0).toString(16).padStart(6, '0')}`;
+
+// Która część panelu odblokowuje które zapytanie: null = każdy zalogowany, 'full' = tylko pełny dostęp
+// (hasło panelu albo administrator serwera). Nieznane ścieżki też wymagają pełnego dostępu.
+const ROUTE_SECTIONS = [
+  [/^\/(status|guild|config|commands|me|logout)$/, null],
+  [/^\/permissions\//, 'uprawnienia'],
+  [/^\/tickets(\/|$)/, 'tickety'],
+  [/^\/bump$/, 'bump'],
+  [/^\/giveaways(\/|$)/, 'spolecznosc'],
+  [/^\/setup$/, 'ustawienia'],
+  [/^\/voice(\/|$)/, 'glosowe'],
+  [/^\/messages(\/|$)/, 'wiadomosci'],
+  [/^\/cases$/, 'sprawy'],
+  [/^\/warns(\/|$)/, 'ostrzezenia'],
+  [/^\/tempbans(\/|$)/, 'bany'],
+];
+function requiredSection(path) {
+  const match = ROUTE_SECTIONS.find(([pattern]) => pattern.test(path));
+  return match ? match[1] : 'full';
+}
+const canUse = (auth, section) => section === null || auth.full || (section !== 'full' && auth.sections.includes(section));
+
+// Kim jest zalogowana osoba, co może zmieniać w panelu i do kiedy ważny jest jej login.
+export function describeAuth(auth) {
+  return { kind: auth.kind, full: auth.full, sections: auth.sections, user: auth.user ?? null, expiresAt: auth.expiresAt ?? null };
+}
+
+// Najważniejsze uprawnienia moderacji, które panel pozwala włączać i wyłączać rolom w samym Discordzie
+// (np. żeby Test Helper nie mógł wyrzucać z serwera, nawet bez bota).
+export const ROLE_PERMISSION_KEYS = [
+  'KICK_MEMBERS',
+  'BAN_MEMBERS',
+  'MODERATE_MEMBERS',
+  'MANAGE_MESSAGES',
+  'MANAGE_NICKNAMES',
+  'MANAGE_ROLES',
+  'MANAGE_CHANNELS',
+  'MANAGE_GUILD_EXPRESSIONS',
+  'MENTION_EVERYONE',
+  'MOVE_MEMBERS',
+  'VIEW_AUDIT_LOG',
+];
+
+async function setRolePermission(bot, auth, roleId, name, value) {
+  if (!ROLE_PERMISSION_KEYS.includes(name)) throw new ActionError('Tego uprawnienia nie można zmieniać z panelu.');
+  const gctx = await getGuildContext(bot, { force: true });
+  const role = gctx.rawRoles.find((r) => r.id === roleId);
+  if (!role || role.managed || role.id === gctx.guild.id) throw new ActionError('Nie ma takiej roli (albo to rola bota lub integracji).');
+  if (has(role.permissions, P.ADMINISTRATOR)) throw new ActionError(`Rola ${role.name} ma uprawnienie Administrator — zmień ją w ustawieniach serwera.`);
+  if (role.position >= highestPosition(gctx.botMember.roles, gctx.roles)) {
+    throw new ActionError(`Rola ${role.name} jest wyżej niż rola bota — przesuń rolę bota wyżej (Ustawienia serwera → Role).`);
+  }
+  const bits = value ? BigInt(role.permissions) | P[name] : BigInt(role.permissions) & ~P[name];
+  const who = auth.user ? auth.user.tag : 'hasło panelu';
+  const updated = await bot.discord.patch(
+    `/guilds/${gctx.guild.id}/roles/${role.id}`,
+    { permissions: String(bits) },
+    { reason: `Panel (${who}): ${value ? 'nadano' : 'odebrano'} ${permissionLabel(P[name])}` },
+  );
+  bot.cache.delete('guildCtx');
+  return { id: updated.id, name: updated.name, permissions: updated.permissions };
+}
 
 async function status(bot) {
   const [stats, recent, setup, cron, gateway] = await Promise.all([
@@ -114,14 +178,27 @@ async function attempt(fn) {
   }
 }
 
-export async function handlePanel(bot, { method, path, query = {}, body = {} }) {
+export async function handlePanel(bot, { method, path, query = {}, body = {}, auth = PASSWORD_AUTH }) {
   const { store } = bot;
+  if (!canUse(auth, requiredSection(path))) return fail(403, 'Nie masz dostępu do tej części panelu.');
 
-  if (method === 'GET' && path === '/status') return ok(await status(bot));
+  if (method === 'GET' && path === '/me') return ok({ me: describeAuth(auth) });
+  // Wylogowanie tej przeglądarki (sesja z /login); przy haśle panelu nie ma czego usuwać.
+  if (method === 'POST' && path === '/logout') {
+    if (auth.session) await store.deletePanelLogins({ id: auth.session.id });
+    return ok({ ok: true });
+  }
+
+  if (method === 'GET' && path === '/status') {
+    const result = await status(bot);
+    // Ostatnie sprawy na pulpicie widzi tylko ktoś z dostępem do spraw.
+    if (!canUse(auth, 'sprawy')) result.recent = [];
+    return ok(result);
+  }
   if (method === 'GET' && path === '/guild') return ok(await guildInfo(bot));
   if (method === 'GET' && path === '/config') return ok({ config: await store.getConfig(), defaults: DEFAULT_CONFIG });
   if (method === 'PUT' && path === '/config') {
-    const config = await store.updateConfig(body ?? {});
+    const config = await store.updateConfig(allowedConfigInput(body ?? {}, auth));
     // Włączone powitania/autorole/tickety potrzebują intencji aplikacji — włączamy je od razu, nie czekając na crona.
     const intents = bot.discord ? await ensureIntentFlags(bot, config).catch((error) => ({ error: error.message })) : null;
     return ok({ config, intents });
@@ -264,6 +341,27 @@ export async function handlePanel(bot, { method, path, query = {}, body = {} }) 
       await store.removeTempBan(ban.guildId, ban.userId);
       return fail(400, describeError(error));
     }
+  }
+
+  // Dostęp do panelu: aktywne loginy z /login (części panelu liczone z obecnej konfiguracji i ról z chwili
+  // /login). Unieważnienie loginu wylogowuje też wszystkie jego przeglądarki — osoba musi wpisać /login.
+  if (method === 'GET' && path === '/access/logins') {
+    const config = await store.getConfig();
+    const logins = (await store.listPanelLogins()).map((login) => ({ ...login, ...sectionAccess(login, config) }));
+    return ok({ logins, sections: PANEL_SECTIONS, now: Date.now() });
+  }
+  if (method === 'DELETE' && path === '/access/logins') return ok({ removed: await store.deletePanelLogins({ kind: 'login' }) });
+  const loginMatch = /^\/access\/logins\/(\d+)$/.exec(path);
+  if (method === 'DELETE' && loginMatch) {
+    if (!(await store.deletePanelLogins({ id: Number(loginMatch[1]), kind: 'login' }))) return fail(404, 'Nie ma takiego loginu');
+    return ok({ ok: true });
+  }
+
+  // Uprawnienia ról w samym Discordzie (wybrane uprawnienia moderacji).
+  const roleMatch = /^\/roles\/(\d+)\/permissions$/.exec(path);
+  if (method === 'POST' && roleMatch) {
+    if (!bot.discord) return fail(503, 'Bot nie jest skonfigurowany (brak DISCORD_TOKEN).');
+    return attempt(async () => ({ role: await setRolePermission(bot, auth, roleMatch[1], String(body?.permission ?? ''), body?.value === true) }));
   }
 
   return fail(404, 'Nie znaleziono');

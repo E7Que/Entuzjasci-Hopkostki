@@ -9,14 +9,22 @@
 </head>
 <body>
   <div id="login-gate" class="login-gate">
-    <form id="login-form" class="login-card">
+    <div class="login-card">
       <div class="logo-badge big">EH</div>
       <h2>Panel — Entuzjaści Hopkostki</h2>
-      <p class="muted">Podaj hasło panelu. Zmienisz je później w zakładce Ustawienia.</p>
-      <input type="password" id="login-password" placeholder="Hasło panelu" autocomplete="current-password" required>
+      <form id="login-mod-form">
+        <p class="muted">Moderacja: login i hasło dostajesz komendą <code>/login</code> na kanale do logowania na Discordzie (widzisz je tylko Ty).</p>
+        <input type="text" id="login-name" placeholder="Login" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="40" required>
+        <input type="password" id="login-mod-password" placeholder="Hasło z /login" autocomplete="current-password" maxlength="20" required>
+        <button type="submit" class="btn primary" id="login-mod-submit">Zaloguj się</button>
+      </form>
+      <div class="login-or"><span>albo hasłem panelu (właściciel)</span></div>
+      <form id="login-form">
+        <input type="password" id="login-password" placeholder="Hasło panelu" autocomplete="current-password" required>
+        <button type="submit" class="btn" id="login-submit">Zaloguj hasłem</button>
+      </form>
       <p class="error-text" id="login-error"></p>
-      <button type="submit" class="btn primary" id="login-submit">Zaloguj</button>
-    </form>
+    </div>
   </div>
 
   <div id="app" class="layout hidden">
@@ -44,8 +52,10 @@
         <a href="#ostrzezenia" data-view="ostrzezenia"><span>Ostrzeżenia</span></a>
         <a href="#sprawy" data-view="sprawy"><span>Sprawy</span></a>
         <a href="#bany" data-view="bany"><span>Tymczasowe bany</span></a>
+        <a href="#dostep" data-view="dostep"><span>Dostęp do panelu</span></a>
       </nav>
-      <a class="side-link" href="https://supabase.com/dashboard/project/ucjmbdogtzztrkorqzjq" target="_blank" rel="noopener">Supabase</a>
+      <div id="me-chip" class="me-chip hidden"></div>
+      <a class="side-link" id="supabase-link" href="https://supabase.com/dashboard/project/ucjmbdogtzztrkorqzjq" target="_blank" rel="noopener">Supabase</a>
       <button type="button" class="side-link" id="logout-btn">Wyloguj</button>
     </aside>
 
@@ -57,6 +67,10 @@
           <h2>Pulpit</h2>
           <p class="muted">Szybki podgląd bota i serwera.</p>
         </header>
+        <div class="card hidden" id="access-card">
+          <h3>Twój dostęp do panelu</h3>
+          <div id="access-summary"></div>
+        </div>
         <div class="grid two">
           <div class="card row-card">
             <img id="guild-icon" class="avatar lg" alt="" hidden>
@@ -157,7 +171,7 @@
             <div class="chips" id="presence-chips"></div>
           </div>
         </div>
-        <div class="card">
+        <div class="card" id="password-card">
           <h3>Hasło panelu</h3>
           <p class="muted small" id="password-status">—</p>
           <form id="password-form" class="grid two tight">
@@ -196,6 +210,11 @@
           <h3>Kto może użyć jakiej komendy — podgląd na żywo</h3>
           <p class="muted small">Liczone z list powyżej (także niezapisanych). Administratorzy mają dostęp zawsze.</p>
           <div class="table-wrap"><table class="table compact" id="permission-matrix"></table></div>
+        </div>
+        <div class="card" id="role-perms-card">
+          <h3>Uprawnienia ról w Discordzie</h3>
+          <p class="muted small">To ustawienia samego Discorda, a nie bota — działają też bez komend bota (np. rola z „Wyrzucaniem” może wyrzucać z serwera prawym przyciskiem myszy). Zmiana od razu zapisuje się na serwerze. Pokazane są role, które mają którekolwiek z tych uprawnień; role z uprawnieniem Administrator mają wszystko, a role wyżej niż rola bota zmienisz tylko w ustawieniach serwera.</p>
+          <div class="table-wrap"><table class="table compact" id="role-perms-table"></table></div>
         </div>
       </section>
 
@@ -639,6 +658,59 @@
         </header>
         <div class="card">
           <div class="table-wrap"><table class="table" id="bans-table"></table></div>
+        </div>
+      </section>
+
+      <!-- DOSTĘP DO PANELU -->
+      <section id="view-dostep" class="view">
+        <header class="view-head">
+          <h2>Dostęp do panelu</h2>
+          <p class="muted">Każda osoba z moderacji ma własny login: wpisuje <code>/login</code> na wybranym kanale, a bot odpowiada loginem i hasłem widocznymi tylko dla niej. Bot czyta jej aktualne role i odblokowuje te części panelu, które przypiszesz tym rolom poniżej — resztę widzi tylko podglądowo (z kłódką). Role sprawdza na bieżąco (co kilka minut), więc po odebraniu roli dostęp znika sam. Login wygasa po ustawionym czasie (wtedy /login daje nowy), a <code>/login nowy:True</code> albo przycisk poniżej wymusza nowe hasło wcześniej. Administratorzy serwera i hasło panelu mają zawsze dostęp do wszystkiego, także do tej zakładki.</p>
+        </header>
+        <div class="grid two">
+          <div class="card">
+            <h3>Logowanie komendą /login</h3>
+            <label class="toggle"><input type="checkbox" data-path="panelAccess.enabled"><span></span>Włącz logowanie moderacji przez Discorda</label>
+            <label class="field"><span>Kanał, na którym działa /login</span><select data-path="panelAccess.channelId" data-channel-select="pick"></select></label>
+            <label class="field"><span>Login wygasa (ze względów bezpieczeństwa)</span>
+              <select data-path="panelAccess.loginDays" data-number>
+                <option value="7">co tydzień (7 dni)</option>
+                <option value="14">co 2 tygodnie (14 dni)</option>
+                <option value="30">co miesiąc (30 dni)</option>
+              </select>
+            </label>
+            <p class="muted small">Najlepiej wybierz kanał widoczny tylko dla moderacji — na innych kanałach /login odmówi. Hasło bot pokazuje tylko raz (w bazie jest tylko jego skrót); zmiana czasu wygasania dotyczy nowych loginów.</p>
+          </div>
+          <div class="card">
+            <h3>Które role odblokowują które części panelu</h3>
+            <div class="access-roles">
+              <div class="field"><span>Ustawienia</span><div data-picker-slot="cfg:panelAccess.roles.ustawienia"></div></div>
+              <div class="field"><span>Uprawnienia komend</span><div data-picker-slot="cfg:panelAccess.roles.uprawnienia"></div></div>
+              <div class="field"><span>Nowe osoby</span><div data-picker-slot="cfg:panelAccess.roles.czlonkowie"></div></div>
+              <div class="field"><span>Logi serwera</span><div data-picker-slot="cfg:panelAccess.roles.logi"></div></div>
+              <div class="field"><span>Bump</span><div data-picker-slot="cfg:panelAccess.roles.bump"></div></div>
+              <div class="field"><span>Społeczność</span><div data-picker-slot="cfg:panelAccess.roles.spolecznosc"></div></div>
+              <div class="field"><span>Tickety</span><div data-picker-slot="cfg:panelAccess.roles.tickety"></div></div>
+              <div class="field"><span>Kanały głosowe</span><div data-picker-slot="cfg:panelAccess.roles.glosowe"></div></div>
+              <div class="field"><span>Wiadomości</span><div data-picker-slot="cfg:panelAccess.roles.wiadomosci"></div></div>
+              <div class="field"><span>Wygląd embedów</span><div data-picker-slot="cfg:panelAccess.roles.embedy"></div></div>
+              <div class="field"><span>Ostrzeżenia</span><div data-picker-slot="cfg:panelAccess.roles.ostrzezenia"></div></div>
+              <div class="field"><span>Sprawy</span><div data-picker-slot="cfg:panelAccess.roles.sprawy"></div></div>
+              <div class="field"><span>Tymczasowe bany</span><div data-picker-slot="cfg:panelAccess.roles.bany"></div></div>
+            </div>
+            <p class="muted small">„Uprawnienia komend” i „Ustawienia” pozwalają zmieniać, kto może używać komend (także /ban) i kto liczy się jako moderacja — dawaj je tylko zaufanym rolom.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3>Loginy moderacji</h3>
+            <div class="card-actions">
+              <button type="button" class="btn ghost small" id="logins-refresh">Odśwież</button>
+              <button type="button" class="btn danger small" id="logins-revoke-all">Wymuś nowe loginy dla wszystkich</button>
+            </div>
+          </div>
+          <p class="muted small">„Wymuś nowy login” unieważnia hasło i wylogowuje wszystkie przeglądarki tej osoby — żeby wrócić, wpisuje /login jeszcze raz.</p>
+          <div class="table-wrap"><table class="table" id="logins-table"></table></div>
         </div>
       </section>
     </main>

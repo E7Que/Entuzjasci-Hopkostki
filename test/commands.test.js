@@ -24,7 +24,7 @@ test('definicje komend spełniają zasady API Discorda', () => {
   assert.deepEqual(
     defs.map((d) => d.name).sort(),
     [
-      'afk', 'ankieta', 'avatar', 'ban', 'bumpy', 'clear', 'czlonkowie', 'emoji', 'historia', 'info', 'kick', 'konkurs', 'lock', 'losuj',
+      'afk', 'ankieta', 'avatar', 'ban', 'bumpy', 'clear', 'czlonkowie', 'emoji', 'historia', 'info', 'kick', 'konkurs', 'lock', 'login', 'losuj',
       'nick', 'notatka', 'ogloszenie', 'pomoc', 'powiedz', 'profil', 'propozycja', 'przypomnij', 'rola', 'rolainfo', 'serwer',
       'slowmode', 'snipe', 'sprawa', 'sprawy', 'timeout', 'unban', 'unlock', 'untimeout', 'warn', 'zaproszenia',
     ],

@@ -3,21 +3,22 @@
 //   POST /cron        zadania okresowe (sekret z bazy, wywołuje pg_cron)
 //   POST /gateway     sesja gateway w tle (status online + opisy), też z pg_cron
 //   GET  /panel/      przekierowanie na stronę panelu (GitHub Pages)
-//   *    /panel/...   API panelu (nagłówek x-panel-password, CORS dla strony panelu)
+//   *    /panel/...   API panelu (nagłówek x-panel-password albo x-panel-session, CORS dla strony panelu)
+//   POST /panel/login logowanie moderatora loginem i hasłem z /login → sesja przeglądarki
 //   GET  /health      szybka diagnostyka bez sekretów
 
 import { handleInteraction } from './interactions.js';
 import { runCron } from './cron.js';
 import { runGatewaySession } from './gateway.js';
-import { handlePanel } from './panel.js';
+import { handlePanel, describeAuth } from './panel.js';
 import { getApp } from './moderation.js';
+import { AccessError, PANEL_SITE, PASSWORD_AUTH, authenticateSession, signIn } from './access.js';
 import { verifyDiscordRequest, ed25519Supported, safeEqual } from './verify.js';
 
 // Supabase nie serwuje stron HTML z funkcji Edge (text/html zamienia na text/plain), więc sama strona
-// panelu stoi na GitHub Pages, a tutaj zostaje jej API. Adres strony zależy od nazwy konta na GitHubie
-// (po zmianie NotKairo → E7Que strona przeniosła się na e7que.github.io, bez przekierowania), a zapytania
-// panelu bot przyjmuje tylko z tej domeny.
-export const PANEL_SITE = 'https://e7que.github.io/Entuzjasci-Hopkostki/';
+// panelu stoi na GitHub Pages (PANEL_SITE w access.js), a tutaj zostaje jej API. Zapytania panelu bot
+// przyjmuje tylko z tej domeny.
+export { PANEL_SITE };
 const PANEL_ORIGINS = new Set([new URL(PANEL_SITE).origin]);
 
 const json = (body, status = 200, headers = {}) =>
@@ -29,7 +30,7 @@ function corsHeaders(request) {
   return {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'content-type, x-panel-password',
+    'Access-Control-Allow-Headers': 'content-type, x-panel-password, x-panel-session',
     'Access-Control-Max-Age': '86400',
     Vary: 'Origin',
   };
@@ -103,20 +104,32 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
     return json({ started: true }, 202);
   }
 
-  async function panel(request, url, path, cors) {
+  // Kto pyta: hasło panelu = pełny dostęp, sesja z loginu z /login = części panelu odblokowane rolami tej osoby.
+  async function panelAuth(request) {
+    const session = request.headers.get('x-panel-session');
+    if (session) return authenticateSession(bot, session);
     const password = await resolvePanelPassword(bot);
-    if (!(await safeEqual(request.headers.get('x-panel-password'), password))) {
-      return json({ error: 'Złe hasło panelu.' }, 401, cors);
-    }
+    if (!(await safeEqual(request.headers.get('x-panel-password'), password))) throw new AccessError('Złe hasło panelu.');
+    return PASSWORD_AUTH;
+  }
+
+  async function panel(request, url, path, cors) {
+    const route = path.slice('/panel'.length) || '/';
     let body = {};
     if (!['GET', 'HEAD'].includes(request.method)) body = await request.json().catch(() => ({}));
-    const result = await handlePanel(bot, {
-      method: request.method,
-      path: path.slice('/panel'.length) || '/',
-      query: Object.fromEntries(url.searchParams),
-      body,
-    });
-    return json(result.body, result.status, cors);
+    try {
+      // Jedyne zapytanie panelu bez hasła panelu i sesji: login i hasło z /login → sesja przeglądarki.
+      if (request.method === 'POST' && route === '/login') {
+        const { token, auth } = await signIn(bot, { login: body?.login, password: body?.password });
+        return json({ token, me: describeAuth(auth) }, 200, cors);
+      }
+      const auth = await panelAuth(request);
+      const result = await handlePanel(bot, { method: request.method, path: route, query: Object.fromEntries(url.searchParams), body, auth });
+      return json(result.body, result.status, cors);
+    } catch (error) {
+      if (error instanceof AccessError) return json({ error: error.message }, 401, cors);
+      throw error;
+    }
   }
 
   return async function handle(request) {

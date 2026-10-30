@@ -305,6 +305,31 @@ textarea { resize: vertical; }
 .login-card p { margin: 0 0 1rem; }
 .login-card input { margin-bottom: .6rem; text-align: center; }
 .login-card .btn { width: 100%; margin-top: .3rem; }
+.login-card code { background: var(--bg); padding: .05rem .3rem; border-radius: 4px; }
+.login-card #login-code { text-transform: uppercase; letter-spacing: .12em; font-family: ui-monospace, monospace; }
+.login-card #login-code::placeholder { text-transform: none; letter-spacing: normal; font-family: inherit; }
+.login-or { display: flex; align-items: center; gap: .6rem; margin: 1.1rem 0 .8rem; color: var(--muted); font-size: .82rem; }
+.login-or::before, .login-or::after { content: ''; flex: 1; border-top: 1px solid var(--line); }
+.login-card .error-text { margin: .6rem 0 0; }
+/* Kto jest zalogowany kodem z /login (pasek boczny). */
+.me-chip { display: flex; align-items: center; gap: .55rem; padding: .55rem .7rem; margin-top: .4rem; border-radius: 6px; background: var(--bg); font-size: .82rem; line-height: 1.3; }
+.me-chip img { width: 28px; height: 28px; border-radius: 50%; flex: none; }
+.me-chip small { display: block; color: var(--muted); }
+.card-actions { display: flex; gap: .4rem; flex-wrap: wrap; }
+/* Części panelu, których zalogowana osoba nie może zmieniać: kłódka w menu, baner i przygaszona zawartość. */
+#nav a.locked { opacity: .55; }
+#nav a.locked span::after { content: ' 🔒'; font-size: .75em; }
+.banner.lock-banner { background: rgba(88, 101, 242, .12); border-color: var(--blurple); }
+.view.locked > [inert] { opacity: .55; filter: grayscale(.35); }
+.access-list { list-style: none; margin: .4rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: .35rem; }
+.access-list li { display: flex; align-items: center; gap: .45rem; padding: .4rem .55rem; border-radius: 6px; background: var(--bg); }
+.access-list li a { color: var(--text); text-decoration: none; font-weight: 600; }
+.access-list li small { margin-left: auto; color: var(--muted); }
+.access-list li.locked { opacity: .7; }
+#role-perms-table th { white-space: nowrap; font-size: .75rem; }
+#role-perms-table td.center { text-align: center; }
+#role-perms-table td:first-child { white-space: nowrap; }
+.access-roles { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .1rem .9rem; }
 button.side-link { background: none; border: none; font: inherit; text-align: left; width: 100%; cursor: pointer; }
 
 /* ---------- Uprawnienia ---------- */

@@ -53,10 +53,11 @@ wyświetlać stron HTML (zamienia je na zwykły tekst), więc sama strona leży 
 publikowana automatycznie z `panel/public/` po każdej zmianie na `main`), a dane i hasło obsługuje API bota
 na Supabase — strona tylko je woła.
 
-Przy pierwszym wejściu panel zapyta o **hasło**. Hasło zmienione w zakładce **Ustawienia → Hasło panelu** ma
-pierwszeństwo; dopóki go nie zmienisz, działa `PANEL_PASSWORD` z sekretów Supabase (a bez sekretu — hasło
-wygenerowane przez bota przy pierwszym użyciu). Hasło zapamiętuje przeglądarka
-na czas karty (do „Wyloguj” albo zamknięcia karty).
+Moderacja loguje się własnym loginem i hasłem z komendy `/login` — patrz „Logowanie moderacji do panelu”
+niżej. Właściciel może też użyć **hasła panelu**: przy pierwszym wejściu panel zapyta o **hasło**. Hasło
+zmienione w zakładce **Ustawienia → Hasło panelu** ma pierwszeństwo; dopóki go nie zmienisz, działa
+`PANEL_PASSWORD` z sekretów Supabase (a bez sekretu — hasło wygenerowane przez bota przy pierwszym użyciu).
+Hasło zapamiętuje przeglądarka na czas karty (do „Wyloguj” albo zamknięcia karty).
 
 W panelu są:
 - **Pulpit:** status bota, lista kontrolna połączenia z Discordem (w tym sesja gateway), statystyki
@@ -64,7 +65,10 @@ W panelu są:
 - **Ustawienia:** kanał logów, kanał ogłoszeń, role moderatorów, DM, dopisek o odwołaniach, emoji reakcji,
   status i rotujące opisy bota oraz hasło panelu.
 - **Uprawnienia:** dla każdej komendy możesz nadpisać domyślne uprawnienie Discorda i ograniczyć ją do
-  wybranych ról — plus tabela pokazująca na żywo, która rola może użyć której komendy.
+  wybranych ról — plus tabela pokazująca na żywo, która rola może użyć której komendy, i uprawnienia ról
+  w samym Discordzie (np. odebranie wyrzucania).
+- **Dostęp do panelu:** logowanie moderacji komendą `/login` (kanał, wygasanie loginów, które role
+  odblokowują które części panelu) i lista aktywnych loginów — patrz niżej.
 - **Nowe osoby:** automatyczne role po wejściu (osobno dla ludzi i botów), powitanie i pożegnanie.
 - **Logi serwera:** logi jak w Carl-bocie — patrz niżej.
 - **Bump:** przypominajka o bumpie DISBOARD jak w Fibo, z podziękowaniem i rankingiem — patrz niżej.
@@ -170,6 +174,36 @@ zakładki (osoba bez dostępu i tak dostanie „Nie masz uprawnień do tej komen
 zależy Ci na ukryciu komendy przed kimś na poziomie samego Discorda, możesz dodatkowo ograniczyć ją w
 *Ustawienia serwera → Integracje → bot*.
 
+Zakładka **Uprawnienia** ma też kartę **Uprawnienia ról w Discordzie** (tylko pełny dostęp): najważniejsze
+uprawnienia moderacji samego Discorda (wyrzucanie, banowanie, wyciszanie, usuwanie wiadomości, pseudonimy,
+role, kanały, emoji, @everyone, przenoszenie z głosowych, dziennik zdarzeń) dla ról, które je mają. Te
+działają bez bota — np. Test Helper z „Wyrzucaniem” mógłby wyrzucać prawym przyciskiem myszy mimo braku
+`/kick` — więc tu można je odebrać jednym kliknięciem (bot zmienia rolę od razu, z wpisem w dzienniku
+zdarzeń). Role wyżej niż rola bota i role z Administratorem zmienisz tylko w ustawieniach serwera.
+
+### Logowanie moderacji do panelu (`/login`)
+
+Każda osoba z moderacji może mieć **własny login do panelu** — bez znajomości hasła panelu — i widzi w nim,
+co może zmieniać, a co nie, zależnie od swojego stopnia:
+1. W zakładce **Dostęp do panelu** włączasz logowanie, wybierasz **kanał**, na którym działa `/login`
+   (najlepiej widoczny tylko dla moderacji), ustawiasz, jak często login **wygasa** (co tydzień, co 2 tygodnie
+   albo co miesiąc), i przypisujesz **role** do części panelu (Tickety, Ostrzeżenia, Sprawy, …).
+2. Moderator wpisuje `/login` na tym kanale. Bot czyta jego **aktualne role** i odpowiada (widzi to tylko on)
+   **loginem** (jego nazwa na Discordzie) i **hasłem**, datą wygaśnięcia, listą tego, co może zmieniać, oraz
+   przyciskiem **„Zaloguj się do panelu”**. Na innym kanale albo bez odpowiedniej roli komenda odmawia.
+3. Hasło bot pokazuje tylko raz (w bazie jest tylko jego skrót SHA-256). Kolejny `/login` przypomina login,
+   a `/login nowy:True` **wymusza nowe hasło** — stare i wszystkie zalogowania nim od razu przestają działać.
+   Po wygaśnięciu `/login` daje nowy login sam.
+4. W panelu odblokowane części działają normalnie, a pozostałe są widoczne z **kłódką**, tylko do podglądu
+   (z informacją, które role je odblokowują; dane spraw, banów i wiadomości są ukryte). Na pulpicie karta
+   **„Twój dostęp do panelu”** pokazuje wszystko naraz. Bot i tak odrzuca zapytania i zapisy spoza
+   odblokowanych części.
+
+Bot sprawdza role zalogowanych co kilka minut: odebrana rola albo wyjście z serwera kończy sesję samo, a
+zmiany ról w zakładce działają od razu. Administratorzy serwera (i logowanie hasłem panelu) mają zawsze
+dostęp do wszystkiego; w zakładce widać aktywne loginy (kto, do kiedy, ile przeglądarek) i można wymusić nowy
+login jednej osobie albo wszystkim.
+
 ### Uruchomienie panelu lokalnie (opcjonalnie)
 
 Panel działa w pełni bez tego — to tylko wygodny skrót, jeśli wolisz `localhost` zamiast GitHub Pages.
@@ -217,6 +251,7 @@ wpisujesz w przeglądarce.
 | `/profil` · `/rolainfo` · `/czlonkowie` | Profil użytkownika / informacje o roli / liczba członków i online. |
 | `/losuj kostka/moneta/liczba/wybor` · `/bumpy ranking/status` | Losowanie / ranking bumpów i kiedy następny. |
 | `/zaproszenia [uzytkownik]` | Ranking zaproszeń albo kogo zaprosiła dana osoba. |
+| `/login [nowy]` | Login i hasło do panelu bota (tylko na kanale do logowania, widoczne tylko dla Ciebie); `nowy:True` wymusza nowe hasło. |
 | `/pomoc` | Lista komend. |
 
 **Jednostki czasu** wybierasz z listy: minuty, godziny, dni, tygodnie albo miesiące (30 dni). W wiadomości

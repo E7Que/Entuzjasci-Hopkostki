@@ -57,6 +57,7 @@ export function fakeDiscord({ dmFails = false, banError = null, endpoint = null 
     vanity: null,
     // Zaproszenia sprawdzane po kodzie (GET /invites/:kod), np. link w formularzu partnerstwa.
     publicInvites: {},
+    roleEdits: [],
   };
 
   const channelMessages = (id) => {
@@ -126,6 +127,12 @@ export function fakeDiscord({ dmFails = false, banError = null, endpoint = null 
       state.kicked.push({ id, reason: opts.reason });
       members.delete(id);
       return null;
+    }],
+    // Zmiana roli (np. uprawnień z panelu) — zapisywana w roleEdits, wspólna tablica ROLES zostaje bez zmian.
+    ['PATCH', /^\/guilds\/g1\/roles\/([\w-]+)$/, ([, id], body, opts) => {
+      const role = ROLES.find((r) => r.id === id) ?? notFound(10011);
+      state.roleEdits.push({ id, body, reason: opts.reason });
+      return { ...role, ...body };
     }],
     ['PUT', /^\/guilds\/g1\/members\/(\w+)\/roles\/([\w-]+)$/, ([, id, role]) => {
       members.get(id)?.roles.push(role);

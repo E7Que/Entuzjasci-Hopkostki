@@ -153,6 +153,7 @@ export async function runCron(bot, { force = false } = {}) {
     await step('prune', async () => {
       await bot.store.pruneModMessages(30);
       await bot.store.pruneMessageCache(7);
+      await bot.store.prunePanelSessions();
     });
     await bot.store.setState('cron_last_run', { at: Date.now(), report });
   } finally {

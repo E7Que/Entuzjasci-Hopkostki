@@ -15,6 +15,7 @@ const INVITES = new URL('../../supabase/migrations/20260927160000_bot_invite_joi
 const TICKET_ARCHIVE = new URL('../../supabase/migrations/20260927180000_bot_ticket_archive.sql', import.meta.url);
 // Zapis rozmowy po zamknięciu wysyła się od razu (nie z opóźnieniem przez crona) — te kolumny już niepotrzebne.
 const TICKET_ARCHIVE_IMMEDIATE = new URL('../../supabase/migrations/20260927190000_bot_ticket_archive_immediate.sql', import.meta.url);
+const PANEL_SESSIONS = new URL('../../supabase/migrations/20261030200000_bot_panel_sessions.sql', import.meta.url);
 const withoutCron = (sql) => sql.split(/^select cron\.schedule/m)[0];
 const withoutGrants = (sql) => sql.replace(/revoke .*? from anon, authenticated;/g, '');
 let shared = null;
@@ -32,6 +33,7 @@ async function database() {
       await db.exec(withoutGrants(fs.readFileSync(INVITES, 'utf8')));
       await db.exec(withoutGrants(fs.readFileSync(TICKET_ARCHIVE, 'utf8')));
       await db.exec(withoutGrants(fs.readFileSync(TICKET_ARCHIVE_IMMEDIATE, 'utf8')));
+      await db.exec(withoutGrants(fs.readFileSync(PANEL_SESSIONS, 'utf8')));
       return db;
     })();
   }
@@ -43,7 +45,7 @@ export async function createTestStore() {
   await db.exec(`
     truncate bot.warns, bot.cases, bot.temp_bans, bot.mod_messages, bot.channel_cursors, bot.notes,
       bot.voice_states, bot.temp_voice, bot.sent_messages, bot.tickets, bot.message_cache, bot.bumps,
-      bot.reminders, bot.giveaways, bot.afk, bot.member_profiles, bot.invite_joins restart identity cascade;
+      bot.reminders, bot.giveaways, bot.afk, bot.member_profiles, bot.invite_joins, bot.panel_sessions restart identity cascade;
     update bot.config set data = '{}'::jsonb;
     delete from bot.state where key not in ('cron_secret', 'cron_lock');
     update bot.state set value = to_jsonb('1970-01-01T00:00:00Z'::text) where key = 'cron_lock';

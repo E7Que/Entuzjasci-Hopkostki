@@ -229,6 +229,31 @@ export const DEFAULT_CONFIG = {
     ],
   },
 
+  // Logowanie moderacji do panelu: /login na wybranym kanale daje osobie jej login i hasło, ważne loginDays
+  // dni (7, 14 albo 30 — potem /login daje nowe; /login nowy:True wymusza nowe wcześniej).
+  // roles: które role odblokowują którą część panelu (bot sprawdza aktualne role na bieżąco).
+  // Administratorzy serwera i logowanie hasłem panelu mają zawsze dostęp do wszystkiego.
+  panelAccess: {
+    enabled: false,
+    channelId: '',
+    loginDays: 7,
+    roles: {
+      ustawienia: [],
+      uprawnienia: [],
+      czlonkowie: [],
+      logi: [],
+      bump: [],
+      spolecznosc: [],
+      tickety: [],
+      glosowe: [],
+      wiadomosci: [],
+      embedy: [],
+      ostrzezenia: [],
+      sprawy: [],
+      bany: [],
+    },
+  },
+
   // Wygląd embedów dla każdej akcji. Dostępne zmienne w tekstach:
   // {uzytkownik} {nick} {moderator} {moderatorNick} {powod} {czas} {serwer} {sprawa} {typ}
   actions: {

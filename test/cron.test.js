@@ -16,7 +16,7 @@ test('pierwszy przebieg: rejestruje komendy i ustawia Interactions Endpoint URL'
   const s = await setup();
   const report = await runCron(s.bot);
   assert.equal(report.setup.ok, true);
-  assert.equal(s.discord.state.commands.length, 35);
+  assert.equal(s.discord.state.commands.length, 36);
   assert.equal(s.discord.state.endpoint, s.bot.env.selfUrl);
   assert.equal((await s.store.getState('app')).id, 'app');
 
