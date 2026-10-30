@@ -1,11 +1,15 @@
-// Tickety: wiadomość-panel z przyciskami (wysyłana z panelu) → prywatny kanał dla osoby i obsługi.
+// Tickety: wiadomość-panel z przyciskami (wysyłana z panelu) → formularz (okienko Discorda) → prywatny
+// kanał dla osoby i obsługi. Każdy przycisk to rodzaj ticketu z własnym formularzem (np. Zgłoszenie,
+// Partnerstwo: link do serwera, liczba członków, powód).
 // W tickecie: Zamknij (z potwierdzeniem, zapis rozmowy do logów i w DM), Przejmij, Dodaj osobę.
 
 import { P, has } from './permissions.js';
 import { DiscordError } from './rest.js';
 import { ActionError, describeError, getGuildContext } from './moderation.js';
-import { BRAND, COLORS, colorInt, errorEmbed, fillTemplate, successEmbed } from './embeds.js';
+import { BRAND, COLORS, colorInt, errorEmbed, escapeMarkdown, fillTemplate, successEmbed } from './embeds.js';
 import { discordTimestamp } from './duration.js';
+import { ticketFields } from './configSchema.js';
+import { emojiObject } from './messages.js';
 
 const EPHEMERAL = 64;
 const STYLES = { niebieski: 1, szary: 2, zielony: 3, czerwony: 4 };
@@ -18,7 +22,10 @@ export const ticketNumber = (id) => String(id).padStart(4, '0');
 // ---------- Panel ticketów (wiadomość z przyciskami) ----------
 
 export function ticketPanelMessage(tickets) {
-  const buttons = tickets.types.map((t, i) => ({ type: 2, style: STYLES[t.style] ?? 1, label: t.label, custom_id: `tk|open|${i}` }));
+  const buttons = tickets.types.map((t, i) => {
+    const emoji = emojiObject(t.emoji);
+    return { type: 2, style: STYLES[t.style] ?? 1, label: t.label, custom_id: `tk|open|${i}`, ...(emoji ? { emoji } : {}) };
+  });
   const rows = [];
   for (let i = 0; i < buttons.length; i += 5) rows.push({ type: 1, components: buttons.slice(i, i + 5) });
   return {
@@ -55,6 +62,124 @@ export async function sendTicketPanel(bot, channelId) {
   return { ...state, updated: false };
 }
 
+// ---------- Formularz (okienko Discorda przed otwarciem ticketu) ----------
+
+const INVITE = /(?:https?:\/\/)?(?:www\.)?(?:discord(?:app)?\.com\/invite|discord\.gg)\/([\w-]{2,32})/i;
+// Liczba z separatorami tysięcy („1 200”, „1.200”) albo bez; „1,5k”, „250-300” czy „5 tys.” są odrzucane.
+const NUMBER_PART = /\d{1,3}(?:[ .,']\d{3})+(?!\d)|\d+/g;
+const NUMBER_SHORTHAND = /\d\s*(?:k|tys|mln)(?![a-ząćęłńóśźż])/i;
+const FIELD_MAX = { short: 200, long: 1000, number: 15, invite: 200 };
+
+// prefill: etykieta pola → wartość — przy poprawianiu formularza wpisane wcześniej odpowiedzi wracają do pól.
+function ticketForm(type, index, prefill = new Map()) {
+  return {
+    custom_id: `tkm|open|${index}`,
+    title: `Nowy ticket — ${type.label}`.slice(0, 45),
+    components: ticketFields(type).map((field, i) => {
+      const required = field.required !== false;
+      const max = FIELD_MAX[field.kind] ?? FIELD_MAX.short;
+      const value = prefill.get(field.label);
+      return {
+        type: 1,
+        components: [
+          {
+            type: 4,
+            custom_id: `f${i}`,
+            style: field.kind === 'long' ? 2 : 1,
+            label: field.label.slice(0, 45),
+            ...(field.placeholder ? { placeholder: field.placeholder.slice(0, 100) } : {}),
+            ...(required ? { min_length: field.kind === 'long' ? 3 : 1 } : {}),
+            max_length: max,
+            required,
+            ...(value ? { value: value.slice(0, max) } : {}),
+          },
+        ],
+      };
+    }),
+  };
+}
+
+// Odpowiedzi z okienka w kolejności pól. Okienka sprzed formularzy miały jedno pole o ID `value`.
+function formAnswers(ix, fields) {
+  const values = new Map();
+  for (const row of ix.raw.data?.components ?? []) {
+    for (const input of row.components ?? []) values.set(input.custom_id === 'value' ? 'f0' : input.custom_id, String(input.value ?? '').trim());
+  }
+  return fields.map((field, i) => ({ label: field.label, kind: field.kind, required: field.required !== false, value: values.get(`f${i}`) ?? '' }));
+}
+
+// Sprawdza i ujednolica odpowiedzi (liczba, link zaproszenia). Zwraca opis problemu albo null. Do odpowiedzi
+// z linkiem dopisuje dane serwera z Discorda — obsługa od razu widzi nazwę i prawdziwą liczbę członków.
+async function checkAnswers(bot, answers, guildId) {
+  for (const answer of answers) {
+    if (!answer.value) {
+      if (answer.required) return `Uzupełnij pole „${answer.label}”.`;
+      continue;
+    }
+    if (answer.kind === 'number') {
+      const parts = answer.value.match(NUMBER_PART) ?? [];
+      if (parts.length !== 1 || NUMBER_SHORTHAND.test(answer.value) || parts[0].replace(/\D/g, '').length > 9) {
+        return `W polu „${answer.label}” wpisz jedną liczbę, np. 250 (albo 1500 zamiast 1,5k).`;
+      }
+      answer.value = String(Number(parts[0].replace(/\D/g, '')));
+    }
+    if (answer.kind === 'invite') {
+      const code = INVITE.exec(answer.value)?.[1];
+      if (!code) return `W polu „${answer.label}” wklej link zaproszenia na serwer Discord, np. https://discord.gg/abc123.`;
+      answer.value = `https://discord.gg/${code}`;
+      let invite = null;
+      try {
+        invite = await bot.discord.get(`/invites/${code}`, { query: { with_counts: true } });
+      } catch (error) {
+        // Nieznane zaproszenie = wygasło albo jest błędne. Inny błąd (np. limit zapytań) nie blokuje ticketu.
+        if (isGone(error)) {
+          return `Link ${answer.value} nie działa — zaproszenie wygasło albo jest błędne. Wklej aktualny link (najlepiej bez limitu czasu).`;
+        }
+      }
+      if (invite?.guild?.id === guildId) return 'To link do naszego serwera — wklej link do swojego.';
+      if (invite?.guild) {
+        answer.server = {
+          name: invite.guild.name,
+          members: invite.approximate_member_count ?? null,
+          online: invite.approximate_presence_count ?? null,
+          expiresAt: invite.expires_at ?? null,
+        };
+      }
+    }
+  }
+  return null;
+}
+
+function serverSummary(server) {
+  const parts = [`**${escapeMarkdown(server.name)}**`];
+  if (Number.isFinite(server.members)) parts.push(`${server.members} członków`);
+  if (Number.isFinite(server.online)) parts.push(`${server.online} online`);
+  const expires = Date.parse(server.expiresAt ?? '');
+  return `${parts.join(' • ')}${Number.isFinite(expires) ? `\n⚠️ Zaproszenie wygasa ${discordTimestamp(expires, 'R')}` : ''}`;
+}
+
+// Odpowiedzi jako pola embeda (powitanie w tickecie, log otwarcia, wiadomość z błędem do poprawienia).
+function answerFields(answers, { withServer = true } = {}) {
+  return answers
+    .filter((a) => a.value)
+    .flatMap((a) => [
+      { name: a.label.slice(0, 256), value: a.value.slice(0, 1024) },
+      ...(withServer && a.server ? [{ name: 'Serwer z zaproszenia', value: serverSummary(a.server) }] : []),
+    ]);
+}
+
+// Tekst do bazy (lista ticketów w panelu, nagłówek zapisu rozmowy): jedna odpowiedź = sama treść.
+function answersText(answers) {
+  const filled = answers.filter((a) => a.value);
+  if (filled.length === 1 && !filled[0].server) return filled[0].value;
+  return filled
+    .flatMap((a) => [
+      `${a.label}: ${a.value}`,
+      ...(a.server ? [`Serwer z zaproszenia: ${a.server.name}${Number.isFinite(a.server.members) ? ` (${a.server.members} członków)` : ''}`] : []),
+    ])
+    .join('\n');
+}
+
 // ---------- Tworzenie ----------
 
 function ticketButtons(ticket) {
@@ -77,7 +202,8 @@ async function ticketLog(bot, tickets, payload, files) {
     .catch((error) => console.warn(`[tickety] Log: ${error.message}`));
 }
 
-export async function createTicket(bot, { guildId, user, type, subject = '' }) {
+// answers: odpowiedzi z formularza [{ label, value, server? }] (sprawdzone przez checkAnswers).
+export async function createTicket(bot, { guildId, user, type, answers = [] }) {
   const { tickets } = await bot.store.getConfig();
 
   // Ticket, którego kanał ktoś usunął ręcznie, nie powinien blokować nowego.
@@ -89,9 +215,11 @@ export async function createTicket(bot, { guildId, user, type, subject = '' }) {
   }
   if (open.length >= tickets.maxOpen) throw new ActionError(`Masz już otwarty ticket: <#${open[0].channelId}>`);
 
+  const subject = answersText(answers);
   let ticket = await bot.store.addTicket({ guildId, userId: user.id, userTag: user.username, type: type.label, subject });
   const number = ticketNumber(ticket.id);
-  const vars = { numer: number, nick: user.username, uzytkownik: `<@${user.id}>` };
+  const vars = { numer: number, nick: user.username, uzytkownik: `<@${user.id}>`, typ: type.label };
+  const fields = answerFields(answers);
   const { botUser } = await getGuildContext(bot);
   const overwrites = [
     { id: guildId, type: 0, allow: '0', deny: String(P.VIEW_CHANNEL) },
@@ -128,8 +256,8 @@ export async function createTicket(bot, { guildId, user, type, subject = '' }) {
       {
         color: colorInt(tickets.panel.color),
         title: `Ticket #${number} • ${type.label}`,
-        description: fillTemplate(tickets.welcome, vars),
-        ...(subject ? { fields: [{ name: 'Sprawa', value: subject.slice(0, 1024) }] } : {}),
+        description: fillTemplate(type.welcome || tickets.welcome, vars),
+        ...(fields.length ? { fields } : {}),
         footer: { text: BRAND },
       },
     ],
@@ -140,7 +268,8 @@ export async function createTicket(bot, { guildId, user, type, subject = '' }) {
       {
         color: COLORS.info,
         title: `Otwarto ticket #${number}`,
-        description: `**Autor:** <@${user.id}> \`${user.username}\`\n**Typ:** ${type.label}\n**Kanał:** <#${channel.id}>${subject ? `\n**Sprawa:** ${subject.slice(0, 500)}` : ''}`,
+        description: `**Autor:** <@${user.id}> \`${user.username}\`\n**Typ:** ${type.label}\n**Kanał:** <#${channel.id}>`,
+        ...(fields.length ? { fields } : {}),
       },
     ],
   });
@@ -170,7 +299,8 @@ export function buildTranscript(ticket, messages, closer) {
     `Zapis ticketu #${ticketNumber(ticket.id)} — ${BRAND}`,
     `Autor: ${ticket.userTag ?? ticket.userId} (${ticket.userId})`,
     `Typ: ${ticket.type ?? '—'}`,
-    ticket.subject ? `Sprawa: ${ticket.subject}` : null,
+    // Kilka odpowiedzi z formularza („Pole: odpowiedź” w liniach) albo jedna — sama treść sprawy.
+    ticket.subject ? (ticket.subject.includes('\n') ? `Formularz:\n${ticket.subject.replace(/^/gm, '  ')}` : `Sprawa: ${ticket.subject}`) : null,
     `Otwarty: ${plTime(ticket.createdAt)}`,
     `Zamknął: ${closer.username} (${closer.id}), ${plTime(Date.now())}`,
     '',
@@ -279,13 +409,6 @@ function isSupport(member, tickets) {
   return tickets.supportRoleIds.some((id) => member.roles?.includes(id));
 }
 
-function modalValue(ix) {
-  for (const row of ix.raw.data?.components ?? []) {
-    for (const input of row.components ?? []) if (input.custom_id === 'value') return String(input.value ?? '').trim();
-  }
-  return '';
-}
-
 const fail = (text) => ({ response: { type: 4, data: { flags: EPHEMERAL, embeds: [errorEmbed(text)] } } });
 
 export async function handleTicketInteraction(ix, bot) {
@@ -304,25 +427,31 @@ export async function handleTicketInteraction(ix, bot) {
     },
   });
 
-  if (action === 'open') {
+  // open: przycisk w panelu ticketów (i wysłany formularz), retry: „Popraw formularz” pod błędem w odpowiedziach.
+  if (action === 'open' || action === 'retry') {
     if (!tickets.enabled) return fail('Tickety są teraz wyłączone.');
     const type = tickets.types[Number(arg)];
     if (!type) return fail('Ten przycisk jest już nieaktualny.');
-    if (kind === 'tk' && type.question) {
-      return {
-        response: {
-          type: 9,
-          data: {
-            custom_id: `tkm|open|${arg}`,
-            title: `Nowy ticket — ${type.label}`.slice(0, 45),
-            components: [{ type: 1, components: [{ type: 4, custom_id: 'value', style: 2, label: type.question, min_length: 3, max_length: 1000, required: true }] }],
-          },
-        },
-      };
+    const fields = ticketFields(type);
+    if (kind === 'tk' && fields.length) {
+      // Odpowiedzi do poprawienia wracają z wiadomości z błędem (jej pola to „etykieta: odpowiedź”).
+      const prefill = new Map(action === 'retry' ? (ix.raw.message?.embeds?.[0]?.fields ?? []).map((f) => [f.name, String(f.value ?? '')]) : []);
+      return { response: { type: 9, data: ticketForm(type, arg, prefill) } };
     }
-    const subject = kind === 'tkm' ? modalValue(ix) : '';
-    return work(5, async () => {
-      const { channel } = await createTicket(bot, { guildId: ix.guildId, user: ix.user, type, subject });
+    const answers = kind === 'tkm' ? formAnswers(ix, fields) : [];
+    // Formularz otwarty z wiadomości z błędem (widocznej tylko dla tej osoby) aktualizuje ją zamiast dodawać nową.
+    const fromRetry = kind === 'tkm' && (Number(ix.raw.message?.flags ?? 0) & EPHEMERAL) !== 0;
+    return work(fromRetry ? 6 : 5, async () => {
+      const problem = await checkAnswers(bot, answers, ix.guildId);
+      if (problem) {
+        await ix.edit({
+          content: '',
+          embeds: [{ ...errorEmbed(`${problem}\nKliknij **Popraw formularz** — wpisane odpowiedzi wrócą do pól.`), fields: answerFields(answers, { withServer: false }) }],
+          components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Popraw formularz', custom_id: `tk|retry|${arg}` }] }],
+        });
+        return null;
+      }
+      const { channel } = await createTicket(bot, { guildId: ix.guildId, user: ix.user, type, answers });
       return `Ticket utworzony: <#${channel.id}>`;
     });
   }

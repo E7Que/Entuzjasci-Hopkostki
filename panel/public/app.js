@@ -22,7 +22,7 @@ const ACTIVITY_LABELS = { custom: 'Własny opis', playing: 'Gra w', listening: '
 const PRESENCE_PLACEHOLDERS = ['{czlonkowie}', '{online}', '{serwer}', '{ostrzezenia}', '{sprawy}'];
 const VIEWS = ['pulpit', 'ustawienia', 'uprawnienia', 'czlonkowie', 'logi', 'bump', 'spolecznosc', 'tickety', 'glosowe', 'wiadomosci', 'embedy', 'ostrzezenia', 'sprawy', 'bany'];
 const MEMBER_VARS = ['{uzytkownik}', '{nick}', '{serwer}', '{liczba}'];
-const TICKET_VARS = ['{uzytkownik}', '{nick}', '{numer}'];
+const TICKET_VARS = ['{uzytkownik}', '{nick}', '{numer}', '{typ}'];
 const BUMP_VARS = ['{uzytkownik}', '{nick}', '{liczba}', '{nastepny}', '{godzina}'];
 const VAR_SETS = { ticket: TICKET_VARS, bump: BUMP_VARS, bumpReminder: ['{uzytkownik}', '</bump:947088344167366698>'] };
 const EMPTY_GUILD = { channels: [], voiceChannels: [], categories: [], roles: [], emojis: [], bot: null };
@@ -1262,19 +1262,48 @@ document.addEventListener('click', (event) => {
 });
 
 // ---------- Tickety ----------
+// Każdy rodzaj ticketu (przycisk w panelu) ma własny formularz: maks. 5 pól w okienku Discorda.
+const TICKET_FIELD_KINDS = { short: 'Krótka odpowiedź', long: 'Długi tekst', number: 'Liczba', invite: 'Link do serwera Discord' };
+
+// Starsze rodzaje ticketów miały jedno pole `question` — w edytorze to formularz z jednym długim polem.
+function ticketTypeFields(type) {
+  if (!Array.isArray(type.fields)) {
+    type.fields = type.question ? [{ label: type.question, placeholder: '', kind: 'long', required: true }] : [];
+    delete type.question;
+  }
+  return type.fields;
+}
+
 function renderTicketTypes() {
   const types = state.draft.tickets.types;
   $('#ticket-types').innerHTML = types
-    .map(
-      (t, i) => `<div class="ttype" data-ttype="${i}">
+    .map((t, i) => {
+      const fields = Array.isArray(t.fields) ? t.fields : t.question ? [{ label: t.question, placeholder: '', kind: 'long', required: true }] : [];
+      return `<div class="ttype" data-ttype="${i}">
         <div class="ttype-row">
+          <button type="button" class="btn ghost small emoji-btn" data-emoji-open data-ttype-emoji title="Emoji na przycisku (emoji serwera albo zwykłe)">${t.emoji ? emojiHtml(t.emoji) : 'Emoji'}</button>
           <input type="text" maxlength="80" value="${esc(t.label)}" data-ttype-field="label" aria-label="Napis na przycisku">
           <select data-ttype-field="style" aria-label="Kolor przycisku">${Object.entries(BUTTON_STYLES).map(([v, l]) => `<option value="${v}" ${v === t.style ? 'selected' : ''}>${l}</option>`).join('')}</select>
           <button type="button" class="btn ghost small" data-ttype-del ${types.length <= 1 ? 'disabled' : ''}>Usuń</button>
         </div>
-        <input type="text" maxlength="45" value="${esc(t.question)}" data-ttype-field="question" placeholder="Pytanie w okienku (maks. 45 znaków) — puste = bez okienka" aria-label="Pytanie">
-      </div>`,
-    )
+        <div class="tfields">
+          <span class="muted small">Formularz przed otwarciem ticketu${fields.length ? '' : ' — brak pól, ticket otwiera się od razu'}</span>
+          ${fields
+            .map(
+              (f, j) => `<div class="tfield" data-tfield="${j}">
+            <input type="text" maxlength="45" value="${esc(f.label)}" data-tfield-prop="label" placeholder="Pytanie (maks. 45 znaków)" aria-label="Pytanie">
+            <select data-tfield-prop="kind" aria-label="Rodzaj odpowiedzi">${Object.entries(TICKET_FIELD_KINDS).map(([v, l]) => `<option value="${v}" ${v === f.kind ? 'selected' : ''}>${l}</option>`).join('')}</select>
+            <label class="toggle small"><input type="checkbox" data-tfield-prop="required" ${f.required !== false ? 'checked' : ''}><span></span>Wymagane</label>
+            <button type="button" class="btn ghost small" data-tfield-del aria-label="Usuń pole">Usuń</button>
+            <input type="text" maxlength="100" value="${esc(f.placeholder ?? '')}" data-tfield-prop="placeholder" placeholder="Podpowiedź w polu (opcjonalnie, np. https://discord.gg/…)" aria-label="Podpowiedź" class="tfield-hint">
+          </div>`,
+            )
+            .join('')}
+          <button type="button" class="btn ghost small" data-tfield-add ${fields.length >= 5 ? 'disabled' : ''}>Dodaj pole</button>
+        </div>
+        <label class="field"><span>Powitanie w tym rodzaju ticketu (puste = wspólne z ustawień)</span><textarea rows="2" maxlength="1500" data-ttype-field="welcome" placeholder="np. Dzięki za chęć partnerstwa, {uzytkownik}! Sprawdzimy Twój serwer.">${esc(t.welcome ?? '')}</textarea></label>
+      </div>`;
+    })
     .join('');
   $('#add-ticket-type').disabled = types.length >= 5;
   const saved = state.ticketPanel?.channelId;
@@ -1283,23 +1312,46 @@ function renderTicketTypes() {
 
 function onTicketTypeChange(event) {
   const row = event.target.closest('[data-ttype]');
+  if (!row) return;
+  const type = state.draft.tickets.types[Number(row.dataset.ttype)];
   const field = event.target.dataset.ttypeField;
-  if (!row || !field) return;
+  const prop = event.target.dataset.tfieldProp;
+  if (field) type[field] = event.target.value;
+  else if (prop) {
+    const item = ticketTypeFields(type)[Number(event.target.closest('[data-tfield]').dataset.tfield)];
+    item[prop] = prop === 'required' ? event.target.checked : event.target.value;
+  } else return;
   event.stopPropagation();
-  state.draft.tickets.types[Number(row.dataset.ttype)][field] = event.target.value;
   markDirty();
 }
 $('#ticket-types').addEventListener('input', onTicketTypeChange);
 $('#ticket-types').addEventListener('change', onTicketTypeChange);
 $('#ticket-types').addEventListener('click', (event) => {
-  const row = event.target.closest('[data-ttype-del]') && event.target.closest('[data-ttype]');
+  const row = event.target.closest('[data-ttype]');
   if (!row) return;
-  state.draft.tickets.types.splice(Number(row.dataset.ttype), 1);
+  const types = state.draft.tickets.types;
+  const type = types[Number(row.dataset.ttype)];
+  if (event.target.closest('[data-ttype-emoji]')) {
+    openEmojiPicker(event.target.closest('[data-ttype-emoji]'), type.emoji ?? '', (value) => {
+      type.emoji = value;
+      renderTicketTypes();
+      markDirty();
+    });
+    return;
+  }
+  if (event.target.closest('[data-ttype-del]')) types.splice(Number(row.dataset.ttype), 1);
+  else if (event.target.closest('[data-tfield-add]')) {
+    const fields = ticketTypeFields(type);
+    if (fields.length >= 5) return;
+    fields.push({ label: '', placeholder: '', kind: 'short', required: true });
+  } else if (event.target.closest('[data-tfield-del]')) {
+    ticketTypeFields(type).splice(Number(event.target.closest('[data-tfield]').dataset.tfield), 1);
+  } else return;
   renderTicketTypes();
   markDirty();
 });
 $('#add-ticket-type').addEventListener('click', () => {
-  state.draft.tickets.types.push({ label: 'Nowy ticket', style: 'szary', question: '' });
+  state.draft.tickets.types.push({ label: 'Nowy ticket', style: 'szary', emoji: '', welcome: '', fields: [{ label: 'Opisz krótko swoją sprawę', placeholder: '', kind: 'long', required: true }] });
   renderTicketTypes();
   markDirty();
 });

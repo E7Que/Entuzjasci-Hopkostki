@@ -4,6 +4,7 @@
 import { DEFAULT_CONFIG } from './defaults.js';
 import { isValidUnit } from './duration.js';
 import { COMMAND_MAP } from './commands.js';
+import { cleanEmoji } from './messages.js';
 
 const SNOWFLAKE = /^\d{15,25}$/;
 const EVERYONE = 'everyone';
@@ -88,6 +89,31 @@ function cleanCommandPermissions(input, current) {
   return out;
 }
 
+// Pola formularza ticketu: krótka odpowiedź, długi tekst, liczba (np. liczba członków) albo link
+// zaproszenia na serwer Discord (bot sprawdza, czy działa, i podaje obsłudze prawdziwą liczbę członków).
+export const TICKET_FIELD_KINDS = ['short', 'long', 'number', 'invite'];
+
+// Starsze rodzaje ticketów miały jedno pole `question` — to formularz z jednym długim polem.
+export function ticketFields(type) {
+  if (Array.isArray(type?.fields)) return type.fields;
+  const question = String(type?.question ?? '').trim();
+  return question ? [{ label: question, placeholder: '', kind: 'long', required: true }] : [];
+}
+
+// Pole trafia do okienka Discorda: etykieta ma limit 45 znaków, podpowiedź 100, a pól może być 5.
+function cleanTicketFields(type) {
+  return ticketFields(type)
+    .slice(0, 20)
+    .map((f) => ({
+      label: String(f?.label ?? '').trim().slice(0, 45),
+      placeholder: String(f?.placeholder ?? '').trim().slice(0, 100),
+      kind: TICKET_FIELD_KINDS.includes(f?.kind) ? f.kind : 'short',
+      required: f?.required !== false,
+    }))
+    .filter((f) => f.label)
+    .slice(0, 5);
+}
+
 function cleanTicketTypes(list, fallback) {
   if (!Array.isArray(list)) return fallback;
   const out = list
@@ -95,8 +121,10 @@ function cleanTicketTypes(list, fallback) {
     .map((t) => ({
       label: String(t?.label ?? '').trim().slice(0, 80),
       style: BUTTON_STYLE_NAMES.includes(t?.style) ? t.style : 'niebieski',
-      // Pytanie trafia do okienka Discorda jako etykieta pola — ta ma limit 45 znaków.
-      question: String(t?.question ?? '').trim().slice(0, 45),
+      emoji: cleanEmoji(t?.emoji),
+      // Własne powitanie tego rodzaju ticketu (puste = wspólne z ustawień).
+      welcome: String(t?.welcome ?? '').trim().slice(0, 1500),
+      fields: cleanTicketFields(t),
     }))
     .filter((t) => t.label);
   return out.length ? out : fallback;

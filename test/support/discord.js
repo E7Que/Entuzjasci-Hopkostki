@@ -55,6 +55,8 @@ export function fakeDiscord({ dmFails = false, banError = null, endpoint = null 
     threads: [],
     invites: [],
     vanity: null,
+    // Zaproszenia sprawdzane po kodzie (GET /invites/:kod), np. link w formularzu partnerstwa.
+    publicInvites: {},
   };
 
   const channelMessages = (id) => {
@@ -95,6 +97,7 @@ export function fakeDiscord({ dmFails = false, banError = null, endpoint = null 
     ['GET', /^\/guilds\/g1$/, () => ({ id: GUILD, name: 'Entuzjaści Hopkostki', icon: null, owner_id: 'owner', roles: ROLES, approximate_member_count: 1337, emojis: EMOJIS })],
     ['GET', /^\/guilds\/g1\/invites$/, () => state.invites],
     ['GET', /^\/guilds\/g1\/vanity-url$/, () => state.vanity ?? notFound(50020)],
+    ['GET', /^\/invites\/([\w-]+)$/, ([, code]) => state.publicInvites[code] ?? notFound(10006)],
     ['POST', /^\/guilds\/g1\/emojis$/, (m, body) => {
       const emoji = { id: snowflake(), name: body.name, animated: false };
       state.emojis.push({ ...emoji, image: body.image });

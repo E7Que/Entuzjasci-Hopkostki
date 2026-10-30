@@ -4,6 +4,7 @@ import { createTestStore } from './support/db.js';
 import { fakeDiscord, makeBot, GUILD } from './support/discord.js';
 import { handleInteraction } from '../supabase/functions/hopkostki-bot/lib/interactions.js';
 import { createHandler } from '../supabase/functions/hopkostki-bot/lib/app.js';
+import { ticketPanelMessage } from '../supabase/functions/hopkostki-bot/lib/tickets.js';
 import { P } from '../supabase/functions/hopkostki-bot/lib/permissions.js';
 
 const SUPPORT = '100000000000000080';
@@ -84,6 +85,123 @@ test('otwarcie ticketu: okienko z pytaniem, prywatny kanał, powitanie z przycis
   await run(s.bot, click('tkm|open|0', { type: 5, components: form('drugi') }));
   assert.match(s.discord.state.webhook.at(-1).body.embeds[0].description, /Masz już otwarty ticket/);
   assert.equal(s.discord.state.createdChannels.length, 1);
+});
+
+test('wybór: Zgłoszenie albo Partnerstwo — formularz partnerstwa z linkiem, liczbą członków i powodem', async () => {
+  const s = await setup();
+  s.discord.state.publicInvites.fajny = {
+    code: 'fajny',
+    guild: { id: '200000000000000001', name: 'Fajny *Serwer*' },
+    approximate_member_count: 243,
+    approximate_presence_count: 57,
+    expires_at: null,
+  };
+  s.discord.state.publicInvites.nasz = { code: 'nasz', guild: { id: GUILD, name: 'Entuzjaści Hopkostki' } };
+
+  const { tickets } = await s.store.getConfig();
+  const panel = ticketPanelMessage(tickets);
+  assert.deepEqual(panel.components[0].components.map((b) => [b.label, b.emoji?.name, b.custom_id]), [
+    ['Zgłoszenie', '📩', 'tk|open|0'],
+    ['Partnerstwo', '🤝', 'tk|open|1'],
+  ]);
+
+  const modal = await run(s.bot, click('tk|open|1'));
+  assert.equal(modal.response.type, 9);
+  assert.equal(modal.response.data.custom_id, 'tkm|open|1');
+  const inputs = modal.response.data.components.map((row) => row.components[0]);
+  assert.deepEqual(inputs.map((i) => [i.custom_id, i.label, i.style, i.required]), [
+    ['f0', 'Link do serwera', 1, true],
+    ['f1', 'Liczba członków', 1, true],
+    ['f2', 'Powód', 2, true],
+  ]);
+
+  const answers = (link, count, why = 'Podobna tematyka, chętnie się wymienimy.') => [
+    { type: 1, components: [{ type: 4, custom_id: 'f0', value: link }] },
+    { type: 1, components: [{ type: 4, custom_id: 'f1', value: count }] },
+    { type: 1, components: [{ type: 4, custom_id: 'f2', value: why }] },
+  ];
+  // Z panelu (publiczna wiadomość) — błędna liczba: nic nie powstaje, odpowiedzi zostają w wiadomości z błędem.
+  const wrong = await run(s.bot, click('tkm|open|1', { type: 5, components: answers('discord.gg/fajny', 'około 1,5k'), message: { id: 'panel', flags: 0 } }));
+  assert.equal(wrong.response.type, 5);
+  const error = s.discord.state.webhook.at(-1).body;
+  assert.match(error.embeds[0].description, /Liczba członków.*jedną liczbę/);
+  assert.deepEqual(error.embeds[0].fields.map((f) => [f.name, f.value]), [
+    ['Link do serwera', 'https://discord.gg/fajny'],
+    ['Liczba członków', 'około 1,5k'],
+    ['Powód', 'Podobna tematyka, chętnie się wymienimy.'],
+  ]);
+  assert.equal(error.components[0].components[0].custom_id, 'tk|retry|1');
+  assert.equal(s.discord.state.createdChannels.length, 0);
+
+  // „Popraw formularz” otwiera okienko z wpisanymi wcześniej odpowiedziami.
+  const retry = await run(s.bot, click('tk|retry|1', { message: { id: 'err', flags: 64, embeds: error.embeds } }));
+  assert.equal(retry.response.type, 9);
+  assert.deepEqual(retry.response.data.components.map((row) => row.components[0].value), [
+    'https://discord.gg/fajny',
+    'około 1,5k',
+    'Podobna tematyka, chętnie się wymienimy.',
+  ]);
+
+  // Wysłane z wiadomości z błędem — aktualizuje ją (typ 6) zamiast dodawać nową.
+  const fromError = { type: 5, message: { id: 'err', flags: 64 } };
+  const dead = await run(s.bot, click('tkm|open|1', { ...fromError, components: answers('https://discord.com/invite/martwy', '1500') }));
+  assert.equal(dead.response.type, 6);
+  assert.match(s.discord.state.webhook.at(-1).body.embeds[0].description, /discord\.gg\/martwy nie działa/);
+  await run(s.bot, click('tkm|open|1', { ...fromError, components: answers('https://discord.gg/nasz', '1500') }));
+  assert.match(s.discord.state.webhook.at(-1).body.embeds[0].description, /naszego serwera/);
+  await run(s.bot, click('tkm|open|1', { ...fromError, components: answers('mój serwer', '1500') }));
+  assert.match(s.discord.state.webhook.at(-1).body.embeds[0].description, /wklej link zaproszenia/);
+  assert.equal(s.discord.state.createdChannels.length, 0);
+
+  await run(s.bot, click('tkm|open|1', { ...fromError, components: answers('Zapraszam: https://discord.gg/fajny !', '1 500') }));
+  assert.match(s.discord.state.webhook.at(-1).body.embeds[0].description, /Ticket utworzony/);
+  const [channel] = s.discord.state.createdChannels;
+  const welcome = s.discord.state.channels.get(channel.id)[0];
+  assert.equal(welcome.embeds[0].title, 'Ticket #0001 • Partnerstwo');
+  assert.match(welcome.embeds[0].description, /Dzięki za chęć nawiązania partnerstwa/, 'własne powitanie rodzaju ticketu');
+  const fields = Object.fromEntries(welcome.embeds[0].fields.map((f) => [f.name, f.value]));
+  assert.equal(fields['Link do serwera'], 'https://discord.gg/fajny');
+  assert.equal(fields['Liczba członków'], '1500');
+  assert.equal(fields['Powód'], 'Podobna tematyka, chętnie się wymienimy.');
+  assert.equal(fields['Serwer z zaproszenia'], '**Fajny \\*Serwer\\*** • 243 członków • 57 online', 'prawdziwa liczba członków dla obsługi');
+  const log = s.discord.state.channels.get(LOGS).at(-1);
+  assert.equal(log.embeds[0].fields.length, 4);
+
+  const ticket = (await s.store.listTickets())[0];
+  assert.equal(ticket.type, 'Partnerstwo');
+  assert.equal(
+    ticket.subject,
+    'Link do serwera: https://discord.gg/fajny\nSerwer z zaproszenia: Fajny *Serwer* (243 członków)\nLiczba członków: 1500\nPowód: Podobna tematyka, chętnie się wymienimy.',
+  );
+});
+
+test('rodzaje ticketów z panelu: stare pytanie zamienia się w formularz, pola są przycinane do limitów Discorda', async () => {
+  const s = await setup();
+  const saved = await s.store.updateConfig({
+    tickets: {
+      types: [
+        { label: 'Stary', style: 'czerwony', question: 'Od czego się odwołujesz?' },
+        {
+          label: 'Nowy',
+          style: 'fioletowy',
+          emoji: 'nie emoji',
+          fields: [
+            ...Array.from({ length: 6 }, (_, i) => ({ label: `Pole ${i} ${'x'.repeat(60)}`, kind: i === 0 ? 'invite' : 'coś', required: i !== 1 })),
+            { label: '   ', kind: 'long' },
+          ],
+        },
+        { label: '', fields: [] },
+      ],
+    },
+  });
+  const [old, fresh] = saved.tickets.types;
+  assert.equal(saved.tickets.types.length, 2, 'bez napisu na przycisku — pomijany');
+  assert.deepEqual(old, { label: 'Stary', style: 'czerwony', emoji: '', welcome: '', fields: [{ label: 'Od czego się odwołujesz?', placeholder: '', kind: 'long', required: true }] });
+  assert.equal(fresh.style, 'niebieski');
+  assert.equal(fresh.emoji, '');
+  assert.equal(fresh.fields.length, 5, 'okienko Discorda mieści maks. 5 pól');
+  assert.ok(fresh.fields.every((f) => f.label.length <= 45));
+  assert.deepEqual(fresh.fields.map((f) => [f.kind, f.required]), [['invite', true], ['short', false], ['short', true], ['short', true], ['short', true]]);
 });
 
 test('ticket: przejęcie tylko przez obsługę, dodanie osoby, zamknięcie z zapisem do logów i DM', async () => {

@@ -72,7 +72,8 @@ export const DEFAULT_CONFIG = {
   },
 
   // Tickety: przycisk w wiadomości-panelu tworzy prywatny kanał dla tej osoby i obsługi.
-  // Zmienne: {uzytkownik} {nick} {numer}. types: przyciski w panelu (question = pytanie w okienku, puste = bez okienka).
+  // Zmienne: {uzytkownik} {nick} {numer} {typ}. types: przyciski w panelu — każdy z własnym formularzem
+  // (fields: maks. 5 pól w okienku Discorda; brak pól = ticket otwiera się od razu) i opcjonalnym powitaniem.
   tickets: {
     enabled: false,
     categoryId: '',
@@ -87,10 +88,30 @@ export const DEFAULT_CONFIG = {
     welcome: 'Cześć {uzytkownik}! Opisz dokładnie swoją sprawę — ktoś z obsługi zaraz odpowie.',
     panel: {
       title: 'Pomoc i zgłoszenia',
-      description: 'Masz problem albo pytanie do administracji? Kliknij przycisk poniżej — utworzymy prywatny kanał, na którym ktoś Ci odpowie.',
+      description:
+        'Masz problem albo pytanie do administracji? Wybierz **Zgłoszenie**.\nChcesz nawiązać z nami partnerstwo? Wybierz **Partnerstwo** — poprosimy o link do serwera, liczbę członków i powód.\n\nUtworzymy prywatny kanał, na którym ktoś Ci odpowie.',
       color: '#5865F2',
     },
-    types: [{ label: 'Otwórz ticket', style: 'niebieski', question: 'Opisz krótko swoją sprawę' }],
+    types: [
+      {
+        label: 'Zgłoszenie',
+        style: 'niebieski',
+        emoji: '📩',
+        welcome: '',
+        fields: [{ label: 'Opisz krótko swoją sprawę', placeholder: '', kind: 'long', required: true }],
+      },
+      {
+        label: 'Partnerstwo',
+        style: 'zielony',
+        emoji: '🤝',
+        welcome: 'Cześć {uzytkownik}! Dzięki za chęć nawiązania partnerstwa — administracja sprawdzi Twój serwer i odpowie tutaj.',
+        fields: [
+          { label: 'Link do serwera', placeholder: 'https://discord.gg/…', kind: 'invite', required: true },
+          { label: 'Liczba członków', placeholder: 'np. 250', kind: 'number', required: true },
+          { label: 'Powód', placeholder: 'Dlaczego chcesz nawiązać z nami partnerstwo?', kind: 'long', required: true },
+        ],
+      },
+    ],
   },
 
   // Nowe osoby na serwerze. Wymaga intencji „Server Members” — bot włącza ją sam, gdy coś tu jest włączone.

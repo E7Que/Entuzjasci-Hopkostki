@@ -125,8 +125,16 @@ a zakładka pokazuje podgląd i ranking. Komenda `/bumpy` pokazuje ranking i kie
 ### Tickety
 
 W zakładce **Tickety** włączasz tickety, wybierasz kategorię, kanał logów i role obsługi, a potem wysyłasz
-**panel ticketów** (wiadomość z przyciskami — każdy przycisk to rodzaj ticketu, opcjonalnie z pytaniem w
-okienku). Kliknięcie tworzy prywatny kanał widoczny tylko dla tej osoby i obsługi (oznaczona w powitaniu
+**panel ticketów** (wiadomość z przyciskami — każdy przycisk to rodzaj ticketu, domyślnie **Zgłoszenie** i
+**Partnerstwo**). Każdy rodzaj ma własny **formularz** (do 5 pól w okienku Discorda: krótka odpowiedź, długi
+tekst, liczba albo link do serwera Discord), emoji na przycisku i opcjonalnie własne powitanie:
+- **Partnerstwo** pyta o link do serwera, liczbę członków i powód. Link musi być działającym zaproszeniem
+  (bot sprawdza go w Discordzie i odrzuca link do naszego serwera), a w tickecie obsługa widzi nazwę serwera
+  i jego **prawdziwą** liczbę członków i osób online obok liczby podanej w formularzu;
+- pole „Liczba” przyjmuje tylko liczbę („1 500” tak, „1,5k” czy „250–300” nie);
+- przy błędzie nic nie przepada — przycisk **„Popraw formularz”** otwiera okienko z wpisanymi odpowiedziami.
+
+Wysłanie formularza tworzy prywatny kanał widoczny tylko dla tej osoby i obsługi (oznaczona w powitaniu
 jest tylko ta osoba — obsługa i tak ma dostęp do kanału, więc pingowanie całej roli przy każdym nowym
 tickecie byłoby tylko spamem powiadomień), z przyciskami **Zamknij** (z potwierdzeniem), **Przejmij** i
 **Dodaj osobę**.

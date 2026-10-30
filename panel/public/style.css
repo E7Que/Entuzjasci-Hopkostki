@@ -391,7 +391,20 @@ select.chip-add:hover { border-color: var(--blurple); }
 .bulk-row select { width: auto; min-width: 180px; }
 .link-btn { background: none; border: none; color: #00a8fc; font: inherit; cursor: pointer; padding: 0; text-decoration: underline; }
 .ttype { border: 1px solid var(--line); border-radius: 8px; padding: .5rem; margin-bottom: .5rem; }
-.ttype-row { display: grid; grid-template-columns: 1fr 130px auto; gap: .4rem; margin-bottom: .4rem; }
+.ttype-row { display: grid; grid-template-columns: auto 1fr 130px auto; gap: .4rem; margin-bottom: .4rem; }
+.ttype .field { margin: .4rem 0 0; }
+/* Formularz rodzaju ticketu: pytanie (cały wiersz), pod nim rodzaj odpowiedzi, wymagane, usuń i podpowiedź. */
+.tfields { display: grid; gap: .4rem; padding: .45rem; border-radius: 6px; background: var(--bg); }
+.tfields > .btn { justify-self: start; }
+.tfield { display: grid; grid-template-columns: 1fr auto auto; gap: .4rem; align-items: center; padding-bottom: .4rem; border-bottom: 1px dashed var(--line); }
+.tfield [data-tfield-prop="label"], .tfield-hint { grid-column: 1 / -1; }
+.tfield select { min-width: 0; }
+.tfield .toggle.small { white-space: nowrap; }
+@media (max-width: 560px) {
+  .ttype-row { grid-template-columns: auto 1fr auto; }
+  .ttype-row select { grid-column: 1 / -1; grid-row: 2; }
+  .tfield select { grid-column: 1 / -1; }
+}
 
 /* Wybór emoji (emoji serwera albo zwykłe) */
 .emoji-pop {
