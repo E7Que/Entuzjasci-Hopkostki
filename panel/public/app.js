@@ -1464,39 +1464,43 @@ $('#logins-revoke-all').addEventListener('click', async () => {
 });
 
 // ---------- Uprawnienia ról w samym Discordzie ----------
-const ROLE_PERMS = [
-  ['KICK_MEMBERS', 'Wyrzucanie', 1n << 1n],
-  ['BAN_MEMBERS', 'Banowanie', 1n << 2n],
-  ['MODERATE_MEMBERS', 'Wyciszanie (timeout)', 1n << 40n],
-  ['MANAGE_MESSAGES', 'Usuwanie wiadomości', 1n << 13n],
-  ['MANAGE_NICKNAMES', 'Zmiana pseudonimów', 1n << 27n],
-  ['MANAGE_ROLES', 'Zarządzanie rolami', 1n << 28n],
-  ['MANAGE_CHANNELS', 'Zarządzanie kanałami', 1n << 4n],
-  ['MANAGE_GUILD_EXPRESSIONS', 'Emoji i naklejki', 1n << 30n],
-  ['MENTION_EVERYONE', '@everyone i @here', 1n << 17n],
-  ['MOVE_MEMBERS', 'Przenoszenie z głosowych', 1n << 24n],
-  ['VIEW_AUDIT_LOG', 'Dziennik zdarzeń', 1n << 7n],
+// [klucz, nazwa, bit] w grupach — klucze muszą być na liście ROLE_PERMISSION_KEYS po stronie bota.
+const ROLE_PERM_GROUPS = [
+  ['Kary i ludzie', [['KICK_MEMBERS', 'Wyrzucanie', 1n << 1n], ['BAN_MEMBERS', 'Banowanie', 1n << 2n], ['MODERATE_MEMBERS', 'Wyciszanie (timeout)', 1n << 40n], ['MANAGE_NICKNAMES', 'Zmiana cudzych pseudonimów', 1n << 27n], ['MANAGE_ROLES', 'Zarządzanie rolami', 1n << 28n]]],
+  ['Wiadomości i kanały', [['MANAGE_MESSAGES', 'Usuwanie wiadomości', 1n << 13n], ['MANAGE_THREADS', 'Zarządzanie wątkami', 1n << 34n], ['MANAGE_CHANNELS', 'Zarządzanie kanałami', 1n << 4n], ['MANAGE_WEBHOOKS', 'Webhooki', 1n << 29n], ['MENTION_EVERYONE', '@everyone i @here', 1n << 17n]]],
+  ['Kanały głosowe', [['MOVE_MEMBERS', 'Przenoszenie osób', 1n << 24n], ['MUTE_MEMBERS', 'Wyciszanie osób', 1n << 22n], ['DEAFEN_MEMBERS', 'Ogłuszanie osób', 1n << 23n]]],
+  ['Serwer', [['MANAGE_GUILD', 'Zarządzanie serwerem', 1n << 5n], ['MANAGE_GUILD_EXPRESSIONS', 'Emoji i naklejki', 1n << 30n], ['MANAGE_EVENTS', 'Wydarzenia', 1n << 33n], ['VIEW_AUDIT_LOG', 'Dziennik zdarzeń', 1n << 7n], ['VIEW_GUILD_INSIGHTS', 'Statystyki serwera', 1n << 19n], ['CREATE_INSTANT_INVITE', 'Tworzenie zaproszeń', 1n << 0n]]],
+  ['Zwykłe uprawnienia', [['CHANGE_NICKNAME', 'Zmiana własnego pseudonimu', 1n << 26n], ['ADD_REACTIONS', 'Dodawanie reakcji', 1n << 6n], ['ATTACH_FILES', 'Załączanie plików', 1n << 15n], ['EMBED_LINKS', 'Osadzanie linków', 1n << 14n], ['USE_EXTERNAL_EMOJIS', 'Zewnętrzne emoji', 1n << 18n], ['CREATE_PUBLIC_THREADS', 'Tworzenie wątków', 1n << 35n], ['SEND_POLLS', 'Tworzenie ankiet', 1n << 49n]]],
 ];
+const ROLE_PERMS = ROLE_PERM_GROUPS.flatMap(([, perms]) => perms);
 const roleBits = (role) => BigInt(role.permissions ?? 0);
 
 function renderRolePermissions() {
   if (!state.me?.full) return;
-  const roles = state.guild.roles.filter((r) => !hasBit(r.permissions, ADMINISTRATOR_BIT) && ROLE_PERMS.some(([, , bit]) => (roleBits(r) & bit) === bit));
-  $('#role-perms-table').innerHTML = roles.length
-    ? `<thead><tr><th>Rola</th>${ROLE_PERMS.map(([, label]) => `<th>${esc(label)}</th>`).join('')}</tr></thead><tbody>${roles
-        .map(
-          (r) => `<tr>
-        <td><span class="role-dot" style="background:${esc(r.color !== '#000000' ? r.color : '#99aab5')}"></span>${esc(r.name)}${r.assignable ? '' : '<span class="note">wyżej niż bot — tylko w ustawieniach serwera</span>'}</td>
-        ${ROLE_PERMS.map(
-          ([key, , bit]) =>
-            `<td class="center"><input type="checkbox" data-role-perm="${esc(key)}" data-role-id="${r.id}" ${(roleBits(r) & bit) === bit ? 'checked' : ''} ${r.assignable ? '' : 'disabled'} aria-label="${esc(r.name)}: ${esc(key)}"></td>`,
-        ).join('')}
-      </tr>`,
-        )
-        .join('')}</tbody>`
-    : '<tr><td class="empty">Żadna rola (poza administracją) nie ma tych uprawnień.</td></tr>';
+  const open = new Set($$('#role-perms-list details[open]').map((d) => d.dataset.roleId));
+  const roles = state.guild.roles.filter((r) => !hasBit(r.permissions, ADMINISTRATOR_BIT));
+  $('#role-perms-list').innerHTML = roles.length
+    ? roles
+        .map((r) => {
+          const on = ROLE_PERMS.filter(([, , bit]) => (roleBits(r) & bit) === bit).length;
+          const groups = ROLE_PERM_GROUPS.map(
+            ([group, perms]) => `<div class="role-perm-group"><strong>${esc(group)}</strong>${perms
+              .map(
+                ([key, label, bit]) =>
+                  `<label class="toggle small"><input type="checkbox" data-role-perm="${esc(key)}" data-role-id="${r.id}" ${(roleBits(r) & bit) === bit ? 'checked' : ''} ${r.assignable ? '' : 'disabled'}><span></span>${esc(label)}</label>`,
+              )
+              .join('')}</div>`,
+          ).join('');
+          const note = r.assignable ? '' : ' • wyżej niż bot, tylko w ustawieniach serwera';
+          return `<details class="role-perm" data-role-id="${r.id}" ${open.has(r.id) ? 'open' : ''}>
+        <summary><span class="role-dot" style="background:${esc(r.color !== '#000000' ? r.color : '#99aab5')}"></span>${esc(r.name)}<small class="muted"> — włączone: ${on} z ${ROLE_PERMS.length}${note}</small></summary>
+        ${groups}
+      </details>`;
+        })
+        .join('')
+    : '<p class="muted">Brak ról do ustawienia.</p>';
 }
-$('#role-perms-table').addEventListener('change', async (event) => {
+$('#role-perms-list').addEventListener('change', async (event) => {
   const box = event.target.closest('[data-role-perm]');
   if (!box) return;
   const role = state.guild.roles.find((r) => r.id === box.dataset.roleId);
@@ -1510,6 +1514,7 @@ $('#role-perms-table').addEventListener('change', async (event) => {
     const { role: updated } = await api(`/roles/${role.id}/permissions`, { method: 'POST', body: JSON.stringify({ permission: box.dataset.rolePerm, value: box.checked }) });
     role.permissions = updated.permissions;
     toast(`${role.name}: ${box.checked ? 'nadano' : 'odebrano'} „${label}”`);
+    renderRolePermissions();
   } catch (error) {
     box.checked = !box.checked;
     toast(error.message, 'error');
@@ -1560,10 +1565,23 @@ function renderTicketTypes() {
           <button type="button" class="btn ghost small" data-tfield-add ${fields.length >= 5 ? 'disabled' : ''}>Dodaj pole</button>
         </div>
         <label class="field"><span>Powitanie w tym rodzaju ticketu (puste = wspólne z ustawień)</span><textarea rows="2" maxlength="1500" data-ttype-field="welcome" placeholder="np. Dzięki za chęć partnerstwa, {uzytkownik}! Sprawdzimy Twój serwer.">${esc(t.welcome ?? '')}</textarea></label>
+        <label class="field"><span>Regulamin przed formularzem (puste = bez ekranu regulaminu)</span><textarea rows="5" maxlength="3800" data-ttype-field="rules" placeholder="Osoba zobaczy ten tekst z przyciskami „Akceptuję regulamin” i „Nie akceptuję” — formularz pojawi się dopiero po akceptacji. Możesz użyć **pogrubienia**.">${esc(t.rules ?? '')}</textarea></label>
+        <details class="ttype-own">
+          <summary>Osobne ustawienia i uprawnienia tego rodzaju (kategoria, obsługa, logi, autor)</summary>
+          <p class="muted small">Puste pola używają ustawień ogólnych z karty „Ustawienia”. Dzięki temu np. partnerstwa trafiają do innej kategorii i widzi je inna obsługa niż zgłoszenia.</p>
+          <label class="field"><span>Kategoria</span><select data-ttype-field="categoryId">${channelOptions(state.guild.categories, t.categoryId ?? '', 'Jak w ustawieniach ogólnych', '')}</select></label>
+          <label class="field"><span>Kategoria archiwum</span><select data-ttype-field="archiveCategoryId">${channelOptions(state.guild.categories, t.archiveCategoryId ?? '', 'Jak w ustawieniach ogólnych', '')}</select></label>
+          <label class="field"><span>Kanał logów</span><select data-ttype-field="logChannelId">${channelOptions(state.guild.channels, t.logChannelId ?? '', 'Jak w ustawieniach ogólnych', '#')}</select></label>
+          <div class="field"><span>Obsługa tego rodzaju (puste = obsługa z ustawień ogólnych; tylko te role widzą ticket)</span><div data-picker-slot="cfg:tickets.types.${i}.supportRoleIds"></div></div>
+          <label class="toggle"><input type="checkbox" data-ttype-field="authorCanClose" ${t.authorCanClose !== false ? 'checked' : ''}><span></span>Autor może zamknąć ticket</label>
+          <label class="toggle"><input type="checkbox" data-ttype-field="authorCanAdd" ${t.authorCanAdd !== false ? 'checked' : ''}><span></span>Autor może dodawać osoby</label>
+          <label class="toggle"><input type="checkbox" data-ttype-field="authorCanAttach" ${t.authorCanAttach !== false ? 'checked' : ''}><span></span>Autor może wysyłać pliki i linki z podglądem</label>
+        </details>
       </div>`;
     })
     .join('');
   $('#add-ticket-type').disabled = types.length >= 5;
+  renderPickers();
   const saved = state.ticketPanel?.channelId;
   $('#ticket-panel-channel').innerHTML = channelOptions(state.guild.channels, saved ?? '', '— wybierz kanał —', '#');
 }
@@ -1574,7 +1592,7 @@ function onTicketTypeChange(event) {
   const type = state.draft.tickets.types[Number(row.dataset.ttype)];
   const field = event.target.dataset.ttypeField;
   const prop = event.target.dataset.tfieldProp;
-  if (field) type[field] = event.target.value;
+  if (field) type[field] = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
   else if (prop) {
     const item = ticketTypeFields(type)[Number(event.target.closest('[data-tfield]').dataset.tfield)];
     item[prop] = prop === 'required' ? event.target.checked : event.target.value;
@@ -1609,7 +1627,7 @@ $('#ticket-types').addEventListener('click', (event) => {
   markDirty();
 });
 $('#add-ticket-type').addEventListener('click', () => {
-  state.draft.tickets.types.push({ label: 'Nowy ticket', style: 'szary', emoji: '', welcome: '', fields: [{ label: 'Opisz krótko swoją sprawę', placeholder: '', kind: 'long', required: true }] });
+  state.draft.tickets.types.push({ label: 'Nowy ticket', style: 'szary', emoji: '', welcome: '', rules: '', categoryId: '', archiveCategoryId: '', logChannelId: '', supportRoleIds: [], authorCanClose: true, authorCanAdd: true, authorCanAttach: true, fields: [{ label: 'Opisz krótko swoją sprawę', placeholder: '', kind: 'long', required: true }] });
   renderTicketTypes();
   markDirty();
 });

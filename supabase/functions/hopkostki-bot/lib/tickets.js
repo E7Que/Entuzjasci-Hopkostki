@@ -16,6 +16,26 @@ const STYLES = { niebieski: 1, szary: 2, zielony: 3, czerwony: 4 };
 const MEMBER_ALLOW = P.VIEW_CHANNEL | P.SEND_MESSAGES | P.READ_MESSAGE_HISTORY | P.ATTACH_FILES | P.EMBED_LINKS;
 const HISTORY_PAGES = 10;
 
+// Ustawienia konkretnego rodzaju ticketu (Zgłoszenie, Partnerstwo, …): własna kategoria, archiwum, kanał logów
+// i role obsługi — puste pole = ustawienie ogólne z zakładki Tickety. Zgłoszenia i partnerstwa mogą więc
+// trafiać do innych kategorii i być widoczne dla innych ról. Ticket zapamiętuje tylko nazwę rodzaju.
+export function typeSettings(tickets, typeLabel) {
+  const type = tickets.types.find((t) => t.label === typeLabel) ?? null;
+  const own = type?.supportRoleIds?.length ? type.supportRoleIds : null;
+  return {
+    type,
+    categoryId: type?.categoryId || tickets.categoryId,
+    archiveCategoryId: type?.archiveCategoryId || tickets.archiveCategoryId,
+    logChannelId: type?.logChannelId || tickets.logChannelId,
+    supportRoleIds: own ?? tickets.supportRoleIds,
+    authorCanClose: type?.authorCanClose !== false,
+    authorCanAdd: type?.authorCanAdd !== false,
+    authorCanAttach: type?.authorCanAttach !== false,
+  };
+}
+// Autor i dodane osoby: bez „Załączanie plików” i „Osadzanie linków”, gdy rodzaj ticketu tego zabrania.
+const memberAllow = (eff) => (eff.authorCanAttach ? MEMBER_ALLOW : MEMBER_ALLOW & ~(P.ATTACH_FILES | P.EMBED_LINKS));
+
 const isGone = (error) => error instanceof DiscordError && (error.status === 404 || error.code === 10003);
 export const ticketNumber = (id) => String(id).padStart(4, '0');
 
@@ -195,16 +215,17 @@ function ticketButtons(ticket) {
   ];
 }
 
-async function ticketLog(bot, tickets, payload, files) {
-  if (!tickets.logChannelId) return;
+async function ticketLog(bot, channelId, payload, files) {
+  if (!channelId) return;
   await bot.discord
-    .post(`/channels/${tickets.logChannelId}/messages`, { allowed_mentions: { parse: [] }, ...payload }, files ? { files } : undefined)
+    .post(`/channels/${channelId}/messages`, { allowed_mentions: { parse: [] }, ...payload }, files ? { files } : undefined)
     .catch((error) => console.warn(`[tickety] Log: ${error.message}`));
 }
 
 // answers: odpowiedzi z formularza [{ label, value, server? }] (sprawdzone przez checkAnswers).
-export async function createTicket(bot, { guildId, user, type, answers = [] }) {
+export async function createTicket(bot, { guildId, user, type, answers = [], rulesAccepted = false }) {
   const { tickets } = await bot.store.getConfig();
+  const eff = typeSettings(tickets, type.label);
 
   // Ticket, którego kanał ktoś usunął ręcznie, nie powinien blokować nowego.
   const open = [];
@@ -219,13 +240,13 @@ export async function createTicket(bot, { guildId, user, type, answers = [] }) {
   let ticket = await bot.store.addTicket({ guildId, userId: user.id, userTag: user.username, type: type.label, subject });
   const number = ticketNumber(ticket.id);
   const vars = { numer: number, nick: user.username, uzytkownik: `<@${user.id}>`, typ: type.label };
-  const fields = answerFields(answers);
+  const fields = [...answerFields(answers), ...(rulesAccepted ? [{ name: 'Regulamin', value: '✅ Zaakceptowany przed otwarciem ticketu' }] : [])];
   const { botUser } = await getGuildContext(bot);
   const overwrites = [
     { id: guildId, type: 0, allow: '0', deny: String(P.VIEW_CHANNEL) },
-    { id: user.id, type: 1, allow: String(MEMBER_ALLOW), deny: '0' },
+    { id: user.id, type: 1, allow: String(memberAllow(eff)), deny: '0' },
     { id: botUser.id, type: 1, allow: String(MEMBER_ALLOW), deny: '0' },
-    ...tickets.supportRoleIds.map((id) => ({ id, type: 0, allow: String(MEMBER_ALLOW | P.MANAGE_MESSAGES), deny: '0' })),
+    ...eff.supportRoleIds.map((id) => ({ id, type: 0, allow: String(MEMBER_ALLOW | P.MANAGE_MESSAGES), deny: '0' })),
   ];
 
   let channel;
@@ -237,7 +258,7 @@ export async function createTicket(bot, { guildId, user, type, answers = [] }) {
         type: 0,
         topic: `Ticket #${number} • ${user.username} • ${type.label}`.slice(0, 1024),
         permission_overwrites: overwrites,
-        ...(tickets.categoryId ? { parent_id: tickets.categoryId } : {}),
+        ...(eff.categoryId ? { parent_id: eff.categoryId } : {}),
       },
       { reason: `Ticket #${number} (${user.username})` },
     );
@@ -263,7 +284,7 @@ export async function createTicket(bot, { guildId, user, type, answers = [] }) {
     ],
     components: ticketButtons(ticket),
   });
-  await ticketLog(bot, tickets, {
+  await ticketLog(bot, eff.logChannelId, {
     embeds: [
       {
         color: COLORS.info,
@@ -336,12 +357,13 @@ function closedSummary(ticket, closer, messageCount) {
 
 export async function closeTicket(bot, ticket, closer) {
   const { tickets } = await bot.store.getConfig();
+  const eff = typeSettings(tickets, ticket.type);
   const number = ticketNumber(ticket.id);
   const messages = await fetchHistory(bot, ticket.channelId).catch(() => []);
   const transcript = buildTranscript(ticket, messages, closer);
   const file = { name: `ticket-${number}.txt`, content: transcript };
   const summary = closedSummary(ticket, closer, messages.length);
-  await ticketLog(bot, tickets, { embeds: [summary] }, [file]);
+  await ticketLog(bot, eff.logChannelId, { embeds: [summary] }, [file]);
   if (tickets.dmTranscript) {
     try {
       const dm = await bot.discord.post('/users/@me/channels', { recipient_id: ticket.userId });
@@ -351,7 +373,7 @@ export async function closeTicket(bot, ticket, closer) {
     }
   }
   await bot.store.updateTicket(ticket.id, { status: 'closed', closedBy: closer.id });
-  const channel = await archiveTicketChannel(bot, ticket, tickets).catch((error) => {
+  const channel = await archiveTicketChannel(bot, ticket, eff).catch((error) => {
     console.warn(`[tickety] Archiwizacja #${number}: ${error.message}`);
     return null;
   });
@@ -378,7 +400,7 @@ export async function closeTicket(bot, ticket, closer) {
 // ustawiona) i znika dla wszystkich poza obsługą (nawet dla autora) — usuwamy nadpisania uprawnień
 // każdego poza @everyone (już ma zakaz VIEW_CHANNEL z chwili utworzenia), botem i rolami obsługi.
 // Zwraca pobrany kanał (albo null, gdy ktoś go już ręcznie usunął).
-async function archiveTicketChannel(bot, ticket, tickets) {
+async function archiveTicketChannel(bot, ticket, eff) {
   let channel;
   try {
     channel = await bot.discord.get(`/channels/${ticket.channelId}`);
@@ -387,14 +409,14 @@ async function archiveTicketChannel(bot, ticket, tickets) {
     throw error;
   }
   const { botUser } = await getGuildContext(bot);
-  const keep = new Set([ticket.guildId, botUser.id, ...tickets.supportRoleIds]);
+  const keep = new Set([ticket.guildId, botUser.id, ...eff.supportRoleIds]);
   const number = ticketNumber(ticket.id);
   for (const overwrite of channel.permission_overwrites ?? []) {
     if (keep.has(overwrite.id)) continue;
     await bot.discord.delete(`/channels/${ticket.channelId}/permissions/${overwrite.id}`, { reason: `Archiwizacja ticketu #${number}` }).catch(() => {});
   }
-  if (tickets.archiveCategoryId && tickets.archiveCategoryId !== channel.parent_id) {
-    await bot.discord.patch(`/channels/${ticket.channelId}`, { parent_id: tickets.archiveCategoryId }, { reason: `Archiwizacja ticketu #${number}` });
+  if (eff.archiveCategoryId && eff.archiveCategoryId !== channel.parent_id) {
+    await bot.discord.patch(`/channels/${ticket.channelId}`, { parent_id: eff.archiveCategoryId }, { reason: `Archiwizacja ticketu #${number}` });
   }
   return channel;
 }
@@ -403,10 +425,10 @@ async function archiveTicketChannel(bot, ticket, tickets) {
 
 export const isTicketCustomId = (customId) => /^tk[ms]?\|/.test(String(customId ?? ''));
 
-function isSupport(member, tickets) {
+function isSupport(member, eff) {
   if (!member) return false;
   if (has(member.permissions, P.ADMINISTRATOR) || has(member.permissions, P.MANAGE_CHANNELS)) return true;
-  return tickets.supportRoleIds.some((id) => member.roles?.includes(id));
+  return eff.supportRoleIds.some((id) => member.roles?.includes(id));
 }
 
 const fail = (text) => ({ response: { type: 4, data: { flags: EPHEMERAL, embeds: [errorEmbed(text)] } } });
@@ -427,11 +449,36 @@ export async function handleTicketInteraction(ix, bot) {
     },
   });
 
-  // open: przycisk w panelu ticketów (i wysłany formularz), retry: „Popraw formularz” pod błędem w odpowiedziach.
-  if (action === 'open' || action === 'retry') {
+  // open: przycisk w panelu ticketów (i wysłany formularz), accept: „Akceptuję regulamin”, decline: odmowa,
+  // retry: „Popraw formularz” pod błędem w odpowiedziach.
+  if (['open', 'retry', 'accept', 'decline'].includes(action)) {
     if (!tickets.enabled) return fail('Tickety są teraz wyłączone.');
     const type = tickets.types[Number(arg)];
     if (!type) return fail('Ten przycisk jest już nieaktualny.');
+    if (action === 'decline') {
+      return { response: { type: 7, data: { content: '', embeds: [errorEmbed('Bez akceptacji regulaminu nie otworzymy tego ticketu. Gdy zmienisz zdanie, kliknij przycisk w panelu jeszcze raz.')], components: [] } } };
+    }
+    // Ekran z regulaminem przed formularzem (np. regulamin partnerstw — tekst z zakładki Tickety w panelu).
+    if (kind === 'tk' && action === 'open' && type.rules) {
+      return {
+        response: {
+          type: 4,
+          data: {
+            flags: EPHEMERAL,
+            embeds: [{ color: colorInt(tickets.panel.color), title: `Regulamin — ${type.label}`.slice(0, 256), description: type.rules.slice(0, 4000), footer: { text: 'Aby przejść dalej, zaakceptuj regulamin.' } }],
+            components: [
+              {
+                type: 1,
+                components: [
+                  { type: 2, style: 3, label: 'Akceptuję regulamin', custom_id: `tk|accept|${arg}` },
+                  { type: 2, style: 2, label: 'Nie akceptuję', custom_id: `tk|decline|${arg}` },
+                ],
+              },
+            ],
+          },
+        },
+      };
+    }
     const fields = ticketFields(type);
     if (kind === 'tk' && fields.length) {
       // Odpowiedzi do poprawienia wracają z wiadomości z błędem (jej pola to „etykieta: odpowiedź”).
@@ -439,8 +486,9 @@ export async function handleTicketInteraction(ix, bot) {
       return { response: { type: 9, data: ticketForm(type, arg, prefill) } };
     }
     const answers = kind === 'tkm' ? formAnswers(ix, fields) : [];
-    // Formularz otwarty z wiadomości z błędem (widocznej tylko dla tej osoby) aktualizuje ją zamiast dodawać nową.
-    const fromRetry = kind === 'tkm' && (Number(ix.raw.message?.flags ?? 0) & EPHEMERAL) !== 0;
+    // Formularz otwarty z wiadomości z błędem (widocznej tylko dla tej osoby) aktualizuje ją zamiast dodawać nową;
+    // ekran z regulaminem (bez formularza) też jest wiadomością tej osoby — aktualizujemy ją.
+    const fromRetry = (kind === 'tkm' && (Number(ix.raw.message?.flags ?? 0) & EPHEMERAL) !== 0) || (kind === 'tk' && action === 'accept');
     return work(fromRetry ? 6 : 5, async () => {
       const problem = await checkAnswers(bot, answers, ix.guildId);
       if (problem) {
@@ -451,19 +499,20 @@ export async function handleTicketInteraction(ix, bot) {
         });
         return null;
       }
-      const { channel } = await createTicket(bot, { guildId: ix.guildId, user: ix.user, type, answers });
+      const { channel } = await createTicket(bot, { guildId: ix.guildId, user: ix.user, type, answers, rulesAccepted: Boolean(type.rules) });
       return `Ticket utworzony: <#${channel.id}>`;
     });
   }
 
   const ticket = await bot.store.getTicket(Number(arg));
   if (!ticket) return fail('Ten ticket już nie istnieje.');
+  const eff = typeSettings(tickets, ticket.type);
 
   // Przycisk pod zapisem rozmowy w archiwum — działa tylko na już zamkniętym tickecie, więc sprawdzany
   // jest przed ogólnym „musi być otwarty” niżej.
   if (kind === 'tk' && (action === 'delete' || action === 'deleteconfirm')) {
     if (ticket.status !== 'closed') return fail('Ten ticket nie jest jeszcze zamknięty.');
-    if (!isSupport(ix.member, tickets)) return fail('Usunąć kanał z archiwum może tylko obsługa.');
+    if (!isSupport(ix.member, eff)) return fail('Usunąć kanał z archiwum może tylko obsługa.');
     if (action === 'delete') {
       return {
         response: {
@@ -485,14 +534,15 @@ export async function handleTicketInteraction(ix, bot) {
   }
 
   if (ticket.status !== 'open') return fail('Ten ticket jest już zamknięty.');
-  const support = isSupport(ix.member, tickets);
+  const support = isSupport(ix.member, eff);
   const owner = ix.user.id === ticket.userId;
 
   if (kind === 'tks' && action === 'add') {
+    if (!support && !(owner && eff.authorCanAdd)) return fail('W tym rodzaju ticketu osoby dodaje tylko obsługa.');
     return work(6, async () => {
       const added = ix.values.filter((id) => id !== ticket.userId);
       for (const id of added) {
-        await bot.discord.put(`/channels/${ticket.channelId}/permissions/${id}`, { type: 1, allow: String(MEMBER_ALLOW), deny: '0' });
+        await bot.discord.put(`/channels/${ticket.channelId}/permissions/${id}`, { type: 1, allow: String(memberAllow(eff)), deny: '0' });
       }
       if (added.length) {
         await bot.discord.post(`/channels/${ticket.channelId}/messages`, {
@@ -506,7 +556,7 @@ export async function handleTicketInteraction(ix, bot) {
 
   switch (action) {
     case 'close':
-      if (!support && !owner) return fail('Ticket może zamknąć jego autor albo obsługa.');
+      if (!support && !(owner && eff.authorCanClose)) return fail(owner ? 'Ten rodzaj ticketu zamyka tylko obsługa.' : 'Ticket może zamknąć jego autor albo obsługa.');
       return {
         response: {
           type: 4,
@@ -518,7 +568,7 @@ export async function handleTicketInteraction(ix, bot) {
         },
       };
     case 'confirm':
-      if (!support && !owner) return fail('Ticket może zamknąć jego autor albo obsługa.');
+      if (!support && !(owner && eff.authorCanClose)) return fail(owner ? 'Ten rodzaj ticketu zamyka tylko obsługa.' : 'Ticket może zamknąć jego autor albo obsługa.');
       return work(6, async () => {
         await ix.edit({ content: 'Zamykam i archiwizuję ticket…', components: [] }).catch(() => {});
         await closeTicket(bot, ticket, ix.user);
@@ -538,7 +588,7 @@ export async function handleTicketInteraction(ix, bot) {
         return 'Przejęto ticket.';
       });
     case 'add':
-      if (!support && !owner) return fail('Osoby do ticketu może dodać jego autor albo obsługa.');
+      if (!support && !(owner && eff.authorCanAdd)) return fail(owner ? 'W tym rodzaju ticketu osoby dodaje tylko obsługa.' : 'Osoby do ticketu może dodać jego autor albo obsługa.');
       return {
         response: {
           type: 4,

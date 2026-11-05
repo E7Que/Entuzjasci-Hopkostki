@@ -1,6 +1,7 @@
 // Uprawnienia Discorda jako bity (BigInt) + liczenie pozycji ról i uprawnień członka.
 
 export const P = {
+  CREATE_INSTANT_INVITE: 1n << 0n,
   KICK_MEMBERS: 1n << 1n,
   BAN_MEMBERS: 1n << 2n,
   ADMINISTRATOR: 1n << 3n,
@@ -8,6 +9,7 @@ export const P = {
   MANAGE_GUILD: 1n << 5n,
   ADD_REACTIONS: 1n << 6n,
   VIEW_AUDIT_LOG: 1n << 7n,
+  VIEW_GUILD_INSIGHTS: 1n << 19n,
   VIEW_CHANNEL: 1n << 10n,
   SEND_MESSAGES: 1n << 11n,
   MANAGE_MESSAGES: 1n << 13n,
@@ -18,10 +20,16 @@ export const P = {
   USE_EXTERNAL_EMOJIS: 1n << 18n,
   CONNECT: 1n << 20n,
   SPEAK: 1n << 21n,
+  MUTE_MEMBERS: 1n << 22n,
+  DEAFEN_MEMBERS: 1n << 23n,
   MOVE_MEMBERS: 1n << 24n,
+  CHANGE_NICKNAME: 1n << 26n,
   MANAGE_NICKNAMES: 1n << 27n,
   MANAGE_ROLES: 1n << 28n,
+  MANAGE_WEBHOOKS: 1n << 29n,
   MANAGE_GUILD_EXPRESSIONS: 1n << 30n,
+  MANAGE_EVENTS: 1n << 33n,
+  MANAGE_THREADS: 1n << 34n,
   CREATE_PUBLIC_THREADS: 1n << 35n,
   SEND_MESSAGES_IN_THREADS: 1n << 38n,
   MODERATE_MEMBERS: 1n << 40n,
@@ -54,6 +62,15 @@ export const PERMISSION_LABELS = {
   [String(P.EMBED_LINKS)]: 'Osadzanie linków',
   [String(P.ATTACH_FILES)]: 'Załączanie plików',
   [String(P.READ_MESSAGE_HISTORY)]: 'Czytanie historii wiadomości',
+  [String(P.MUTE_MEMBERS)]: 'Wyciszanie członków na głosowych',
+  [String(P.DEAFEN_MEMBERS)]: 'Ogłuszanie członków na głosowych',
+  [String(P.VIEW_GUILD_INSIGHTS)]: 'Podgląd statystyk serwera',
+  [String(P.MANAGE_THREADS)]: 'Zarządzanie wątkami',
+  [String(P.MANAGE_EVENTS)]: 'Zarządzanie wydarzeniami',
+  [String(P.MANAGE_WEBHOOKS)]: 'Zarządzanie webhookami',
+  [String(P.CREATE_INSTANT_INVITE)]: 'Tworzenie zaproszeń',
+  [String(P.CHANGE_NICKNAME)]: 'Zmiana własnego pseudonimu',
+  [String(P.USE_EXTERNAL_EMOJIS)]: 'Zewnętrzne emoji',
 };
 
 export function permissionLabel(bits) {

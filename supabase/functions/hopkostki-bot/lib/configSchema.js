@@ -125,6 +125,17 @@ function cleanTicketTypes(list, fallback) {
       emoji: cleanEmoji(t?.emoji),
       // Własne powitanie tego rodzaju ticketu (puste = wspólne z ustawień).
       welcome: String(t?.welcome ?? '').trim().slice(0, 1500),
+      // Regulamin pokazywany przed formularzem (z przyciskiem „Akceptuję”); puste = bez ekranu regulaminu.
+      rules: String(t?.rules ?? '').trim().slice(0, 3800),
+      // Osobne ustawienia tego rodzaju (puste = ustawienia ogólne): kategoria, archiwum, logi, role obsługi.
+      categoryId: SNOWFLAKE.test(String(t?.categoryId ?? '')) ? String(t.categoryId) : '',
+      archiveCategoryId: SNOWFLAKE.test(String(t?.archiveCategoryId ?? '')) ? String(t.archiveCategoryId) : '',
+      logChannelId: SNOWFLAKE.test(String(t?.logChannelId ?? '')) ? String(t.logChannelId) : '',
+      supportRoleIds: Array.isArray(t?.supportRoleIds) ? cleanRoleIds(t.supportRoleIds) : [],
+      // Co wolno autorowi ticketu.
+      authorCanClose: t?.authorCanClose !== false,
+      authorCanAdd: t?.authorCanAdd !== false,
+      authorCanAttach: t?.authorCanAttach !== false,
       fields: cleanTicketFields(t),
     }))
     .filter((t) => t.label);

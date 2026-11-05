@@ -138,6 +138,14 @@ tekst, liczba albo link do serwera Discord), emoji na przycisku i opcjonalnie w�
 - pole „Liczba” przyjmuje tylko liczbę („1 500” tak, „1,5k” czy „250–300” nie);
 - przy błędzie nic nie przepada — przycisk **„Popraw formularz”** otwiera okienko z wpisanymi odpowiedziami.
 
+Każdy rodzaj ticketu można też skonfigurować osobno (zakładka Tickety → rodzaj → „Osobne ustawienia”):
+- **Regulamin przed formularzem** — tekst edytowany w panelu; osoba widzi go z przyciskami „Akceptuję
+  regulamin” / „Nie akceptuję” i dopiero po akceptacji dostaje formularz (domyślnie ma go Partnerstwo,
+  a obsługa widzi w tickecie „Regulamin: zaakceptowany”);
+- **własna kategoria, archiwum, kanał logów i role obsługi** — np. partnerstwa trafiają do innej kategorii
+  i widzi je tylko inna obsługa niż zgłoszenia (puste = ustawienia ogólne);
+- **uprawnienia autora** — czy może zamknąć ticket, dodawać osoby i wysyłać pliki/linki.
+
 Wysłanie formularza tworzy prywatny kanał widoczny tylko dla tej osoby i obsługi (oznaczona w powitaniu
 jest tylko ta osoba — obsługa i tak ma dostęp do kanału, więc pingowanie całej roli przy każdym nowym
 tickecie byłoby tylko spamem powiadomień), z przyciskami **Zamknij** (z potwierdzeniem), **Przejmij** i
@@ -175,8 +183,9 @@ zależy Ci na ukryciu komendy przed kimś na poziomie samego Discorda, możesz d
 *Ustawienia serwera → Integracje → bot*.
 
 Zakładka **Uprawnienia** ma też kartę **Uprawnienia ról w Discordzie** (tylko pełny dostęp): najważniejsze
-uprawnienia moderacji samego Discorda (wyrzucanie, banowanie, wyciszanie, usuwanie wiadomości, pseudonimy,
-role, kanały, emoji, @everyone, przenoszenie z głosowych, dziennik zdarzeń) dla ról, które je mają. Te
+uprawnienia samego Discorda (wyrzucanie, banowanie, wyciszanie, usuwanie wiadomości, pseudonimy, role,
+kanały, wątki, webhooki, głosowe, emoji, wydarzenia, zaproszenia, dziennik zdarzeń i inne — ponad 25 w grupach)
+dla każdej roli, którą rozwiniesz na liście. Te
 działają bez bota — np. Test Helper z „Wyrzucaniem” mógłby wyrzucać prawym przyciskiem myszy mimo braku
 `/kick` — więc tu można je odebrać jednym kliknięciem (bot zmienia rolę od razu, z wpisem w dzienniku
 zdarzeń). Role wyżej niż rola bota i role z Administratorem zmienisz tylko w ustawieniach serwera.

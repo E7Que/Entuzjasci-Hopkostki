@@ -326,9 +326,12 @@ textarea { resize: vertical; }
 .access-list li a { color: var(--text); text-decoration: none; font-weight: 600; }
 .access-list li small { margin-left: auto; color: var(--muted); }
 .access-list li.locked { opacity: .7; }
-#role-perms-table th { white-space: nowrap; font-size: .75rem; }
-#role-perms-table td.center { text-align: center; }
-#role-perms-table td:first-child { white-space: nowrap; }
+.role-perm { border: 1px solid var(--line); border-radius: 8px; margin-bottom: .4rem; }
+.role-perm summary { cursor: pointer; padding: .55rem .7rem; font-weight: 600; }
+.role-perm-group { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: .3rem .9rem; padding: .3rem .7rem .6rem; }
+.role-perm-group > strong { grid-column: 1 / -1; font-size: .78rem; color: var(--muted); text-transform: uppercase; }
+.ttype-own { margin-top: .5rem; }
+.ttype-own summary { cursor: pointer; font-weight: 600; margin-bottom: .4rem; }
 .access-roles { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .1rem .9rem; }
 button.side-link { background: none; border: none; font: inherit; text-align: left; width: 100%; cursor: pointer; }
 

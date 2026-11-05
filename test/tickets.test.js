@@ -105,7 +105,18 @@ test('wybór: Zgłoszenie albo Partnerstwo — formularz partnerstwa z linkiem, 
     ['Partnerstwo', '🤝', 'tk|open|1'],
   ]);
 
-  const modal = await run(s.bot, click('tk|open|1'));
+  // Najpierw ekran z regulaminem partnerstw; formularz dopiero po „Akceptuję regulamin”.
+  const rules = await run(s.bot, click('tk|open|1'));
+  assert.equal(rules.response.type, 4);
+  assert.equal(rules.response.data.flags, 64);
+  assert.equal(rules.response.data.embeds[0].title, 'Regulamin — Partnerstwo');
+  assert.match(rules.response.data.embeds[0].description, /prawdziwa/);
+  assert.deepEqual(rules.response.data.components[0].components.map((b) => b.custom_id), ['tk|accept|1', 'tk|decline|1']);
+  const declined = await run(s.bot, click('tk|decline|1'));
+  assert.equal(declined.response.type, 7);
+  assert.match(declined.response.data.embeds[0].description, /Bez akceptacji regulaminu/);
+  assert.equal((await run(s.bot, click('tk|open|0'))).response.type, 9, 'Zgłoszenie bez regulaminu od razu pokazuje formularz');
+  const modal = await run(s.bot, click('tk|accept|1'));
   assert.equal(modal.response.type, 9);
   assert.equal(modal.response.data.custom_id, 'tkm|open|1');
   const inputs = modal.response.data.components.map((row) => row.components[0]);
@@ -165,7 +176,8 @@ test('wybór: Zgłoszenie albo Partnerstwo — formularz partnerstwa z linkiem, 
   assert.equal(fields['Powód'], 'Podobna tematyka, chętnie się wymienimy.');
   assert.equal(fields['Serwer z zaproszenia'], '**Fajny \\*Serwer\\*** • 243 członków • 57 online', 'prawdziwa liczba członków dla obsługi');
   const log = s.discord.state.channels.get(LOGS).at(-1);
-  assert.equal(log.embeds[0].fields.length, 4);
+  assert.equal(log.embeds[0].fields.length, 5);
+  assert.equal(fields['Regulamin'], '✅ Zaakceptowany przed otwarciem ticketu');
 
   const ticket = (await s.store.listTickets())[0];
   assert.equal(ticket.type, 'Partnerstwo');
@@ -196,7 +208,7 @@ test('rodzaje ticketów z panelu: stare pytanie zamienia się w formularz, pola 
   });
   const [old, fresh] = saved.tickets.types;
   assert.equal(saved.tickets.types.length, 2, 'bez napisu na przycisku — pomijany');
-  assert.deepEqual(old, { label: 'Stary', style: 'czerwony', emoji: '', welcome: '', fields: [{ label: 'Od czego się odwołujesz?', placeholder: '', kind: 'long', required: true }] });
+  assert.deepEqual(old, { label: 'Stary', style: 'czerwony', emoji: '', welcome: '', rules: '', categoryId: '', archiveCategoryId: '', logChannelId: '', supportRoleIds: [], authorCanClose: true, authorCanAdd: true, authorCanAttach: true, fields: [{ label: 'Od czego się odwołujesz?', placeholder: '', kind: 'long', required: true }] });
   assert.equal(fresh.style, 'niebieski');
   assert.equal(fresh.emoji, '');
   assert.equal(fresh.fields.length, 5, 'okienko Discorda mieści maks. 5 pól');
@@ -290,4 +302,36 @@ test('ticket, którego kanał usunięto ręcznie, nie blokuje nowego; wyłączon
   await s.store.updateConfig({ tickets: { enabled: false } });
   const off = await run(s.bot, click('tk|open|0', { user: 'owner' }));
   assert.match(off.response.data.embeds[0].description, /wyłączone/);
+});
+
+test('osobne ustawienia rodzajów ticketów: własna kategoria, role obsługi, logi i uprawnienia autora', async () => {
+  const PARTNER_CAT = '100000000000000091';
+  const PARTNER_ROLE = '100000000000000092';
+  const PARTNER_LOG = '100000000000000093';
+  const s = await setup({
+    types: [
+      { label: 'Zgłoszenie', style: 'niebieski', fields: [] },
+      { label: 'Partnerstwo', style: 'zielony', fields: [], categoryId: PARTNER_CAT, logChannelId: PARTNER_LOG, supportRoleIds: [PARTNER_ROLE], authorCanClose: false, authorCanAdd: false, authorCanAttach: false },
+    ],
+  });
+  await run(s.bot, click('tk|open|0', { user: 'target' }));
+  await run(s.bot, click('tk|open|1', { user: 'owner' }));
+  const [report, partner] = s.discord.state.createdChannels;
+  assert.equal(report.parent_id, CATEGORY);
+  assert.equal(partner.parent_id, PARTNER_CAT, 'partnerstwa w osobnej kategorii');
+  const roles = (ch) => ch.permission_overwrites.filter((o) => o.type === 0 && o.id !== GUILD).map((o) => o.id);
+  assert.deepEqual(roles(report), [SUPPORT]);
+  assert.deepEqual(roles(partner), [PARTNER_ROLE], 'partnerstwa widzi tylko własna obsługa');
+  const authorAllow = BigInt(partner.permission_overwrites.find((o) => o.id === 'owner').allow);
+  assert.equal(authorAllow & P.ATTACH_FILES, 0n, 'autor partnerstwa bez załączników');
+  assert.equal(s.discord.state.channels.get(PARTNER_LOG).length, 1, 'log otwarcia w osobnym kanale');
+  assert.equal(s.discord.state.channels.get(LOGS).length, 1);
+
+  const [t1, t2] = await s.store.listTickets();
+  const tPartner = t1.type === 'Partnerstwo' ? t1 : t2;
+  assert.match((await run(s.bot, click(`tk|close|${tPartner.id}`, { user: 'owner' }))).response.data.embeds[0].description, /tylko obsługa/);
+  assert.match((await run(s.bot, click(`tk|add|${tPartner.id}`, { user: 'owner' }))).response.data.embeds[0].description, /tylko obsługa/);
+  assert.match((await run(s.bot, click(`tk|claim|${tPartner.id}`, { user: 'mod', roles: [SUPPORT] }))).response.data.embeds[0].description, /tylko obsługa/, 'obsługa zgłoszeń nie rusza partnerstw');
+  const ok = await run(s.bot, click(`tk|close|${tPartner.id}`, { user: 'mod', roles: [PARTNER_ROLE] }));
+  assert.equal(ok.response.data.components[0].components[0].custom_id, `tk|confirm|${tPartner.id}`);
 });
