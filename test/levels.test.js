@@ -333,6 +333,8 @@ test('publiczny ranking: pseudonim + nazwa, tydzień/miesiąc, liczba osób, syn
   assert.equal(nitroLook({ collectibles: { nameplate: { asset: '../../evil' } } }).look, null, 'tylko bezpieczne ścieżki do obrazków');
   assert.equal(nitroLook({ avatar: 'x' }, { banner: 'serwerowy' }).nitro, true, 'baner tylko na serwerze = Nitro');
   assert.equal(nitroLook({ avatar: 'x', accent_color: 5 }).nitro, false);
+  assert.equal(nitroLook({ banner: 'obrazek', accent_color: 0xfba404 }).accentColor, null, 'przy obrazku banera stary kolor banera się nie liczy');
+  assert.equal(nitroLook({ avatar: 'x' }, { banner: 'serwerowy' }).accentColor, null);
 
   await s.store.updateConfig({ levels: { publicLeaderboard: false } });
   assert.equal((await get(`profile?id=${A}`)).status, 404, 'wyłączony publiczny ranking = brak profili');

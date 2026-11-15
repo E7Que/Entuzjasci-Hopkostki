@@ -383,7 +383,10 @@ export function profileLook(user, member = null) {
   };
   const nitro = Boolean(String(user?.avatar ?? '').startsWith('a_') || user?.banner || member?.avatar || member?.banner || nameColors.length || font || effect);
   const empty = !font && !effect && !nameColors.length && !look.decoration && !look.nameplate && !look.tag;
-  return { nitro, accentColor: hexColor(user?.accent_color), nameColors, look: empty ? null : look };
+  // accent_color to kolor banera „bez obrazka” — przy ustawionym obrazku Discord go nie pokazuje (bywa nieaktualny),
+  // więc wtedy kolory karty bierze strona z samego banera i avatara.
+  const hasBanner = Boolean(user?.banner || member?.banner);
+  return { nitro, accentColor: hasBanner ? null : hexColor(user?.accent_color), nameColors, look: empty ? null : look };
 }
 export const nitroLook = profileLook;
 

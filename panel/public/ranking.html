@@ -321,7 +321,7 @@
     .dn.fx2 { background: linear-gradient(90deg, var(--n1), var(--n2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
     .dn.fx3 { color: color-mix(in srgb, var(--n1) 40%, #fff); text-shadow: 0 0 3px var(--n1), 0 0 9px var(--n1); }
     .dn.fx4 { color: var(--n1); text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 2px 2px 0 color-mix(in srgb, var(--n2) 55%, #000); }
-    .dn.fx5 { color: var(--n1); text-shadow: 2px 2px 0 color-mix(in srgb, var(--n2) 55%, #000); }
+    .dn.fx5 { color: color-mix(in srgb, var(--n1) 22%, #fff); text-shadow: 1.5px 1.5px 0 var(--n2); }
     .dn.fx6 {
       background: linear-gradient(180deg, color-mix(in srgb, var(--n1) 45%, #fff), var(--n1) 55%, color-mix(in srgb, var(--n2) 75%, #000));
       -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.55));
@@ -623,7 +623,7 @@
       return `<span class="dn${fx ? ` fx${fx}` : ''}" style="${style}">${esc(text)}</span>`;
     }
     const tagHtml = (look) => (look?.tag ? `<span class="gtag" title="Tag serwera">${look.tag.badge ? `<img src="${esc(look.tag.badge)}" alt="" width="13" height="13">` : ''}${esc(look.tag.text)}</span>` : '');
-    const PALETTES = { crimson: '#b3243a', berry: '#9b2a6b', sky: '#3d8fd6', teal: '#1c9a9a', forest: '#2f7343', bubble_gum: '#e2669f', violet: '#7346d6', cobalt: '#2a4fc0', clover: '#3c9b45', lemon: '#cfae2b', white: '#cfd6da' };
+    const PALETTES = { crimson: '#b3243a', berry: '#9b2a6b', sky: '#3d8fd6', teal: '#1c9a9a', forest: '#2f7343', bubble_gum: '#e2669f', violet: '#7346d6', cobalt: '#2a4fc0', clover: '#3c9b45', lemon: '#cfae2b', white: '#cfd6da', black: '#3a3d44' };
     function avatarHtml(e, size, cls = 'avatar') {
       const deco = e.look?.decoration ? `<img class="deco" src="${esc(e.look.decoration)}" alt="" loading="lazy">` : '';
       return `<span class="av"><img class="${cls}" src="${esc(e.avatar)}"${e.avatarAnim ? ` data-anim="${esc(e.avatarAnim)}"` : ''} alt="" loading="lazy" width="${size}" height="${size}">${deco}</span>`;
@@ -918,7 +918,7 @@
       if (fresh) {
         resetTheme();
         showProfile(profileHtml(quick, true));
-        applyTheme(quick, id);
+        if (validColor(quick.accentColor)) applyTheme(quick, id);
       }
       try {
         const res = await fetch(`${BASE}/profile?id=${encodeURIComponent(id)}`);
