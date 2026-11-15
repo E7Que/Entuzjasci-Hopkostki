@@ -13,11 +13,25 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(HERE, 'public');
 export const DEFAULT_BOT_URL = 'https://ucjmbdogtzztrkorqzjq.supabase.co/functions/v1/hopkostki-bot';
 
-const STATIC_FILES = new Set(['', 'index.html', 'app.js', 'style.css', 'ranking.html']);
+const STATIC_FILES = new Set([
+  '',
+  'index.html',
+  'app.js',
+  'style.css',
+  'ranking.html',
+  'img/banner.webp',
+  'img/banner-og.jpg',
+  'img/icon.webp',
+  'img/favicon.png',
+  'img/apple-touch-icon.png',
+]);
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
+  '.webp': 'image/webp',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
 };
 const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]', '::1']);
 const MAX_BODY = 256 * 1024;

@@ -18,6 +18,7 @@ import {
   firstPlaceTick,
   onMemberLeaveLevels,
   importLevels,
+  levelProfilesTick,
 } from '../supabase/functions/hopkostki-bot/lib/levels.js';
 
 const LVL5 = '100000000000000060';
@@ -246,4 +247,52 @@ test('/rank, /ranking, /xp (tylko Zarządzanie serwerem; blokada dla właścicie
   assert.deepEqual([pub.enabled, pub.entries[0].level, pub.entries[0].name], [true, 3, 'hurownik_og']);
   const role = await (await call('/roles', { method: 'POST', body: JSON.stringify({ name: '| Level Highlights', color: '#F1C40F' }) })).json();
   assert.equal(role.role.name, '| Level Highlights');
+});
+
+test('publiczny ranking: pseudonim + nazwa, tydzień/miesiąc, liczba osób, synchronizacja nazw i profil po kliknięciu', async () => {
+  const s = await setup({ publicLeaderboard: true });
+  const A = '100000000000000070';
+  const B = '100000000000000071';
+  s.discord.state.members.set(A, { user: { id: A, username: 'kasia_123', global_name: 'Kasia' }, nick: 'Kasia z serwera', roles: [], joined_at: '2025-01-02T10:00:00.000Z' });
+  s.discord.state.members.set(B, { user: { id: B, username: 'bartek' }, roles: [] });
+  await onMessageLevels(s.bot, message(A, { author: { id: A, username: 'kasia_123', global_name: 'Kasia' }, member: { roles: [], nick: 'Kasia z serwera' } }));
+  await s.store.importLevel({ userId: B, userTag: 'bartek', xp: 900 });
+
+  const handle = createHandler(s.bot);
+  const get = async (path) => {
+    const res = await handle(new Request(`https://x.supabase.co/functions/v1/hopkostki-bot/panel/public/${path}`));
+    return { status: res.status, body: await res.json() };
+  };
+  let { body } = await get('leaderboard?limit=1');
+  assert.deepEqual([body.total, body.entries.length, body.entries[0].name, body.entries[0].displayName], [2, 1, 'bartek', null]);
+  ({ body } = await get('leaderboard?offset=1&limit=1'));
+  assert.deepEqual([body.entries[0].rank, body.entries[0].name, body.entries[0].displayName], [2, 'kasia_123', 'Kasia z serwera']);
+  ({ body } = await get('leaderboard?search=z%20serwera'));
+  assert.deepEqual(body.entries.map((e) => e.name), ['kasia_123'], 'szukanie także po pseudonimie');
+  ({ body } = await get('leaderboard?period=week'));
+  assert.deepEqual([body.total, body.entries[0].name, body.entries[0].periodXp, body.entries[0].rank], [1, 'kasia_123', 10, 1], 'import nie liczy się do tygodnia');
+  ({ body } = await get('leaderboard?period=month&search=kasia'));
+  assert.deepEqual([body.total, body.entries[0].rank], [1, 1]);
+  ({ body } = await get('leaderboard?period=week&search=bartek'));
+  assert.deepEqual([body.total, body.entries.length], [0, 0]);
+  assert.deepEqual(body.rewards, [], 'nagrody bez ról na serwerze są pomijane');
+  assert.equal(body.totals.members, 2);
+
+  s.discord.state.members.set(B, { user: { id: B, username: 'bartek', global_name: 'Bartuś', avatar: 'abc' }, roles: [] });
+  assert.equal(await levelProfilesTick(s.bot), 1, 'tylko zmienione wiersze');
+  assert.equal(await levelProfilesTick(s.bot), null, 'najwyżej co 30 minut');
+  ({ body } = await get('leaderboard'));
+  assert.deepEqual([body.entries[0].displayName, body.entries[0].avatar], ['Bartuś', `https://cdn.discordapp.com/avatars/${B}/abc.png?size=128`]);
+
+  const profile = await get(`profile?id=${A}`);
+  assert.equal(profile.status, 200);
+  assert.deepEqual(
+    [profile.body.displayName, profile.body.username, profile.body.joinedAt, profile.body.stats.messages, profile.body.stats.weekXp, profile.body.stats.weekRank, profile.body.stats.rank],
+    ['Kasia z serwera', 'kasia_123', '2025-01-02T10:00:00.000Z', 1, 10, 1, 2],
+  );
+  assert.ok(profile.body.lastActive, 'ostatnia aktywność');
+  assert.equal((await get('profile?id=100000000000000099')).status, 404, 'tylko osoby z rankingu');
+  assert.equal((await get('profile?id=../../users/@me')).status, 404);
+  await s.store.updateConfig({ levels: { publicLeaderboard: false } });
+  assert.equal((await get(`profile?id=${A}`)).status, 404, 'wyłączony publiczny ranking = brak profili');
 });

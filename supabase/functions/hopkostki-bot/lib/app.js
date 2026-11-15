@@ -13,7 +13,7 @@ import { runGatewaySession } from './gateway.js';
 import { handlePanel, describeAuth } from './panel.js';
 import { getApp, getGuildContext } from './moderation.js';
 import { avatarUrl, guildIconUrl } from './rest.js';
-import { levelProgress } from './levels.js';
+import { levelProgress, weekKey, monthKey, publicProfile } from './levels.js';
 import { AccessError, PANEL_SITE, PASSWORD_AUTH, authenticateSession, signIn } from './access.js';
 import { verifyDiscordRequest, ed25519Supported, safeEqual } from './verify.js';
 
@@ -106,24 +106,65 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
     return json({ started: true }, 202);
   }
 
+  // ?period=all|week|month, ?offset=, ?limit= (do 100), ?search= (nazwa, pseudonim albo ID).
   async function publicLeaderboard(url) {
     const { levels } = await bot.store.getConfig();
     if (!levels.enabled || !levels.publicLeaderboard) return { enabled: false, entries: [] };
-    const offset = Math.max(Number(url.searchParams.get('offset')) || 0, 0);
-    const rows = await bot.store.levelLeaderboard({ limit: 100, offset });
-    const gctx = bot.discord ? await getGuildContext(bot).catch(() => null) : null;
+    const params = url.searchParams;
+    const offset = Math.min(Math.max(Math.floor(Number(params.get('offset'))) || 0, 0), 100_000);
+    const limit = Math.min(Math.max(Math.floor(Number(params.get('limit'))) || 100, 1), 100);
+    const period = ['week', 'month'].includes(params.get('period')) ? params.get('period') : 'all';
+    const search = String(params.get('search') ?? '').trim().slice(0, 64);
+    const periodKey = period === 'week' ? weekKey() : period === 'month' ? monthKey() : null;
+    const [rows, total, totals, gctx] = await Promise.all([
+      period === 'all'
+        ? bot.store.levelLeaderboard({ limit, offset, search })
+        : bot.store.levelPeriodTop({ period, key: periodKey, limit, offset, search }),
+      period === 'all' ? bot.store.countLevels(search) : bot.store.countPeriod({ period, key: periodKey, search }),
+      bot.store.levelTotals(),
+      bot.discord ? getGuildContext(bot).catch(() => null) : null,
+    ]);
+    const role = (id) => {
+      const r = id ? gctx?.roles.get(id) : null;
+      return r ? { name: r.name, color: r.color ? `#${r.color.toString(16).padStart(6, '0')}` : null } : null;
+    };
+    const rate = (source, keys) => (source.enabled ? Object.fromEntries(keys.map((k) => [k, source[k]])) : null);
+    const { effort } = levels.boosters;
     return {
       enabled: true,
-      guild: gctx ? { name: gctx.guild.name, icon: guildIconUrl(gctx.guild) } : null,
+      period,
+      periodKey,
+      total,
+      offset,
+      guild: gctx ? { name: gctx.guild.name, icon: guildIconUrl(gctx.guild), memberCount: gctx.guild.memberCount } : null,
       color: levels.card.color,
+      totals,
+      rates: {
+        message: rate(levels.message, ['mode', 'min', 'max', 'cooldown']),
+        voice: rate(levels.voice, ['min', 'max', 'cooldown', 'minMembers']),
+        reaction: rate(levels.reaction, ['min', 'max', 'cooldown']),
+        effort: effort.enabled ? { words: effort.words, images: effort.images, percent: effort.percent } : null,
+        boosters: levels.boosters.roles.map((b) => ({ ...role(b.roleId), percent: b.percent })).filter((b) => b.name),
+      },
+      rewards: levels.rewards
+        .map((r) => ({ level: r.level, ...role(r.roleId) }))
+        .filter((r) => r.name)
+        .sort((a, b) => a.level - b.level),
+      highlights: {
+        weekly: levels.highlights.weekly.enabled,
+        monthly: levels.highlights.monthly.enabled,
+        role: role(levels.highlights.roleId)?.name ?? null,
+      },
       entries: rows.map((r) => {
         const p = levelProgress(r.xp, levels.formula);
         return {
-          rank: r.rank,
+          rank: period === 'all' ? r.rank : r.periodRank,
           userId: r.userId,
           name: r.userTag ?? 'Użytkownik',
-          avatar: avatarUrl({ id: r.userId, avatar: r.avatar }, 64),
+          displayName: r.displayName && r.displayName !== r.userTag ? r.displayName : null,
+          avatar: avatarUrl({ id: r.userId, avatar: r.avatar }, 128),
           xp: r.xp,
+          periodXp: period === 'all' ? null : r.periodXp,
           level: p.level,
           current: p.current,
           needed: p.needed,
@@ -151,6 +192,10 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
     try {
       // Publiczny ranking poziomów (strona ranking.html) — bez logowania, o ile włączony w panelu.
       if (request.method === 'GET' && route === '/public/leaderboard') return json(await publicLeaderboard(url), 200, cors);
+      if (request.method === 'GET' && route === '/public/profile') {
+        const profile = bot.discord ? await publicProfile(bot, url.searchParams.get('id')) : null;
+        return profile ? json(profile, 200, cors) : json({ error: 'Nie ma takiej osoby w rankingu.' }, 404, cors);
+      }
       // Jedyne zapytanie panelu bez hasła panelu i sesji: login i hasło z /login → sesja przeglądarki.
       if (request.method === 'POST' && route === '/login') {
         const { token, auth } = await signIn(bot, { login: body?.login, password: body?.password });

@@ -16,6 +16,7 @@ const XP_KINDS = {
 const mapLevel = (r) => ({
   userId: r.user_id,
   userTag: r.user_tag,
+  displayName: r.display_name ?? null,
   avatar: r.avatar,
   xp: Number(r.xp),
   level: r.level,
@@ -26,6 +27,9 @@ const mapLevel = (r) => ({
   weekXp: Number(r.week_xp),
   monthKey: r.month_key,
   monthXp: Number(r.month_xp),
+  lastMessageAt: r.last_message_at ?? null,
+  lastVoiceAt: r.last_voice_at ?? null,
+  lastReactionAt: r.last_reaction_at ?? null,
   rank: r.rank === undefined ? null : Number(r.rank),
 });
 
@@ -959,16 +963,17 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
     // ---------- Poziomy ----------
     // XP z cooldownem danego rodzaju (wiadomość / głosowe / reakcja) — atomowo: przy cooldownie nic się nie
     // zmienia i wynik to null. Zwraca nowe łączne XP i POPRZEDNI poziom (kolumna level zmienia się osobno).
-    async awardXp({ userId, userTag, avatar, amount, kind, cooldownSec, minutes = 0, weekKey, monthKey }) {
+    async awardXp({ userId, userTag, displayName = null, avatar, amount, kind, cooldownSec, minutes = 0, weekKey, monthKey }) {
       const k = XP_KINDS[kind];
       const row = await one(
-        `insert into bot.levels as l (user_id, user_tag, avatar, xp, ${k.counter}, ${k.last}, week_key, week_xp, month_key, month_xp, updated_at)
-         values ($1::text, $2::text, $3::text, $4::bigint, $8::int, now(), $5::text, $4::bigint, $6::text, $4::bigint, now())
+        `insert into bot.levels as l (user_id, user_tag, display_name, avatar, xp, ${k.counter}, ${k.last}, week_key, week_xp, month_key, month_xp, updated_at)
+         values ($1::text, $2::text, $9::text, $3::text, $4::bigint, $8::int, now(), $5::text, $4::bigint, $6::text, $4::bigint, now())
          on conflict (user_id) do update set
            xp = l.xp + excluded.xp,
            ${k.counter} = l.${k.counter} + excluded.${k.counter},
            ${k.last} = now(),
            user_tag = coalesce(excluded.user_tag, l.user_tag),
+           display_name = coalesce(excluded.display_name, l.display_name),
            avatar = coalesce(excluded.avatar, l.avatar),
            week_xp = case when l.week_key = excluded.week_key then l.week_xp + excluded.xp else excluded.xp end,
            week_key = excluded.week_key,
@@ -977,7 +982,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
            updated_at = now()
          where l.${k.last} is null or l.${k.last} <= now() - make_interval(secs => $7::double precision)
          returning xp, level`,
-        [userId, userTag ?? null, avatar ?? null, amount, weekKey, monthKey, cooldownSec, kind === 'voice' ? minutes : 1],
+        [userId, userTag ?? null, avatar ?? null, amount, weekKey, monthKey, cooldownSec, kind === 'voice' ? minutes : 1, displayName ?? null],
       );
       return row ? { xp: Number(row.xp), level: row.level } : null;
     },
@@ -999,14 +1004,15 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
     },
 
     // Import (np. z Arcane): większe XP zostaje, statystyki — większe z dwóch.
-    async importLevel({ userId, userTag, avatar, xp, messages = 0, reactions = 0 }) {
+    async importLevel({ userId, userTag, displayName = null, avatar, xp, messages = 0, reactions = 0 }) {
       const row = await one(
-        `insert into bot.levels as l (user_id, user_tag, avatar, xp, messages, reactions) values ($1::text, $2::text, $3::text, $4::bigint, $5::int, $6::int)
+        `insert into bot.levels as l (user_id, user_tag, avatar, xp, messages, reactions, display_name) values ($1::text, $2::text, $3::text, $4::bigint, $5::int, $6::int, $7::text)
          on conflict (user_id) do update set xp = greatest(l.xp, excluded.xp), messages = greatest(l.messages, excluded.messages),
            reactions = greatest(l.reactions, excluded.reactions), user_tag = coalesce(excluded.user_tag, l.user_tag),
+           display_name = coalesce(excluded.display_name, l.display_name),
            avatar = coalesce(excluded.avatar, l.avatar), updated_at = now()
          returning xp, level`,
-        [userId, userTag ?? null, avatar ?? null, xp, messages, reactions],
+        [userId, userTag ?? null, avatar ?? null, xp, messages, reactions, displayName ?? null],
       );
       return { xp: Number(row.xp), level: row.level };
     },
@@ -1022,7 +1028,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
     async levelLeaderboard({ limit = 10, offset = 0, search = '' } = {}) {
       const rows = await query(
         `select * from (select l.*, rank() over (order by l.xp desc) as rank from bot.levels l where l.xp > 0) r
-         where ($3::text = '' or r.user_id = $3::text or r.user_tag ilike '%' || $3::text || '%')
+         where ($3::text = '' or r.user_id = $3::text or r.user_tag ilike '%' || $3::text || '%' or r.display_name ilike '%' || $3::text || '%')
          order by r.xp desc, r.user_id limit $1::int offset $2::int`,
         [limit, offset, search],
       );
@@ -1031,20 +1037,68 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
 
     async countLevels(search = '') {
       const row = await one(
-        `select count(*)::int as n from bot.levels where xp > 0 and ($1::text = '' or user_id = $1::text or user_tag ilike '%' || $1::text || '%')`,
+        `select count(*)::int as n from bot.levels where xp > 0
+           and ($1::text = '' or user_id = $1::text or user_tag ilike '%' || $1::text || '%' or display_name ilike '%' || $1::text || '%')`,
         [search],
       );
       return row.n;
     },
 
     // Najwięcej XP w tygodniu (period 'week', klucz = data niedzieli) albo miesiącu ('month', klucz RRRR-MM).
-    async levelPeriodTop({ period, key, limit = 10 }) {
+    async levelPeriodTop({ period, key, limit = 10, offset = 0, search = '' }) {
       const [keyCol, xpCol] = period === 'week' ? ['week_key', 'week_xp'] : ['month_key', 'month_xp'];
       const rows = await query(
-        `select *, ${xpCol} as period_xp from bot.levels where ${keyCol} = $1::text and ${xpCol} > 0 order by ${xpCol} desc limit $2::int`,
-        [key, limit],
+        `select * from (
+           select l.*, l.${xpCol} as period_xp, rank() over (order by l.${xpCol} desc) as period_rank
+           from bot.levels l where l.${keyCol} = $1::text and l.${xpCol} > 0
+         ) r
+         where ($4::text = '' or r.user_id = $4::text or r.user_tag ilike '%' || $4::text || '%' or r.display_name ilike '%' || $4::text || '%')
+         order by r.period_xp desc, r.user_id limit $2::int offset $3::int`,
+        [key, limit, offset, search],
       );
-      return rows.map((r) => ({ ...mapLevel(r), periodXp: Number(r.period_xp) }));
+      return rows.map((r) => ({ ...mapLevel(r), periodXp: Number(r.period_xp), periodRank: Number(r.period_rank) }));
+    },
+
+    async periodRank({ period, key, xp }) {
+      const [keyCol, xpCol] = period === 'week' ? ['week_key', 'week_xp'] : ['month_key', 'month_xp'];
+      const row = await one(`select count(*)::int + 1 as n from bot.levels where ${keyCol} = $1::text and ${xpCol} > $2::bigint`, [key, xp]);
+      return row.n;
+    },
+
+    async countPeriod({ period, key, search = '' }) {
+      const [keyCol, xpCol] = period === 'week' ? ['week_key', 'week_xp'] : ['month_key', 'month_xp'];
+      const row = await one(
+        `select count(*)::int as n from bot.levels where ${keyCol} = $1::text and ${xpCol} > 0
+           and ($2::text = '' or user_id = $2::text or user_tag ilike '%' || $2::text || '%' or display_name ilike '%' || $2::text || '%')`,
+        [key, search],
+      );
+      return row.n;
+    },
+
+    // Nazwy i avatary z listy członków serwera — tylko dla osób, które już są w rankingu.
+    // [{ id, tag, name, avatar }]; name = pseudonim na serwerze albo nazwa wyświetlana (może być null).
+    async syncLevelProfiles(members) {
+      if (!members.length) return 0;
+      const rows = await query(
+        `update bot.levels l set user_tag = coalesce(m->>'tag', l.user_tag), display_name = m->>'name', avatar = m->>'avatar'
+         from jsonb_array_elements($1::text::jsonb) m
+         where l.user_id = m->>'id'
+           and (l.user_tag is distinct from coalesce(m->>'tag', l.user_tag) or l.display_name is distinct from m->>'name' or l.avatar is distinct from m->>'avatar')
+         returning l.user_id`,
+        [JSON.stringify(members)],
+      );
+      return rows.length;
+    },
+
+    // Podsumowanie do publicznego rankingu: ile osób ma XP i ile łącznie nazbierały.
+    async levelTotals() {
+      const row = await one(
+        `select count(*) filter (where xp > 0)::int as members, coalesce(sum(xp), 0)::bigint as xp,
+           coalesce(sum(messages), 0)::bigint as messages, coalesce(sum(voice_minutes), 0)::bigint as voice_minutes
+         from bot.levels`,
+        [],
+      );
+      return { members: row.members, xp: Number(row.xp), messages: Number(row.messages), voiceMinutes: Number(row.voice_minutes) };
     },
 
     // { userId } — jedna osoba, {} — wszyscy. Zeruje XP, poziom i liczniki okresów; statystyki zostają.

@@ -120,11 +120,12 @@ async function memberInfo(bot, userId) {
 // ---------- Przyznawanie XP i awanse ----------
 
 // Dodaje XP (z cooldownem danego rodzaju) i obsługuje awans. Zwraca { xp, level, previous } albo null (cooldown).
-export async function awardXp(bot, config, { user, amount, kind, cooldown, minutes = 0, channelId = null, roles }) {
+export async function awardXp(bot, config, { user, amount, kind, cooldown, minutes = 0, channelId = null, roles, displayName = null }) {
   if (!user?.id || amount <= 0) return null;
   const row = await bot.store.awardXp({
     userId: user.id,
     userTag: userTag(user),
+    displayName: displayName ?? user.global_name ?? null,
     avatar: user.avatar ?? null,
     amount,
     kind,
@@ -232,12 +233,15 @@ export async function onMessageLevels(bot, message) {
 
   let user = message.author;
   let roles = message.member?.roles;
+  let nick = message.member?.nick ?? null;
   if (user?.bot) {
     // Komendy slash dowolnego bota: XP dla osoby, która jej użyła (jeśli włączone).
     const invoker = message.interaction_metadata?.user ?? message.interaction?.user;
     if (!config.restrictions.slashCommands || !invoker || invoker.bot) return;
     user = invoker;
-    roles = (await memberInfo(bot, invoker.id))?.roles ?? [];
+    const member = await memberInfo(bot, invoker.id);
+    roles = member?.roles ?? [];
+    nick = member?.nick ?? null;
   }
   if (!user || blockedByRole(config, roles)) return;
   const channel = await channelInfo(bot, message.channel_id);
@@ -255,6 +259,7 @@ export async function onMessageLevels(bot, message) {
     cooldown: config.message.cooldown,
     channelId: message.channel_id,
     roles,
+    displayName: nick,
   });
 }
 
@@ -269,15 +274,15 @@ export async function onReactionLevels(bot, data) {
   const channelIds = [channel?.id, channel?.parentId].filter(Boolean);
   const targets = [];
   const giver = data.member?.user;
-  if (config.reaction.awards !== 'receiver' && giver && !giver.bot) targets.push({ user: giver, roles: data.member.roles ?? [] });
+  if (config.reaction.awards !== 'receiver' && giver && !giver.bot) targets.push({ user: giver, roles: data.member.roles ?? [], nick: data.member.nick ?? null });
   if (config.reaction.awards !== 'giver' && data.message_author_id && data.message_author_id !== data.user_id) {
     const author = await memberInfo(bot, data.message_author_id);
-    if (author?.user && !author.user.bot) targets.push({ user: author.user, roles: author.roles ?? [] });
+    if (author?.user && !author.user.bot) targets.push({ user: author.user, roles: author.roles ?? [], nick: author.nick ?? null });
   }
-  for (const { user, roles } of targets) {
+  for (const { user, roles, nick } of targets) {
     if (blockedByRole(config, roles)) continue;
     const amount = boosted(random(config.reaction.min, config.reaction.max), boostPercent(config, { roles, channelIds }));
-    await awardXp(bot, config, { user, amount, kind: 'reaction', cooldown: config.reaction.cooldown, channelId: data.channel_id, roles });
+    await awardXp(bot, config, { user, amount, kind: 'reaction', cooldown: config.reaction.cooldown, channelId: data.channel_id, roles, displayName: nick });
   }
 }
 
@@ -337,6 +342,88 @@ export async function firstPlaceTick(bot, { now = Date.now() } = {}) {
   }
   await bot.store.setState('levels_first_place', { userId: top?.userId ?? null, roleId, at: now });
   return top?.userId ?? null;
+}
+
+// Co 30 min: pseudonimy, nazwy i avatary osób z rankingu z listy członków serwera (do publicznej strony).
+export async function levelProfilesTick(bot, { now = Date.now() } = {}) {
+  const config = (await bot.store.getConfig()).levels;
+  if (!config.enabled) return null;
+  const last = Number(await bot.store.getState('levels_profiles_sync')) || 0;
+  if (now - last < 30 * 60_000) return null;
+  await bot.store.setState('levels_profiles_sync', now);
+  const members = (await guildMembers(bot)).filter((m) => m.user && !m.user.bot);
+  return bot.store.syncLevelProfiles(
+    members.map((m) => ({ id: m.user.id, tag: m.user.username, name: m.nick ?? m.user.global_name ?? null, avatar: m.user.avatar ?? null })),
+  );
+}
+
+// ---------- Publiczny profil (karta po kliknięciu na stronie rankingu) ----------
+
+const cdnImage = (path, hash, size) => `https://cdn.discordapp.com/${path}/${hash}.${String(hash).startsWith('a_') ? 'gif' : 'png'}?size=${size}`;
+const hexColor = (n) => (Number.isInteger(n) && n > 0 ? `#${n.toString(16).padStart(6, '0')}` : null);
+const snowflakeTime = (id) => Number((BigInt(id) >> 22n) + 1420070400000n);
+const isoOrNull = (v) => (v ? new Date(v).toISOString() : null);
+
+// Tylko osoby z XP w rankingu i tylko gdy publiczny ranking jest włączony. Zwraca null, gdy nie ma kogo pokazać.
+export async function publicProfile(bot, userId) {
+  const config = (await bot.store.getConfig()).levels;
+  if (!config.enabled || !config.publicLeaderboard || !/^\d{15,22}$/.test(String(userId ?? ''))) return null;
+  const row = await bot.store.getLevel(userId);
+  if (!row || row.xp <= 0) return null;
+  const { guild, roles: byId } = await getGuildContext(bot);
+  const [user, member] = await Promise.all([
+    cached(bot, `publicUser:${userId}`, 10 * 60_000, () => bot.discord.get(`/users/${userId}`).catch(() => null)),
+    memberInfo(bot, userId),
+  ]);
+  const u = user ?? member?.user ?? { id: userId, username: row.userTag };
+  const p = levelProgress(row.xp, config.formula);
+  const week = row.weekKey === weekKey() ? row.weekXp : 0;
+  const month = row.monthKey === monthKey() ? row.monthXp : 0;
+  const [weekRank, monthRank] = await Promise.all([
+    week > 0 ? bot.store.periodRank({ period: 'week', key: weekKey(), xp: week }) : null,
+    month > 0 ? bot.store.periodRank({ period: 'month', key: monthKey(), xp: month }) : null,
+  ]);
+  const roles = (member?.roles ?? [])
+    .map((id) => byId.get(id))
+    .filter(Boolean)
+    .sort((a, b) => b.position - a.position)
+    .slice(0, 12)
+    .map((r) => ({ name: r.name, color: hexColor(r.color) }));
+  const nextReward = [...config.rewards]
+    .sort((a, b) => a.level - b.level)
+    .find((r) => r.level > p.level && byId.has(r.roleId));
+  const nextRole = nextReward ? byId.get(nextReward.roleId) : null;
+  const lastActive = [row.lastMessageAt, row.lastVoiceAt, row.lastReactionAt].filter(Boolean).map((d) => new Date(d).getTime());
+  return {
+    id: userId,
+    username: u.username ?? row.userTag ?? null,
+    displayName: member?.nick ?? u.global_name ?? row.displayName ?? null,
+    avatar: member?.avatar ? cdnImage(`guilds/${guild.id}/users/${userId}/avatars`, member.avatar, 256) : u.avatar ? cdnImage(`avatars/${userId}`, u.avatar, 256) : avatarUrl({ id: userId }, 256),
+    banner: member?.banner ? cdnImage(`guilds/${guild.id}/users/${userId}/banners`, member.banner, 600) : u.banner ? cdnImage(`banners/${userId}`, u.banner, 600) : null,
+    decoration: u.avatar_decoration_data?.asset ? `https://cdn.discordapp.com/avatar-decoration-presets/${u.avatar_decoration_data.asset}.png?size=240&passthrough=true` : null,
+    accentColor: hexColor(u.accent_color),
+    inGuild: Boolean(member),
+    joinedAt: isoOrNull(member?.joined_at),
+    boostingSince: isoOrNull(member?.premium_since),
+    createdAt: new Date(snowflakeTime(userId)).toISOString(),
+    lastActive: lastActive.length ? new Date(Math.max(...lastActive)).toISOString() : null,
+    roles,
+    nextReward: nextRole ? { level: nextReward.level, name: nextRole.name, color: hexColor(nextRole.color) } : null,
+    stats: {
+      rank: row.rank,
+      xp: row.xp,
+      level: p.level,
+      current: p.current,
+      needed: p.needed,
+      messages: row.messages,
+      voiceMinutes: row.voiceMinutes,
+      reactions: row.reactions,
+      weekXp: week,
+      weekRank,
+      monthXp: month,
+      monthRank,
+    },
+  };
 }
 
 // ---------- Rankingi tygodnia i miesiąca ----------
@@ -501,6 +588,7 @@ export async function importLevels(bot, entries) {
     const row = await bot.store.importLevel({
       userId: member.user.id,
       userTag: member.user.username,
+      displayName: member.nick ?? member.user.global_name ?? null,
       avatar: member.user.avatar ?? null,
       xp,
       messages: entry.messages,

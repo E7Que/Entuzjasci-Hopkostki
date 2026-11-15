@@ -4,85 +4,748 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ranking poziomów — Entuzjaści Hopkostki</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%235865f2'/><text x='50' y='66' font-size='46' font-weight='700' font-family='sans-serif' text-anchor='middle' fill='white'>EH</text></svg>">
+  <meta name="description" content="Ranking poziomów serwera Entuzjaści Hopkostki: XP za wiadomości i kanały głosowe, rankingi tygodnia i miesiąca, nagrody za poziomy.">
+  <meta name="theme-color" content="#0d1113">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Entuzjaści Hopkostki">
+  <meta property="og:title" content="Ranking poziomów — Entuzjaści Hopkostki">
+  <meta property="og:description" content="Kto ma najwięcej XP na serwerze? Ranking ogólny, tygodniowy i miesięczny.">
+  <meta property="og:image" content="https://e7que.github.io/Entuzjasci-Hopkostki/img/banner-og.jpg">
+  <meta property="og:url" content="https://e7que.github.io/Entuzjasci-Hopkostki/ranking.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root { --bg: #1e1f22; --bg-2: #2b2d31; --line: #3f4147; --text: #dbdee1; --muted: #949ba4; --accent: #5865f2; }
+    :root {
+      --bg: #0d1113;
+      --surface: #151b1e;
+      --surface-2: #1b2226;
+      --hover: #1f282c;
+      --border: #242d32;
+      --text: #e6ebed;
+      --muted: #8b989e;
+      --faint: #67757b;
+      --accent: #3cc3d6;
+      --gold: #e3b341;
+      --silver: #a9b5bd;
+      --bronze: #c8834f;
+      --radius: 10px;
+    }
     * { box-sizing: border-box; }
-    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
-    main { max-width: 860px; margin: 0 auto; padding: 24px 16px 48px; }
-    header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
-    header img { width: 56px; height: 56px; border-radius: 16px; }
-    h1 { margin: 0; font-size: 1.4rem; color: #fff; }
-    .muted { color: var(--muted); }
-    .row { display: grid; grid-template-columns: 44px 40px 1fr auto; gap: 12px; align-items: center; background: var(--bg-2); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; }
-    .rank { font-weight: 700; color: var(--muted); text-align: center; }
-    .row:nth-child(1) .rank { color: #f1c40f; } .row:nth-child(2) .rank { color: #c0c7cf; } .row:nth-child(3) .rank { color: #d9884a; }
-    .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--line); }
-    .name { font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .bar { height: 6px; border-radius: 3px; background: var(--bg); margin-top: 6px; overflow: hidden; }
-    .bar span { display: block; height: 100%; background: var(--accent); }
-    .stats { text-align: right; white-space: nowrap; }
-    .stats strong { color: #fff; font-size: 1.05rem; }
-    .stats small { display: block; color: var(--muted); }
-    .more { display: block; margin: 16px auto 0; padding: 10px 18px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; font: inherit; cursor: pointer; }
-    @media (max-width: 480px) { .row { grid-template-columns: 30px 34px 1fr; } .stats { grid-column: 2 / -1; text-align: left; } .avatar { width: 34px; height: 34px; } }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.5 'Rubik', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      font-variant-numeric: tabular-nums;
+    }
+    img { display: block; }
+    button { font: inherit; color: inherit; }
+    [hidden] { display: none !important; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    main { max-width: 1120px; margin: 0 auto; padding: 20px 16px 56px; }
+
+    /* ---------- Nagłówek ---------- */
+    .banner { border-radius: 12px; overflow: hidden; aspect-ratio: 16 / 5; background: var(--surface); }
+    .banner img { width: 100%; height: 100%; object-fit: cover; object-position: center 45%; }
+    .head { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; padding: 0 16px; }
+    .server-icon { width: 88px; height: 88px; margin-top: -40px; border-radius: 22px; border: 5px solid var(--bg); background: var(--surface); object-fit: cover; flex: none; }
+    .title { flex: 1 1 240px; min-width: 0; padding-bottom: 4px; }
+    .title small { display: block; color: var(--muted); font-size: 0.85rem; }
+    h1 { margin: 0; font-size: 1.75rem; font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; }
+    .totals { display: flex; flex-wrap: wrap; gap: 4px 22px; margin: 0; padding-bottom: 6px; }
+    .totals div { display: flex; flex-direction: column-reverse; }
+    .totals dt { color: var(--muted); font-size: 0.78rem; }
+    .totals dd { margin: 0; font-weight: 600; font-size: 1.1rem; }
+
+    /* ---------- Pasek ---------- */
+    .toolbar {
+      position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      margin: 22px 0 18px; padding: 10px 0; background: var(--bg); border-bottom: 1px solid var(--border);
+    }
+    .tabs { display: flex; gap: 4px; flex: 1 1 auto; }
+    .tab { padding: 8px 12px; border: 0; border-radius: 8px; background: none; color: var(--muted); font-weight: 500; cursor: pointer; }
+    .tab:hover { color: var(--text); background: var(--surface); }
+    .tab[aria-selected="true"] { color: var(--text); background: var(--surface-2); }
+    .search { position: relative; flex: 0 1 260px; }
+    .search svg { position: absolute; left: 11px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%); color: var(--faint); pointer-events: none; }
+    .search input { width: 100%; padding: 8px 12px 8px 34px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; }
+    .search input::placeholder { color: var(--faint); }
+    .search input:focus { outline: none; border-color: var(--accent); }
+    .views { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .views button { width: 38px; height: 36px; display: grid; place-items: center; border: 0; background: var(--surface); color: var(--faint); cursor: pointer; }
+    .views button + button { border-left: 1px solid var(--border); }
+    .views button:hover { color: var(--text); }
+    .views button[aria-pressed="true"] { color: var(--text); background: var(--surface-2); }
+    .views svg { width: 16px; height: 16px; }
+
+    .layout { display: grid; gap: 24px; }
+    @media (min-width: 980px) { .layout { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; } }
+
+    .note { margin: 0 0 14px; color: var(--muted); font-size: 0.88rem; }
+    .note b { color: var(--text); font-weight: 500; }
+
+    /* ---------- Top 3 ---------- */
+    .top3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .top {
+      display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0;
+      padding: 18px 12px 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border);
+      border-top: 3px solid var(--m); cursor: pointer;
+    }
+    .top:hover { background: var(--hover); }
+    .top.sel { background: var(--surface-2); }
+    .top.t1 { --m: var(--gold); }
+    .top.t2 { --m: var(--silver); }
+    .top.t3 { --m: var(--bronze); }
+    .top .place { font-weight: 700; color: var(--m); font-size: 0.85rem; margin-bottom: 10px; }
+    .top img { width: 72px; height: 72px; border-radius: 50%; background: var(--surface-2); object-fit: cover; margin-bottom: 10px; }
+    .top .nick { max-width: 100%; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .top .tag { max-width: 100%; color: var(--faint); font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .top .meta { margin-top: 8px; color: var(--muted); font-size: 0.85rem; }
+    .top .meta b { color: var(--text); font-weight: 600; }
+
+    /* ---------- Lista ---------- */
+    .table { border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); overflow: hidden; }
+    .cols, .row { display: grid; grid-template-columns: 44px minmax(0, 1fr) 96px 104px 92px 48px; align-items: center; gap: 12px; padding: 0 16px; }
+    .cols { height: 38px; color: var(--faint); font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--border); }
+    .cols span:first-child { text-align: center; }
+    .cols span:nth-child(n + 3) { text-align: right; }
+    .cols span:last-child { text-align: center; }
+    .list { list-style: none; margin: 0; padding: 0; }
+    .row { min-height: 60px; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .row:last-child { border-bottom: 0; }
+    .row:hover { background: var(--hover); }
+    .row.sel { background: var(--surface-2); box-shadow: inset 3px 0 0 var(--accent); }
+    .rank { color: var(--muted); font-weight: 600; text-align: center; }
+    .r1 .rank { color: var(--gold); } .r2 .rank { color: var(--silver); } .r3 .rank { color: var(--bronze); }
+    .who { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--surface-2); object-fit: cover; flex: none; }
+    .name { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+    .name .nick { min-width: 0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .name .tag { min-width: 0; color: var(--faint); font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .num { text-align: right; color: var(--muted); font-size: 0.9rem; white-space: nowrap; }
+    .num.xp { color: var(--text); font-weight: 500; }
+    .num .plus { color: #6fcf8f; }
+    .lvl { position: relative; width: 40px; height: 40px; justify-self: center; }
+    .lvl svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .lvl .track { fill: none; stroke: var(--border); stroke-width: 3; }
+    .lvl .val { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; }
+    .lvl b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 0.85rem; font-weight: 600; }
+    .empty { padding: 36px 20px; text-align: center; color: var(--muted); }
+    .empty b { display: block; color: var(--text); font-weight: 600; margin-bottom: 2px; }
+    .skeleton { height: 60px; border-bottom: 1px solid var(--border); background: linear-gradient(90deg, var(--surface) 30%, var(--surface-2) 50%, var(--surface) 70%); background-size: 300% 100%; animation: sk 1.4s linear infinite; }
+    @keyframes sk { to { background-position: -300% 0; } }
+    .board.loading .table, .board.loading .top3 { opacity: 0.55; }
+    .found { margin: 0 0 10px; color: var(--muted); font-size: 0.88rem; }
+    .found b { color: var(--text); }
+
+    /* Siatka */
+    .board.grid .cols { display: none; }
+    .board.grid .table { background: none; border: 0; overflow: visible; }
+    .board.grid .list { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+    .board.grid .row {
+      position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 0; padding: 18px 12px 14px;
+      border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); text-align: center;
+    }
+    .board.grid .row:hover { background: var(--hover); }
+    .board.grid .row.sel { box-shadow: inset 0 0 0 1px var(--accent); }
+    .board.grid .rank { position: absolute; top: 10px; left: 12px; font-size: 0.85rem; }
+    .board.grid .who { flex-direction: column; gap: 8px; width: 100%; }
+    .board.grid .avatar { width: 64px; height: 64px; }
+    .board.grid .name { flex-direction: column; align-items: center; gap: 0; max-width: 100%; }
+    .board.grid .name span { max-width: 100%; }
+    .board.grid .num { text-align: center; }
+    .board.grid .num.msgs, .board.grid .num.voice { display: none; }
+    .board.grid .lvl { position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; }
+    .board.grid .lvl b { font-size: 0.75rem; }
+    .board.grid .empty, .board.grid .skeleton { grid-column: 1 / -1; border: 0; }
+
+    .more { display: block; margin: 14px auto 0; padding: 9px 18px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-weight: 500; cursor: pointer; }
+    .more:hover { background: var(--hover); }
+    .more:disabled { opacity: 0.6; cursor: default; }
+
+    /* ---------- Boczny panel ---------- */
+    .side { display: grid; gap: 14px; }
+    @media (min-width: 980px) { .side { position: sticky; top: 72px; } }
+    .info { display: grid; gap: 14px; }
+    .card { padding: 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); }
+    .card h2 { margin: 0 0 10px; font-size: 0.95rem; font-weight: 600; }
+    .card p { margin: 0; color: var(--muted); font-size: 0.86rem; }
+    .kv { display: grid; gap: 8px; margin: 0 0 12px; font-size: 0.88rem; }
+    .kv div { display: flex; justify-content: space-between; gap: 12px; }
+    .kv dt { color: var(--muted); }
+    .kv dd { margin: 0; text-align: right; font-weight: 500; }
+    .ping { color: #c3c8fb; background: rgba(88, 101, 242, 0.18); padding: 0 5px; border-radius: 4px; font-weight: 500; }
+    .ways { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: 0.88rem; }
+    .ways b { display: block; font-weight: 500; }
+    .ways span { color: var(--muted); }
+    .rewards { list-style: none; margin: 0; padding: 0; display: grid; font-size: 0.88rem; }
+    .rewards li { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+    .rewards li:last-child { border-bottom: 0; }
+    .rewards .at { width: 72px; flex: none; color: var(--muted); }
+    .role { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+    .role i { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--rc, var(--faint)); }
+    .role span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cmds { display: grid; gap: 6px; font-size: 0.86rem; color: var(--muted); }
+    code { padding: 1px 6px; border-radius: 5px; background: var(--surface-2); color: var(--text); font: 500 0.84rem ui-monospace, 'SFMono-Regular', Menlo, monospace; margin-right: 6px; }
+
+    /* ---------- Profil (jak okienko profilu na Discordzie) ---------- */
+    .profile { position: relative; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--border); }
+    @media (min-width: 980px) {
+      .profile { max-height: calc(100vh - 90px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+      .side.has-profile .info { display: none; }
+      .backdrop { display: none !important; }
+    }
+    .pf-banner { height: 110px; background: #23434a center / cover no-repeat; }
+    .pf-close { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(0, 0, 0, 0.5); color: #fff; cursor: pointer; }
+    .pf-close:hover { background: rgba(0, 0, 0, 0.7); }
+    .pf-close svg { width: 16px; height: 16px; }
+    .pf-top { position: relative; height: 48px; }
+    .pf-avatar { position: absolute; left: 14px; top: -46px; width: 92px; height: 92px; }
+    .pf-avatar .pic { width: 100%; height: 100%; border-radius: 50%; border: 6px solid var(--surface); background: var(--surface-2); object-fit: cover; }
+    .pf-deco { position: absolute; left: -9%; top: -9%; width: 118%; height: 118%; pointer-events: none; }
+    .pf-place { position: absolute; right: 14px; top: 10px; font-weight: 700; color: var(--muted); }
+    .pf-place.p1 { color: var(--gold); } .pf-place.p2 { color: var(--silver); } .pf-place.p3 { color: var(--bronze); }
+    .pf-body { padding: 4px 16px 16px; }
+    .pf-name { font-size: 1.25rem; font-weight: 700; line-height: 1.25; word-break: break-word; }
+    .pf-user { color: var(--muted); font-size: 0.9rem; }
+    .pf-boost { margin-top: 6px; color: #e59cf5; font-size: 0.82rem; }
+    .pf-sec { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+    .pf-h { margin: 0 0 8px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+    .pf-level { display: flex; align-items: center; gap: 12px; }
+    .pf-level .lvl { width: 46px; height: 46px; justify-self: auto; flex: none; }
+    .pf-level .lvl b { font-size: 0.95rem; }
+    .pf-level p { margin: 0; color: var(--muted); font-size: 0.86rem; }
+    .pf-level p b { color: var(--text); font-weight: 500; }
+    .pf-next { margin-top: 10px; font-size: 0.86rem; color: var(--muted); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .pf-next .role span { color: var(--text); }
+    .pf-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; margin: 0; }
+    .pf-stats div { display: flex; flex-direction: column-reverse; min-width: 0; }
+    .pf-stats dt { color: var(--muted); font-size: 0.78rem; }
+    .pf-stats dd { margin: 0; font-weight: 600; }
+    .pf-stats dd small { color: var(--muted); font-weight: 400; margin-left: 4px; }
+    .pf-roles { display: flex; flex-wrap: wrap; gap: 6px; }
+    .pf-role { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 3px 8px; border-radius: 6px; background: var(--surface-2); font-size: 0.8rem; }
+    .pf-role i { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--rc, var(--faint)); }
+    .pf-role span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pf-skel { height: 12px; margin: 8px 0; border-radius: 6px; background: linear-gradient(90deg, var(--surface-2) 30%, var(--hover) 50%, var(--surface-2) 70%); background-size: 300% 100%; animation: sk 1.4s linear infinite; }
+    .pf-err { margin: 0 0 8px; color: var(--muted); font-size: 0.86rem; }
+    .backdrop { position: fixed; inset: 0; z-index: 19; background: rgba(0, 0, 0, 0.6); }
+    @keyframes up { from { transform: translateY(40px); opacity: 0; } }
+    @media (max-width: 979px) {
+      .profile { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; max-height: 86vh; overflow-y: auto; border-radius: 14px 14px 0 0; border-bottom: 0; animation: up 0.25s ease-out both; }
+    }
+
+    footer { margin-top: 40px; color: var(--faint); font-size: 0.82rem; text-align: center; }
+
+    /* ---------- Telefony ---------- */
+    @media (max-width: 720px) {
+      main { padding-top: 12px; }
+      .banner { aspect-ratio: 16 / 7; border-radius: 10px; }
+      .head { padding: 0 8px; gap: 12px; }
+      .server-icon { width: 72px; height: 72px; margin-top: -32px; border-radius: 18px; border-width: 4px; }
+      h1 { font-size: 1.4rem; }
+      .totals { width: 100%; gap: 4px 18px; }
+      .toolbar { gap: 8px; }
+      .tabs { flex: 1 1 100%; }
+      .tab { flex: 1; padding: 8px 6px; }
+      .search { flex: 1 1 auto; }
+      .top3 { gap: 6px; }
+      .top { padding: 14px 6px 12px; }
+      .top img { width: 52px; height: 52px; }
+      .top .meta { font-size: 0.78rem; }
+      .cols { display: none; }
+      .row { grid-template-columns: 26px minmax(0, 1fr) auto 40px; gap: 10px; padding: 0 12px; }
+      .num.msgs, .num.voice { display: none; }
+      .avatar { width: 34px; height: 34px; }
+      .who { gap: 10px; }
+      .name { flex-direction: column; gap: 0; }
+      .name .nick, .name .tag { max-width: 100%; }
+      .board.grid .list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .skeleton, .pf-skel, .profile { animation: none; }
+    }
   </style>
 </head>
 <body>
   <main>
     <header>
-      <img id="icon" alt="" hidden>
-      <div>
-        <h1 id="title">Ranking poziomów</h1>
-        <div class="muted">XP za wiadomości, kanały głosowe i reakcje · <code>/rank</code> pokazuje Twoją kartę</div>
+      <div class="banner"><img src="img/banner.webp" alt="Entuzjaści Hopkostki" width="1600" height="900"></div>
+      <div class="head">
+        <img class="server-icon" src="img/icon.webp" alt="" width="256" height="256">
+        <div class="title">
+          <small id="guild-name">Entuzjaści Hopkostki</small>
+          <h1>Ranking poziomów</h1>
+        </div>
+        <dl class="totals">
+          <div><dt>osób w rankingu</dt><dd data-total="members">—</dd></div>
+          <div><dt>zdobytego XP</dt><dd data-total="xp">—</dd></div>
+          <div><dt>wiadomości</dt><dd data-total="messages">—</dd></div>
+          <div><dt>na kanałach głosowych</dt><dd data-total="voice">—</dd></div>
+        </dl>
       </div>
     </header>
-    <div id="list"><p class="muted">Ładowanie…</p></div>
-    <button type="button" class="more" id="more" hidden>Pokaż więcej</button>
+
+    <nav class="toolbar" aria-label="Ranking">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" aria-selected="true" data-period="all">Cały czas</button>
+        <button class="tab" role="tab" aria-selected="false" data-period="week">Ten tydzień</button>
+        <button class="tab" role="tab" aria-selected="false" data-period="month">Ten miesiąc</button>
+      </div>
+      <label class="search">
+        <span class="sr-only">Szukaj osoby</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <input id="search" type="search" placeholder="Szukaj osoby…" title="Szukaj po pseudonimie albo nazwie użytkownika" autocomplete="off" spellcheck="false">
+      </label>
+      <div class="views" role="group" aria-label="Widok">
+        <button type="button" data-view="list" aria-pressed="true" title="Lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><span class="sr-only">Lista</span></button>
+        <button type="button" data-view="grid" aria-pressed="false" title="Siatka"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg><span class="sr-only">Siatka</span></button>
+      </div>
+    </nav>
+
+    <div class="layout">
+      <section class="board" id="board" aria-live="polite">
+        <p class="note" id="note" hidden></p>
+        <div class="top3" id="top3" hidden></div>
+        <p class="found" id="found" hidden></p>
+        <div class="table">
+          <div class="cols" aria-hidden="true"><span>#</span><span>Osoba</span><span>Wiadomości</span><span>Na głosowych</span><span id="xp-col">XP</span><span>Poziom</span></div>
+          <ol class="list" id="list">
+            <li class="skeleton"></li><li class="skeleton"></li><li class="skeleton"></li><li class="skeleton"></li><li class="skeleton"></li>
+          </ol>
+        </div>
+        <button type="button" class="more" id="more" hidden>Pokaż więcej</button>
+      </section>
+
+      <aside class="side" id="side">
+        <section class="profile" id="profile" hidden aria-label="Profil"></section>
+        <div class="info">
+          <section class="card" id="card-highlights" hidden>
+            <h2>Rankingi tygodnia i miesiąca</h2>
+            <dl class="kv" id="countdowns"></dl>
+            <p id="highlights-text"></p>
+          </section>
+          <section class="card" id="card-xp" hidden>
+            <h2>Jak zdobywać XP</h2>
+            <ul class="ways" id="ways"></ul>
+          </section>
+          <section class="card" id="card-rewards" hidden>
+            <h2>Nagrody za poziomy</h2>
+            <ul class="rewards" id="rewards"></ul>
+          </section>
+          <section class="card">
+            <h2>Na Discordzie</h2>
+            <div class="cmds">
+              <div><code>/rank</code>Twoja karta poziomu</div>
+              <div><code>/ranking</code>ranking na serwerze</div>
+            </div>
+          </section>
+        </div>
+      </aside>
+    </div>
+    <div class="backdrop" id="backdrop" hidden></div>
+
+    <footer>Entuzjaści Hopkostki</footer>
   </main>
+
   <script>
     'use strict';
-    const API = ['localhost', '127.0.0.1'].includes(location.hostname) ? 'public/leaderboard' : 'https://ucjmbdogtzztrkorqzjq.supabase.co/functions/v1/hopkostki-bot/panel/public/leaderboard';
+    const BASE = ['localhost', '127.0.0.1'].includes(location.hostname)
+      ? 'public'
+      : 'https://ucjmbdogtzztrkorqzjq.supabase.co/functions/v1/hopkostki-bot/panel/public';
+    const $ = (s) => document.querySelector(s);
     const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-    const fmt = (n) => Number(n).toLocaleString('pl-PL');
-    let offset = 0;
-    async function load() {
-      const list = document.getElementById('list');
+    const fmt = (n) => Number(n ?? 0).toLocaleString('pl-PL');
+    const compact = new Intl.NumberFormat('pl-PL', { notation: 'compact', maximumFractionDigits: 1 });
+    const relative = new Intl.RelativeTimeFormat('pl', { numeric: 'auto' });
+    const desktop = matchMedia('(min-width: 980px)');
+    const FALLBACK_AVATAR = 'https://cdn.discordapp.com/embed/avatars/0.png';
+    const PERIODS = ['all', 'week', 'month'];
+    const PAGE = 50;
+    const saved = {
+      get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
+      set: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
+    };
+    const state = { period: 'all', search: '', entries: [], total: 0, data: null, req: 0, metaDone: false, selected: null, view: saved.get('ranking-view') === 'grid' ? 'grid' : 'list' };
+
+    // ---------- Pomocnicze ----------
+    const pct = (e) => (e.needed ? Math.min(100, Math.floor((e.current / e.needed) * 100)) : 100);
+    function voiceText(min) {
+      if (!min) return '0 min';
+      const h = Math.floor(min / 60);
+      const m = min % 60;
+      return h ? `${fmt(h)} h${m ? ` ${m} min` : ''}` : `${m} min`;
+    }
+    const range = (r) => (r.min === r.max ? `${fmt(r.min)} XP` : `${fmt(r.min)}–${fmt(r.max)} XP`);
+    const every = (sec) => (sec <= 0 ? 'bez limitu' : sec === 60 ? 'raz na minutę' : sec % 60 === 0 ? `co ${sec / 60} min` : `co ${sec} s`);
+    const roleHtml = (r) => `<span class="role" style="${r.color ? `--rc:${esc(r.color)}` : ''}"><i></i><span>${esc(r.name)}</span></span>`;
+    const display = (e) => e.displayName || e.name;
+    const dateText = (iso) => new Date(iso).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' });
+    const daysSince = (iso) => Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+    function ago(iso) {
+      const diff = (new Date(iso).getTime() - Date.now()) / 1000;
+      const units = [[60, 'second', 1], [3600, 'minute', 60], [86400, 'hour', 3600], [2592000, 'day', 86400], [31536000, 'month', 2592000], [Infinity, 'year', 31536000]];
+      const [, unit, div] = units.find(([limit]) => Math.abs(diff) < limit);
+      return relative.format(Math.round(diff / div), unit);
+    }
+    function span(ms) {
+      const s = Math.max(0, Math.floor(ms / 1000));
+      const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+      return d ? `${d} d ${h} h` : h ? `${h} h ${m} min` : `${m} min`;
+    }
+    const ring = (p, level) => `<div class="lvl" title="Poziom ${level} — ${p}% do kolejnego"><svg viewBox="0 0 36 36" aria-hidden="true"><circle class="track" cx="18" cy="18" r="15"/><circle class="val" cx="18" cy="18" r="15" pathLength="100" stroke-dasharray="${Math.max(p, 1)} 100"/></svg><b>${level}</b></div>`;
+
+    function rowHtml(e) {
+      const xp = e.periodXp != null ? `<span class="plus">+${fmt(e.periodXp)}</span>` : fmt(e.xp);
+      return `<li class="row${e.rank <= 3 ? ` r${e.rank}` : ''}${e.userId === state.selected ? ' sel' : ''}" data-id="${esc(e.userId)}" tabindex="0" role="button" aria-label="Profil: ${esc(display(e))}">
+        <span class="rank">${e.rank}</span>
+        <span class="who">
+          <img class="avatar" src="${esc(e.avatar)}" alt="" loading="lazy" width="38" height="38">
+          <span class="name"><span class="nick">${esc(display(e))}</span>${e.displayName ? `<span class="tag">(${esc(e.name)})</span>` : ''}</span>
+        </span>
+        <span class="num msgs">${fmt(e.messages)}</span>
+        <span class="num voice">${voiceText(e.voiceMinutes)}</span>
+        <span class="num xp">${xp}</span>
+        ${ring(pct(e), e.level)}
+      </li>`;
+    }
+
+    function topHtml(e, i) {
+      const xp = e.periodXp != null ? `+${fmt(e.periodXp)} XP` : `${fmt(e.xp)} XP`;
+      return `<article class="top t${i + 1}${e.userId === state.selected ? ' sel' : ''}" data-id="${esc(e.userId)}" tabindex="0" role="button" aria-label="Profil: ${esc(display(e))}">
+        <span class="place">#${e.rank}</span>
+        <img src="${esc(e.avatar)}" alt="" width="72" height="72">
+        <span class="nick">${esc(display(e))}</span>
+        ${e.displayName ? `<span class="tag">${esc(e.name)}</span>` : ''}
+        <span class="meta">Poziom <b>${e.level}</b> · ${xp}</span>
+      </article>`;
+    }
+
+    // ---------- Rankingi okresowe ----------
+    function nextWeekStart(now = Date.now()) {
+      const d = new Date(now);
+      return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - d.getUTCDay() + 7);
+    }
+    function nextMonthStart(now = Date.now()) {
+      const d = new Date(now);
+      return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1);
+    }
+    function tick() {
+      document.querySelectorAll('[data-until]').forEach((el) => { el.textContent = `za ${span(Number(el.dataset.until) - Date.now())}`; });
+    }
+    setInterval(tick, 30000);
+
+    function renderMeta(data) {
+      if (data.guild?.name) $('#guild-name').textContent = data.guild.name;
+      const t = data.totals ?? {};
+      const short = (n) => (n >= 10000 ? compact.format(n) : fmt(n));
+      $('[data-total="members"]').textContent = fmt(t.members);
+      $('[data-total="xp"]').textContent = short(t.xp ?? 0);
+      $('[data-total="messages"]').textContent = short(t.messages ?? 0);
+      $('[data-total="voice"]').textContent = `${fmt(Math.round((t.voiceMinutes ?? 0) / 60))} h`;
+
+      const hl = data.highlights ?? {};
+      if (hl.weekly || hl.monthly) {
+        $('#countdowns').innerHTML =
+          (hl.weekly ? `<div><dt>Tygodniowy</dt><dd data-until="${nextWeekStart()}"></dd></div>` : '') +
+          (hl.monthly ? `<div><dt>Miesięczny</dt><dd data-until="${nextMonthStart()}"></dd></div>` : '');
+        $('#highlights-text').innerHTML = `Bot ogłasza na serwerze osoby, które w danym okresie zdobyły najwięcej XP${hl.role ? `, a rola <span class="ping">@${esc(hl.role)}</span> dostaje ping` : ''}.`;
+        $('#card-highlights').hidden = false;
+      }
+
+      const r = data.rates ?? {};
+      const ways = [];
+      if (r.message) ways.push(`<li><b>Wiadomości</b><span>${range(r.message)} ${every(r.message.cooldown)}${r.message.mode === 'perWord' ? ', więcej za dłuższe' : ''}</span></li>`);
+      if (r.voice) ways.push(`<li><b>Kanały głosowe</b><span>${range(r.voice)} ${every(r.voice.cooldown)}${r.voice.minMembers > 1 ? `, gdy na kanale jest min. ${r.voice.minMembers} osoby` : ''}</span></li>`);
+      if (r.reaction) ways.push(`<li><b>Reakcje</b><span>${range(r.reaction)} ${every(r.reaction.cooldown)}</span></li>`);
+      for (const b of r.boosters ?? []) ways.push(`<li><b>+${b.percent}% XP</b><span>dla roli ${roleHtml(b)}</span></li>`);
+      if (r.effort) ways.push(`<li><b>+${r.effort.percent}% za dłuższe wiadomości</b><span>od ${r.effort.words} słów albo ${r.effort.images} obrazków</span></li>`);
+      if (ways.length) { $('#ways').innerHTML = ways.join(''); $('#card-xp').hidden = false; }
+
+      if (data.rewards?.length) {
+        $('#rewards').innerHTML = data.rewards.map((x) => `<li><span class="at">Poziom ${x.level}</span>${roleHtml(x)}</li>`).join('');
+        $('#card-rewards').hidden = false;
+      }
+      tick();
+    }
+
+    function renderNote() {
+      const note = $('#note');
+      $('#xp-col').textContent = state.period === 'all' ? 'XP' : state.period === 'week' ? 'XP w tyg.' : 'XP w mies.';
+      if (state.period === 'all') { note.hidden = true; return; }
+      const week = state.period === 'week';
+      const now = new Date();
+      const start = week ? nextWeekStart() - 7 * 86400000 : Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1);
+      const startText = new Date(start).toLocaleString('pl-PL', { weekday: week ? 'long' : undefined, day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+      note.innerHTML = `XP zdobyte od <b>${esc(startText)}</b>. XP dodane ręcznie i przeniesione z Arcane się tu nie liczy.`;
+      note.hidden = false;
+    }
+
+    function emptyHtml() {
+      if (state.search) return '<li class="empty"><b>Nikogo nie znaleziono</b>Sprawdź pisownię pseudonimu albo nazwy użytkownika.</li>';
+      if (state.period === 'week') return '<li class="empty"><b>Nikt jeszcze nie zdobył XP w tym tygodniu</b>Ranking zapełni się, gdy ktoś napisze na serwerze albo wejdzie na kanał głosowy.</li>';
+      if (state.period === 'month') return '<li class="empty"><b>Nikt jeszcze nie zdobył XP w tym miesiącu</b></li>';
+      return '<li class="empty"><b>Ranking jest pusty</b></li>';
+    }
+
+    function renderMore() {
+      const left = Math.max(0, state.total - state.entries.length);
+      $('#more').hidden = left === 0;
+      $('#more').textContent = `Pokaż więcej (${fmt(left)})`;
+    }
+
+    function renderBoard(appended) {
+      const list = $('#list');
+      const top3 = $('#top3');
+      const table = list.closest('.table');
+      $('#found').hidden = !state.search;
+      if (state.search) $('#found').innerHTML = `Wyniki dla „${esc(state.search)}”: <b>${fmt(state.total)}</b>`;
+      if (appended) {
+        list.insertAdjacentHTML('beforeend', appended.map(rowHtml).join(''));
+        table.hidden = false;
+        return;
+      }
+      if (!state.entries.length) {
+        top3.hidden = true;
+        table.hidden = false;
+        list.innerHTML = emptyHtml();
+        return;
+      }
+      const top = state.search ? [] : state.entries.slice(0, 3);
+      top3.innerHTML = top.map(topHtml).join('');
+      top3.hidden = !top.length;
+      list.innerHTML = state.entries.slice(top.length).map(rowHtml).join('');
+      table.hidden = !list.children.length;
+    }
+
+    async function load(append = false) {
+      const id = ++state.req;
+      $('#board').classList.add('loading');
+      $('#more').disabled = true;
+      const params = new URLSearchParams({ period: state.period, offset: String(append ? state.entries.length : 0), limit: String(PAGE) });
+      if (state.search) params.set('search', state.search);
       try {
-        const res = await fetch(`${API}?offset=${offset}`);
+        const res = await fetch(`${BASE}/leaderboard?${params}`);
         const data = await res.json();
+        if (id !== state.req) return;
         if (!data.enabled) {
-          list.innerHTML = '<p class="muted">Ranking jest teraz niedostępny.</p>';
+          $('#top3').hidden = true;
+          $('#list').innerHTML = '<li class="empty"><b>Ranking jest teraz wyłączony</b></li>';
+          $('#more').hidden = true;
           return;
         }
-        if (data.guild) {
-          document.getElementById('title').textContent = `Ranking poziomów — ${data.guild.name}`;
-          if (data.guild.icon) Object.assign(document.getElementById('icon'), { src: data.guild.icon, hidden: false });
-        }
-        if (data.color) document.documentElement.style.setProperty('--accent', data.color);
-        const rows = data.entries
-          .map((e) => {
-            const pct = e.needed ? Math.floor((e.current / e.needed) * 100) : 100;
-            return `<div class="row">
-              <div class="rank">${e.rank}</div>
-              <img class="avatar" src="${esc(e.avatar)}" alt="" loading="lazy">
-              <div><div class="name">${esc(e.name)}</div><div class="bar" title="${fmt(e.current)} / ${fmt(e.needed)} XP do kolejnego poziomu"><span style="width:${pct}%"></span></div></div>
-              <div class="stats"><strong>Poziom ${e.level}</strong><small>${fmt(e.xp)} XP · ${fmt(e.messages)} wiad.</small></div>
-            </div>`;
-          })
-          .join('');
-        if (offset === 0) list.innerHTML = rows || '<p class="muted">Nikt jeszcze nie zdobył XP.</p>';
-        else list.insertAdjacentHTML('beforeend', rows);
-        document.getElementById('more').hidden = data.entries.length < 100;
+        state.data = data;
+        state.total = data.total ?? data.entries.length;
+        state.entries = append ? state.entries.concat(data.entries) : data.entries;
+        if (!state.metaDone) { renderMeta(data); state.metaDone = true; }
+        renderNote();
+        renderBoard(append ? data.entries : null);
+        renderMore();
       } catch {
-        list.innerHTML = '<p class="muted">Nie udało się wczytać rankingu — spróbuj za chwilę.</p>';
+        if (id !== state.req) return;
+        $('#top3').hidden = true;
+        $('#list').closest('.table').hidden = false;
+        $('#list').innerHTML = '<li class="empty"><b>Nie udało się wczytać rankingu</b>Spróbuj za chwilę.</li>';
+        $('#more').hidden = true;
+      } finally {
+        if (id === state.req) {
+          $('#board').classList.remove('loading');
+          $('#more').disabled = false;
+        }
       }
     }
-    document.getElementById('more').addEventListener('click', () => {
-      offset += 100;
-      load();
+
+    // ---------- Profil ----------
+    function setUrlUser(id) {
+      try {
+        const url = new URL(location.href);
+        if (id) url.searchParams.set('u', id);
+        else url.searchParams.delete('u');
+        history.replaceState(null, '', url);
+      } catch {}
+    }
+    function markSelected() {
+      document.querySelectorAll('[data-id]').forEach((el) => el.classList.toggle('sel', el.dataset.id === state.selected));
+    }
+    const lockScroll = (lock) => { document.body.style.overflow = lock && !desktop.matches ? 'hidden' : ''; };
+
+    function profileHtml(p, loading) {
+      const s = p.stats ?? {};
+      const banner = p.banner ? `background-image:url('${esc(p.banner)}')` : p.accentColor ? `background:${esc(p.accentColor)}` : '';
+      const skel = '<div class="pf-skel" style="width:70%"></div><div class="pf-skel" style="width:45%"></div>';
+      const item = (label, value) => `<div><dt>${label}</dt><dd>${value}</dd></div>`;
+      const period = (xp, rank) => (xp ? `+${fmt(xp)} XP${rank ? `<small>#${rank}</small>` : ''}` : '—');
+      return `
+        <button type="button" class="pf-close" id="pf-close" aria-label="Zamknij profil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        <div class="pf-banner" style="${banner}"></div>
+        <div class="pf-top">
+          <div class="pf-avatar">
+            <img class="pic" src="${esc(p.avatar ?? FALLBACK_AVATAR)}" alt="" width="92" height="92">
+            ${p.decoration ? `<img class="pf-deco" src="${esc(p.decoration)}" alt="">` : ''}
+          </div>
+          ${s.rank ? `<span class="pf-place${s.rank <= 3 ? ` p${s.rank}` : ''}">#${s.rank}</span>` : ''}
+        </div>
+        <div class="pf-body">
+          <div class="pf-name">${esc(p.displayName || p.username || 'Użytkownik')}</div>
+          <div class="pf-user">${esc(p.username ?? '')}</div>
+          ${p.boostingSince ? `<div class="pf-boost">Boostuje serwer od ${esc(dateText(p.boostingSince))}</div>` : ''}
+
+          <div class="pf-sec">
+            <div class="pf-h">Poziom</div>
+            <div class="pf-level">
+              ${ring(pct(s), s.level ?? 0)}
+              <p><b>${fmt(s.current)} / ${fmt(s.needed)} XP</b><br>do poziomu ${(s.level ?? 0) + 1}</p>
+            </div>
+            ${p.nextReward ? `<div class="pf-next">Następna nagroda na poziomie ${p.nextReward.level}: ${roleHtml(p.nextReward)}</div>` : ''}
+          </div>
+
+          <div class="pf-sec">
+            <div class="pf-h">Statystyki</div>
+            ${p.error ? `<p class="pf-err">${esc(p.error)}</p>` : ''}
+            ${loading && !p.stats ? skel : `<dl class="pf-stats">
+              ${item('Miejsce w rankingu', s.rank ? `#${s.rank}` : '—')}
+              ${item('Łączne XP', fmt(s.xp))}
+              ${item('Wiadomości', fmt(s.messages))}
+              ${item('Na kanałach głosowych', voiceText(s.voiceMinutes))}
+              ${item('Reakcje', fmt(s.reactions))}
+              ${loading ? '' : item('Ostatnio aktywny', p.lastActive ? esc(ago(p.lastActive)) : '—')}
+              ${loading ? '' : item('Ten tydzień', period(s.weekXp, s.weekRank))}
+              ${loading ? '' : item('Ten miesiąc', period(s.monthXp, s.monthRank))}
+            </dl>`}
+          </div>
+
+          <div class="pf-sec">
+            <div class="pf-h">Na serwerze</div>
+            ${loading ? skel : `<dl class="pf-stats">
+              ${p.joinedAt ? item('Dołączył(a)', esc(dateText(p.joinedAt))) + item('Na serwerze', `${fmt(daysSince(p.joinedAt))} dni`) : item('Na serwerze', p.inGuild === false ? 'już nie' : '—')}
+              ${p.createdAt ? item('Konto Discord od', esc(dateText(p.createdAt))) : ''}
+            </dl>`}
+          </div>
+
+          ${!loading && p.roles?.length ? `<div class="pf-sec"><div class="pf-h">Role</div><div class="pf-roles">${p.roles
+            .map((r) => `<span class="pf-role" style="${r.color ? `--rc:${esc(r.color)}` : ''}"><i></i><span>${esc(r.name)}</span></span>`)
+            .join('')}</div></div>` : ''}
+        </div>`;
+    }
+
+    function showProfile(html) {
+      const el = $('#profile');
+      el.innerHTML = html;
+      el.hidden = false;
+      $('#side').classList.add('has-profile');
+      $('#backdrop').hidden = desktop.matches;
+      lockScroll(true);
+      $('#pf-close').addEventListener('click', closeProfile);
+    }
+
+    async function openProfile(id) {
+      if (!/^\d{5,25}$/.test(String(id))) return;
+      const fresh = state.selected !== id || $('#profile').hidden;
+      state.selected = id;
+      markSelected();
+      setUrlUser(id);
+      const entry = state.entries.find((e) => e.userId === id);
+      const quick = entry
+        ? { username: entry.name, displayName: entry.displayName, avatar: entry.avatar, stats: { ...entry, rank: state.period === 'all' ? entry.rank : null } }
+        : { username: '', displayName: 'Wczytywanie…' };
+      if (fresh) showProfile(profileHtml(quick, true));
+      try {
+        const res = await fetch(`${BASE}/profile?id=${encodeURIComponent(id)}`);
+        if (res.status === 404 && !entry) {
+          if (state.selected === id) closeProfile();
+          return;
+        }
+        if (!res.ok) throw new Error(String(res.status));
+        const profile = await res.json();
+        if (state.selected !== id) return;
+        const scroll = $('#profile').scrollTop;
+        showProfile(profileHtml(profile, false));
+        $('#profile').scrollTop = scroll;
+      } catch {
+        if (state.selected === id) showProfile(profileHtml({ ...quick, error: 'Nie udało się wczytać pełnego profilu — spróbuj za chwilę.' }, false));
+      }
+    }
+
+    function closeProfile() {
+      state.selected = null;
+      $('#profile').hidden = true;
+      $('#profile').innerHTML = '';
+      $('#side').classList.remove('has-profile');
+      $('#backdrop').hidden = true;
+      lockScroll(false);
+      markSelected();
+      setUrlUser(null);
+    }
+
+    // ---------- Zdarzenia ----------
+    function setView(view) {
+      state.view = view;
+      $('#board').classList.toggle('grid', view === 'grid');
+      document.querySelectorAll('.views button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === view)));
+      saved.set('ranking-view', view);
+    }
+    document.querySelectorAll('.views button').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
+    setView(state.view);
+
+    document.querySelectorAll('.tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        if (tab.dataset.period === state.period) return;
+        state.period = tab.dataset.period;
+        document.querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
+        try { history.replaceState(null, '', `${location.pathname}${location.search}${state.period === 'all' ? '' : `#${state.period}`}`); } catch {}
+        load();
+      });
     });
-    load();
+    let debounce;
+    $('#search').addEventListener('input', (event) => {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => {
+        const value = event.target.value.trim();
+        if (value === state.search) return;
+        state.search = value;
+        load();
+      }, 250);
+    });
+    $('#more').addEventListener('click', () => load(true));
+    $('#board').addEventListener('click', (event) => {
+      const card = event.target.closest('[data-id]');
+      if (card) openProfile(card.dataset.id);
+    });
+    $('#board').addEventListener('keydown', (event) => {
+      const card = event.target.closest('[data-id]');
+      if (card && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        openProfile(card.dataset.id);
+      }
+    });
+    $('#backdrop').addEventListener('click', closeProfile);
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && state.selected) closeProfile();
+    });
+    desktop.addEventListener?.('change', () => {
+      if (!state.selected) return;
+      $('#backdrop').hidden = desktop.matches;
+      lockScroll(true);
+    });
+    // Nieaktualne avatary (np. po zmianie zdjęcia) → domyślny avatar Discorda.
+    document.addEventListener('error', (event) => {
+      const img = event.target;
+      if (img.tagName !== 'IMG') return;
+      if (img.classList.contains('pf-deco')) img.remove();
+      else if ((img.classList.contains('avatar') || img.classList.contains('pic') || img.closest('.top')) && img.src !== FALLBACK_AVATAR) img.src = FALLBACK_AVATAR;
+    }, true);
+
+    const initial = location.hash.slice(1);
+    if (PERIODS.includes(initial) && initial !== 'all') document.querySelector(`.tab[data-period="${initial}"]`).click();
+    else load();
+    const linked = new URLSearchParams(location.search).get('u');
+    if (linked) openProfile(linked);
   </script>
 </body>
 </html>
