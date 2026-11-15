@@ -4,7 +4,7 @@
 // i import XP z rankingu Arcane.
 
 import { P, has } from './permissions.js';
-import { avatarUrl } from './rest.js';
+import { avatarUrl, guildIconUrl } from './rest.js';
 import { cached, getGuildContext, isOurGuild } from './moderation.js';
 import { BRAND, colorInt, escapeMarkdown } from './embeds.js';
 
@@ -198,18 +198,24 @@ export function levelUpText(template, { user, level, xp, earned = [], roleName =
     .trim();
 }
 
+// Wiadomość o awansie — ta sama przy prawdziwym awansie i przy teście z panelu.
+export async function levelUpMessage(bot, config, { user, level, previous, xp, earned = [] }) {
+  const gctx = await getGuildContext(bot);
+  const person = await levelPerson(bot, user);
+  const roleName = (id) => gctx.roles.get(id)?.name ?? 'rola';
+  const content = levelUpText(config.levelUp.message, { user: { ...person.user, global_name: person.name }, level, xp, earned, roleName });
+  return {
+    content: content.slice(0, 2000),
+    allowed_mentions: { users: [user.id], roles: [] },
+    ...(config.levelUp.card ? { embeds: [await levelUpEmbed(bot, config, { user, level, previous, xp, earned })] } : {}),
+  };
+}
+
 async function onLevelUp(bot, config, { user, level, previous, xp, channelId, roles }) {
   const earned = await applyRewards(bot, config, { userId: user.id, level, previous, roles });
   const msg = config.levelUp;
   if (!msg.enabled) return;
-  const gctx = await getGuildContext(bot);
-  const roleName = (id) => gctx.roles.get(id)?.name ?? 'rola';
-  const content = levelUpText(msg.message, { user, level, xp, earned, roleName });
-  const payload = {
-    content: content.slice(0, 2000),
-    allowed_mentions: { users: [user.id], roles: [] },
-    ...(msg.card ? { embeds: [await rankCardEmbed(bot, config, user)] } : {}),
-  };
+  const payload = await levelUpMessage(bot, config, { user, level, previous, xp, earned });
   if (!payload.content && !payload.embeds) return;
   let target = null;
   if (msg.target === 'dm') {
@@ -502,7 +508,8 @@ export async function publicProfile(bot, userId) {
 const MEDALS = ['🥇', '🥈', '🥉'];
 const pl = (n) => Number(n).toLocaleString('pl-PL');
 
-export function highlightsEmbed(config, period, key, top) {
+// Ranking tygodnia — turkus, miesiąca — złoto; miniatura: avatar zwycięzcy.
+export function highlightsEmbed(config, period, key, top, guild = null) {
   const title = period === 'week' ? '🏆 Najaktywniejsi tygodnia' : '🏆 Najaktywniejsi miesiąca';
   const range =
     period === 'week'
@@ -512,12 +519,22 @@ export function highlightsEmbed(config, period, key, top) {
           return `${fmt(start)} – ${fmt(start + 6 * DAY)}`;
         })()
       : new Date(`${key}-01T00:00:00Z`).toLocaleDateString('pl-PL', { month: 'long', year: 'numeric', timeZone: 'UTC' });
-  const lines = top.map((row, i) => `${MEDALS[i] ?? `**${i + 1}.**`} <@${row.userId}> — **${pl(row.periodXp)} XP** · poziom ${row.level}`);
+  const lines = top.map((row, i) => `${MEDALS[i] ?? `\`${String(i + 1).padStart(2, ' ')}.\``} <@${row.userId}> — **${pl(row.periodXp)} XP** · poziom ${row.level}`);
+  const winner = top[0];
+  const winnerAvatar = winner
+    ? winner.guildAvatar && guild?.id
+      ? cdnImage(`guilds/${guild.id}/users/${winner.userId}/avatars`, winner.guildAvatar, 256)
+      : winner.avatar
+        ? cdnImage(`avatars/${winner.userId}`, winner.avatar, 256)
+        : avatarUrl({ id: winner.userId }, 256)
+    : null;
   return {
-    color: colorInt(config.card.color),
+    color: config.card.autoColor === false ? colorInt(config.card.color, LEVEL_COLOR) : period === 'week' ? LEVEL_COLOR : 0xffc83d,
     title,
     description: `Osoby, które zdobyły najwięcej XP (${range}):\n\n${lines.join('\n')}`,
-    footer: { text: `${BRAND} • gratulacje!` },
+    ...(winnerAvatar ? { thumbnail: { url: winnerAvatar } } : {}),
+    footer: { text: `${guild?.name ?? BRAND} • gratulacje!`, ...(guildIconUrl(guild) ? { icon_url: guildIconUrl(guild) } : {}) },
+    timestamp: new Date().toISOString(),
   };
 }
 
@@ -526,9 +543,10 @@ async function postHighlights(bot, config, period, key) {
   const top = await bot.store.levelPeriodTop({ period, key, limit: 10 });
   if (!top.length || !settings.channelId) return false;
   const roleId = config.highlights.roleId;
+  const { guild } = await getGuildContext(bot);
   await bot.discord.post(`/channels/${settings.channelId}/messages`, {
     ...(roleId ? { content: `<@&${roleId}>` } : {}),
-    embeds: [highlightsEmbed(config, period, key, top)],
+    embeds: [highlightsEmbed(config, period, key, top, guild)],
     allowed_mentions: { parse: [], roles: roleId ? [roleId] : [] },
   });
   return true;
@@ -565,14 +583,108 @@ export function progressBar(current, needed) {
   return `${'▰'.repeat(filled)}${'▱'.repeat(BAR - filled)}`;
 }
 
+// ---------- Wygląd embedów poziomów ----------
+
+// Kolor: rola za najwyższy osiągnięty poziom (jeśli ma kolor), a bez niej — kolor progu poziomu.
+// Wyłączone „kolory zależne od poziomu” = jeden stały kolor z panelu.
+export const LEVEL_COLOR = 0x3cc3d6;
+const TIER_COLORS = [[100, 0xff4d6d], [75, 0xffc83d], [50, 0xff8a3d], [25, 0x9b6bff], [10, 0x3b9dff], [5, 0x2fc9a0], [0, LEVEL_COLOR]];
+export function levelColor(config, level, roles = null) {
+  if (config.card.autoColor === false) return colorInt(config.card.color, LEVEL_COLOR);
+  const fromRole = [...config.rewards]
+    .filter((r) => r.level <= level)
+    .sort((a, b) => b.level - a.level)
+    .map((r) => roles?.get(r.roleId)?.color)
+    .find((c) => c > 0);
+  return fromRole ?? TIER_COLORS.find(([min]) => level >= min)[1];
+}
+
+const definedOnly = (obj) => Object.fromEntries(Object.entries(obj ?? {}).filter(([, v]) => v !== undefined && v !== null));
+
+// Osoba do embedów: pseudonim i avatar z serwera (też animowany), baner z profilu — dane z Discorda z pamięcią.
+// Dzięki temu karta ma prawdziwe zdjęcia także przy awansie z kanału głosowego i w teście z panelu.
+async function levelPerson(bot, user, { banner = false } = {}) {
+  const { guild } = await getGuildContext(bot);
+  const member = await memberInfo(bot, user.id);
+  const profile = banner || !(member?.user ?? user)?.username
+    ? await cached(bot, `publicUser:${user.id}`, 10 * 60_000, () => bot.discord.get(`/users/${user.id}`).catch(() => null))
+    : null;
+  const u = { ...definedOnly(profile), ...definedOnly(member?.user), ...definedOnly(user) };
+  const avatar = (size) =>
+    member?.avatar
+      ? cdnImage(`guilds/${guild.id}/users/${user.id}/avatars`, member.avatar, size)
+      : u.avatar
+        ? cdnImage(`avatars/${user.id}`, u.avatar, size)
+        : avatarUrl({ id: user.id }, size);
+  const bannerUrl = member?.banner
+    ? cdnImage(`guilds/${guild.id}/users/${user.id}/banners`, member.banner, 1024)
+    : profile?.banner
+      ? cdnImage(`banners/${user.id}`, profile.banner, 1024)
+      : null;
+  return { user: u, name: member?.nick ?? u.global_name ?? u.username ?? 'Użytkownik', avatar, banner: bannerUrl, guild };
+}
+
+// Linki do załączników Discorda wygasają po ~24 h — przed wysłaniem bot prosi Discorda o świeży link.
+const DISCORD_ATTACHMENT = /^https:\/\/(cdn\.discordapp\.com|media\.discordapp\.net)\/(attachments|ephemeral-attachments)\//;
+export async function freshImageUrl(bot, url) {
+  if (!url) return null;
+  if (!DISCORD_ATTACHMENT.test(url)) return url;
+  return cached(bot, `freshUrl:${url}`, 6 * 60 * 60_000, async () => {
+    const res = await bot.discord.post('/attachments/refresh-urls', { attachment_urls: [url] }).catch(() => null);
+    return res?.refreshed_urls?.[0]?.refreshed ?? url;
+  });
+}
+
+// Obrazek karty: baner osoby z Discorda (jeśli włączone i go ma), inaczej obrazek z panelu.
+async function cardImage(bot, config, person) {
+  if (config.card.userBanner !== false && person.banner) return person.banner;
+  return freshImageUrl(bot, config.card.image);
+}
+
+const footerFor = (guild) => ({ text: guild?.name ?? BRAND, ...(guildIconUrl(guild) ? { icon_url: guildIconUrl(guild) } : {}) });
+const voiceText = (min) => (min >= 60 ? `${pl(Math.floor(min / 60))} h ${min % 60} min` : `${pl(min)} min`);
+
+export async function levelUpEmbed(bot, config, { user, level, previous, xp, earned = [] }) {
+  const person = await levelPerson(bot, user, { banner: config.card.userBanner !== false });
+  const { roles } = await getGuildContext(bot);
+  const row = await bot.store.getLevel(user.id);
+  const total = xp ?? row?.xp ?? 0;
+  const p = levelProgress(total, config.formula);
+  const pct = p.needed ? Math.floor((p.current / p.needed) * 100) : 100;
+  const next = [...config.rewards].sort((a, b) => a.level - b.level).find((r) => r.level > level && roles.has(r.roleId));
+  const fields = [
+    { name: 'Poziom', value: `${previous ?? Math.max(0, level - 1)} → **${level}**`, inline: true },
+    { name: 'Łącznie XP', value: pl(total), inline: true },
+    { name: 'Miejsce', value: row?.rank ? `#${row.rank}` : '—', inline: true },
+  ];
+  if (earned.length) fields.push({ name: earned.length > 1 ? 'Nowe role' : 'Nowa rola', value: earned.map((r) => `<@&${r.roleId}>`).join(' '), inline: false });
+  else if (next) fields.push({ name: 'Następna nagroda', value: `<@&${next.roleId}> na poziomie **${next.level}**`, inline: false });
+  const image = await cardImage(bot, config, person);
+  return {
+    color: levelColor(config, level, roles),
+    author: { name: person.name, icon_url: person.avatar(64) },
+    title: `Awans na poziom ${level}!`,
+    description: p.maxed
+      ? `${progressBar(1, 1)} maksymalny poziom`
+      : `${progressBar(p.current, p.needed)} **${pct}%**\n${pl(p.current)} / ${pl(p.needed)} XP do poziomu ${level + 1}`,
+    fields,
+    thumbnail: { url: person.avatar(256) },
+    ...(image ? { image: { url: image } } : {}),
+    footer: footerFor(person.guild),
+    timestamp: new Date().toISOString(),
+  };
+}
+
 export async function rankCardEmbed(bot, config, user) {
+  const person = await levelPerson(bot, user, { banner: config.card.userBanner !== false });
+  const { roles } = await getGuildContext(bot);
   const row = (await bot.store.getLevel(user.id)) ?? { xp: 0, messages: 0, voiceMinutes: 0, reactions: 0, weekXp: 0, rank: null };
   const p = levelProgress(row.xp, config.formula);
   const pct = p.needed ? Math.floor((p.current / p.needed) * 100) : 100;
-  const name = user.global_name ?? user.username ?? row.userTag ?? 'Użytkownik';
+  const image = await cardImage(bot, config, person);
   return {
-    color: colorInt(config.card.color),
-    author: { name, icon_url: avatarUrl(user, 64) },
+    color: levelColor(config, p.level, roles),
+    author: { name: person.name, icon_url: person.avatar(64) },
     title: `Poziom ${p.level}${row.rank ? ` • #${row.rank} w rankingu` : ''}`,
     description: p.maxed
       ? `${progressBar(1, 1)} maksymalny poziom`
@@ -580,12 +692,14 @@ export async function rankCardEmbed(bot, config, user) {
     fields: [
       { name: 'Łącznie XP', value: pl(row.xp), inline: true },
       { name: 'Wiadomości', value: pl(row.messages), inline: true },
-      { name: 'Na głosowych', value: `${pl(row.voiceMinutes)} min`, inline: true },
+      { name: 'Na głosowych', value: voiceText(row.voiceMinutes), inline: true },
       { name: 'Ten tydzień', value: `${pl(row.weekKey === weekKey() ? row.weekXp : 0)} XP`, inline: true },
+      { name: 'Ten miesiąc', value: `${pl(row.monthKey === monthKey() ? row.monthXp : 0)} XP`, inline: true },
+      { name: 'Reakcje', value: pl(row.reactions), inline: true },
     ],
-    thumbnail: { url: avatarUrl(user, 256) },
-    ...(config.card.image ? { image: { url: config.card.image } } : {}),
-    footer: { text: BRAND },
+    thumbnail: { url: person.avatar(256) },
+    ...(image ? { image: { url: image } } : {}),
+    footer: footerFor(person.guild),
   };
 }
 

@@ -535,11 +535,13 @@
         <h3 class="section-title">Karta poziomu, zarządzanie i ograniczenia</h3>
         <div class="grid two">
           <div class="card">
-            <h3>Karta poziomu (<code>/rank</code>)</h3>
-            <label class="field"><span>Kolor</span>
+            <h3>Wygląd embedów (<code>/rank</code>, awans, rankingi)</h3>
+            <label class="toggle"><input type="checkbox" data-path="levels.card.autoColor"><span></span>Kolor zależny od poziomu (kolor roli za poziom)</label>
+            <label class="field"><span>Kolor stały — gdy powyższe jest wyłączone</span>
               <div class="color-row"><input type="color" data-color-for="levels.card.color"><input type="text" data-path="levels.card.color" maxlength="7"></div>
             </label>
-            <label class="field"><span>Obrazek (baner) — link https, opcjonalnie</span><input type="url" data-path="levels.card.image" maxlength="500" placeholder="https://…"></label>
+            <label class="toggle"><input type="checkbox" data-path="levels.card.userBanner"><span></span>Baner osoby z Discorda jako obrazek (jeśli go ma)</label>
+            <label class="field"><span>Obrazek zapasowy — link https (link do zdjęcia z Discorda bot sam odświeża)</span><input type="url" data-path="levels.card.image" maxlength="500" placeholder="https://…"></label>
           </div>
           <div class="card">
             <h3>Zarządzanie XP</h3>

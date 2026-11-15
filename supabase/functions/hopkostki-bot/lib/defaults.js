@@ -275,7 +275,8 @@ export const DEFAULT_CONFIG = {
     // Raz w tygodniu (niedziela 00:00 UTC) i raz w miesiącu ranking osób, które w tym czasie zdobyły najwięcej XP;
     // roleId — rola pingowana przy każdym nowym rankingu.
     highlights: { weekly: { enabled: false, channelId: '' }, monthly: { enabled: false, channelId: '' }, roleId: '' },
-    card: { color: '#5865F2', image: '' },
+    // autoColor — kolor embedów z roli za poziom (albo progu poziomu); userBanner — baner osoby z Discorda jako obrazek.
+    card: { color: '#3cc3d6', image: '', autoColor: true, userBanner: true },
     management: { lockXpCommand: false, lockReset: false },
     autoReset: true,
     restrictions: { channelMode: 'deny', channelIds: [], roleIds: [], threads: true, forums: true, voiceText: true, slashCommands: false },

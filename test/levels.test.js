@@ -118,7 +118,20 @@ test('XP za wiadomości: cooldown, awans z wiadomością na kanale i rolą za po
   const up = s.discord.state.channels.get('chan').at(-1);
   assert.match(up.content, /^<@target> poziom 5 \+ /);
   assert.deepEqual(up.allowed_mentions, { users: ['target'], roles: [] });
-  assert.equal(up.embeds[0].title, 'Poziom 5 • #1 w rankingu');
+  const card = up.embeds[0];
+  assert.equal(card.title, 'Awans na poziom 5!');
+  assert.deepEqual(card.fields.slice(0, 3).map((f) => f.value), ['0 → **5**', '1380', '#1']);
+  assert.equal(card.fields[3].value, `<@&${LVL5}>`, 'zdobyta rola w karcie');
+  assert.equal(card.color, 0x2fc9a0, 'kolor progu, gdy rola za poziom nie ma koloru');
+  assert.equal(card.author.name, 'target');
+
+  // Awans z kanału głosowego: bot sam dociąga avatar i pseudonim z serwera (wcześniej był domyślny avatar).
+  s.discord.state.members.set('target', { ...s.discord.state.members.get('target'), nick: 'Celownik', avatar: null, user: { id: 'target', username: 'hurownik_og', avatar: 'a_ruchomy' } });
+  s.bot.cache.clear();
+  const { levelUpEmbed } = await import('../supabase/functions/hopkostki-bot/lib/levels.js');
+  const voiceCard = await levelUpEmbed(s.bot, (await s.store.getConfig()).levels, { user: { id: 'target' }, level: 5, previous: 4, xp: 1375 });
+  assert.equal(voiceCard.author.name, 'Celownik');
+  assert.equal(voiceCard.thumbnail.url, 'https://cdn.discordapp.com/avatars/target/a_ruchomy.gif?size=256');
 });
 
 test('wątki, fora, czat kanałów głosowych i komendy slash — według przełączników; tryb „tylko te kanały”', async () => {

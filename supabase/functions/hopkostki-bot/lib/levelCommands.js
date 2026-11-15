@@ -6,7 +6,7 @@ import { P } from './permissions.js';
 import * as embeds from './embeds.js';
 import { ActionError } from './moderation.js';
 import { PANEL_SITE } from './access.js';
-import { canManageXp, changeXp, levelProgress, monthKey, rankCardEmbed, weekKey } from './levels.js';
+import { LEVEL_COLOR, canManageXp, changeXp, levelProgress, monthKey, rankCardEmbed, weekKey } from './levels.js';
 
 const T = { SUB: 1, STRING: 3, INTEGER: 4, BOOLEAN: 5, USER: 6 };
 const GUILD_ONLY = { contexts: [0] };
@@ -73,7 +73,7 @@ const ranking = {
     return ix.edit({
       embeds: [
         {
-          color: embeds.colorInt(config.card.color),
+          color: config.card.autoColor === false ? embeds.colorInt(config.card.color, LEVEL_COLOR) : LEVEL_COLOR,
           title: `🏆 Ranking poziomów — ${PERIODS[period]}`,
           description: (lines.length ? lines.join('\n') : 'Na tej stronie nikogo jeszcze nie ma.') + link,
           footer: { text: `Strona ${page} • ${embeds.BRAND}` },

@@ -14,7 +14,7 @@ import { sendTicketPanel, closeTicket } from './tickets.js';
 import { ensureIntentFlags, membersIntentOn, contentIntentOn } from './members.js';
 import { endGiveaway } from './community.js';
 import { PANEL_SECTIONS, PASSWORD_AUTH, allowedConfigInput, sectionAccess } from './access.js';
-import { changeXp, importLevels, levelProgress, levelUpText, parseImport, rankCardEmbed } from './levels.js';
+import { changeXp, importLevels, levelProgress, levelUpMessage, parseImport } from './levels.js';
 
 const TEXT_CHANNELS = new Set([0, 5]);
 const byPosition = (a, b) => a.position - b.position;
@@ -412,13 +412,17 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
     return attempt(async () => {
       const { levels } = await store.getConfig();
       const gctx = await getGuildContext(bot);
-      const user = auth.user ? { id: auth.user.id, username: auth.user.tag } : gctx.botUser;
-      const earned = levels.rewards.slice(0, 1);
-      const content = levelUpText(levels.levelUp.message, { user, level: 5, xp: 1375, earned, roleName: (id) => gctx.roles.get(id)?.name ?? 'rola' });
+      // Test na prawdziwych danych: osoba zalogowana w panelu (albo bot), jej XP, avatar i baner z Discorda.
+      const user = { id: auth.user?.id ?? gctx.botUser.id };
+      const row = await store.getLevel(user.id);
+      const xp = row?.xp || 1375;
+      const level = Math.max(1, levelProgress(xp, levels.formula).level);
+      const earned = levels.rewards.filter((r) => r.level <= level).slice(-1);
+      const message = await levelUpMessage(bot, levels, { user, level, previous: level - 1, xp, earned });
       await bot.discord.post(`/channels/${channelId}/messages`, {
-        content: `-# Test wiadomości o awansie (z panelu)\n${content}`.slice(0, 2000),
+        ...message,
+        content: `-# Test wiadomości o awansie (z panelu)\n${message.content}`.slice(0, 2000),
         allowed_mentions: { parse: [] },
-        ...(levels.levelUp.card ? { embeds: [await rankCardEmbed(bot, levels, user)] } : {}),
       });
       return { ok: true };
     });
