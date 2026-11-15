@@ -156,7 +156,8 @@ async function guildInfo(bot) {
     // permissions + position pozwalają panelowi policzyć samodzielnie, kto ma dostęp do jakiej komendy
     // (zakładka "Uprawnienia") i które role bot może rozdawać (zakładka "Wiadomości").
     roles: gctx.rawRoles
-      .filter((r) => r.id !== gctx.guild.id && !r.managed)
+      // Role integracji pomijamy — poza rolą boosterów serwera (np. do boosterów XP w Poziomach).
+      .filter((r) => r.id !== gctx.guild.id && (!r.managed || 'premium_subscriber' in (r.tags ?? {})))
       .sort((a, b) => b.position - a.position)
       .map((r) => ({
         id: r.id,
@@ -164,7 +165,7 @@ async function guildInfo(bot) {
         color: hex(r.color),
         permissions: r.permissions,
         position: r.position,
-        assignable: r.position < botPosition && !has(r.permissions, P.ADMINISTRATOR),
+        assignable: !r.managed && r.position < botPosition && !has(r.permissions, P.ADMINISTRATOR),
       })),
     // Własne emoji serwera — do wyboru przy rolach w wiadomościach.
     emojis: gctx.emojis
