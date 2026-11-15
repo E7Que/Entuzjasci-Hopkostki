@@ -32,6 +32,8 @@ const mapLevel = (r) => ({
   lastReactionAt: r.last_reaction_at ?? null,
   accentColor: r.accent_color ?? null,
   nitro: Boolean(r.nitro),
+  look: r.look ?? null,
+  guildAvatar: r.guild_avatar ?? null,
   rank: r.rank === undefined ? null : Number(r.rank),
 });
 
@@ -1082,10 +1084,11 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
     async syncLevelProfiles(members) {
       if (!members.length) return 0;
       const rows = await query(
-        `update bot.levels l set user_tag = coalesce(m->>'tag', l.user_tag), display_name = m->>'name', avatar = m->>'avatar'
+        `update bot.levels l set user_tag = coalesce(m->>'tag', l.user_tag), display_name = m->>'name', avatar = m->>'avatar', guild_avatar = m->>'guildAvatar'
          from jsonb_array_elements($1::text::jsonb) m
          where l.user_id = m->>'id'
-           and (l.user_tag is distinct from coalesce(m->>'tag', l.user_tag) or l.display_name is distinct from m->>'name' or l.avatar is distinct from m->>'avatar')
+           and (l.user_tag is distinct from coalesce(m->>'tag', l.user_tag) or l.display_name is distinct from m->>'name'
+             or l.avatar is distinct from m->>'avatar' or l.guild_avatar is distinct from m->>'guildAvatar')
          returning l.user_id`,
         [JSON.stringify(members)],
       );
@@ -1102,12 +1105,14 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return rows.map((r) => r.user_id);
     },
 
-    async setLevelLook(userId, { accentColor = null, nitro = false }) {
-      await query('update bot.levels set accent_color = $2::text, nitro = $3::boolean, look_checked_at = now() where user_id = $1::text', [
-        userId,
-        accentColor,
-        Boolean(nitro),
-      ]);
+    // avatar: świeży hash avatara z profilu (undefined = bez zmian).
+    async setLevelLook(userId, { accentColor = null, nitro = false, look = null, avatar }) {
+      await query(
+        `update bot.levels set accent_color = $2::text, nitro = $3::boolean, look = $4::text::jsonb, look_checked_at = now(),
+           avatar = case when $5::boolean then $6::text else avatar end
+         where user_id = $1::text`,
+        [userId, accentColor, Boolean(nitro), look ? JSON.stringify(look) : null, avatar !== undefined, avatar ?? null],
+      );
     },
 
     // Podsumowanie do publicznego rankingu: ile osób ma XP i ile łącznie nazbierały.

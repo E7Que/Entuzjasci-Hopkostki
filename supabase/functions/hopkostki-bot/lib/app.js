@@ -13,7 +13,7 @@ import { runGatewaySession } from './gateway.js';
 import { handlePanel, describeAuth } from './panel.js';
 import { getApp, getGuildContext } from './moderation.js';
 import { avatarUrl, guildIconUrl } from './rest.js';
-import { levelProgress, weekKey, monthKey, publicProfile } from './levels.js';
+import { levelProgress, weekKey, monthKey, publicProfile, publicLook } from './levels.js';
 import { AccessError, PANEL_SITE, PASSWORD_AUTH, authenticateSession, signIn } from './access.js';
 import { verifyDiscordRequest, ed25519Supported, safeEqual } from './verify.js';
 
@@ -164,7 +164,15 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
           displayName: r.displayName && r.displayName !== r.userTag ? r.displayName : null,
           nitro: r.nitro,
           accent: r.nitro ? r.accentColor : null,
-          avatar: avatarUrl({ id: r.userId, avatar: r.avatar }, 128),
+          avatar: r.guildAvatar && gctx
+            ? `https://cdn.discordapp.com/guilds/${gctx.guild.id}/users/${r.userId}/avatars/${r.guildAvatar}.png?size=128`
+            : avatarUrl({ id: r.userId, avatar: r.avatar }, 128),
+          avatarAnim: String(r.guildAvatar ?? r.avatar ?? '').startsWith('a_')
+            ? r.guildAvatar && gctx
+              ? `https://cdn.discordapp.com/guilds/${gctx.guild.id}/users/${r.userId}/avatars/${r.guildAvatar}.gif?size=128`
+              : `https://cdn.discordapp.com/avatars/${r.userId}/${r.avatar}.gif?size=128`
+            : null,
+          look: publicLook(r.look),
           xp: r.xp,
           periodXp: period === 'all' ? null : r.periodXp,
           level: p.level,

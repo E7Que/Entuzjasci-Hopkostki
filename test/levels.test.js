@@ -297,7 +297,17 @@ test('publiczny ranking: pseudonim + nazwa, tydzień/miesiąc, liczba osób, syn
   assert.equal((await get('profile?id=../../users/@me')).status, 404);
 
   // Nitro: animowany avatar / baner / profil na serwerze; kolor akcentu = kolor banera z API.
-  s.discord.state.users.set(A, { id: A, username: 'kasia_123', global_name: 'Kasia', avatar: 'a_anim', accent_color: 0x3366ff, display_name_styles: { font_id: 3, effect_id: 1, colors: [0xff0000, 0x00ff00] } });
+  s.discord.state.users.set(A, {
+    id: A,
+    username: 'kasia_123',
+    global_name: 'Kasia',
+    avatar: 'a_anim',
+    accent_color: 0x3366ff,
+    display_name_styles: { font_id: 3, effect_id: 1, colors: [0xff0000, 0x00ff00] },
+    collectibles: { nameplate: { asset: 'nameplates/nameplates/twilight/', palette: 'violet', label: '' } },
+    primary_guild: { identity_enabled: true, identity_guild_id: '123456789012345678', tag: 'HOPK', badge: 'abcdef0123' },
+    avatar_decoration_data: { asset: 'a_1234abcd', sku_id: '1' },
+  });
   s.discord.state.users.set(B, { id: B, username: 'bartek', avatar: 'abc', accent_color: 0x123456 });
   s.bot.cache.clear();
   assert.equal(await levelAccentTick(s.bot), 2);
@@ -305,10 +315,22 @@ test('publiczny ranking: pseudonim + nazwa, tydzień/miesiąc, liczba osób, syn
   ({ body } = await get('leaderboard'));
   const byName = Object.fromEntries(body.entries.map((e) => [e.name, e]));
   assert.deepEqual([byName.kasia_123.nitro, byName.kasia_123.accent], [true, '#3366ff']);
+  assert.equal(byName.kasia_123.avatarAnim, `https://cdn.discordapp.com/avatars/${A}/a_anim.gif?size=128`);
+  assert.deepEqual(byName.kasia_123.look, {
+    font: 3,
+    effect: 1,
+    colors: ['#ff0000', '#00ff00'],
+    decoration: 'https://cdn.discordapp.com/avatar-decoration-presets/a_1234abcd.png?size=96&passthrough=false',
+    nameplate: { image: 'https://cdn.discordapp.com/assets/collectibles/nameplates/nameplates/twilight/static.png', palette: 'violet' },
+    tag: { text: 'HOPK', badge: 'https://cdn.discordapp.com/guild-tag-badges/123456789012345678/abcdef0123.png?size=32' },
+  });
+  assert.equal(byName.bartek.look, null, 'bez personalizacji = brak');
   assert.deepEqual([byName.bartek.nitro, byName.bartek.accent], [false, null], 'bez Nitro kolor akcentu się nie liczy');
   const nitroProfile = (await get(`profile?id=${A}`)).body;
   assert.deepEqual([nitroProfile.nitro, nitroProfile.accentColor, nitroProfile.nameColors], [true, '#3366ff', ['#ff0000', '#00ff00']]);
   assert.match(nitroProfile.avatar, /a_anim\.gif/);
+  assert.match(nitroProfile.look.decoration, /passthrough=true/, 'w profilu animowana dekoracja');
+  assert.equal(nitroLook({ collectibles: { nameplate: { asset: '../../evil' } } }).look, null, 'tylko bezpieczne ścieżki do obrazków');
   assert.equal(nitroLook({ avatar: 'x' }, { banner: 'serwerowy' }).nitro, true, 'baner tylko na serwerze = Nitro');
   assert.equal(nitroLook({ avatar: 'x', accent_color: 5 }).nitro, false);
 
