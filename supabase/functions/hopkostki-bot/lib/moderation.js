@@ -26,7 +26,7 @@ export function describeError(error) {
 
 // ---------- Informacje o aplikacji i serwerze (z pamięcią podręczną) ----------
 
-async function cached(bot, key, ttlMs, load) {
+export async function cached(bot, key, ttlMs, load) {
   const hit = bot.cache.get(key);
   if (hit && Date.now() - hit.at < ttlMs) return hit.value;
   const value = await load();
@@ -73,6 +73,7 @@ export async function getGuildContext(bot, { force = false } = {}) {
         name: guild.name,
         icon: guild.icon,
         ownerId: guild.owner_id,
+        afkChannelId: guild.afk_channel_id ?? null,
         memberCount: guild.approximate_member_count ?? null,
         onlineCount: guild.approximate_presence_count ?? null,
       },

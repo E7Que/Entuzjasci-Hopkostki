@@ -13,7 +13,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(HERE, 'public');
 export const DEFAULT_BOT_URL = 'https://ucjmbdogtzztrkorqzjq.supabase.co/functions/v1/hopkostki-bot';
 
-const STATIC_FILES = new Set(['', 'index.html', 'app.js', 'style.css']);
+const STATIC_FILES = new Set(['', 'index.html', 'app.js', 'style.css', 'ranking.html']);
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',

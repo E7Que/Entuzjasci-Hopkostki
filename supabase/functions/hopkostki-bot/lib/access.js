@@ -29,6 +29,7 @@ export const PANEL_SECTIONS = {
   ostrzezenia: 'Ostrzeżenia',
   sprawy: 'Sprawy',
   bany: 'Tymczasowe bany',
+  poziomy: 'Poziomy',
 };
 const ALL_SECTIONS = Object.keys(PANEL_SECTIONS);
 
@@ -45,6 +46,7 @@ export const SECTION_CONFIG_KEYS = {
   glosowe: ['tempVoice'],
   embedy: ['actions'],
   ostrzezenia: ['warns', 'escalation'],
+  poziomy: ['levels'],
 };
 
 // Po ilu dniach login wygasa (do wyboru w panelu).

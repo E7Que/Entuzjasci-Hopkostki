@@ -11,7 +11,9 @@ import { handleInteraction } from './interactions.js';
 import { runCron } from './cron.js';
 import { runGatewaySession } from './gateway.js';
 import { handlePanel, describeAuth } from './panel.js';
-import { getApp } from './moderation.js';
+import { getApp, getGuildContext } from './moderation.js';
+import { avatarUrl, guildIconUrl } from './rest.js';
+import { levelProgress } from './levels.js';
 import { AccessError, PANEL_SITE, PASSWORD_AUTH, authenticateSession, signIn } from './access.js';
 import { verifyDiscordRequest, ed25519Supported, safeEqual } from './verify.js';
 
@@ -104,6 +106,35 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
     return json({ started: true }, 202);
   }
 
+  async function publicLeaderboard(url) {
+    const { levels } = await bot.store.getConfig();
+    if (!levels.enabled || !levels.publicLeaderboard) return { enabled: false, entries: [] };
+    const offset = Math.max(Number(url.searchParams.get('offset')) || 0, 0);
+    const rows = await bot.store.levelLeaderboard({ limit: 100, offset });
+    const gctx = bot.discord ? await getGuildContext(bot).catch(() => null) : null;
+    return {
+      enabled: true,
+      guild: gctx ? { name: gctx.guild.name, icon: guildIconUrl(gctx.guild) } : null,
+      color: levels.card.color,
+      entries: rows.map((r) => {
+        const p = levelProgress(r.xp, levels.formula);
+        return {
+          rank: r.rank,
+          userId: r.userId,
+          name: r.userTag ?? 'Użytkownik',
+          avatar: avatarUrl({ id: r.userId, avatar: r.avatar }, 64),
+          xp: r.xp,
+          level: p.level,
+          current: p.current,
+          needed: p.needed,
+          messages: r.messages,
+          voiceMinutes: r.voiceMinutes,
+          reactions: r.reactions,
+        };
+      }),
+    };
+  }
+
   // Kto pyta: hasło panelu = pełny dostęp, sesja z loginu z /login = części panelu odblokowane rolami tej osoby.
   async function panelAuth(request) {
     const session = request.headers.get('x-panel-session');
@@ -118,6 +149,8 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
     let body = {};
     if (!['GET', 'HEAD'].includes(request.method)) body = await request.json().catch(() => ({}));
     try {
+      // Publiczny ranking poziomów (strona ranking.html) — bez logowania, o ile włączony w panelu.
+      if (request.method === 'GET' && route === '/public/leaderboard') return json(await publicLeaderboard(url), 200, cors);
       // Jedyne zapytanie panelu bez hasła panelu i sesji: login i hasło z /login → sesja przeglądarki.
       if (request.method === 'POST' && route === '/login') {
         const { token, auth } = await signIn(bot, { login: body?.login, password: body?.password });

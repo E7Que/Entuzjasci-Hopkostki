@@ -246,6 +246,42 @@ export const DEFAULT_CONFIG = {
     ],
   },
 
+  // Poziomy (jak Arcane). Formuła: linear = 100·poziom + 75 XP na następny poziom (jak „Linear” w Arcane),
+  // standard = jak MEE6, flat = zawsze 100; × mnożnik; maxLevel 0 = bez limitu.
+  // levelUp.target: current (kanał, na którym ktoś napisał) | channel (channelId) | dm.
+  // Tagi wiadomości: {user.mention} {user.name} {user.level} {user.xp} {earned:… {name} / {mention} …}.
+  levels: {
+    enabled: false,
+    formula: { curve: 'linear', multiplier: 1, maxLevel: 0 },
+    message: { enabled: true, mode: 'random', min: 15, max: 40, cooldown: 60 },
+    voice: { enabled: false, min: 15, max: 40, cooldown: 180, minMembers: 2, antiAfk: true },
+    reaction: { enabled: false, awards: 'both', min: 25, max: 25, cooldown: 300 },
+    levelUp: {
+      enabled: true,
+      target: 'current',
+      channelId: '',
+      message: '{user.mention} właśnie awansował(a) na poziom **{user.level}**!{earned: Zdobywasz rolę **{name}**!}',
+      card: false,
+    },
+    rewards: [],
+    stackRewards: true,
+    firstPlaceRoleId: '',
+    boosters: {
+      stack: true,
+      effort: { enabled: false, words: 50, images: 5, percent: 10 },
+      roles: [],
+      channels: [],
+    },
+    // Raz w tygodniu (niedziela 00:00 UTC) i raz w miesiącu ranking osób, które w tym czasie zdobyły najwięcej XP;
+    // roleId — rola pingowana przy każdym nowym rankingu.
+    highlights: { weekly: { enabled: false, channelId: '' }, monthly: { enabled: false, channelId: '' }, roleId: '' },
+    card: { color: '#5865F2', image: '' },
+    management: { lockXpCommand: false, lockReset: false },
+    autoReset: true,
+    restrictions: { channelMode: 'deny', channelIds: [], roleIds: [], threads: true, forums: true, voiceText: true, slashCommands: false },
+    publicLeaderboard: true,
+  },
+
   // Logowanie moderacji do panelu: /login na wybranym kanale daje osobie jej login i hasło, ważne loginDays
   // dni (7, 14 albo 30 — potem /login daje nowe; /login nowy:True wymusza nowe wcześniej).
   // roles: które role odblokowują którą część panelu (bot sprawdza aktualne role na bieżąco).
@@ -268,6 +304,7 @@ export const DEFAULT_CONFIG = {
       ostrzezenia: [],
       sprawy: [],
       bany: [],
+      poziomy: [],
     },
   },
 

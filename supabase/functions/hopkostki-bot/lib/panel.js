@@ -14,6 +14,7 @@ import { sendTicketPanel, closeTicket } from './tickets.js';
 import { ensureIntentFlags, membersIntentOn, contentIntentOn } from './members.js';
 import { endGiveaway } from './community.js';
 import { PANEL_SECTIONS, PASSWORD_AUTH, allowedConfigInput, sectionAccess } from './access.js';
+import { changeXp, importLevels, levelProgress, levelUpText, parseImport, rankCardEmbed } from './levels.js';
 
 const TEXT_CHANNELS = new Set([0, 5]);
 const byPosition = (a, b) => a.position - b.position;
@@ -35,6 +36,7 @@ const ROUTE_SECTIONS = [
   [/^\/cases$/, 'sprawy'],
   [/^\/warns(\/|$)/, 'ostrzezenia'],
   [/^\/tempbans(\/|$)/, 'bany'],
+  [/^\/levels(\/|$)/, 'poziomy'],
 ];
 function requiredSection(path) {
   const match = ROUTE_SECTIONS.find(([pattern]) => pattern.test(path));
@@ -372,6 +374,73 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
   if (method === 'DELETE' && loginMatch) {
     if (!(await store.deletePanelLogins({ id: Number(loginMatch[1]), kind: 'login' }))) return fail(404, 'Nie ma takiego loginu');
     return ok({ ok: true });
+  }
+
+  // Poziomy: ranking z wyszukiwaniem, ręczne zmiany XP, reset, test wiadomości o awansie, import z Arcane.
+  if (method === 'GET' && path === '/levels') {
+    const { levels } = await store.getConfig();
+    const limit = Math.min(Number(query.limit) || 50, 200);
+    const offset = Math.max(Number(query.offset) || 0, 0);
+    const search = String(query.search ?? '').trim();
+    const [rows, total] = await Promise.all([store.levelLeaderboard({ limit, offset, search }), store.countLevels(search)]);
+    return ok({ entries: rows.map((r) => ({ ...r, ...levelProgress(r.xp, levels.formula) })), total, now: Date.now() });
+  }
+  const levelUser = /^\/levels\/user\/(\w+)$/.exec(path);
+  const ownerOnlyReset = async () => {
+    const { levels } = await store.getConfig();
+    if (!levels.management.lockReset || auth.kind === 'password') return false;
+    const { guild } = await getGuildContext(bot);
+    return auth.user?.id !== guild.ownerId;
+  };
+  if (method === 'POST' && levelUser) {
+    const mode = String(body?.mode ?? '');
+    if (!['add', 'set', 'level', 'reset'].includes(mode)) return fail(400, 'Nieznana zmiana.');
+    if (mode === 'reset' && (await ownerOnlyReset())) return fail(403, 'Resetowanie XP jest zablokowane — może to zrobić tylko właściciel serwera.');
+    const amount = Math.trunc(Number(body?.amount) || 0);
+    return attempt(async () => ({ result: await changeXp(bot, levelUser[1], { mode, amount }) }));
+  }
+  if (method === 'POST' && path === '/levels/reset-all') {
+    if (body?.confirm !== true) return fail(400, 'Potwierdź reset.');
+    if (await ownerOnlyReset()) return fail(403, 'Resetowanie XP jest zablokowane — może to zrobić tylko właściciel serwera.');
+    return ok({ reset: await store.resetLevels() });
+  }
+  if (method === 'POST' && path === '/levels/test') {
+    if (!bot.discord) return fail(503, 'Bot nie jest skonfigurowany (brak DISCORD_TOKEN).');
+    const channelId = String(body?.channelId ?? '');
+    if (!/^\d{15,25}$/.test(channelId)) return fail(400, 'Wybierz kanał.');
+    return attempt(async () => {
+      const { levels } = await store.getConfig();
+      const gctx = await getGuildContext(bot);
+      const user = auth.user ? { id: auth.user.id, username: auth.user.tag } : gctx.botUser;
+      const earned = levels.rewards.slice(0, 1);
+      const content = levelUpText(levels.levelUp.message, { user, level: 5, xp: 1375, earned, roleName: (id) => gctx.roles.get(id)?.name ?? 'rola' });
+      await bot.discord.post(`/channels/${channelId}/messages`, {
+        content: `-# Test wiadomości o awansie (z panelu)\n${content}`.slice(0, 2000),
+        allowed_mentions: { parse: [] },
+        ...(levels.levelUp.card ? { embeds: [await rankCardEmbed(bot, levels, user)] } : {}),
+      });
+      return { ok: true };
+    });
+  }
+  if (method === 'POST' && path === '/levels/import') {
+    if (!bot.discord) return fail(503, 'Bot nie jest skonfigurowany (brak DISCORD_TOKEN).');
+    const { entries, invalid } = Array.isArray(body?.entries) ? { entries: body.entries, invalid: [] } : parseImport(body?.text);
+    if (!entries.length) return fail(400, 'Brak poprawnych linii do importu (format: nazwa poziom xp [wiadomości] [reakcje]).');
+    return attempt(async () => ({ ...(await importLevels(bot, entries.slice(0, 1000))), invalid }));
+  }
+
+  // Nowa rola (np. pingowana przy rankingach poziomów) — bez uprawnień, tylko pełny dostęp.
+  if (method === 'POST' && path === '/roles') {
+    if (!bot.discord) return fail(503, 'Bot nie jest skonfigurowany (brak DISCORD_TOKEN).');
+    const name = String(body?.name ?? '').trim().slice(0, 100);
+    if (!name) return fail(400, 'Podaj nazwę roli.');
+    const color = /^#[0-9a-f]{6}$/i.test(String(body?.color ?? '')) ? parseInt(body.color.slice(1), 16) : 0;
+    return attempt(async () => {
+      const { guild } = await getGuildContext(bot);
+      const role = await bot.discord.post(`/guilds/${guild.id}/roles`, { name, color, permissions: '0', mentionable: body?.mentionable === true, hoist: false }, { reason: `Panel (${auth.user ? auth.user.tag : 'hasło panelu'})` });
+      bot.cache.delete('guildCtx');
+      return { role: { id: role.id, name: role.name } };
+    });
   }
 
   // Uprawnienia ról w samym Discordzie (wybrane uprawnienia moderacji).

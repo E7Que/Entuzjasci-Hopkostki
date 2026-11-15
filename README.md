@@ -126,6 +126,30 @@ Bumpnięcie serwera! @osoba — to już Twój 7. bump. Kolejny możliwy za 2 god
 teksty, kolory i czas zmienić (zmienne: `{uzytkownik}`, `{nick}`, `{liczba}`, `{nastepny}`, `{godzina}`),
 a zakładka pokazuje podgląd i ranking. Komenda `/bumpy` pokazuje ranking i kiedy następny bump.
 
+### Poziomy (leveling jak w Arcane)
+
+Zakładka **Poziomy** ma wszystkie funkcje Arcane, także premium:
+- **XP** za wiadomości (losowo albo za słowa, z cooldownem), za **kanały głosowe** (co kilka minut, przy
+  minimalnej liczbie osób; anty-AFK pomija wyciszonych, ogłuszonych i kanał AFK) i za **reakcje** (dający,
+  autor albo obie strony). Formuła „Liniowa” jest taka jak w Arcane (100 × poziom + 75 XP na kolejny
+  poziom), jest też standardowa (jak MEE6) i stała, z mnożnikiem i maksymalnym poziomem.
+- **Wiadomość o awansie** na kanale, na którym ktoś napisał, na wybranym kanale albo w DM — z tagami Arcane
+  `{user.mention}`, `{user.name}`, `{user.level}`, `{user.xp}` i `{earned:…}` (tekst tylko przy zdobytej roli),
+  opcjonalnie z kartą poziomu, i przyciskiem testu.
+- **Role za poziomy** (z kumulowaniem albo tylko najwyższa) i **rola za 1. miejsce** (co godzinę).
+- **Boostery**: role, kanały i „wysiłek” (długa wiadomość albo dużo obrazków), sumowane albo tylko największy.
+- **Rankingi tygodnia i miesiąca**: w niedzielę 00:00 UTC i 1. dnia miesiąca bot wysyła 10 osób, które w tym
+  czasie zdobyły najwięcej XP, i pinguje wybraną rolę.
+- **Ograniczenia**: kanały bez XP (albo XP tylko na wybranych), role bez XP, wątki, fora, czat kanałów
+  głosowych i komendy slash dowolnego bota.
+- **Zarządzanie**: `/xp dodaj|odejmij|ustaw|poziom|reset|reset-wszystkich` (Zarządzanie serwerem; można
+  zostawić tylko właścicielowi `/xp` albo samo resetowanie), **auto reset** po wyjściu z serwera,
+  ranking w panelu ze zmianą XP i **publiczna strona rankingu** (`ranking.html` obok panelu).
+- **Import z Arcane**: wklejasz ranking (`nazwa poziom xp [wiadomości] [reakcje]`, np. `@nick 31 49.7K 4.3K`),
+  a bot dopasowuje nazwy do członków serwera i ustawia XP tak, żeby poziom był taki sam jak w Arcane.
+
+Komendy dla wszystkich: `/rank` (karta poziomu) i `/ranking` (łącznie, w tym tygodniu albo miesiącu).
+
 ### Tickety
 
 W zakładce **Tickety** włączasz tickety, wybierasz kategorię, kanał logów i role obsługi, a potem wysyłasz

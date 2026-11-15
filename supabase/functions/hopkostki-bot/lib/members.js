@@ -17,12 +17,15 @@ export const contentIntentOn = (app) => Boolean((app?.flags ?? 0) & (FLAG.CONTEN
 
 export function membersFeaturesOn(config) {
   const m = config.members;
-  return m.autoRole.enabled || m.welcome.enabled || m.goodbye.enabled || joinLogsOn(config) || profileLogsOn(config);
+  // Poziomy: auto reset po wyjściu z serwera i import z rankingu (lista członków).
+  const levels = config.levels.enabled && config.levels.autoReset;
+  return m.autoRole.enabled || m.welcome.enabled || m.goodbye.enabled || joinLogsOn(config) || profileLogsOn(config) || levels;
 }
 
 // Treść cudzych wiadomości: zapis ticketów, logi usuniętych/edytowanych wiadomości, embed DISBOARD przy bumpie.
 export function contentFeaturesOn(config) {
-  return config.tickets.enabled || config.bump.enabled || messageLogsOn(config);
+  // Poziomy: XP za słowa i booster „wysiłku” liczą słowa w wiadomości.
+  return config.tickets.enabled || config.bump.enabled || messageLogsOn(config) || (config.levels.enabled && config.levels.message.enabled);
 }
 
 // Włącza w aplikacji intencje potrzebne do włączonych funkcji (tylko wersje "limited" da się włączyć przez API —

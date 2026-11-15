@@ -20,11 +20,16 @@ const RULE_ACTIONS = { alert: 'Alert', timeout: 'Timeout', kick: 'Kick', ban: 'B
 const PLACEHOLDERS = ['{uzytkownik}', '{nick}', '{moderator}', '{moderatorNick}', '{powod}', '{czas}', '{serwer}', '{sprawa}', '{typ}'];
 const ACTIVITY_LABELS = { custom: 'Własny opis', playing: 'Gra w', listening: 'Słucha', watching: 'Ogląda', competing: 'Rywalizuje w' };
 const PRESENCE_PLACEHOLDERS = ['{czlonkowie}', '{online}', '{serwer}', '{ostrzezenia}', '{sprawy}'];
-const VIEWS = ['pulpit', 'ustawienia', 'uprawnienia', 'czlonkowie', 'logi', 'bump', 'spolecznosc', 'tickety', 'glosowe', 'wiadomosci', 'embedy', 'ostrzezenia', 'sprawy', 'bany', 'dostep'];
+const VIEWS = ['pulpit', 'ustawienia', 'uprawnienia', 'czlonkowie', 'logi', 'bump', 'spolecznosc', 'poziomy', 'tickety', 'glosowe', 'wiadomosci', 'embedy', 'ostrzezenia', 'sprawy', 'bany', 'dostep'];
 const MEMBER_VARS = ['{uzytkownik}', '{nick}', '{serwer}', '{liczba}'];
 const TICKET_VARS = ['{uzytkownik}', '{nick}', '{numer}', '{typ}'];
 const BUMP_VARS = ['{uzytkownik}', '{nick}', '{liczba}', '{nastepny}', '{godzina}'];
-const VAR_SETS = { ticket: TICKET_VARS, bump: BUMP_VARS, bumpReminder: ['{uzytkownik}', '</bump:947088344167366698>'] };
+const VAR_SETS = {
+  ticket: TICKET_VARS,
+  bump: BUMP_VARS,
+  bumpReminder: ['{uzytkownik}', '</bump:947088344167366698>'],
+  levelUp: ['{user.mention}', '{user.name}', '{user.level}', '{user.xp}', '{earned: Zdobywasz rolę {name}!}'],
+};
 const EMPTY_GUILD = { channels: [], voiceChannels: [], categories: [], roles: [], emojis: [], bot: null };
 // Grupy jak karty w Carl-bocie; klucz = logs.<klucz>ChannelId (kanał grupy).
 const LOG_EVENT_GROUPS = {
@@ -452,6 +457,10 @@ function route() {
     if (open) loadBump();
   }
   if (state.view === 'spolecznosc' && open) loadGiveaways();
+  if (state.view === 'poziomy') {
+    renderLevels();
+    if (open) loadLevels();
+  }
   if (state.view === 'wiadomosci') {
     renderMessageEditor();
     if (open) loadSentMessages();
@@ -614,6 +623,8 @@ function renderConfigUi() {
   renderChannelPickers();
   renderBotWarnings();
   renderEmbedTabs();
+  renderRoleSelects();
+  renderLevels();
   fillInputs();
   renderEmojiButtons();
   renderBumpPreview();
@@ -653,6 +664,7 @@ function onFieldChange(event) {
   if (el.dataset.path) {
     setPath(state.draft, el.dataset.path, readValue(el));
     markDirty();
+    if (el.dataset.path.startsWith('levels.formula')) renderLevelsFormula();
     if (el.dataset.path.startsWith('warns') || el.dataset.path === 'dmShowModerator' || el.dataset.path === 'appealText' || el.dataset.path === 'mentionTarget') {
       renderPreview();
     }
@@ -1521,6 +1533,193 @@ $('#role-perms-list').addEventListener('change', async (event) => {
   } finally {
     box.disabled = !role.assignable;
     renderPermissionMatrix();
+  }
+});
+
+// ---------- Poziomy ----------
+// Pojedyncza rola z listy (np. rola za 1. miejsce, rola pingowana przy rankingach): <select data-role-select>.
+function renderRoleSelects() {
+  $$('[data-role-select]').forEach((select) => {
+    const current = getPath(state.draft, select.dataset.path) ?? '';
+    const roles = state.guild.roles;
+    select.innerHTML = `<option value="">— brak —</option>${roles.map((r) => `<option value="${r.id}">${esc(r.name)}</option>`).join('')}${
+      current && !roles.some((r) => r.id === current) ? `<option value="${esc(current)}">(nieznana rola)</option>` : ''
+    }`;
+    select.value = current;
+  });
+}
+
+// Te same wzory co w bocie (levels.js): XP potrzebne z poziomu na następny.
+function xpToNext(level, f) {
+  const base = f.curve === 'standard' ? 5 * level * level + 50 * level + 100 : f.curve === 'flat' ? 100 : 100 * level + 75;
+  return Math.max(1, Math.round(base * (f.multiplier || 1)));
+}
+function totalXp(level, f) {
+  let total = 0;
+  for (let i = 0; i < level; i += 1) total += xpToNext(i, f);
+  return total;
+}
+function renderLevelsFormula() {
+  const f = state.draft.levels.formula;
+  $('#levels-formula-preview').textContent = `Poziom 1: ${totalXp(1, f)} XP · 5: ${totalXp(5, f).toLocaleString('pl-PL')} · 10: ${totalXp(10, f).toLocaleString('pl-PL')} · 25: ${totalXp(25, f).toLocaleString('pl-PL')} · 50: ${totalXp(50, f).toLocaleString('pl-PL')} XP łącznie`;
+}
+
+function roleChip(roleId, extra, attrs) {
+  const { name, color } = roleLabel(roleId);
+  return `<span class="role-chip"><span class="role-dot" style="background:${esc(color)}"></span>${extra}${esc(name)}<button type="button" ${attrs} title="Usuń">×</button></span>`;
+}
+
+function renderLevels() {
+  const lv = state.draft?.levels;
+  if (!lv) return;
+  renderLevelsFormula();
+  $('#levels-rewards').innerHTML = lv.rewards.length
+    ? lv.rewards.map((r, i) => roleChip(r.roleId, `<strong>${r.level}.</strong>`, `data-lv-del="rewards" data-i="${i}"`)).join('')
+    : '<span class="muted small">Brak nagród.</span>';
+  $('#levels-role-boosters').innerHTML = lv.boosters.roles.length
+    ? lv.boosters.roles.map((b, i) => roleChip(b.roleId, `<strong>+${b.percent}%</strong>`, `data-lv-del="boosters.roles" data-i="${i}"`)).join('')
+    : '<span class="muted small">Brak boosterów ról.</span>';
+  $('#levels-channel-boosters').innerHTML = lv.boosters.channels.length
+    ? lv.boosters.channels
+        .map((b, i) => `<span class="role-chip"><strong>+${b.percent}%</strong>#${esc(state.guild.channels.find((c) => c.id === b.channelId)?.name ?? b.channelId)}<button type="button" data-lv-del="boosters.channels" data-i="${i}" title="Usuń">×</button></span>`)
+        .join('')
+    : '<span class="muted small">Brak boosterów kanałów.</span>';
+  const roleOpts = `<option value="">— rola —</option>${state.guild.roles.map((r) => `<option value="${r.id}">${esc(r.name)}${r.assignable ? '' : ' (wyżej niż bot)'}</option>`).join('')}`;
+  $('#levels-reward-role').innerHTML = roleOpts;
+  $('#levels-rb-role').innerHTML = roleOpts;
+  $('#levels-cb-channel').innerHTML = channelOptions(state.guild.channels, '', '— kanał —', '#');
+  if (!$('#levels-test-channel').options.length) $('#levels-test-channel').innerHTML = channelOptions(state.guild.channels, lv.levelUp.channelId ?? '', '— kanał testu —', '#');
+  const link = $('#levels-public-link');
+  link.href = new URL('ranking.html', location.href).href;
+}
+
+function addLevelsItem(path, item) {
+  setPath(state.draft, `levels.${path}`, [...getPath(state.draft, `levels.${path}`), item]);
+  renderLevels();
+  markDirty();
+}
+$('#levels-reward-add').addEventListener('click', () => {
+  const level = Math.floor(Number($('#levels-reward-level').value));
+  const roleId = $('#levels-reward-role').value;
+  if (!(level >= 1) || !roleId) return toast('Podaj poziom i rolę.', 'error');
+  addLevelsItem('rewards', { level, roleId });
+  state.draft.levels.rewards.sort((a, b) => a.level - b.level);
+  renderLevels();
+});
+$('#levels-rb-add').addEventListener('click', () => {
+  const percent = Math.floor(Number($('#levels-rb-percent').value));
+  const roleId = $('#levels-rb-role').value;
+  if (!(percent >= 1) || !roleId) return toast('Podaj procent i rolę.', 'error');
+  addLevelsItem('boosters.roles', { roleId, percent });
+});
+$('#levels-cb-add').addEventListener('click', () => {
+  const percent = Math.floor(Number($('#levels-cb-percent').value));
+  const channelId = $('#levels-cb-channel').value;
+  if (!(percent >= 1) || !channelId) return toast('Podaj procent i kanał.', 'error');
+  addLevelsItem('boosters.channels', { channelId, percent });
+});
+$('#view-poziomy').addEventListener('click', (event) => {
+  const del = event.target.closest('[data-lv-del]');
+  if (!del) return;
+  const path = `levels.${del.dataset.lvDel}`;
+  setPath(state.draft, path, getPath(state.draft, path).filter((_, i) => i !== Number(del.dataset.i)));
+  renderLevels();
+  markDirty();
+});
+$('#levels-test').addEventListener('click', async () => {
+  if (isDirty()) return toast('Najpierw zapisz zmiany (przycisk na dole ekranu).', 'error');
+  const channelId = $('#levels-test-channel').value;
+  if (!channelId) return toast('Wybierz kanał testu.', 'error');
+  try {
+    await api('/levels/test', { method: 'POST', body: JSON.stringify({ channelId }) });
+    toast('Wysłano test wiadomości o awansie');
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+});
+
+const LEVELS_PAGE = 50;
+let levelsOffset = 0;
+async function loadLevels() {
+  try {
+    const search = $('#levels-search').value.trim();
+    const { entries, total } = await api(`/levels?limit=${LEVELS_PAGE}&offset=${levelsOffset}&search=${encodeURIComponent(search)}`);
+    $('#levels-table').innerHTML = entries.length
+      ? `<thead><tr><th>#</th><th>Osoba</th><th>Poziom</th><th>XP</th><th>Wiadomości</th><th>Głosowe</th><th></th></tr></thead><tbody>${entries
+          .map((e) => {
+            const pct = e.needed ? Math.floor((e.current / e.needed) * 100) : 100;
+            return `<tr>
+          <td>${e.rank}</td>
+          <td><strong>${esc(e.userTag ?? e.userId)}</strong><span class="note">${esc(e.userId)}</span></td>
+          <td>${e.level}</td>
+          <td class="xp-bar">${e.xp.toLocaleString('pl-PL')}<div class="xp-progress" title="${e.current} / ${e.needed} XP do kolejnego poziomu"><span style="width:${pct}%"></span></div></td>
+          <td>${e.messages.toLocaleString('pl-PL')}</td>
+          <td>${e.voiceMinutes.toLocaleString('pl-PL')} min</td>
+          <td><button type="button" class="btn ghost small" data-lv-edit="${e.userId}" data-lv-xp="${e.xp}">Zmień XP</button> <button type="button" class="btn danger small" data-lv-reset="${e.userId}">Reset</button></td>
+        </tr>`;
+          })
+          .join('')}</tbody>`
+      : '<tr><td class="empty">Nikt jeszcze nie ma XP.</td></tr>';
+    $('#levels-page').textContent = total ? `${levelsOffset + 1}–${Math.min(levelsOffset + LEVELS_PAGE, total)} z ${total}` : '';
+    $('#levels-prev').disabled = levelsOffset === 0;
+    $('#levels-next').disabled = levelsOffset + LEVELS_PAGE >= total;
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+$('#levels-refresh').addEventListener('click', loadLevels);
+$('#levels-search').addEventListener('change', () => {
+  levelsOffset = 0;
+  loadLevels();
+});
+$('#levels-prev').addEventListener('click', () => {
+  levelsOffset = Math.max(0, levelsOffset - LEVELS_PAGE);
+  loadLevels();
+});
+$('#levels-next').addEventListener('click', () => {
+  levelsOffset += LEVELS_PAGE;
+  loadLevels();
+});
+$('#levels-table').addEventListener('click', async (event) => {
+  const edit = event.target.closest('[data-lv-edit]');
+  const reset = event.target.closest('[data-lv-reset]');
+  try {
+    if (edit) {
+      const value = prompt('Nowe łączne XP tej osoby:', edit.dataset.lvXp);
+      if (value === null || !/^\d+$/.test(value.trim())) return;
+      await api(`/levels/user/${edit.dataset.lvEdit}`, { method: 'POST', body: JSON.stringify({ mode: 'set', amount: Number(value) }) });
+    } else if (reset) {
+      if (!confirm('Wyzerować XP i poziom tej osoby? Statystyki zostaną.')) return;
+      await api(`/levels/user/${reset.dataset.lvReset}`, { method: 'POST', body: JSON.stringify({ mode: 'reset' }) });
+    } else return;
+    toast('Zapisano');
+    loadLevels();
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+});
+$('#levels-reset-all').addEventListener('click', async () => {
+  if (!confirm('Wyzerować XP i poziomy WSZYSTKICH? Ranking zacznie się od zera (statystyki zostaną). Tego nie da się cofnąć.')) return;
+  try {
+    const { reset } = await api('/levels/reset-all', { method: 'POST', body: JSON.stringify({ confirm: true }) });
+    toast(`Wyzerowano: ${reset}`);
+    loadLevels();
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+});
+$('#levels-import').addEventListener('click', async () => {
+  const text = $('#levels-import-text').value;
+  if (!text.trim()) return toast('Wklej ranking do zaimportowania.', 'error');
+  $('#levels-import').disabled = true;
+  try {
+    const r = await api('/levels/import', { method: 'POST', body: JSON.stringify({ text }) });
+    $('#levels-import-result').textContent = `Zaimportowano: ${r.imported}.${r.notFound.length ? ` Nie znaleziono na serwerze: ${r.notFound.join(', ')}.` : ''}${r.invalid.length ? ` Pominięte linie: ${r.invalid.length}.` : ''}`;
+    loadLevels();
+  } catch (error) {
+    toast(error.message, 'error');
+  } finally {
+    $('#levels-import').disabled = false;
   }
 });
 

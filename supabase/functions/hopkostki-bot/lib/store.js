@@ -6,6 +6,29 @@ import { mergeWithDefaults, sanitizeConfig } from './configSchema.js';
 
 const ms = (value) => (value === null || value === undefined ? null : new Date(value).getTime());
 
+// Rodzaje XP: kolumna cooldownu i licznik statystyk.
+const XP_KINDS = {
+  message: { last: 'last_message_at', counter: 'messages' },
+  voice: { last: 'last_voice_at', counter: 'voice_minutes' },
+  reaction: { last: 'last_reaction_at', counter: 'reactions' },
+};
+
+const mapLevel = (r) => ({
+  userId: r.user_id,
+  userTag: r.user_tag,
+  avatar: r.avatar,
+  xp: Number(r.xp),
+  level: r.level,
+  messages: r.messages,
+  voiceMinutes: r.voice_minutes,
+  reactions: r.reactions,
+  weekKey: r.week_key,
+  weekXp: Number(r.week_xp),
+  monthKey: r.month_key,
+  monthXp: Number(r.month_xp),
+  rank: r.rank === undefined ? null : Number(r.rank),
+});
+
 // Bez skrótu tokenu — ten zostaje w bazie.
 const mapPanelSession = (r) => ({
   id: r.id,
@@ -457,16 +480,31 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return (await one('select channel_id from bot.voice_states where user_id = $1::text', [userId]))?.channel_id ?? null;
     },
 
-    async setVoiceState(userId, channelId) {
+    // muted/deafened (samo- albo przez serwer), bot i role — dla XP za kanały głosowe (anty-AFK, role bez XP).
+    async setVoiceState(userId, channelId, { muted = false, deafened = false, bot = false, roles = [] } = {}) {
       if (!channelId) {
         await query('delete from bot.voice_states where user_id = $1::text', [userId]);
         return;
       }
       await query(
-        `insert into bot.voice_states (user_id, channel_id, updated_at) values ($1::text, $2::text, now())
-         on conflict (user_id) do update set channel_id = excluded.channel_id, updated_at = now()`,
-        [userId, channelId],
+        `insert into bot.voice_states as v (user_id, channel_id, muted, deafened, bot, roles, updated_at)
+         values ($1::text, $2::text, $3::boolean, $4::boolean, $5::boolean, $6::text::jsonb, now())
+         on conflict (user_id) do update set channel_id = excluded.channel_id, muted = excluded.muted, deafened = excluded.deafened,
+           bot = excluded.bot, roles = excluded.roles,
+           updated_at = case when v.channel_id = excluded.channel_id then v.updated_at else now() end`,
+        [userId, channelId, muted, deafened, bot, JSON.stringify(roles)],
       );
+    },
+
+    async listVoiceStates() {
+      return (await query('select * from bot.voice_states')).map((r) => ({
+        userId: r.user_id,
+        channelId: r.channel_id,
+        muted: r.muted,
+        deafened: r.deafened,
+        bot: r.bot,
+        roles: r.roles ?? [],
+      }));
     },
 
     // Pełna lista z GUILD_CREATE — zastępuje wszystko, co było (po ponownym zalogowaniu do gatewaya).
@@ -474,9 +512,12 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       await query('delete from bot.voice_states');
       if (!states.length) return;
       await query(
-        `insert into bot.voice_states (user_id, channel_id)
-         select s->>'userId', s->>'channelId' from jsonb_array_elements($1::text::jsonb) s
-         on conflict (user_id) do update set channel_id = excluded.channel_id, updated_at = now()`,
+        `insert into bot.voice_states (user_id, channel_id, muted, deafened, bot, roles)
+         select s->>'userId', s->>'channelId', coalesce((s->>'muted')::boolean, false), coalesce((s->>'deafened')::boolean, false),
+                coalesce((s->>'bot')::boolean, false), coalesce(s->'roles', '[]'::jsonb)
+         from jsonb_array_elements($1::text::jsonb) s
+         on conflict (user_id) do update set channel_id = excluded.channel_id, muted = excluded.muted, deafened = excluded.deafened,
+           bot = excluded.bot, roles = excluded.roles, updated_at = now()`,
         [JSON.stringify(states)],
       );
     },
@@ -913,6 +954,107 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
 
     async prunePanelSessions() {
       await query('delete from bot.panel_sessions where expires_at < now()');
+    },
+
+    // ---------- Poziomy ----------
+    // XP z cooldownem danego rodzaju (wiadomość / głosowe / reakcja) — atomowo: przy cooldownie nic się nie
+    // zmienia i wynik to null. Zwraca nowe łączne XP i POPRZEDNI poziom (kolumna level zmienia się osobno).
+    async awardXp({ userId, userTag, avatar, amount, kind, cooldownSec, minutes = 0, weekKey, monthKey }) {
+      const k = XP_KINDS[kind];
+      const row = await one(
+        `insert into bot.levels as l (user_id, user_tag, avatar, xp, ${k.counter}, ${k.last}, week_key, week_xp, month_key, month_xp, updated_at)
+         values ($1::text, $2::text, $3::text, $4::bigint, $8::int, now(), $5::text, $4::bigint, $6::text, $4::bigint, now())
+         on conflict (user_id) do update set
+           xp = l.xp + excluded.xp,
+           ${k.counter} = l.${k.counter} + excluded.${k.counter},
+           ${k.last} = now(),
+           user_tag = coalesce(excluded.user_tag, l.user_tag),
+           avatar = coalesce(excluded.avatar, l.avatar),
+           week_xp = case when l.week_key = excluded.week_key then l.week_xp + excluded.xp else excluded.xp end,
+           week_key = excluded.week_key,
+           month_xp = case when l.month_key = excluded.month_key then l.month_xp + excluded.xp else excluded.xp end,
+           month_key = excluded.month_key,
+           updated_at = now()
+         where l.${k.last} is null or l.${k.last} <= now() - make_interval(secs => $7::double precision)
+         returning xp, level`,
+        [userId, userTag ?? null, avatar ?? null, amount, weekKey, monthKey, cooldownSec, kind === 'voice' ? minutes : 1],
+      );
+      return row ? { xp: Number(row.xp), level: row.level } : null;
+    },
+
+    async setLevel(userId, level) {
+      await query('update bot.levels set level = $2::int where user_id = $1::text', [userId, level]);
+    },
+
+    // Ręczna zmiana (/xp, panel) — nie liczy się do rankingów tygodnia i miesiąca.
+    async setXp({ userId, xp, userTag = null, avatar = null }) {
+      const row = await one(
+        `insert into bot.levels as l (user_id, user_tag, avatar, xp) values ($1::text, $3::text, $4::text, $2::bigint)
+         on conflict (user_id) do update set xp = excluded.xp, user_tag = coalesce(excluded.user_tag, l.user_tag),
+           avatar = coalesce(excluded.avatar, l.avatar), updated_at = now()
+         returning xp, level`,
+        [userId, xp, userTag, avatar],
+      );
+      return { xp: Number(row.xp), level: row.level };
+    },
+
+    // Import (np. z Arcane): większe XP zostaje, statystyki — większe z dwóch.
+    async importLevel({ userId, userTag, avatar, xp, messages = 0, reactions = 0 }) {
+      const row = await one(
+        `insert into bot.levels as l (user_id, user_tag, avatar, xp, messages, reactions) values ($1::text, $2::text, $3::text, $4::bigint, $5::int, $6::int)
+         on conflict (user_id) do update set xp = greatest(l.xp, excluded.xp), messages = greatest(l.messages, excluded.messages),
+           reactions = greatest(l.reactions, excluded.reactions), user_tag = coalesce(excluded.user_tag, l.user_tag),
+           avatar = coalesce(excluded.avatar, l.avatar), updated_at = now()
+         returning xp, level`,
+        [userId, userTag ?? null, avatar ?? null, xp, messages, reactions],
+      );
+      return { xp: Number(row.xp), level: row.level };
+    },
+
+    async getLevel(userId) {
+      const row = await one(
+        `select l.*, (select count(*)::int + 1 from bot.levels o where o.xp > l.xp) as rank from bot.levels l where l.user_id = $1::text`,
+        [userId],
+      );
+      return row ? mapLevel(row) : null;
+    },
+
+    async levelLeaderboard({ limit = 10, offset = 0, search = '' } = {}) {
+      const rows = await query(
+        `select * from (select l.*, rank() over (order by l.xp desc) as rank from bot.levels l where l.xp > 0) r
+         where ($3::text = '' or r.user_id = $3::text or r.user_tag ilike '%' || $3::text || '%')
+         order by r.xp desc, r.user_id limit $1::int offset $2::int`,
+        [limit, offset, search],
+      );
+      return rows.map(mapLevel);
+    },
+
+    async countLevels(search = '') {
+      const row = await one(
+        `select count(*)::int as n from bot.levels where xp > 0 and ($1::text = '' or user_id = $1::text or user_tag ilike '%' || $1::text || '%')`,
+        [search],
+      );
+      return row.n;
+    },
+
+    // Najwięcej XP w tygodniu (period 'week', klucz = data niedzieli) albo miesiącu ('month', klucz RRRR-MM).
+    async levelPeriodTop({ period, key, limit = 10 }) {
+      const [keyCol, xpCol] = period === 'week' ? ['week_key', 'week_xp'] : ['month_key', 'month_xp'];
+      const rows = await query(
+        `select *, ${xpCol} as period_xp from bot.levels where ${keyCol} = $1::text and ${xpCol} > 0 order by ${xpCol} desc limit $2::int`,
+        [key, limit],
+      );
+      return rows.map((r) => ({ ...mapLevel(r), periodXp: Number(r.period_xp) }));
+    },
+
+    // { userId } — jedna osoba, {} — wszyscy. Zeruje XP, poziom i liczniki okresów; statystyki zostają.
+    async resetLevels({ userId } = {}) {
+      const rows = await query(
+        `update bot.levels set xp = 0, level = 0, week_xp = 0, month_xp = 0, updated_at = now()
+         where ($1::text is null or user_id = $1::text) returning user_id`,
+        [userId ?? null],
+      );
+      return rows.length;
     },
 
     async stats() {

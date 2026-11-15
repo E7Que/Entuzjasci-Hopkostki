@@ -25,8 +25,8 @@ test('definicje komend spełniają zasady API Discorda', () => {
     defs.map((d) => d.name).sort(),
     [
       'afk', 'ankieta', 'avatar', 'ban', 'bumpy', 'clear', 'czlonkowie', 'emoji', 'historia', 'info', 'kick', 'konkurs', 'lock', 'login', 'losuj',
-      'nick', 'notatka', 'ogloszenie', 'pomoc', 'powiedz', 'profil', 'propozycja', 'przypomnij', 'rola', 'rolainfo', 'serwer',
-      'slowmode', 'snipe', 'sprawa', 'sprawy', 'timeout', 'unban', 'unlock', 'untimeout', 'warn', 'zaproszenia',
+      'nick', 'notatka', 'ogloszenie', 'pomoc', 'powiedz', 'profil', 'propozycja', 'przypomnij', 'rank', 'ranking', 'rola', 'rolainfo', 'serwer',
+      'slowmode', 'snipe', 'sprawa', 'sprawy', 'timeout', 'unban', 'unlock', 'untimeout', 'warn', 'xp', 'zaproszenia',
     ],
   );
   for (const def of defs) {

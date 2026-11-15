@@ -142,6 +142,51 @@ function cleanTicketTypes(list, fallback) {
   return out.length ? out : fallback;
 }
 
+// Poziomy: listy (nagrody, boostery), wybory z listy i liczby z własnymi zakresami. undefined = zwykłe reguły.
+const intIn = (input, current, min, max) => {
+  const n = Math.floor(Number(input));
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : current;
+};
+const ROLE_ID = (v) => SNOWFLAKE.test(String(v ?? ''));
+function cleanLevelValue(path, input, current) {
+  const choice = { 'levels.formula.curve': ['linear', 'standard', 'flat'], 'levels.message.mode': ['random', 'perWord'], 'levels.reaction.awards': ['both', 'giver', 'receiver'], 'levels.levelUp.target': ['current', 'channel', 'dm'], 'levels.restrictions.channelMode': ['deny', 'allow'] }[path];
+  if (choice) return choice.includes(input) ? input : current;
+  if (path === 'levels.formula.multiplier') {
+    const n = Number(input);
+    return Number.isFinite(n) && n > 0 ? Math.round(Math.min(10, Math.max(0.1, n)) * 100) / 100 : current;
+  }
+  if (path === 'levels.formula.maxLevel') return intIn(input, current, 0, 1000);
+  if (/^levels\.(message|voice|reaction)\.(min|max)$/.test(path)) return intIn(input, current, 0, 10_000);
+  if (/^levels\.(message|voice|reaction)\.cooldown$/.test(path)) return intIn(input, current, 0, 86_400);
+  if (path === 'levels.voice.minMembers') return intIn(input, current, 1, 99);
+  if (/^levels\.boosters\.effort\.(words|images)$/.test(path)) return intIn(input, current, 0, 10_000);
+  if (path === 'levels.boosters.effort.percent') return intIn(input, current, 1, 1000);
+  if (path === 'levels.firstPlaceRoleId' || path === 'levels.highlights.roleId') return input === '' || input === null ? '' : ROLE_ID(input) ? String(input) : current;
+  if (path === 'levels.card.image') {
+    const url = String(input ?? '').trim();
+    return url === '' || (/^https:\/\/\S+$/.test(url) && url.length <= 500) ? url : current;
+  }
+  if (path === 'levels.rewards') {
+    if (!Array.isArray(input)) return current;
+    const seen = new Set();
+    return input
+      .slice(0, 100)
+      .map((r) => ({ level: Math.floor(Number(r?.level)), roleId: String(r?.roleId ?? '') }))
+      .filter((r) => Number.isFinite(r.level) && r.level >= 1 && r.level <= 1000 && ROLE_ID(r.roleId) && !seen.has(`${r.level}:${r.roleId}`) && seen.add(`${r.level}:${r.roleId}`))
+      .sort((a, b) => a.level - b.level);
+  }
+  if (path === 'levels.boosters.roles' || path === 'levels.boosters.channels') {
+    if (!Array.isArray(input)) return current;
+    const key = path.endsWith('roles') ? 'roleId' : 'channelId';
+    const seen = new Set();
+    return input
+      .slice(0, 50)
+      .map((b) => ({ [key]: String(b?.[key] ?? ''), percent: Math.floor(Number(b?.percent)) }))
+      .filter((b) => ROLE_ID(b[key]) && Number.isFinite(b.percent) && b.percent >= 1 && b.percent <= 1000 && !seen.has(b[key]) && seen.add(b[key]));
+  }
+  return undefined;
+}
+
 function cleanValue(path, input, current, def) {
   if (path === 'commandPermissions') return cleanCommandPermissions(input, current);
   if (/roleIds$/i.test(path)) return Array.isArray(input) ? cleanRoleIds(input) : current;
@@ -157,6 +202,10 @@ function cleanValue(path, input, current, def) {
   }
   if (path === 'tickets.types') return cleanTicketTypes(input, current);
   if (path.startsWith('panelAccess.roles.')) return Array.isArray(input) ? cleanRoleIds(input) : current;
+  if (path.startsWith('levels.')) {
+    const cleaned = cleanLevelValue(path, input, current);
+    if (cleaned !== undefined) return cleaned;
+  }
   if (path === 'panelAccess.loginDays') return LOGIN_DAYS.includes(Number(input)) ? Number(input) : current;
   if (path === 'tickets.maxOpen') {
     const n = Math.floor(Number(input));

@@ -58,6 +58,9 @@ export function fakeDiscord({ dmFails = false, banError = null, endpoint = null 
     // Zaproszenia sprawdzane po kodzie (GET /invites/:kod), np. link w formularzu partnerstwa.
     publicInvites: {},
     roleEdits: [],
+    // Rodzaj i kanał nadrzędny wybranych kanałów (np. wątek na forum) — dla GET /channels/:id.
+    channelInfo: {},
+    createdRoles: [],
   };
 
   const channelMessages = (id) => {
@@ -128,6 +131,11 @@ export function fakeDiscord({ dmFails = false, banError = null, endpoint = null 
       members.delete(id);
       return null;
     }],
+    ['POST', /^\/guilds\/g1\/roles$/, (match, body) => {
+      const role = { id: snowflake(), position: 1, permissions: '0', ...body };
+      state.createdRoles.push(role);
+      return role;
+    }],
     // Zmiana roli (np. uprawnień z panelu) — zapisywana w roleEdits, wspólna tablica ROLES zostaje bez zmian.
     ['PATCH', /^\/guilds\/g1\/roles\/([\w-]+)$/, ([, id], body, opts) => {
       const role = ROLES.find((r) => r.id === id) ?? notFound(10011);
@@ -197,7 +205,7 @@ export function fakeDiscord({ dmFails = false, banError = null, endpoint = null 
       if (state.deletedChannels.includes(id)) return notFound(10003);
       const cs = channelState.get(id);
       if (cs) return { id, guild_id: GUILD, parent_id: cs.parent_id, permission_overwrites: cs.permission_overwrites };
-      return { id, permission_overwrites: state.overwrites.has(id) ? [state.overwrites.get(id)] : [] };
+      return { id, type: 0, ...state.channelInfo[id], permission_overwrites: state.overwrites.has(id) ? [state.overwrites.get(id)] : [] };
     }],
     ['PUT', /^\/channels\/([\w-]+)\/permissions\/(\w+)$/, ([, id, target], body) => {
       state.overwrites.set(id, { id: target, ...body });

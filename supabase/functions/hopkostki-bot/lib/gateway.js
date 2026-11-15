@@ -11,6 +11,7 @@ import { membersFeaturesOn, membersIntentOn, contentFeaturesOn, contentIntentOn,
 import { auditLogsOn, onMessageCreateLog, onMessageUpdate, onMessageDelete, onMessageDeleteBulk, onAuditLogEntry, onMemberUpdateLog } from './logs.js';
 import { onBumpMessage } from './bump.js';
 import { onMessageAfk } from './community.js';
+import { onMessageLevels, onReactionLevels, onMemberLeaveLevels } from './levels.js';
 
 const QUERY = '/?v=10&encoding=json';
 // GUILDS (lista osób na kanałach głosowych przy logowaniu) + GUILD_VOICE_STATES (wejścia/wyjścia z kanałów)
@@ -22,11 +23,14 @@ export const INTENTS = (1 << 0) | (1 << 7) | (1 << 9);
 const GUILD_MEMBERS = 1 << 1;
 const GUILD_MODERATION = 1 << 2;
 const MESSAGE_CONTENT = 1 << 15;
+// Reakcje na wiadomościach — tylko dla XP za reakcje (poziomy).
+const GUILD_MESSAGE_REACTIONS = 1 << 10;
 
 export async function sessionIntents(bot) {
   const config = await bot.store.getConfig();
   let intents = INTENTS;
   if (auditLogsOn(config)) intents |= GUILD_MODERATION;
+  if (config.levels.enabled && config.levels.reaction.enabled) intents |= GUILD_MESSAGE_REACTIONS;
   const wantsMembers = membersFeaturesOn(config);
   const wantsContent = contentFeaturesOn(config);
   if (!wantsMembers && !wantsContent) return intents;
@@ -290,6 +294,7 @@ async function connectOnce(bot, { WebSocketImpl, deadline, margin, status }) {
             track(onMessageCreateLog(bot, packet.d));
             track(onBumpMessage(bot, packet.d));
             track(onMessageAfk(bot, packet.d));
+            track(onMessageLevels(bot, packet.d));
           } else if (packet.t === 'MESSAGE_UPDATE') {
             track(onMessageUpdate(bot, packet.d));
           } else if (packet.t === 'MESSAGE_DELETE') {
@@ -309,6 +314,9 @@ async function connectOnce(bot, { WebSocketImpl, deadline, margin, status }) {
             track(onMemberUpdateLog(bot, packet.d));
           } else if (packet.t === 'GUILD_MEMBER_REMOVE') {
             track(onMemberLeave(bot, packet.d));
+            track(onMemberLeaveLevels(bot, packet.d));
+          } else if (packet.t === 'MESSAGE_REACTION_ADD') {
+            track(onReactionLevels(bot, packet.d));
           }
           break;
         default:

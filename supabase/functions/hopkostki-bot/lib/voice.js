@@ -76,9 +76,23 @@ const moveMember = (bot, guildId, userId, channelId) =>
 
 // ---------- Zdarzenia z gatewaya ----------
 
+// Wyciszony/ogłuszony (sam albo przez serwer), bot i role — do XP za kanały głosowe.
+function voiceFlags(state, member = state.member) {
+  return {
+    muted: Boolean(state.self_mute || state.mute),
+    deafened: Boolean(state.self_deaf || state.deaf),
+    bot: Boolean(member?.user?.bot),
+    roles: member?.roles ?? [],
+  };
+}
+
 export async function syncGuildVoiceStates(bot, guild) {
   if (!(await isOurGuild(bot, guild?.id))) return;
-  const states = (guild.voice_states ?? []).filter((s) => s.channel_id).map((s) => ({ userId: s.user_id, channelId: s.channel_id }));
+  // GUILD_CREATE dosyła członków z kanałów głosowych — z nich role i to, czy to bot (do XP za głosowe).
+  const members = new Map((guild.members ?? []).map((m) => [m.user?.id, m]));
+  const states = (guild.voice_states ?? [])
+    .filter((s) => s.channel_id)
+    .map((s) => ({ userId: s.user_id, channelId: s.channel_id, ...voiceFlags(s, members.get(s.user_id)) }));
   await bot.store.replaceVoiceStates(states);
 }
 
@@ -87,7 +101,7 @@ export async function onVoiceStateUpdate(bot, state) {
   const userId = state.user_id;
   const channelId = state.channel_id ?? null;
   const previous = await bot.store.getVoiceChannel(userId);
-  await bot.store.setVoiceState(userId, channelId);
+  await bot.store.setVoiceState(userId, channelId, voiceFlags(state));
   await logVoiceChange(bot, state, previous).catch((error) => console.warn(`[logi:głosowe] ${error.message}`));
   if (previous && previous !== channelId) await deleteIfEmpty(bot, previous);
   if (!channelId || previous === channelId || state.member?.user?.bot) return;

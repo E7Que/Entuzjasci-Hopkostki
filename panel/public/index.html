@@ -45,6 +45,7 @@
         <a href="#logi" data-view="logi"><span>Logi serwera</span></a>
         <a href="#bump" data-view="bump"><span>Bump</span></a>
         <a href="#spolecznosc" data-view="spolecznosc"><span>Społeczność</span></a>
+        <a href="#poziomy" data-view="poziomy"><span>Poziomy</span></a>
         <a href="#tickety" data-view="tickety"><span>Tickety</span></a>
         <a href="#glosowe" data-view="glosowe"><span>Kanały głosowe</span></a>
         <a href="#wiadomosci" data-view="wiadomosci"><span>Wiadomości</span></a>
@@ -381,6 +382,214 @@
         </div>
       </section>
 
+      <!-- POZIOMY -->
+      <section id="view-poziomy" class="view">
+        <header class="view-head">
+          <h2>Poziomy</h2>
+          <p class="muted">Leveling jak w Arcane (ze wszystkimi funkcjami premium): XP za wiadomości, kanały głosowe i reakcje, wiadomość o awansie, role za poziomy, rola za 1. miejsce, boostery, cotygodniowe i comiesięczne rankingi, karta poziomu (<code>/rank</code>), ranking (<code>/ranking</code>), zmiany XP (<code>/xp</code>) i import z Arcane. Gdy włączysz poziomy tutaj, wyłącz leveling w Arcane — inaczej każdy awans będzie ogłaszany dwa razy.</p>
+        </header>
+        <div class="card">
+          <label class="toggle"><input type="checkbox" data-path="levels.enabled"><span></span>Włącz poziomy</label>
+        </div>
+
+        <h3 class="section-title">XP</h3>
+        <div class="grid two">
+          <div class="card">
+            <h3>Formuła</h3>
+            <p class="muted small">Ile XP potrzeba na każdy poziom. „Liniowa” to dokładnie formuła Arcane (100 × poziom + 75 XP na kolejny poziom), więc przeniesione poziomy się zgadzają.</p>
+            <div class="grid three tight">
+              <label class="field"><span>Krzywa</span>
+                <select data-path="levels.formula.curve">
+                  <option value="linear">Liniowa (jak Arcane)</option>
+                  <option value="standard">Standardowa (jak MEE6)</option>
+                  <option value="flat">Stała (zawsze 100 XP)</option>
+                </select>
+              </label>
+              <label class="field"><span>Mnożnik</span><input type="number" min="0.1" max="10" step="0.1" data-path="levels.formula.multiplier" data-number></label>
+              <label class="field"><span>Maks. poziom (0 = bez limitu)</span><input type="number" min="0" max="1000" data-path="levels.formula.maxLevel"></label>
+            </div>
+            <p class="muted small" id="levels-formula-preview"></p>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>XP za wiadomości</h3><label class="toggle small"><input type="checkbox" data-path="levels.message.enabled"><span></span>Włączone</label></div>
+            <p class="muted small">Losowe XP za wiadomość albo XP za słowa (1 XP za słowo, między minimum a maksimum). Cooldown: ile sekund musi minąć, zanim kolejna wiadomość da XP.</p>
+            <div class="grid four tight">
+              <label class="field"><span>Tryb</span><select data-path="levels.message.mode"><option value="random">Losowo</option><option value="perWord">Za słowa</option></select></label>
+              <label class="field"><span>Min</span><input type="number" min="0" max="10000" data-path="levels.message.min"></label>
+              <label class="field"><span>Max</span><input type="number" min="0" max="10000" data-path="levels.message.max"></label>
+              <label class="field"><span>Cooldown (s)</span><input type="number" min="0" max="86400" data-path="levels.message.cooldown"></label>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>XP za kanały głosowe</h3><label class="toggle small"><input type="checkbox" data-path="levels.voice.enabled"><span></span>Włączone</label></div>
+            <p class="muted small">Co „cooldown” sekund każda osoba na kanale głosowym dostaje losowe XP — o ile na kanale jest co najmniej tyle osób (bez botów). Anty-AFK pomija wyciszonych, ogłuszonych i kanał AFK.</p>
+            <div class="grid three tight">
+              <label class="field"><span>Min</span><input type="number" min="0" max="10000" data-path="levels.voice.min"></label>
+              <label class="field"><span>Max</span><input type="number" min="0" max="10000" data-path="levels.voice.max"></label>
+              <label class="field"><span>Cooldown (s)</span><input type="number" min="0" max="86400" data-path="levels.voice.cooldown"></label>
+              <label class="field"><span>Minimum osób</span><input type="number" min="1" max="99" data-path="levels.voice.minMembers"></label>
+            </div>
+            <label class="toggle"><input type="checkbox" data-path="levels.voice.antiAfk"><span></span>Anty-AFK</label>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>XP za reakcje</h3><label class="toggle small"><input type="checkbox" data-path="levels.reaction.enabled"><span></span>Włączone</label></div>
+            <p class="muted small">XP za dodanie reakcji i/lub za reakcję pod swoją wiadomością.</p>
+            <div class="grid four tight">
+              <label class="field"><span>Kto dostaje</span><select data-path="levels.reaction.awards"><option value="both">Obie strony</option><option value="giver">Dający reakcję</option><option value="receiver">Autor wiadomości</option></select></label>
+              <label class="field"><span>Min</span><input type="number" min="0" max="10000" data-path="levels.reaction.min"></label>
+              <label class="field"><span>Max</span><input type="number" min="0" max="10000" data-path="levels.reaction.max"></label>
+              <label class="field"><span>Cooldown (s)</span><input type="number" min="0" max="86400" data-path="levels.reaction.cooldown"></label>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="section-title">Awans</h3>
+        <div class="card">
+          <div class="card-head"><h3>Wiadomość o awansie</h3><label class="toggle small"><input type="checkbox" data-path="levels.levelUp.enabled"><span></span>Włączona</label></div>
+          <div class="grid two tight">
+            <label class="field"><span>Gdzie</span>
+              <select data-path="levels.levelUp.target">
+                <option value="current">Na kanale, na którym ktoś napisał</option>
+                <option value="channel">Na wybranym kanale</option>
+                <option value="dm">W wiadomości prywatnej (DM)</option>
+              </select>
+            </label>
+            <label class="field"><span>Kanał (dla „wybranego” — i dla XP z głosowych i reakcji)</span><select data-path="levels.levelUp.channelId" data-channel-select="pick"></select></label>
+          </div>
+          <label class="field"><span>Treść</span><textarea id="levels-levelup-message" data-path="levels.levelUp.message" rows="3" maxlength="1500"></textarea></label>
+          <div class="chips" data-insert-into="levels-levelup-message" data-vars="levelUp"></div>
+          <p class="muted small"><code>{earned: …}</code> — ten tekst pojawia się tylko wtedy, gdy awans dał rolę; w środku <code>{name}</code> to nazwa roli, a <code>{mention}</code> jej oznaczenie.</p>
+          <label class="toggle"><input type="checkbox" data-path="levels.levelUp.card"><span></span>Dołącz kartę poziomu</label>
+          <div class="bulk-row">
+            <select id="levels-test-channel" aria-label="Kanał testu"></select>
+            <button type="button" class="btn ghost" id="levels-test">Wyślij test</button>
+          </div>
+        </div>
+
+        <h3 class="section-title">Nagrody za poziomy</h3>
+        <div class="grid two">
+          <div class="card">
+            <h3>Role za poziomy</h3>
+            <label class="toggle"><input type="checkbox" data-path="levels.stackRewards"><span></span>Kumuluj nagrody (zostają role za niższe poziomy)</label>
+            <div id="levels-rewards" class="levels-list"></div>
+            <div class="bulk-row">
+              <input type="number" min="1" max="1000" id="levels-reward-level" placeholder="Poziom" aria-label="Poziom">
+              <select id="levels-reward-role" aria-label="Rola"></select>
+              <button type="button" class="btn ghost" id="levels-reward-add">Dodaj nagrodę</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Rola za 1. miejsce</h3>
+            <p class="muted small">Osoba z największym XP dostaje tę rolę (sprawdzane co godzinę), a poprzedni lider ją traci.</p>
+            <label class="field"><span>Rola</span><select data-path="levels.firstPlaceRoleId" data-role-select="none"></select></label>
+          </div>
+        </div>
+
+        <h3 class="section-title">Boostery XP</h3>
+        <div class="grid two">
+          <div class="card">
+            <h3>Ogólne</h3>
+            <label class="toggle"><input type="checkbox" data-path="levels.boosters.stack"><span></span>Sumuj boostery (wyłączone = liczy się tylko największy)</label>
+            <div class="card-head"><h3>Booster „wysiłku”</h3><label class="toggle small"><input type="checkbox" data-path="levels.boosters.effort.enabled"><span></span>Włączony</label></div>
+            <p class="muted small">Premia za długą wiadomość (co najmniej tyle słów) albo wiadomość z co najmniej tyloma obrazkami.</p>
+            <div class="grid three tight">
+              <label class="field"><span>Słowa</span><input type="number" min="0" max="10000" data-path="levels.boosters.effort.words"></label>
+              <label class="field"><span>Obrazki</span><input type="number" min="0" max="10000" data-path="levels.boosters.effort.images"></label>
+              <label class="field"><span>Premia (%)</span><input type="number" min="1" max="1000" data-path="levels.boosters.effort.percent"></label>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Boostery ról i kanałów</h3>
+            <p class="muted small">Osoby z rolą albo piszące na kanale (także jego wątkach) dostają więcej XP.</p>
+            <div id="levels-role-boosters" class="levels-list"></div>
+            <div class="bulk-row">
+              <input type="number" min="1" max="1000" id="levels-rb-percent" placeholder="%" aria-label="Procent">
+              <select id="levels-rb-role" aria-label="Rola"></select>
+              <button type="button" class="btn ghost" id="levels-rb-add">Dodaj booster roli</button>
+            </div>
+            <div id="levels-channel-boosters" class="levels-list"></div>
+            <div class="bulk-row">
+              <input type="number" min="1" max="1000" id="levels-cb-percent" placeholder="%" aria-label="Procent">
+              <select id="levels-cb-channel" aria-label="Kanał"></select>
+              <button type="button" class="btn ghost" id="levels-cb-add">Dodaj booster kanału</button>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="section-title">Rankingi tygodnia i miesiąca</h3>
+        <div class="card">
+          <p class="muted small">Raz w tygodniu (niedziela 00:00 UTC) i raz w miesiącu (1. dnia 00:00 UTC) bot wysyła ranking 10 osób, które w tym czasie zdobyły najwięcej XP. Wybrana rola dostaje ping przy każdym nowym rankingu.</p>
+          <div class="grid three tight">
+            <div>
+              <label class="toggle"><input type="checkbox" data-path="levels.highlights.weekly.enabled"><span></span>Ranking tygodnia</label>
+              <label class="field"><span>Kanał</span><select data-path="levels.highlights.weekly.channelId" data-channel-select="pick"></select></label>
+            </div>
+            <div>
+              <label class="toggle"><input type="checkbox" data-path="levels.highlights.monthly.enabled"><span></span>Ranking miesiąca</label>
+              <label class="field"><span>Kanał</span><select data-path="levels.highlights.monthly.channelId" data-channel-select="pick"></select></label>
+            </div>
+            <label class="field"><span>Rola pingowana przy rankingu</span><select data-path="levels.highlights.roleId" data-role-select="none"></select></label>
+          </div>
+        </div>
+
+        <h3 class="section-title">Karta poziomu, zarządzanie i ograniczenia</h3>
+        <div class="grid two">
+          <div class="card">
+            <h3>Karta poziomu (<code>/rank</code>)</h3>
+            <label class="field"><span>Kolor</span>
+              <div class="color-row"><input type="color" data-color-for="levels.card.color"><input type="text" data-path="levels.card.color" maxlength="7"></div>
+            </label>
+            <label class="field"><span>Obrazek (baner) — link https, opcjonalnie</span><input type="url" data-path="levels.card.image" maxlength="500" placeholder="https://…"></label>
+          </div>
+          <div class="card">
+            <h3>Zarządzanie XP</h3>
+            <label class="toggle"><input type="checkbox" data-path="levels.management.lockXpCommand"><span></span><code>/xp</code> tylko dla właściciela serwera</label>
+            <label class="toggle"><input type="checkbox" data-path="levels.management.lockReset"><span></span>Resetowanie XP tylko dla właściciela serwera</label>
+            <label class="toggle"><input type="checkbox" data-path="levels.autoReset"><span></span>Auto reset: wyjście z serwera zeruje XP i poziom (statystyki zostają)</label>
+            <label class="toggle"><input type="checkbox" data-path="levels.publicLeaderboard"><span></span>Publiczny ranking na stronie</label>
+            <p class="muted small"><a id="levels-public-link" target="_blank" rel="noopener">Otwórz publiczny ranking</a> · <code>/xp</code> i reset wymagają uprawnienia „Zarządzanie serwerem”.</p>
+          </div>
+          <div class="card">
+            <h3>Gdzie nie ma XP</h3>
+            <label class="field"><span>Kanały</span>
+              <select data-path="levels.restrictions.channelMode">
+                <option value="deny">Bez XP na wybranych kanałach</option>
+                <option value="allow">XP tylko na wybranych kanałach</option>
+              </select>
+            </label>
+            <div class="field"><span>Wybrane kanały (kategoria obejmuje swoje kanały)</span><div data-channel-picker-slot="levels.restrictions.channelIds"></div></div>
+            <div class="field"><span>Role bez XP</span><div data-picker-slot="cfg:levels.restrictions.roleIds"></div></div>
+          </div>
+          <div class="card">
+            <h3>Rodzaje kanałów</h3>
+            <label class="toggle"><input type="checkbox" data-path="levels.restrictions.threads"><span></span>XP w wątkach</label>
+            <label class="toggle"><input type="checkbox" data-path="levels.restrictions.forums"><span></span>XP na forach</label>
+            <label class="toggle"><input type="checkbox" data-path="levels.restrictions.voiceText"><span></span>XP na czacie kanałów głosowych</label>
+            <label class="toggle"><input type="checkbox" data-path="levels.restrictions.slashCommands"><span></span>XP za komendy slash (dowolnego bota)</label>
+          </div>
+        </div>
+
+        <h3 class="section-title">Ranking</h3>
+        <div class="card">
+          <div class="card-head">
+            <h3>Ranking poziomów</h3>
+            <div class="card-actions">
+              <input type="search" id="levels-search" placeholder="Szukaj nicku lub ID" aria-label="Szukaj">
+              <button type="button" class="btn ghost small" id="levels-refresh">Odśwież</button>
+              <button type="button" class="btn danger small" id="levels-reset-all">Resetuj wszystkich</button>
+            </div>
+          </div>
+          <div class="table-wrap"><table class="table" id="levels-table"></table></div>
+          <div class="bulk-row"><button type="button" class="btn ghost small" id="levels-prev">◀</button><span id="levels-page" class="muted small"></span><button type="button" class="btn ghost small" id="levels-next">▶</button></div>
+        </div>
+        <div class="card">
+          <h3>Import z Arcane</h3>
+          <p class="muted small">Wklej ranking — jedna osoba w linii: <code>nazwa poziom xp [wiadomości] [reakcje]</code>, np. <code>@dfgbh65 31 49.7K 4.3K 1</code>. Bot dopasuje nazwy do członków serwera i ustawi XP tak, żeby poziom wyszedł taki sam jak w Arcane (większego XP nie zmniejsza).</p>
+          <textarea id="levels-import-text" rows="6" placeholder="@dfgbh65 31 49.7K 4.3K 1&#10;@ins4nee 29 43.9K 5.7K"></textarea>
+          <div class="bulk-row"><button type="button" class="btn" id="levels-import">Importuj</button><span id="levels-import-result" class="muted small"></span></div>
+        </div>
+      </section>
+
       <!-- SPOŁECZNOŚĆ -->
       <section id="view-spolecznosc" class="view">
         <header class="view-head">
@@ -697,6 +906,7 @@
               <div class="field"><span>Ostrzeżenia</span><div data-picker-slot="cfg:panelAccess.roles.ostrzezenia"></div></div>
               <div class="field"><span>Sprawy</span><div data-picker-slot="cfg:panelAccess.roles.sprawy"></div></div>
               <div class="field"><span>Tymczasowe bany</span><div data-picker-slot="cfg:panelAccess.roles.bany"></div></div>
+              <div class="field"><span>Poziomy</span><div data-picker-slot="cfg:panelAccess.roles.poziomy"></div></div>
             </div>
             <p class="muted small">„Uprawnienia komend” i „Ustawienia” pozwalają zmieniać, kto może używać komend (także /ban) i kto liczy się jako moderacja — dawaj je tylko zaufanym rolom.</p>
           </div>

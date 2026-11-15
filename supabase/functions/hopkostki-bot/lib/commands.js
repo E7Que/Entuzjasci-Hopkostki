@@ -20,6 +20,7 @@ import {
 } from './moderation.js';
 import { VIEWS, renderView } from './views.js';
 import { COMMUNITY_COMMANDS } from './communityCommands.js';
+import { LEVEL_COMMANDS } from './levelCommands.js';
 import { PANEL_SECTIONS, PANEL_SITE, issueLogin } from './access.js';
 
 // ---------- Budowanie opcji ----------
@@ -901,6 +902,7 @@ const pomoc = {
                 '`/notatka dodaj` · `/notatka lista`',
                 '`/nick` · `/rola dodaj` · `/rola usun`',
                 '`/login` — Twój login i hasło do panelu bota (na kanale do logowania)',
+                '`/xp dodaj|odejmij|ustaw|poziom|reset` — XP i poziomy',
               ].join('\n'),
             },
             {
@@ -917,6 +919,7 @@ const pomoc = {
                 '`/profil` · `/serwer` · `/czlonkowie` · `/avatar`',
                 '`/przypomnij` · `/afk` · `/propozycja` · `/losuj`',
                 '`/bumpy` — ranking bumpów · `/zaproszenia` — kto kogo zaprosił · `/pomoc`',
+                '`/rank` — karta poziomu · `/ranking` — ranking poziomów (łącznie, tydzień, miesiąc)',
               ].join('\n'),
             },
           ],
@@ -949,6 +952,7 @@ export const COMMANDS = [
   lockCommand('lock', '🔒 Zablokuj pisanie na kanale (np. podczas kłótni)', true),
   lockCommand('unlock', '🔓 Odblokuj pisanie na kanale', false),
   ...COMMUNITY_COMMANDS,
+  ...LEVEL_COMMANDS,
   login,
   pomoc,
 ];
