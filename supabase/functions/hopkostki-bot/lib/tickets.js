@@ -1,7 +1,7 @@
 // Tickety: wiadomość-panel z przyciskami (wysyłana z panelu) → formularz (okienko Discorda) → prywatny
 // kanał dla osoby i obsługi. Każdy przycisk to rodzaj ticketu z własnym formularzem (np. Zgłoszenie,
 // Partnerstwo: link do serwera, liczba członków, powód).
-// W tickecie: Zamknij (z potwierdzeniem, zapis rozmowy do logów i w DM), Przejmij, Dodaj osobę.
+// W tickecie: Zamknij (z wymaganym powodem w okienku, zapis rozmowy i powód do logów i w DM), Przejmij, Dodaj osobę.
 
 import { P, has } from './permissions.js';
 import { DiscordError } from './rest.js';
@@ -315,7 +315,7 @@ async function fetchHistory(bot, channelId) {
 const snowflakeMs = (id) => Number((BigInt(id) >> 22n) + 1420070400000n);
 const plTime = (ms) => new Date(ms).toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' });
 
-export function buildTranscript(ticket, messages, closer) {
+export function buildTranscript(ticket, messages, closer, reason = '') {
   const header = [
     `Zapis ticketu #${ticketNumber(ticket.id)} — ${BRAND}`,
     `Autor: ${ticket.userTag ?? ticket.userId} (${ticket.userId})`,
@@ -324,6 +324,7 @@ export function buildTranscript(ticket, messages, closer) {
     ticket.subject ? (ticket.subject.includes('\n') ? `Formularz:\n${ticket.subject.replace(/^/gm, '  ')}` : `Sprawa: ${ticket.subject}`) : null,
     `Otwarty: ${plTime(ticket.createdAt)}`,
     `Zamknął: ${closer.username} (${closer.id}), ${plTime(Date.now())}`,
+    reason ? `Powód zamknięcia: ${reason}` : null,
     '',
   ].filter((line) => line !== null);
   const lines = messages.map((m) => {
@@ -338,7 +339,7 @@ export function buildTranscript(ticket, messages, closer) {
   return [...header, ...lines].join('\n');
 }
 
-function closedSummary(ticket, closer, messageCount) {
+function closedSummary(ticket, closer, messageCount, reason = '') {
   const number = ticketNumber(ticket.id);
   return {
     color: COLORS.muted,
@@ -350,19 +351,21 @@ function closedSummary(ticket, closer, messageCount) {
       ...(ticket.claimedBy ? [{ name: 'Przejął', value: `<@${ticket.claimedBy}>`, inline: true }] : []),
       { name: 'Otwarty', value: discordTimestamp(ticket.createdAt, 'f'), inline: true },
       { name: 'Wiadomości', value: String(messageCount), inline: true },
+      ...(reason ? [{ name: 'Powód zamknięcia', value: reason.slice(0, 1024) }] : []),
     ],
     footer: { text: BRAND },
   };
 }
 
-export async function closeTicket(bot, ticket, closer) {
+// reason: powód zamknięcia (wymagany w Discordzie i w panelu) — trafia do podsumowania, logów, DM i zapisu rozmowy.
+export async function closeTicket(bot, ticket, closer, reason = '') {
   const { tickets } = await bot.store.getConfig();
   const eff = typeSettings(tickets, ticket.type);
   const number = ticketNumber(ticket.id);
   const messages = await fetchHistory(bot, ticket.channelId).catch(() => []);
-  const transcript = buildTranscript(ticket, messages, closer);
+  const transcript = buildTranscript(ticket, messages, closer, reason);
   const file = { name: `ticket-${number}.txt`, content: transcript };
-  const summary = closedSummary(ticket, closer, messages.length);
+  const summary = closedSummary(ticket, closer, messages.length, reason);
   await ticketLog(bot, eff.logChannelId, { embeds: [summary] }, [file]);
   if (tickets.dmTranscript) {
     try {
@@ -429,6 +432,13 @@ function isSupport(member, eff) {
   if (!member) return false;
   if (has(member.permissions, P.ADMINISTRATOR) || has(member.permissions, P.MANAGE_CHANNELS)) return true;
   return eff.supportRoleIds.some((id) => member.roles?.includes(id));
+}
+
+function modalReason(ix) {
+  for (const row of ix.raw.data?.components ?? []) {
+    for (const input of row.components ?? []) if (input.custom_id === 'reason') return String(input.value ?? '').trim();
+  }
+  return '';
 }
 
 const fail = (text) => ({ response: { type: 4, data: { flags: EPHEMERAL, embeds: [errorEmbed(text)] } } });
@@ -557,23 +567,25 @@ export async function handleTicketInteraction(ix, bot) {
   switch (action) {
     case 'close':
       if (!support && !(owner && eff.authorCanClose)) return fail(owner ? 'Ten rodzaj ticketu zamyka tylko obsługa.' : 'Ticket może zamknąć jego autor albo obsługa.');
+      if (kind === 'tkm') {
+        // Wysłane okienko z powodem — dopiero teraz ticket się zamyka (kanał trafia do archiwum, a zapis rozmowy do logów, DM i na kanał).
+        const reason = modalReason(ix);
+        if (reason.length < 3) return fail('Podaj powód zamknięcia (co najmniej 3 znaki).');
+        return work(5, async () => {
+          await closeTicket(bot, ticket, ix.user, reason);
+          return 'Ticket zamknięty i zarchiwizowany.';
+        });
+      }
       return {
         response: {
-          type: 4,
+          type: 9,
           data: {
-            flags: EPHEMERAL,
-            content: 'Na pewno zamknąć ticket? Kanał trafi do archiwum i zniknie dla autora oraz każdego poza obsługą; zapis rozmowy trafi do logów, w DM do autora i na ten kanał.',
-            components: [{ type: 1, components: [{ type: 2, style: 4, label: 'Tak, zamknij', custom_id: `tk|confirm|${ticket.id}` }] }],
+            custom_id: `tkm|close|${ticket.id}`,
+            title: `Zamknięcie ticketu #${ticketNumber(ticket.id)}`,
+            components: [{ type: 1, components: [{ type: 4, custom_id: 'reason', style: 2, label: 'Powód zamknięcia', placeholder: 'Np. sprawa rozwiązana, brak odpowiedzi autora…', min_length: 3, max_length: 500, required: true }] }],
           },
         },
       };
-    case 'confirm':
-      if (!support && !(owner && eff.authorCanClose)) return fail(owner ? 'Ten rodzaj ticketu zamyka tylko obsługa.' : 'Ticket może zamknąć jego autor albo obsługa.');
-      return work(6, async () => {
-        await ix.edit({ content: 'Zamykam i archiwizuję ticket…', components: [] }).catch(() => {});
-        await closeTicket(bot, ticket, ix.user);
-        return null;
-      });
     case 'claim':
       if (!support) return fail('Przejąć ticket może tylko obsługa.');
       return work(5, async () => {

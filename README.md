@@ -148,7 +148,7 @@ Każdy rodzaj ticketu można też skonfigurować osobno (zakładka Tickety → r
 
 Wysłanie formularza tworzy prywatny kanał widoczny tylko dla tej osoby i obsługi (oznaczona w powitaniu
 jest tylko ta osoba — obsługa i tak ma dostęp do kanału, więc pingowanie całej roli przy każdym nowym
-tickecie byłoby tylko spamem powiadomień), z przyciskami **Zamknij** (z potwierdzeniem), **Przejmij** i
+tickecie byłoby tylko spamem powiadomień), z przyciskami **Zamknij** (trzeba podać powód zamknięcia — trafia do logów, DM i zapisu rozmowy; także przy zamykaniu w panelu), **Przejmij** i
 **Dodaj osobę**.
 
 Zamknięty ticket **nie jest usuwany** — zostaje jako archiwum:

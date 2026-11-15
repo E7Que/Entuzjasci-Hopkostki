@@ -232,9 +232,13 @@ test('ticket: przejęcie tylko przez obsługę, dodanie osoby, zamknięcie z zap
   const added = s.discord.state.calls.find((c) => c.method === 'PUT' && c.path === `/channels/${channel.id}/permissions/owner`);
   assert.equal(BigInt(added.body.allow) & P.VIEW_CHANNEL, P.VIEW_CHANNEL);
 
-  const confirm = await run(s.bot, click(`tk|close|${ticket.id}`));
-  assert.equal(confirm.response.data.components[0].components[0].custom_id, `tk|confirm|${ticket.id}`);
-  await run(s.bot, click(`tk|confirm|${ticket.id}`));
+  const modal = await run(s.bot, click(`tk|close|${ticket.id}`));
+  assert.equal(modal.response.type, 9, 'zamknięcie otwiera okienko z powodem');
+  assert.equal(modal.response.data.custom_id, `tkm|close|${ticket.id}`);
+  const tooShort = await run(s.bot, click(`tkm|close|${ticket.id}`, { type: 5, components: [{ type: 1, components: [{ type: 4, custom_id: 'reason', value: ' x ' }] }] }));
+  assert.match(tooShort.response.data.embeds[0].description, /Podaj powód/);
+  assert.equal((await s.store.getTicket(ticket.id)).status, 'open', 'bez powodu ticket zostaje otwarty');
+  await run(s.bot, click(`tkm|close|${ticket.id}`, { type: 5, components: [{ type: 1, components: [{ type: 4, custom_id: 'reason', value: 'Sprawa rozwiązana' }] }] }));
 
   // Kanał NIE jest usuwany — zostaje jako archiwum, ukryty dla autora i dodanej osoby.
   assert.deepEqual(s.discord.state.deletedChannels, []);
@@ -252,10 +256,12 @@ test('ticket: przejęcie tylko przez obsługę, dodanie osoby, zamknięcie z zap
   const logCall = s.discord.state.calls.findLast((c) => c.method === 'POST' && c.path === `/channels/${LOGS}/messages`);
   assert.equal(logCall.files[0].name, 'ticket-0001.txt');
   assert.match(logCall.files[0].content, /target: Pomocy!/);
+  assert.match(logCall.files[0].content, /Powód zamknięcia: Sprawa rozwiązana/);
   assert.equal(s.discord.state.dms.at(-1).embeds[0].title, 'Twój ticket #0001 został zamknięty');
   // Zapis rozmowy trafia na sam kanał od razu przy zamknięciu, z przyciskiem do usunięcia go z archiwum.
   const posted = s.discord.state.channels.get(channel.id).at(-1);
   assert.equal(posted.embeds[0].title, 'Ticket #0001 zamknięty');
+  assert.equal(posted.embeds[0].fields.find((f) => f.name === 'Powód zamknięcia').value, 'Sprawa rozwiązana');
   assert.equal(posted.embeds[0].fields.find((f) => f.name === 'Wiadomości').value, '4');
   assert.deepEqual(posted.components[0].components.map((b) => [b.label, b.custom_id]), [['Usuń kanał z archiwum', `tk|delete|${ticket.id}`]]);
   const postedCall = s.discord.state.calls.findLast((c) => c.method === 'POST' && c.path === `/channels/${channel.id}/messages`);
@@ -273,8 +279,7 @@ test('zamknięty ticket: przeniesienie do archiwum i przycisk „Usuń kanał z 
   const channel = s.discord.state.createdChannels[0];
   const ticket = (await s.store.listTickets())[0];
 
-  await run(s.bot, click(`tk|close|${ticket.id}`));
-  await run(s.bot, click(`tk|confirm|${ticket.id}`));
+  await run(s.bot, click(`tkm|close|${ticket.id}`, { type: 5, components: [{ type: 1, components: [{ type: 4, custom_id: 'reason', value: 'Koniec sprawy' }] }] }));
 
   const liveChannel = await s.bot.discord.get(`/channels/${channel.id}`);
   assert.equal(liveChannel.parent_id, ARCHIVE, 'kanał przenosi się do kategorii archiwum');
@@ -333,5 +338,5 @@ test('osobne ustawienia rodzajów ticketów: własna kategoria, role obsługi, l
   assert.match((await run(s.bot, click(`tk|add|${tPartner.id}`, { user: 'owner' }))).response.data.embeds[0].description, /tylko obsługa/);
   assert.match((await run(s.bot, click(`tk|claim|${tPartner.id}`, { user: 'mod', roles: [SUPPORT] }))).response.data.embeds[0].description, /tylko obsługa/, 'obsługa zgłoszeń nie rusza partnerstw');
   const ok = await run(s.bot, click(`tk|close|${tPartner.id}`, { user: 'mod', roles: [PARTNER_ROLE] }));
-  assert.equal(ok.response.data.components[0].components[0].custom_id, `tk|confirm|${tPartner.id}`);
+  assert.equal(ok.response.type, 9);
 });

@@ -237,9 +237,11 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
   if (method === 'POST' && ticketMatch) {
     const ticket = await store.getTicket(Number(ticketMatch[1]));
     if (!ticket || ticket.status !== 'open') return fail(404, 'Nie ma takiego otwartego ticketu');
+    const reason = String(body?.reason ?? '').trim().slice(0, 500);
+    if (reason.length < 3) return fail(400, 'Podaj powód zamknięcia (co najmniej 3 znaki).');
     return attempt(async () => {
       const { botUser } = await getGuildContext(bot);
-      await closeTicket(bot, ticket, botUser);
+      await closeTicket(bot, ticket, botUser, `${reason} (zamknięte w panelu)`);
       return { ok: true };
     });
   }

@@ -1676,9 +1676,11 @@ async function loadTickets() {
 $('#tickets-refresh').addEventListener('click', loadTickets);
 $('#tickets-table').addEventListener('click', async (event) => {
   const id = event.target.closest('[data-ticket-close]')?.dataset.ticketClose;
-  if (!id || !confirm('Zamknąć ten ticket? Kanał trafi do archiwum i zniknie dla autora oraz każdego poza obsługą; zapis trafi do logów, w DM do autora i na ten kanał.')) return;
+  if (!id) return;
+  const reason = (prompt('Powód zamknięcia ticketu (wymagany). Kanał trafi do archiwum i zniknie dla autora oraz każdego poza obsługą; zapis i powód trafią do logów, w DM do autora i na ten kanał.') ?? '').trim();
+  if (!reason) return toast('Bez powodu nie zamknę ticketu.', 'error');
   try {
-    await api(`/tickets/${id}/close`, { method: 'POST' });
+    await api(`/tickets/${id}/close`, { method: 'POST', body: JSON.stringify({ reason }) });
     toast('Ticket zamknięty');
   } catch (error) {
     toast(error.message, 'error');
