@@ -19,6 +19,8 @@ import {
   onMemberLeaveLevels,
   importLevels,
   levelProfilesTick,
+  levelAccentTick,
+  nitroLook,
 } from '../supabase/functions/hopkostki-bot/lib/levels.js';
 
 const LVL5 = '100000000000000060';
@@ -293,6 +295,23 @@ test('publiczny ranking: pseudonim + nazwa, tydzień/miesiąc, liczba osób, syn
   assert.ok(profile.body.lastActive, 'ostatnia aktywność');
   assert.equal((await get('profile?id=100000000000000099')).status, 404, 'tylko osoby z rankingu');
   assert.equal((await get('profile?id=../../users/@me')).status, 404);
+
+  // Nitro: animowany avatar / baner / profil na serwerze; kolor akcentu = kolor banera z API.
+  s.discord.state.users.set(A, { id: A, username: 'kasia_123', global_name: 'Kasia', avatar: 'a_anim', accent_color: 0x3366ff, display_name_styles: { font_id: 3, effect_id: 1, colors: [0xff0000, 0x00ff00] } });
+  s.discord.state.users.set(B, { id: B, username: 'bartek', avatar: 'abc', accent_color: 0x123456 });
+  s.bot.cache.clear();
+  assert.equal(await levelAccentTick(s.bot), 2);
+  assert.equal(await levelAccentTick(s.bot), 0, 'najwyżej co 12 h');
+  ({ body } = await get('leaderboard'));
+  const byName = Object.fromEntries(body.entries.map((e) => [e.name, e]));
+  assert.deepEqual([byName.kasia_123.nitro, byName.kasia_123.accent], [true, '#3366ff']);
+  assert.deepEqual([byName.bartek.nitro, byName.bartek.accent], [false, null], 'bez Nitro kolor akcentu się nie liczy');
+  const nitroProfile = (await get(`profile?id=${A}`)).body;
+  assert.deepEqual([nitroProfile.nitro, nitroProfile.accentColor, nitroProfile.nameColors], [true, '#3366ff', ['#ff0000', '#00ff00']]);
+  assert.match(nitroProfile.avatar, /a_anim\.gif/);
+  assert.equal(nitroLook({ avatar: 'x' }, { banner: 'serwerowy' }).nitro, true, 'baner tylko na serwerze = Nitro');
+  assert.equal(nitroLook({ avatar: 'x', accent_color: 5 }).nitro, false);
+
   await s.store.updateConfig({ levels: { publicLeaderboard: false } });
   assert.equal((await get(`profile?id=${A}`)).status, 404, 'wyłączony publiczny ranking = brak profili');
 });

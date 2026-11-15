@@ -162,6 +162,8 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
           userId: r.userId,
           name: r.userTag ?? 'Użytkownik',
           displayName: r.displayName && r.displayName !== r.userTag ? r.displayName : null,
+          nitro: r.nitro,
+          accent: r.nitro ? r.accentColor : null,
           avatar: avatarUrl({ id: r.userId, avatar: r.avatar }, 128),
           xp: r.xp,
           periodXp: period === 'all' ? null : r.periodXp,

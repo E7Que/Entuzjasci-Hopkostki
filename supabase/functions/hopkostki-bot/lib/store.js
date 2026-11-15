@@ -30,6 +30,8 @@ const mapLevel = (r) => ({
   lastMessageAt: r.last_message_at ?? null,
   lastVoiceAt: r.last_voice_at ?? null,
   lastReactionAt: r.last_reaction_at ?? null,
+  accentColor: r.accent_color ?? null,
+  nitro: Boolean(r.nitro),
   rank: r.rank === undefined ? null : Number(r.rank),
 });
 
@@ -1088,6 +1090,24 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
         [JSON.stringify(members)],
       );
       return rows.length;
+    },
+
+    // Osoby z rankingu, których kolor akcentu i Nitro nie były sprawdzane od 12 godzin (najpierw nigdy).
+    async levelsNeedingLook(limit = 5) {
+      const rows = await query(
+        `select user_id from bot.levels where xp > 0 and (look_checked_at is null or look_checked_at < now() - interval '12 hours')
+         order by look_checked_at nulls first, xp desc limit $1::int`,
+        [limit],
+      );
+      return rows.map((r) => r.user_id);
+    },
+
+    async setLevelLook(userId, { accentColor = null, nitro = false }) {
+      await query('update bot.levels set accent_color = $2::text, nitro = $3::boolean, look_checked_at = now() where user_id = $1::text', [
+        userId,
+        accentColor,
+        Boolean(nitro),
+      ]);
     },
 
     // Podsumowanie do publicznego rankingu: ile osób ma XP i ile łącznie nazbierały.

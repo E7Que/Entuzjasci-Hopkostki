@@ -14,7 +14,7 @@ import { bumpReminderTick, bumpScan } from './bump.js';
 import { seedMemberProfiles } from './logs.js';
 import { ensureInviteSnapshot } from './invites.js';
 import { sendDueReminders, finishDueGiveaways } from './community.js';
-import { voiceXpTick, highlightsTick, firstPlaceTick, levelProfilesTick } from './levels.js';
+import { voiceXpTick, highlightsTick, firstPlaceTick, levelProfilesTick, levelAccentTick } from './levels.js';
 
 const SETUP_EVERY_MS = 10 * 60_000;
 const PAGES_PER_CHANNEL = 5;
@@ -155,6 +155,7 @@ export async function runCron(bot, { force = false } = {}) {
     report.levelHighlights = await step('levelHighlights', () => highlightsTick(bot));
     report.firstPlace = await step('firstPlace', () => firstPlaceTick(bot));
     report.levelProfiles = await step('levelProfiles', () => levelProfilesTick(bot));
+    report.levelAccents = await step('levelAccents', () => levelAccentTick(bot));
     await step('prune', async () => {
       await bot.store.pruneModMessages(30);
       await bot.store.pruneMessageCache(7);

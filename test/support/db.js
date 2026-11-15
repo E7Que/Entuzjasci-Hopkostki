@@ -18,6 +18,7 @@ const TICKET_ARCHIVE_IMMEDIATE = new URL('../../supabase/migrations/202609271900
 const PANEL_SESSIONS = new URL('../../supabase/migrations/20261030200000_bot_panel_sessions.sql', import.meta.url);
 const LEVELS = new URL('../../supabase/migrations/20261115120000_bot_levels.sql', import.meta.url);
 const LEVEL_NAMES = new URL('../../supabase/migrations/20261115210000_bot_levels_display_name.sql', import.meta.url);
+const LEVEL_LOOK = new URL('../../supabase/migrations/20261115230000_bot_levels_nitro_look.sql', import.meta.url);
 const withoutCron = (sql) => sql.split(/^select cron\.schedule/m)[0];
 const withoutGrants = (sql) => sql.replace(/revoke .*? from anon, authenticated;/g, '');
 let shared = null;
@@ -38,6 +39,7 @@ async function database() {
       await db.exec(withoutGrants(fs.readFileSync(PANEL_SESSIONS, 'utf8')));
       await db.exec(withoutGrants(fs.readFileSync(LEVELS, 'utf8')));
       await db.exec(withoutGrants(fs.readFileSync(LEVEL_NAMES, 'utf8')));
+      await db.exec(withoutGrants(fs.readFileSync(LEVEL_LOOK, 'utf8')));
       return db;
     })();
   }

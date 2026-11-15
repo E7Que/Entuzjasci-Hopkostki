@@ -359,6 +359,33 @@ export async function levelProfilesTick(bot, { now = Date.now() } = {}) {
 
 // ---------- Publiczny profil (karta po kliknięciu na stronie rankingu) ----------
 
+// Nitro po tym, co bot widzi w API: animowany avatar, własny baner, avatar albo baner tylko na tym serwerze,
+// styl nazwy wyświetlanej. Kolorów motywu profilu Nitro API botom nie daje — jest kolor banera (accent_color).
+export function nitroLook(user, member = null) {
+  const styles = user?.display_name_styles ?? null;
+  const nameColors = (styles?.colors ?? []).map(hexColor).filter(Boolean).slice(0, 2);
+  const nitro = Boolean(
+    String(user?.avatar ?? '').startsWith('a_') || user?.banner || member?.avatar || member?.banner || nameColors.length || styles?.font_id || styles?.effect_id,
+  );
+  return { nitro, accentColor: hexColor(user?.accent_color), nameColors };
+}
+
+// Co przebieg crona kilka osób z rankingu: kolor akcentu i Nitro (każda osoba najwyżej co 12 h).
+export async function levelAccentTick(bot, { batch = 5 } = {}) {
+  const config = (await bot.store.getConfig()).levels;
+  if (!config.enabled || !config.publicLeaderboard) return 0;
+  const ids = await bot.store.levelsNeedingLook(batch);
+  for (const id of ids) {
+    const [user, member] = await Promise.all([
+      cached(bot, `publicUser:${id}`, 10 * 60_000, () => bot.discord.get(`/users/${id}`).catch(() => null)),
+      memberInfo(bot, id),
+    ]);
+    const look = nitroLook(user ?? member?.user, member);
+    await bot.store.setLevelLook(id, { accentColor: look.accentColor, nitro: look.nitro });
+  }
+  return ids.length;
+}
+
 const cdnImage = (path, hash, size) => `https://cdn.discordapp.com/${path}/${hash}.${String(hash).startsWith('a_') ? 'gif' : 'png'}?size=${size}`;
 const hexColor = (n) => (Number.isInteger(n) && n > 0 ? `#${n.toString(16).padStart(6, '0')}` : null);
 const snowflakeTime = (id) => Number((BigInt(id) >> 22n) + 1420070400000n);
@@ -394,6 +421,10 @@ export async function publicProfile(bot, userId) {
     .find((r) => r.level > p.level && byId.has(r.roleId));
   const nextRole = nextReward ? byId.get(nextReward.roleId) : null;
   const lastActive = [row.lastMessageAt, row.lastVoiceAt, row.lastReactionAt].filter(Boolean).map((d) => new Date(d).getTime());
+  const look = nitroLook(u, member);
+  if (user && (look.nitro !== row.nitro || look.accentColor !== row.accentColor)) {
+    await bot.store.setLevelLook(userId, { accentColor: look.accentColor, nitro: look.nitro });
+  }
   return {
     id: userId,
     username: u.username ?? row.userTag ?? null,
@@ -401,7 +432,9 @@ export async function publicProfile(bot, userId) {
     avatar: member?.avatar ? cdnImage(`guilds/${guild.id}/users/${userId}/avatars`, member.avatar, 256) : u.avatar ? cdnImage(`avatars/${userId}`, u.avatar, 256) : avatarUrl({ id: userId }, 256),
     banner: member?.banner ? cdnImage(`guilds/${guild.id}/users/${userId}/banners`, member.banner, 600) : u.banner ? cdnImage(`banners/${userId}`, u.banner, 600) : null,
     decoration: u.avatar_decoration_data?.asset ? `https://cdn.discordapp.com/avatar-decoration-presets/${u.avatar_decoration_data.asset}.png?size=240&passthrough=true` : null,
-    accentColor: hexColor(u.accent_color),
+    accentColor: look.accentColor,
+    nitro: look.nitro,
+    nameColors: look.nameColors,
     inGuild: Boolean(member),
     joinedAt: isoOrNull(member?.joined_at),
     boostingSince: isoOrNull(member?.premium_since),
