@@ -79,6 +79,17 @@ main { padding: 2rem clamp(1rem, 3vw, 2.5rem) 6rem; min-width: 0; }
 .grid.two { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
 .grid.two.tight { gap: .75rem; margin-bottom: 0; grid-template-columns: 1fr 1fr; }
 .grid.editor { grid-template-columns: minmax(300px, 1fr) minmax(320px, 1.1fr); align-items: start; }
+.grid.three.tight, .grid.four.tight { gap: .75rem; margin-bottom: 0; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); align-items: end; }
+#view-poziomy .grid.three.tight:has([data-path="levels.formula.curve"]) { grid-template-columns: minmax(190px, 1.6fr) 1fr 1fr; }
+@media (max-width: 560px) { #view-poziomy .grid.three.tight:has([data-path="levels.formula.curve"]) { grid-template-columns: 1fr 1fr; } }
+.section-title { margin: 1.6rem 0 .6rem; font-size: 1.05rem; }
+/* Poziomy: listy nagród i boosterów, ranking. */
+.levels-list { display: flex; flex-wrap: wrap; gap: .35rem; margin: .5rem 0; }
+.levels-list .role-chip strong { margin-right: .25rem; }
+#levels-table td.xp-bar { min-width: 140px; }
+.xp-progress { height: 6px; border-radius: 3px; background: var(--bg); overflow: hidden; margin-top: .25rem; }
+.xp-progress > span { display: block; height: 100%; background: var(--blurple); }
+#levels-search { width: 190px; }
 
 .card {
   background: var(--bg-2);
@@ -106,7 +117,7 @@ main { padding: 2rem clamp(1rem, 3vw, 2.5rem) 6rem; min-width: 0; }
 .field { display: flex; flex-direction: column; gap: .3rem; margin-bottom: .85rem; }
 .field > span { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
 .field small { color: var(--muted); font-size: .8rem; }
-input[type=text], input[type=password], input[type=number], input[type=search], select, textarea {
+input[type=text], input[type=password], input[type=number], input[type=search], input[type=url], select, textarea {
   background: var(--bg-3);
   color: var(--text);
   border: 1px solid transparent;
