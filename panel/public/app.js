@@ -2597,4 +2597,21 @@ function tick() {
   }
 }
 
+// ---------- Tabele na telefonie ----------
+// Na wąskim ekranie tabele z danymi stają się kartami (CSS) — każda komórka dostaje podpis z nagłówka kolumny.
+function labelTable(table) {
+  const heads = [...table.querySelectorAll('thead th')].map((th) => th.textContent.trim());
+  if (!heads.length) return;
+  table.querySelectorAll('tbody tr').forEach((tr) => {
+    [...tr.children].forEach((td, i) => {
+      const label = heads[i] ?? '';
+      if (td.dataset.label !== label) td.dataset.label = label;
+    });
+  });
+}
+$$('table.table').forEach((table) => {
+  labelTable(table);
+  new MutationObserver(() => labelTable(table)).observe(table, { childList: true, subtree: true });
+});
+
 boot();
