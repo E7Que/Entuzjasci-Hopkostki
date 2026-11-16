@@ -153,25 +153,124 @@
     .note { margin: 0 0 14px; color: var(--muted); font-size: 0.88rem; }
     .note b { color: var(--text); font-weight: 500; }
 
-    /* ---------- Top 3 ---------- */
-    .top3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
-    .top {
-      display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0;
-      padding: 18px 12px 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border);
-      border-top: 3px solid var(--m); cursor: pointer;
+    /* ---------- Podium (top 3): 1. miejsce na środku, reflektory świecą na kolumny ---------- */
+    .top3 {
+      --pad: 34px; --apex: 120px;
+      position: relative; isolation: isolate; overflow: hidden;
+      display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.14fr) minmax(0, 1fr); gap: 0 8px;
+      margin-bottom: 14px; padding: var(--pad) 14px 0; border-radius: var(--radius); border: 1px solid var(--border);
+      background: radial-gradient(80% 62% at 50% 0%, rgba(60, 195, 214, 0.09), transparent 72%), linear-gradient(180deg, #131b1f, #0f1518 62%, #0b1012);
     }
-    .top:hover { background: var(--hover); }
-    .top.sel { background: var(--surface-2); }
-    .top.t1 { --m: var(--gold); }
-    .top.t2 { --m: var(--silver); }
-    .top.t3 { --m: var(--bronze); }
-    .top .place { font-weight: 700; color: var(--m); font-size: 0.85rem; margin-bottom: 10px; }
-    .top .av { margin-bottom: 10px; }
-    .top .avatar { width: 72px; height: 72px; }
-    .top .nick { max-width: 100%; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* Kolumna podium z osobą: --m kolor medalu, --ph wysokość kolumny, --sp rozwarcie reflektora, --d opóźnienie wejścia */
+    .top {
+      --m: var(--silver); --avs: 72px; --ph: 84px; --num: 2.6rem; --sp: 9.5deg; --lamp: 40px; --glow: 24%; --core: 12%; --halo: 24%; --d: 0.24s; --sway: 8.5s; --sway-d: -3s;
+      position: relative; grid-row: 1; grid-column: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+      min-width: 0; text-align: center; cursor: pointer; border-radius: 10px 10px 0 0; -webkit-tap-highlight-color: transparent;
+    }
+    .top.t1 { --m: var(--gold); --avs: 96px; --ph: 118px; --num: 3.5rem; --sp: 14.5deg; --lamp: 60px; --glow: 36%; --core: 20%; --halo: 36%; --d: 0.5s; --sway: 7s; --sway-d: 0s; grid-column: 2; }
+    .top.t3 { --m: var(--bronze); --ph: 62px; --num: 2.1rem; --sp: 8.6deg; --lamp: 36px; --d: 0.04s; --sway: 9.5s; --sway-d: -6s; grid-column: 3; }
+    .top:focus-visible { outline-offset: -3px; }
+
+    /* Reflektor: oprawa u góry sceny i stożek światła na osobę (wierzchołek stożka jest ponad sceną) */
+    .lamp {
+      position: absolute; z-index: 1; left: 50%; top: calc(-1 * var(--pad)); width: var(--lamp); height: 8px; margin-left: calc(var(--lamp) / -2);
+      border: 1px solid #2b363b; border-top: 0; border-radius: 0 0 8px 8px; background: #06090a;
+    }
+    .lamp::after {
+      content: ''; position: absolute; left: 3px; right: 3px; bottom: -1px; height: 3px; border-radius: 3px;
+      background: color-mix(in srgb, var(--m) 65%, #fff); box-shadow: 0 2px 14px 2px color-mix(in srgb, var(--m) 60%, transparent);
+    }
+    .beam {
+      --bc: color-mix(in srgb, var(--m) var(--glow), transparent); --bc2: color-mix(in srgb, var(--m) var(--core), transparent);
+      position: absolute; z-index: -1; left: -30%; right: -30%; top: calc(-1 * var(--pad)); bottom: calc(var(--ph) - 4px); pointer-events: none;
+      background:
+        conic-gradient(from calc(180deg - var(--sp) * 0.5) at 50% calc(-1 * var(--apex)), transparent 0deg, var(--bc2) calc(var(--sp) * 0.3), var(--bc2) calc(var(--sp) * 0.7), transparent var(--sp), transparent 360deg),
+        conic-gradient(from calc(180deg - var(--sp)) at 50% calc(-1 * var(--apex)), transparent 0deg, var(--bc) calc(var(--sp) * 0.5), var(--bc) calc(var(--sp) * 1.5), transparent calc(var(--sp) * 2), transparent 360deg);
+      -webkit-mask-image: linear-gradient(180deg, #000 0, #000 38%, transparent 97%); mask-image: linear-gradient(180deg, #000 0, #000 38%, transparent 97%);
+      transform-origin: 50% calc(-1 * var(--apex)); animation: beam-sway var(--sway) ease-in-out var(--sway-d) infinite alternate;
+    }
+    @keyframes beam-sway { from { transform: rotate(-1.6deg); } to { transform: rotate(1.6deg); } }
+
+    /* Osoba nad kolumną */
+    .pod-person { position: relative; display: flex; flex-direction: column; align-items: center; width: 100%; min-width: 0; padding: 0 4px; }
+    .pod-av { position: relative; display: grid; place-items: center; padding: 4px; margin-bottom: 15px; border-radius: 50%; transition: transform 0.18s ease; }
+    .pod-av::before {
+      content: ''; position: absolute; inset: 0; border-radius: 50%;
+      background: conic-gradient(var(--m), color-mix(in srgb, var(--m) 40%, #fff) 12%, var(--m) 28%, color-mix(in srgb, var(--m) 50%, #000) 52%, var(--m) 74%, color-mix(in srgb, var(--m) 40%, #fff) 88%, var(--m));
+    }
+    .pod-av::after { content: ''; position: absolute; z-index: -1; inset: -28%; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--m) var(--halo), transparent), transparent); }
+    .top.t1 .pod-av::before { animation: spin 7s linear infinite; }
+    .top .avatar { position: relative; width: var(--avs); height: var(--avs); border: 3px solid #0f1518; }
+    .pod-lvl {
+      position: absolute; z-index: 2; left: 50%; bottom: -10px; transform: translateX(-50%); padding: 0 8px; border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--m) 55%, var(--border)); background: #0f1518; color: var(--text); font-size: 0.68rem; font-weight: 600; line-height: 17px; white-space: nowrap;
+    }
+    .pod-av .me-tag { position: absolute; z-index: 3; right: -6px; top: 4px; background: var(--accent); color: #062126; }
+    .top .nick { display: flex; align-items: center; justify-content: center; gap: 6px; max-width: 100%; min-width: 0; font-weight: 600; white-space: nowrap; }
+    .top .nick .dn { min-width: 0; padding: 6px 1px; margin: -6px -1px; overflow: hidden; text-overflow: ellipsis; }
+    .top.t1 .nick { font-size: 1.08rem; }
     .top .tag { max-width: 100%; color: var(--faint); font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .top .meta { margin-top: 8px; color: var(--muted); font-size: 0.85rem; }
-    .top .meta b { color: var(--text); font-weight: 600; }
+    .top .meta { max-width: 100%; color: color-mix(in srgb, var(--m) 78%, #fff); font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .top.t1 .meta { font-size: 1rem; }
+
+    /* Korona i iskierki zwycięzcy */
+    .crown { position: absolute; z-index: 3; left: 50%; top: -22px; width: 36px; margin-left: -18px; line-height: 0; pointer-events: none; }
+    .crown svg { width: 100%; fill: var(--gold); filter: drop-shadow(0 2px 5px rgba(227, 179, 65, 0.55)); animation: crown-float 3.2s ease-in-out infinite; }
+    .crown circle, .arch-crown circle { fill: #ffe9a6; }
+    @keyframes crown-float { 50% { transform: translateY(-3px) rotate(-3deg); } }
+    .spark {
+      position: absolute; z-index: 3; width: 10px; height: 10px; background: #fff3c4; opacity: 0; pointer-events: none;
+      clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); animation: twinkle 2.8s ease-in-out infinite;
+    }
+    .spark.s1 { left: -15px; top: 20%; }
+    .spark.s2 { right: -17px; top: 5%; width: 13px; height: 13px; animation-delay: 0.7s; }
+    .spark.s3 { right: -11px; bottom: 22%; width: 8px; height: 8px; animation-delay: 1.4s; }
+    .spark.s4 { left: -8px; bottom: 9%; width: 7px; height: 7px; animation-delay: 2.1s; }
+    @keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(0.3) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
+
+    /* Kolumna z numerem miejsca */
+    .pod-col {
+      position: relative; flex: none; width: 100%; height: var(--ph); margin-top: 12px; overflow: hidden; display: grid; place-items: center;
+      border: 1px solid color-mix(in srgb, var(--m) 42%, var(--border)); border-bottom: 0; border-radius: 10px 10px 0 0;
+      background: linear-gradient(180deg, color-mix(in srgb, var(--m) 25%, #141b1f), color-mix(in srgb, var(--m) 7%, #10161a) 80%);
+      box-shadow: inset 0 2px 0 color-mix(in srgb, var(--m) 60%, transparent), 0 -12px 30px -16px var(--m); transition: filter 0.18s ease;
+    }
+    .pod-col::before { content: ''; position: absolute; inset: 7px 7px 0; border: 1px solid color-mix(in srgb, var(--m) 20%, transparent); border-bottom: 0; border-radius: 5px 5px 0 0; }
+    .pod-col::after { content: ''; position: absolute; inset: 0 -70%; background: linear-gradient(105deg, transparent 43%, rgba(255, 255, 255, 0.17) 50%, transparent 57%); transform: translateX(-75%); }
+    .top.t1 .pod-col::after { animation: pod-shine 6s ease-in-out 2.4s infinite; }
+    @keyframes pod-shine { 0% { transform: translateX(-75%); } 22%, 100% { transform: translateX(75%); } }
+    .pod-col b {
+      position: relative; top: -2px; font-size: var(--num); font-weight: 800; line-height: 1; letter-spacing: -0.02em; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.45));
+      background: linear-gradient(180deg, color-mix(in srgb, var(--m) 25%, #fff), var(--m) 55%, color-mix(in srgb, var(--m) 60%, #000));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+
+    /* Stany: najechanie, otwarty profil, „Moje miejsce”, ukryta osoba, wolne miejsce */
+    @media (hover: hover) {
+      .top:not(.anon):not(.vacant):hover .pod-av { transform: translateY(-3px) scale(1.035); }
+      .top:not(.anon):not(.vacant):hover .pod-col { filter: brightness(1.2); }
+    }
+    .top.sel .pod-col { border-color: var(--accent); box-shadow: inset 0 2px 0 var(--accent), 0 -12px 30px -16px var(--m); }
+    .top.sel .pod-lvl { border-color: var(--accent); }
+    .top.flash .pod-col { animation: pod-flash 1.8s ease-out; }
+    @keyframes pod-flash { 0%, 35% { box-shadow: inset 0 0 0 150px color-mix(in srgb, var(--accent) 36%, transparent); } }
+    .top.vacant { --m: #47545a; cursor: default; }
+    .top.vacant .beam, .top.vacant .lamp::after, .top.vacant .pod-av::before, .top.vacant .pod-av::after { display: none; }
+    .top.vacant .nick { color: var(--faint); font-size: 0.82rem; font-weight: 500; }
+    .top .pod-free { display: block; border: 2px dashed #37444a; background: none; }
+
+    /* Wejście podium: kolumny wyjeżdżają od 3. do 1. miejsca, osoby wskakują, reflektory się zapalają */
+    .top3.pre .pod-col { transform: translateY(105%); }
+    .top3.pre .pod-person, .top3.pre .beam, .top3.pre .lamp::after { opacity: 0; }
+    .top3.enter .pod-col { animation: pod-rise 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.12) var(--d) both; }
+    .top3.enter .pod-person { animation: pod-drop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3) calc(var(--d) + 0.36s) both; }
+    .top3.enter .beam { animation: beam-sway var(--sway) ease-in-out var(--sway-d) infinite alternate, beam-on 0.8s linear calc(var(--d) + 0.6s) both; }
+    .top3.enter .lamp::after { animation: beam-on 0.8s linear calc(var(--d) + 0.6s) both; }
+    .top3.enter .crown { animation: crown-drop 0.55s cubic-bezier(0.3, 1.5, 0.5, 1) calc(var(--d) + 0.8s) backwards; }
+    @keyframes pod-rise { from { transform: translateY(105%); } }
+    @keyframes pod-drop { from { opacity: 0; transform: translateY(-22px) scale(0.86); } }
+    @keyframes beam-on { 0% { opacity: 0; } 10% { opacity: 0.85; } 18% { opacity: 0.1; } 30% { opacity: 1; } 40% { opacity: 0.35; } 55%, 100% { opacity: 1; } }
+    @keyframes crown-drop { from { opacity: 0; transform: translateY(-26px) rotate(-24deg) scale(0.6); } }
 
     /* ---------- Lista ---------- */
     .table { border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); overflow: hidden; }
@@ -236,7 +335,7 @@
     .me-tag { flex: none; align-self: center; padding: 0 6px; border-radius: 5px; background: color-mix(in srgb, var(--accent) 24%, transparent); color: var(--text); font-size: 0.7rem; font-weight: 600; line-height: 18px; }
     .row.me { box-shadow: inset 3px 0 0 var(--accent); }
     .board.grid .row.me { box-shadow: inset 0 0 0 1px var(--accent); }
-    .row.flash, .top.flash { animation: flash 1.8s ease-out; }
+    .row.flash { animation: flash 1.8s ease-out; }
     @keyframes flash { 0%, 35% { background: color-mix(in srgb, var(--accent) 24%, var(--surface)); } }
     .pf-me { margin-top: 8px; padding: 3px 10px; border: 1px solid var(--border); border-radius: 999px; background: none; color: var(--muted); font-size: 0.78rem; cursor: pointer; }
     .pf-me:hover { color: var(--text); background: var(--hover); }
@@ -250,10 +349,23 @@
     .archive { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; max-height: 440px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
     .arch-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px; font-size: 0.82rem; color: var(--muted); }
     .arch-head b { color: var(--text); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .arch-podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-    .arch-p { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; padding: 8px 4px 7px; border: 1px solid var(--border); border-top: 2px solid var(--m, var(--border)); border-radius: 8px; background: none; color: inherit; font: inherit; text-align: center; cursor: pointer; }
+    /* Małe podium: 1. miejsce na środku, wyższe i z koroną; 2. po lewej, 3. po prawej */
+    .arch-podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 6px; padding-top: 10px; }
+    .arch-p { position: relative; grid-row: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; padding: 8px 4px 7px; border: 1px solid var(--border); border-top: 2px solid var(--m, var(--border)); border-radius: 8px; background: none; color: inherit; font: inherit; text-align: center; cursor: pointer; }
     .arch-p:hover { background: var(--hover); }
-    .arch-p.p1 { --m: var(--gold); } .arch-p.p2 { --m: var(--silver); } .arch-p.p3 { --m: var(--bronze); }
+    .arch-p.p1 {
+      --m: var(--gold); --bgp: linear-gradient(180deg, color-mix(in srgb, var(--gold) 15%, transparent), transparent 78%);
+      grid-column: 2; padding: 14px 4px 11px; border-color: color-mix(in srgb, var(--gold) 38%, var(--border)); border-top-color: var(--gold); background: var(--bgp);
+    }
+    .arch-p.p2 { --m: var(--silver); grid-column: 1; }
+    .arch-p.p3 { --m: var(--bronze); grid-column: 3; padding-top: 6px; padding-bottom: 5px; }
+    .arch-p.p1:hover { background: var(--hover); }
+    .arch-p.p1.anon:hover { background: var(--bgp); }
+    .arch-p.p1 .avatar { width: 40px; height: 40px; box-shadow: 0 0 0 2px var(--gold), 0 0 14px -2px var(--gold); }
+    .arch-p.p1 .who-n { font-weight: 600; }
+    .arch-p.p1 small { color: color-mix(in srgb, var(--gold) 78%, #fff); font-weight: 600; }
+    .arch-crown { position: absolute; left: 50%; top: -11px; width: 20px; margin-left: -10px; line-height: 0; pointer-events: none; }
+    .arch-crown svg { width: 100%; fill: var(--gold); }
     .arch-p.anon { cursor: default; }
     .arch-p.anon:hover { background: none; }
     .arch-p .avatar { width: 32px; height: 32px; }
@@ -266,7 +378,7 @@
     .anon-av { display: grid; place-items: center; color: var(--faint); background: var(--surface-2); }
     .anon-av svg { width: 44%; height: 44%; }
     .row.anon, .top.anon { cursor: default; }
-    .row.anon:hover, .top.anon:hover { background: var(--surface); }
+    .row.anon:hover { background: var(--surface); }
     .board.grid .row.anon:hover { background: var(--surface); }
     .row.anon .nick, .top.anon .nick { color: var(--muted); font-style: italic; }
 
@@ -499,8 +611,11 @@
     .tab[data-period="event"]::before { content: ''; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--evc); box-shadow: 0 0 8px var(--evc); }
     body[data-ev-live] .tab[data-period="event"]::before { animation: ev-blink 1.4s ease-in-out infinite; }
     @keyframes ev-blink { 50% { opacity: 0.35; } }
-    .board.ev-mode .top { border-top-color: var(--evc); box-shadow: 0 -10px 30px -22px var(--evc); }
-    .board.ev-mode .top.t1 { border-top-color: var(--gold); }
+    /* Podium wydarzenia: scena w kolorze wydarzenia, medale jak zawsze — złoty, srebrny i brązowy */
+    .board.ev-mode .top3 {
+      border-color: color-mix(in srgb, var(--evc) 36%, var(--border));
+      background: radial-gradient(80% 62% at 50% 0%, color-mix(in srgb, var(--evc) 16%, transparent), transparent 72%), linear-gradient(180deg, #131b1f, #0f1518 62%, #0b1012);
+    }
     .board.ev-mode .num .plus { color: var(--evc2); }
     .board.ev-mode .row.sel { box-shadow: inset 3px 0 0 var(--evc); }
 
@@ -516,10 +631,24 @@
       .tabs { flex: 1 1 100%; }
       .tab { flex: 1; padding: 8px 6px; }
       .search { flex: 1 1 auto; }
-      .top3 { gap: 6px; }
-      .top { padding: 14px 6px 12px; }
-      .top .avatar { width: 52px; height: 52px; }
-      .top .meta { font-size: 0.78rem; }
+      .top3 { --pad: 27px; --apex: 90px; gap: 0 5px; padding: var(--pad) 8px 0; }
+      .top { --avs: 52px; --ph: 62px; --num: 2rem; --lamp: 30px; }
+      .top.t1 { --avs: 68px; --ph: 86px; --num: 2.6rem; --lamp: 44px; }
+      .top.t3 { --ph: 46px; --num: 1.6rem; --lamp: 28px; }
+      .lamp { height: 7px; }
+      .pod-person { padding: 0 2px; }
+      .pod-av { padding: 3px; margin-bottom: 13px; }
+      .top .avatar { border-width: 2px; }
+      .pod-lvl { bottom: -9px; padding: 0 6px; font-size: 0.62rem; line-height: 15px; }
+      .top .nick { font-size: 0.86rem; }
+      .top.t1 .nick { font-size: 0.95rem; }
+      .top .tag { font-size: 0.72rem; }
+      .top .meta { font-size: 0.8rem; }
+      .top.t1 .meta { font-size: 0.88rem; }
+      .top.vacant .nick { font-size: 0.74rem; }
+      .crown { top: -17px; width: 28px; margin-left: -14px; }
+      .pod-col { margin-top: 9px; }
+      .pod-col::before { inset: 5px 5px 0; }
       .cols { display: none; }
       .row { grid-template-columns: 26px minmax(0, 1fr) auto 40px; gap: 10px; padding: 0 12px; }
       .num.msgs, .num.voice { display: none; }
@@ -548,6 +677,8 @@
     @media (prefers-reduced-motion: reduce) {
       .skeleton, .pf-skel, .profile, .blob, .bg-grid, .saw svg, .cog svg, .pillar::after, .chev span, .dn.fx7 { animation: none; }
       .event, .event::after, .ev-mult, .ev-mult::before, .ev-dot, .ev-clock b.tick, body[data-ev-live] .tab[data-period="event"]::before { animation: none; }
+      .beam, .top.t1 .pod-av::before, .crown svg, .spark, .top.t1 .pod-col::after, .top.flash .pod-col { animation: none; }
+      .pod-av, .pod-col { transition: none; }
     }
   </style>
 </head>
@@ -873,37 +1004,137 @@
       </li>`;
     }
 
-    function topHtml(e, i) {
-      const xp = e.periodXp != null
-        ? `+${fmt(e.periodXp)} XP`
-        : state.sort === 'messages' && state.period === 'all'
-          ? `${fmt(e.messages)} wiad.`
-          : state.sort === 'voice' && state.period === 'all'
-            ? voiceText(e.voiceMinutes)
-            : `${fmt(e.xp)} XP`;
-      if (e.hidden) {
-        return `<article class="top t${i + 1} anon" title="${ANON_TITLE}">
-        <span class="place">#${e.rank}</span>
-        ${anonAvatar(72)}
-        <span class="nick">Ukryta osoba</span>
-        <span class="meta">Poziom <b>${e.level}</b> · ${xp}</span>
-      </article>`;
+    // ---------- Podium (top 3) ----------
+    // Trzy kolumny (1. miejsce na środku) stoją na stałe; przy zmianie rankingu podmieniają się tylko osoby.
+    const CROWN_SVG = '<svg viewBox="0 0 32 24" aria-hidden="true"><path d="M4 17.4 2.3 7.2l7.2 4.9L16 3.6l6.5 8.5 7.2-4.9L28 17.4z"/><rect x="4" y="18.8" width="24" height="3.6" rx="1.3"/><circle cx="2.3" cy="5.8" r="1.7"/><circle cx="16" cy="2.3" r="1.9"/><circle cx="29.7" cy="5.8" r="1.7"/></svg>';
+    const POD_AVATAR = [96, 72, 72];
+    const POD_ATTRS = ['data-id', 'tabindex', 'role', 'aria-label', 'aria-hidden', 'title'];
+    const pod = { built: false, shown: [null, null, null], flips: [[], [], []], timer: 0 };
+    function podStat(e) {
+      if (e.periodXp != null) return `+${fmt(e.periodXp)} XP`;
+      if (state.period === 'all' && state.sort === 'messages') return `${fmt(e.messages)} wiad.`;
+      if (state.period === 'all' && state.sort === 'voice') return voiceText(e.voiceMinutes);
+      return `${fmt(e.xp)} XP`;
+    }
+    // Jedno miejsce: kto na nim stoi (who), „podpis” treści do wykrywania zmian (sig), klasy i atrybuty kolumny, treść nad kolumną.
+    function podSlot(e, i) {
+      const place = i + 1;
+      if (!e) {
+        return { who: '', sig: 'vacant', cls: ' vacant', attrs: { 'aria-hidden': 'true' }, html: '<span class="pod-av"><span class="av"><span class="avatar pod-free"></span></span></span><span class="nick">Wolne miejsce</span>' };
       }
-      return `<article class="top t${i + 1}${e.nitro ? ' nitro' : ''}${e.look?.decoration ? ' has-deco' : ''}${e.userId === state.selected ? ' sel' : ''}"${nitroAttrs(e)} data-id="${esc(e.userId)}" tabindex="0" role="button" aria-label="Profil: ${esc(display(e))}">
-        <span class="place">#${e.rank}</span>
-        ${avatarHtml(e, 72)}
-        <span class="nick">${styledName(display(e), e.look, true)} ${tagHtml(e.look)}</span>
-        ${e.displayName ? `<span class="tag">${esc(e.name)}</span>` : ''}
-        <span class="meta">Poziom <b>${e.level}</b> · ${xp}</span>
-      </article>`;
+      const stat = podStat(e);
+      const winner = place === 1 ? `<span class="crown">${CROWN_SVG}</span><i class="spark s1"></i><i class="spark s2"></i><i class="spark s3"></i><i class="spark s4"></i>` : '';
+      const level = `<b class="pod-lvl">Poziom ${e.level}</b>`;
+      const lead = `<span class="sr-only">Miejsce ${place}: </span>`;
+      if (e.hidden) {
+        return {
+          who: 'hidden',
+          sig: JSON.stringify(['hidden', stat, e.level]),
+          cls: ' anon',
+          attrs: { title: ANON_TITLE },
+          html: `${lead}<span class="pod-av">${winner}<span class="av"><span class="avatar anon-av" aria-hidden="true">${LOCK_SVG}</span></span>${level}</span><span class="nick">Ukryta osoba</span><span class="meta">${stat}</span>`,
+        };
+      }
+      const name = display(e);
+      const mine = Boolean(state.me) && e.userId === state.me;
+      return {
+        who: e.userId,
+        sig: JSON.stringify([e.userId, stat, e.level, name, e.name, e.avatar, e.avatarAnim ?? null, e.look ?? null, mine]),
+        cls: `${e.nitro ? ' nitro' : ''}${e.look?.decoration ? ' has-deco' : ''}`,
+        attrs: { 'data-id': e.userId, tabindex: '0', role: 'button', 'aria-label': `Miejsce ${place}: ${name}, poziom ${e.level}, ${stat} — profil` },
+        html: `${lead}<span class="pod-av">${winner}${avatarHtml(e, POD_AVATAR[i])}${level}${mine ? '<span class="me-tag">Ty</span>' : ''}</span>
+          <span class="nick">${styledName(name, e.look, true)} ${tagHtml(e.look)}</span>
+          ${e.displayName ? `<span class="tag">${esc(e.name)}</span>` : ''}
+          <span class="meta">${stat}</span>`,
+      };
+    }
+    function podApply(article, slot, i) {
+      article.className = `top t${i + 1}${slot.cls}`;
+      for (const name of POD_ATTRS) {
+        if (slot.attrs[name] != null) article.setAttribute(name, slot.attrs[name]);
+        else article.removeAttribute(name);
+      }
+      article.querySelector('.pod-person').innerHTML = slot.html;
+      article.classList.toggle('sel', Boolean(state.selected) && article.dataset.id === state.selected);
+      pod.shown[i] = slot;
+    }
+    // Pierwsze pokazanie: animacja wejścia, gdy podium jest widoczne na ekranie.
+    function podEntrance(box) {
+      if (reduceMotion.matches || !('IntersectionObserver' in window)) return;
+      box.classList.add('pre');
+      const io = new IntersectionObserver((seen) => {
+        if (!seen.some((x) => x.isIntersecting)) return;
+        io.disconnect();
+        box.classList.remove('pre');
+        box.classList.add('enter');
+        pod.timer = setTimeout(() => box.classList.remove('enter'), 2700);
+      }, { threshold: 0.2 });
+      io.observe(box);
+    }
+    function renderPodium(top) {
+      const box = $('#top3');
+      if (!top.length) {
+        box.hidden = true;
+        return;
+      }
+      const slots = [0, 1, 2].map((i) => podSlot(top[i], i));
+      if (!pod.built) {
+        box.innerHTML = [1, 2, 3]
+          .map((n) => `<article class="top t${n}"><i class="lamp" aria-hidden="true"></i><i class="beam" aria-hidden="true"></i><div class="pod-person"></div><div class="pod-col" aria-hidden="true"><b>${n}</b></div></article>`)
+          .join('');
+        pod.built = true;
+        slots.forEach((slot, i) => podApply(box.children[i], slot, i));
+        box.hidden = false;
+        podEntrance(box);
+        return;
+      }
+      const animate = !box.hidden && !box.classList.contains('pre') && !reduceMotion.matches && typeof box.animate === 'function';
+      box.hidden = false;
+      // Zmiana w trakcie animacji wejścia: kończymy ją od razu (inaczej nowa treść wchodziłaby jeszcze raz).
+      if (box.classList.contains('enter') && slots.some((slot, i) => pod.shown[i]?.sig !== slot.sig)) {
+        clearTimeout(pod.timer);
+        box.classList.remove('enter');
+      }
+      slots.forEach((slot, i) => {
+        const article = box.children[i];
+        const person = article.querySelector('.pod-person');
+        const shown = pod.shown[i];
+        // Przerwana podmiana (szybkie przełączanie zakładek): wracamy do tego, co faktycznie stoi na kolumnie.
+        pod.flips[i].forEach((a) => a.cancel());
+        pod.flips[i] = [];
+        if (shown?.sig === slot.sig) return;
+        if (!animate || shown?.who === slot.who) {
+          podApply(article, slot, i);
+          return;
+        }
+        // Podmiana osoby: stara obraca się bokiem, nowa wraca przodem, a reflektor mruga. Kolejność: 3., 2., 1. miejsce.
+        const out = person.animate(
+          [{ transform: 'perspective(700px) rotateY(0deg)', opacity: 1 }, { transform: 'perspective(700px) rotateY(88deg)', opacity: 0.2 }],
+          { duration: 170, delay: (2 - i) * 80, easing: 'ease-in', fill: 'forwards' },
+        );
+        pod.flips[i] = [out];
+        out.finished
+          .then(() => {
+            podApply(article, slot, i);
+            const back = person.animate(
+              [{ transform: 'perspective(700px) rotateY(-88deg)', opacity: 0.2 }, { transform: 'perspective(700px) rotateY(0deg)', opacity: 1 }],
+              { duration: 320, easing: 'cubic-bezier(0.2, 0.9, 0.3, 1.25)' },
+            );
+            const blink = article.querySelector('.beam').animate([{ opacity: 0.1 }, { opacity: 1, offset: 0.3 }, { opacity: 0.35, offset: 0.5 }, { opacity: 1 }], { duration: 480 });
+            pod.flips[i] = [back, blink];
+            out.cancel();
+          })
+          .catch(() => {});
+      });
     }
 
     // ---------- Archiwum zwycięzców ----------
     const archive = { data: null, tab: 'weeks' };
     function archivePerson(p) {
       const xp = `${fmt(p.xp)} XP`;
-      if (p.hidden) return `<div class="arch-p p${p.rank} anon" title="${ANON_TITLE}">${anonAvatar(32)}<span class="who-n">Ukryta osoba</span><small>${xp}</small></div>`;
-      return `<button type="button" class="arch-p p${p.rank}" data-id="${esc(p.userId)}" title="${esc(display(p))} — profil">
+      const crown = p.rank === 1 ? `<span class="arch-crown">${CROWN_SVG}</span>` : '';
+      if (p.hidden) return `<div class="arch-p p${p.rank} anon" title="${ANON_TITLE}">${crown}${anonAvatar(32)}<span class="who-n">Ukryta osoba</span><small>${xp}</small></div>`;
+      return `<button type="button" class="arch-p p${p.rank}" data-id="${esc(p.userId)}" title="${esc(display(p))} — profil">${crown}
         <img class="avatar" src="${esc(p.avatar ?? FALLBACK_AVATAR)}" alt="" loading="lazy" width="32" height="32">
         <span class="who-n">${esc(display(p))}</span><small>${xp}</small></button>`;
     }
@@ -1056,11 +1287,9 @@
         return;
       }
       const top = state.search ? [] : state.entries.slice(0, 3);
-      top3.innerHTML = top.map(topHtml).join('');
-      top3.hidden = !top.length;
+      renderPodium(top);
       list.innerHTML = state.entries.slice(top.length).map(rowHtml).join('');
       table.hidden = !list.children.length;
-      applySamples(top3);
       applySamples(list);
     }
 
