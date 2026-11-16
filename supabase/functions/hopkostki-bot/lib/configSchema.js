@@ -12,6 +12,8 @@ const EVERYONE = 'everyone';
 export const BUTTON_STYLE_NAMES = ['niebieski', 'szary', 'zielony', 'czerwony'];
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 export const ESCALATION_ACTIONS = ['alert', 'timeout', 'kick', 'ban'];
+export const AUTOMOD_ACTIONS = ['delete', 'warn', 'timeout'];
+export const RAID_ACTIONS = ['alert', 'kick'];
 export const ACTIVITY_TYPES = ['custom', 'playing', 'listening', 'watching', 'competing'];
 export const PRESENCE_STATUSES = ['online', 'idle', 'dnd'];
 export const NEW_ACCOUNT_MENTIONS = ['here', 'everyone', 'roles'];
@@ -187,6 +189,39 @@ function cleanLevelValue(path, input, current) {
   return undefined;
 }
 
+const AUTOMOD_LIMITS = {
+  'automod.timeoutMinutes': [1, 40320],
+  'automod.warnPoints': [1, 100],
+  'automod.mentions.limit': [2, 50],
+  'automod.caps.percent': [50, 100],
+  'automod.caps.minLength': [5, 500],
+  'automod.spam.messages': [0, 50],
+  'automod.spam.seconds': [2, 60],
+  'automod.spam.duplicates': [0, 20],
+  'automod.raid.joins': [3, 200],
+  'automod.raid.seconds': [5, 600],
+  'automod.raid.minutes': [1, 240],
+  'automod.raid.accountAgeDays': [0, 365],
+};
+function cleanAutomodValue(path, input, current) {
+  if (AUTOMOD_LIMITS[path]) {
+    const [min, max] = AUTOMOD_LIMITS[path];
+    const n = Math.floor(Number(input));
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : current;
+  }
+  if (path === 'automod.raid.action') return RAID_ACTIONS.includes(input) ? input : current;
+  if (path.endsWith('.action')) return AUTOMOD_ACTIONS.includes(input) ? input : current;
+  if (path === 'automod.words.list') {
+    if (!Array.isArray(input)) return current;
+    const seen = new Set();
+    return input
+      .map((w) => String(w ?? '').trim().slice(0, 60))
+      .filter((w) => w.length >= 2 && !seen.has(w.toLowerCase()) && seen.add(w.toLowerCase()))
+      .slice(0, 300);
+  }
+  return undefined;
+}
+
 function cleanValue(path, input, current, def) {
   if (path === 'commandPermissions') return cleanCommandPermissions(input, current);
   if (/roleIds$/i.test(path)) return Array.isArray(input) ? cleanRoleIds(input) : current;
@@ -224,6 +259,10 @@ function cleanValue(path, input, current, def) {
     return SNOWFLAKE.test(String(input)) ? String(input) : current;
   }
   if (path.endsWith('.color')) return HEX_COLOR.test(String(input)) ? String(input).toUpperCase() : current;
+  if (path.startsWith('automod.')) {
+    const cleaned = cleanAutomodValue(path, input, current);
+    if (cleaned !== undefined) return cleaned;
+  }
   if (path === 'alerts.minutes') {
     const n = Math.floor(Number(input));
     return Number.isFinite(n) ? Math.min(120, Math.max(3, n)) : current;

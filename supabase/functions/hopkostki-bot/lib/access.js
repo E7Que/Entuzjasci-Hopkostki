@@ -30,6 +30,7 @@ export const PANEL_SECTIONS = {
   sprawy: 'Sprawy',
   bany: 'Tymczasowe bany',
   poziomy: 'Poziomy',
+  automod: 'Automoderacja',
 };
 const ALL_SECTIONS = Object.keys(PANEL_SECTIONS);
 
@@ -47,6 +48,7 @@ export const SECTION_CONFIG_KEYS = {
   embedy: ['actions'],
   ostrzezenia: ['warns', 'escalation'],
   poziomy: ['levels'],
+  automod: ['automod'],
 };
 
 // Po ilu dniach login wygasa (do wyboru w panelu).

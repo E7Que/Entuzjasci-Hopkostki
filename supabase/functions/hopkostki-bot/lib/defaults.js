@@ -290,6 +290,27 @@ export const DEFAULT_CONFIG = {
   // dni (7, 14 albo 30 — potem /login daje nowe; /login nowy:True wymusza nowe wcześniej).
   // roles: które role odblokowują którą część panelu (bot sprawdza aktualne role na bieżąco).
   // Administratorzy serwera i logowanie hasłem panelu mają zawsze dostęp do wszystkiego.
+  // Automoderacja (domyślnie wyłączona). action: delete = tylko usunięcie wiadomości, warn = usunięcie + ostrzeżenie
+  // (warnPoints punktów → progi z „Ostrzeżeń”), timeout = usunięcie + timeout na timeoutMinutes minut.
+  // Moderatorzy (role moderatorów, uprawnienia zarządzania wiadomościami/serwerem/timeoutem) są pomijani.
+  automod: {
+    enabled: false,
+    logChannelId: '',
+    exemptRoleIds: [],
+    exemptChannelIds: [],
+    notify: true,
+    timeoutMinutes: 10,
+    warnPoints: 1,
+    invites: { enabled: true, action: 'delete', allowOwn: true },
+    mentions: { enabled: true, limit: 6, action: 'timeout' },
+    caps: { enabled: false, percent: 75, minLength: 15, action: 'delete' },
+    words: { enabled: false, list: [], action: 'delete' },
+    spam: { enabled: true, messages: 7, seconds: 8, duplicates: 4, action: 'timeout' },
+    // Rajd: tyle wejść w tyle sekund → alert i tryb anty-rajdu na `minutes` minut; kick = wyrzucanie nowych kont
+    // (młodszych niż accountAgeDays dni; 0 = wszystkich) w tym czasie.
+    raid: { enabled: false, joins: 10, seconds: 30, minutes: 10, action: 'alert', accountAgeDays: 7 },
+  },
+
   panelAccess: {
     enabled: false,
     channelId: '',
@@ -309,6 +330,7 @@ export const DEFAULT_CONFIG = {
       sprawy: [],
       bany: [],
       poziomy: [],
+      automod: [],
     },
   },
 

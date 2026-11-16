@@ -52,6 +52,7 @@
         <a href="#logi" data-view="logi"><span>Logi serwera</span></a>
         <a href="#bump" data-view="bump"><span>Bump</span></a>
         <a href="#spolecznosc" data-view="spolecznosc"><span>Społeczność</span></a>
+        <a href="#automod" data-view="automod"><span>Automoderacja</span></a>
         <a href="#poziomy" data-view="poziomy"><span>Poziomy</span></a>
         <a href="#tickety" data-view="tickety"><span>Tickety</span></a>
         <a href="#glosowe" data-view="glosowe"><span>Kanały głosowe</span></a>
@@ -396,6 +397,81 @@
         <div class="card">
           <h3>Podgląd</h3>
           <div id="bump-preview" class="preview"></div>
+        </div>
+      </section>
+
+      <!-- AUTOMODERACJA -->
+      <section id="view-automod" class="view">
+        <header class="view-head">
+          <h2>Automoderacja</h2>
+          <p class="muted">Bot sam usuwa reklamy, spam i wulgaryzmy oraz pilnuje rajdów. Moderatorzy (role moderatorów i osoby z uprawnieniem do zarządzania wiadomościami, serwerem albo timeoutów) są pomijani. Ostrzeżenia z automoderacji liczą się do progów z zakładki <a href="#ostrzezenia">Ostrzeżenia</a>.</p>
+        </header>
+        <div class="grid two">
+          <div class="card">
+            <h3>Ogólne</h3>
+            <label class="toggle"><input type="checkbox" data-path="automod.enabled"><span></span>Automoderacja włączona</label>
+            <label class="field"><span>Kanał logów automoderacji</span><select data-path="automod.logChannelId" data-channel-select="modlog"></select></label>
+            <label class="toggle"><input type="checkbox" data-path="automod.notify"><span></span>Krótka informacja na kanale (znika po kilku sekundach)</label>
+            <div class="grid two tight">
+              <label class="field"><span>Timeout (minuty)</span><input type="number" min="1" max="40320" data-path="automod.timeoutMinutes"></label>
+              <label class="field"><span>Punkty za ostrzeżenie</span><input type="number" min="1" max="100" data-path="automod.warnPoints"></label>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Wyjątki</h3>
+            <div class="field"><span>Role pomijane przez automoderację</span><div data-picker-slot="cfg:automod.exemptRoleIds"></div></div>
+            <div class="field"><span>Kanały pomijane</span><div data-channel-picker-slot="automod.exemptChannelIds"></div></div>
+          </div>
+          <div class="card">
+            <h3>Zaproszenia do innych serwerów</h3>
+            <label class="toggle"><input type="checkbox" data-path="automod.invites.enabled"><span></span>Włączone</label>
+            <label class="toggle"><input type="checkbox" data-path="automod.invites.allowOwn"><span></span>Zaproszenia na nasz serwer są dozwolone</label>
+            <label class="field"><span>Kara</span><select data-path="automod.invites.action"><option value="delete">Usuń wiadomość</option><option value="warn">Usuń + ostrzeżenie</option><option value="timeout">Usuń + timeout</option></select></label>
+          </div>
+          <div class="card">
+            <h3>Masowe oznaczenia</h3>
+            <label class="toggle"><input type="checkbox" data-path="automod.mentions.enabled"><span></span>Włączone</label>
+            <label class="field"><span>Od ilu oznaczeń w jednej wiadomości (osoby, role, @everyone)</span><input type="number" min="2" max="50" data-path="automod.mentions.limit"></label>
+            <label class="field"><span>Kara</span><select data-path="automod.mentions.action"><option value="delete">Usuń wiadomość</option><option value="warn">Usuń + ostrzeżenie</option><option value="timeout">Usuń + timeout</option></select></label>
+          </div>
+          <div class="card">
+            <h3>Spam</h3>
+            <label class="toggle"><input type="checkbox" data-path="automod.spam.enabled"><span></span>Włączone</label>
+            <div class="grid two tight">
+              <label class="field"><span>Wiadomości (0 = wył.)</span><input type="number" min="0" max="50" data-path="automod.spam.messages"></label>
+              <label class="field"><span>w ciągu (sekundy)</span><input type="number" min="2" max="60" data-path="automod.spam.seconds"></label>
+            </div>
+            <label class="field"><span>Ta sama wiadomość ile razy w minutę (0 = wył.)</span><input type="number" min="0" max="20" data-path="automod.spam.duplicates"></label>
+            <label class="field"><span>Kara (usuwa całą serię)</span><select data-path="automod.spam.action"><option value="delete">Usuń wiadomość</option><option value="warn">Usuń + ostrzeżenie</option><option value="timeout">Usuń + timeout</option></select></label>
+          </div>
+          <div class="card">
+            <h3>Pisanie wielkimi literami</h3>
+            <label class="toggle"><input type="checkbox" data-path="automod.caps.enabled"><span></span>Włączone</label>
+            <div class="grid two tight">
+              <label class="field"><span>Od ilu % wielkich liter</span><input type="number" min="50" max="100" data-path="automod.caps.percent"></label>
+              <label class="field"><span>Minimum liter w wiadomości</span><input type="number" min="5" max="500" data-path="automod.caps.minLength"></label>
+            </div>
+            <label class="field"><span>Kara</span><select data-path="automod.caps.action"><option value="delete">Usuń wiadomość</option><option value="warn">Usuń + ostrzeżenie</option><option value="timeout">Usuń + timeout</option></select></label>
+          </div>
+          <div class="card">
+            <h3>Zakazane słowa</h3>
+            <label class="toggle"><input type="checkbox" data-path="automod.words.enabled"><span></span>Włączone</label>
+            <label class="field"><span>Lista — jedno słowo albo fraza w linii</span><textarea data-path="automod.words.list" data-lines rows="6" maxlength="20000"></textarea><small><code>słowo*</code> łapie wszystko, co się od niego zaczyna. Wielkość liter, polskie znaki, cyfry zamiast liter (k0rwa) i r o z s t r z e l e n i e nie pomagają w obejściu.</small></label>
+            <label class="field"><span>Kara</span><select data-path="automod.words.action"><option value="delete">Usuń wiadomość</option><option value="warn">Usuń + ostrzeżenie</option><option value="timeout">Usuń + timeout</option></select></label>
+          </div>
+          <div class="card">
+            <h3>Anty-rajd</h3>
+            <label class="toggle"><input type="checkbox" data-path="automod.raid.enabled"><span></span>Włączone</label>
+            <div class="grid two tight">
+              <label class="field"><span>Wejść na serwer</span><input type="number" min="3" max="200" data-path="automod.raid.joins"></label>
+              <label class="field"><span>w ciągu (sekundy)</span><input type="number" min="5" max="600" data-path="automod.raid.seconds"></label>
+            </div>
+            <label class="field"><span>Co robić</span><select data-path="automod.raid.action"><option value="alert">Tylko alert (z pingiem roli z „Alertów o awarii”)</option><option value="kick">Alert + wyrzucanie nowych kont</option></select></label>
+            <div class="grid two tight">
+              <label class="field"><span>Tryb anty-rajdu trwa (minuty)</span><input type="number" min="1" max="240" data-path="automod.raid.minutes"></label>
+              <label class="field"><span>Nowe konto = młodsze niż (dni, 0 = każde)</span><input type="number" min="0" max="365" data-path="automod.raid.accountAgeDays"></label>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -926,6 +1002,7 @@
               <div class="field"><span>Sprawy</span><div data-picker-slot="cfg:panelAccess.roles.sprawy"></div></div>
               <div class="field"><span>Tymczasowe bany</span><div data-picker-slot="cfg:panelAccess.roles.bany"></div></div>
               <div class="field"><span>Poziomy</span><div data-picker-slot="cfg:panelAccess.roles.poziomy"></div></div>
+              <div class="field"><span>Automoderacja</span><div data-picker-slot="cfg:panelAccess.roles.automod"></div></div>
             </div>
             <p class="muted small">„Uprawnienia komend” i „Ustawienia” pozwalają zmieniać, kto może używać komend (także /ban) i kto liczy się jako moderacja — dawaj je tylko zaufanym rolom.</p>
           </div>

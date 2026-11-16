@@ -19,13 +19,16 @@ export function membersFeaturesOn(config) {
   const m = config.members;
   // Poziomy: auto reset po wyjściu z serwera i import z rankingu (lista członków).
   const levels = config.levels.enabled && config.levels.autoReset;
-  return m.autoRole.enabled || m.welcome.enabled || m.goodbye.enabled || joinLogsOn(config) || profileLogsOn(config) || levels;
+  // Automoderacja: anty-rajd liczy wejścia na serwer.
+  const raid = config.automod.enabled && config.automod.raid.enabled;
+  return m.autoRole.enabled || m.welcome.enabled || m.goodbye.enabled || joinLogsOn(config) || profileLogsOn(config) || levels || raid;
 }
 
 // Treść cudzych wiadomości: zapis ticketów, logi usuniętych/edytowanych wiadomości, embed DISBOARD przy bumpie.
 export function contentFeaturesOn(config) {
   // Poziomy: XP za słowa i booster „wysiłku” liczą słowa w wiadomości.
-  return config.tickets.enabled || config.bump.enabled || messageLogsOn(config) || (config.levels.enabled && config.levels.message.enabled);
+  // Automoderacja: filtry czytają treść wiadomości.
+  return config.tickets.enabled || config.bump.enabled || messageLogsOn(config) || (config.levels.enabled && config.levels.message.enabled) || config.automod.enabled;
 }
 
 // Włącza w aplikacji intencje potrzebne do włączonych funkcji (tylko wersje "limited" da się włączyć przez API —

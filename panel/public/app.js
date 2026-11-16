@@ -20,7 +20,7 @@ const RULE_ACTIONS = { alert: 'Alert', timeout: 'Timeout', kick: 'Kick', ban: 'B
 const PLACEHOLDERS = ['{uzytkownik}', '{nick}', '{moderator}', '{moderatorNick}', '{powod}', '{czas}', '{serwer}', '{sprawa}', '{typ}'];
 const ACTIVITY_LABELS = { custom: 'Własny opis', playing: 'Gra w', listening: 'Słucha', watching: 'Ogląda', competing: 'Rywalizuje w' };
 const PRESENCE_PLACEHOLDERS = ['{czlonkowie}', '{online}', '{serwer}', '{ostrzezenia}', '{sprawy}'];
-const VIEWS = ['pulpit', 'ustawienia', 'uprawnienia', 'czlonkowie', 'logi', 'bump', 'spolecznosc', 'poziomy', 'tickety', 'glosowe', 'wiadomosci', 'embedy', 'ostrzezenia', 'sprawy', 'bany', 'dostep'];
+const VIEWS = ['pulpit', 'ustawienia', 'uprawnienia', 'czlonkowie', 'logi', 'bump', 'spolecznosc', 'automod', 'poziomy', 'tickety', 'glosowe', 'wiadomosci', 'embedy', 'ostrzezenia', 'sprawy', 'bany', 'dostep'];
 const MEMBER_VARS = ['{uzytkownik}', '{nick}', '{serwer}', '{liczba}'];
 const TICKET_VARS = ['{uzytkownik}', '{nick}', '{numer}', '{typ}'];
 const BUMP_VARS = ['{uzytkownik}', '{nick}', '{liczba}', '{nastepny}', '{godzina}'];
@@ -675,6 +675,7 @@ function fillInputs() {
   $$('[data-path]').forEach((el) => {
     const value = getPath(state.draft, el.dataset.path);
     if (el.type === 'checkbox') el.checked = Boolean(value);
+    else if ('lines' in el.dataset) el.value = Array.isArray(value) ? value.join('\n') : '';
     else el.value = value ?? '';
   });
   $$('input[type=color][data-color-for]').forEach((picker) => {
@@ -688,6 +689,8 @@ function fillInputs() {
 
 function readValue(el) {
   if (el.type === 'checkbox') return el.checked;
+  // Lista w polu tekstowym: jedna pozycja w linii.
+  if ('lines' in el.dataset) return el.value.split('\n').map((line) => line.trim()).filter(Boolean);
   if ('number' in el.dataset) return Number(el.value);
   if (el.type === 'number') return Math.max(0, Math.floor(Number(el.value) || 0));
   return el.value;
