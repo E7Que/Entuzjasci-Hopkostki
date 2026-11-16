@@ -437,6 +437,8 @@ function route() {
   state.view = VIEWS.includes(hash) && canSee(hash) ? hash : 'pulpit';
   $$('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${state.view}`));
   $$('#nav a').forEach((a) => a.classList.toggle('active', a.dataset.view === state.view));
+  $('#nav-current').textContent = viewLabel(state.view);
+  closeMobileMenu();
   applyViewLock(state.view);
   // Dane z bota tylko tam, gdzie wolno (inaczej bot i tak odmówi).
   const open = canEdit(state.view);
@@ -466,6 +468,26 @@ function route() {
     if (open) loadSentMessages();
   }
 }
+// Telefon: menu z zakładkami pod przyciskiem w górnym pasku.
+function closeMobileMenu() {
+  $('.sidebar').classList.remove('open');
+  $('#nav-toggle').setAttribute('aria-expanded', 'false');
+}
+$('#nav-toggle').addEventListener('click', () => {
+  const open = $('.sidebar').classList.toggle('open');
+  $('#nav-toggle').setAttribute('aria-expanded', String(open));
+});
+// Kliknięcie w otwartą już zakładkę nie zmienia # — menu i tak ma się zamknąć.
+$('#nav').addEventListener('click', (event) => {
+  if (event.target.closest('a')) closeMobileMenu();
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') closeMobileMenu();
+});
+document.addEventListener('click', (event) => {
+  if ($('.sidebar').classList.contains('open') && !event.target.closest('.sidebar')) closeMobileMenu();
+});
+
 window.addEventListener('hashchange', () => {
   // Przycisk z /login otwarty w karcie, w której panel już działa (zmienia się tylko #, bez przeładowania).
   if (location.hash.startsWith('#login=')) boot();
