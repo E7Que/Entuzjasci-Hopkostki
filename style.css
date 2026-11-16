@@ -105,6 +105,50 @@ main { padding: 2rem clamp(1rem, 3vw, 2.5rem) 6rem; min-width: 0; }
 @media (max-width: 860px) {
   .search-results { position: static; width: 100%; max-height: none; margin-top: .4rem; box-shadow: none; }
 }
+/* ---------- Serwer info ---------- */
+#view-serwerinfo .grid.editor { grid-template-columns: minmax(420px, 1.15fr) minmax(320px, 1fr); }
+.si-previews { max-height: calc(100vh - 2rem); overflow-y: auto; }
+.si-stats { margin-left: .35rem; font-weight: 600; text-transform: none; letter-spacing: 0; }
+.si-stats.over { color: var(--red); }
+#si-problems div + div { margin-top: .3rem; }
+.si-posted p { margin: .2rem 0; }
+.si-actions { flex-wrap: wrap; gap: .5rem; }
+.si-add-section { margin-bottom: 1rem; }
+.si-section .card-head h3 { display: flex; align-items: center; gap: .55rem; min-width: 0; overflow-wrap: anywhere; }
+.si-num { display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; flex: none; border-radius: 50%; background: var(--blurple); color: #fff; font-size: .85rem; }
+.si-section-tools { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+.si-section-tools select { width: auto; padding: .3rem .5rem; font-size: .85rem; }
+.si-banner { overflow: hidden; border: 1px dashed var(--line); border-radius: 6px; background: var(--bg); }
+.si-banner.has { border-style: solid; }
+.si-banner img { display: block; width: 100%; max-height: 180px; object-fit: cover; }
+.si-banner-empty { padding: 1rem; color: var(--muted); font-size: .85rem; text-align: center; }
+.si-banner-row { display: flex; gap: .4rem; align-items: center; margin-top: .4rem; }
+.si-banner-row input[type=text] { flex: 1; }
+.si-upload { white-space: nowrap; }
+.si-upload.busy { opacity: .6; pointer-events: none; }
+.si-items { display: grid; gap: .45rem; margin: .2rem 0 .7rem; }
+.si-item { padding: .45rem .55rem .55rem; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.si-item.kind-heading { border-left: 3px solid var(--blurple); }
+.si-item-tools { display: flex; align-items: center; gap: .3rem; margin-bottom: .35rem; }
+.si-item-tools .btn.small { padding: .1rem .45rem; }
+.si-kind { display: inline-flex; align-items: center; gap: .4rem; margin-right: auto; color: var(--muted); font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.si-item-body { display: grid; gap: .35rem; }
+.si-command-row { display: grid; grid-template-columns: auto 1fr 140px; gap: .35rem; align-items: center; }
+.si-slash { color: var(--muted); font-weight: 700; }
+.si-add { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+.si-msg-body { min-width: 0; }
+.si-embed.si-banner-embed { padding: .5rem .5rem .5rem .55rem; }
+.si-embed.si-banner-embed .embed-image { width: 100%; max-height: none; margin-top: 0; }
+@media (max-width: 1100px) {
+  #view-serwerinfo .grid.editor { grid-template-columns: 1fr; }
+  .si-previews { position: static; max-height: none; overflow: visible; }
+}
+@media (max-width: 560px) {
+  .si-command-row { grid-template-columns: auto 1fr; }
+  .si-command-row [data-si-item-field="commandId"] { grid-column: 1 / -1; }
+  .si-banner-row { flex-wrap: wrap; }
+  .si-section-tools { width: 100%; }
+}
 .health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .6rem; margin-top: .75rem; }
 .health-tile { padding: .7rem .8rem; border-radius: 8px; background: var(--bg-3); border: 1px solid var(--line); border-left: 3px solid var(--line); min-width: 0; }
 .health-tile.ok { border-left-color: var(--green); }
@@ -362,6 +406,8 @@ textarea { resize: vertical; }
 .codeblock { margin: .15rem 0 0; padding: .45rem .6rem; background: #1e1f22; border: 1px solid #111214; border-radius: 4px; font-size: .82rem; white-space: pre-wrap; color: var(--text); }
 @media (max-width: 560px) { .embed-fields { grid-template-columns: 1fr; } }
 .embed img.emoji, .embed-title img.emoji { width: 1.2em; height: 1.2em; vertical-align: -.25em; }
+.mention.role { color: var(--role); background: color-mix(in srgb, var(--role) 16%, transparent); }
+.md-quote { display: block; border-left: 4px solid #4e5058; border-radius: 4px; padding: 0 .5rem 0 .75rem; margin: .1rem 0; }
 
 /* ---------- Połączenie, pasek zapisu, toast ---------- */
 .side-link { color: var(--muted); text-decoration: none; padding: .55rem .7rem; border-radius: 6px; }
