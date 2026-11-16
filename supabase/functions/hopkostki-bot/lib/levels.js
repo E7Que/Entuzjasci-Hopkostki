@@ -51,6 +51,19 @@ export function weekKey(ms = Date.now()) {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - d.getUTCDay())).toISOString().slice(0, 10);
 }
 export const monthKey = (ms = Date.now()) => new Date(ms).toISOString().slice(0, 7);
+// Doba według czasu polskiego — dzienny limit XP i historia w bot.level_daily.
+export const dayKey = (ms = Date.now()) => new Date(ms).toLocaleDateString('sv-SE', { timeZone: 'Europe/Warsaw' });
+
+// Skrót treści do wykrywania powtórek: bez wielkości liter, polskich znaków, interpunkcji i powtórzonych liter
+// („Siemaaa!!” = „siema”). null, gdy wiadomość nie ma tekstu.
+export function textHash(content) {
+  const raw = String(content ?? '').trim().toLowerCase();
+  if (!raw) return null;
+  const letters = raw.replace(/ł/g, 'l').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\p{L}\p{N}]+/gu, '').replace(/(.)\1+/gu, '$1');
+  let h = 0x811c9dc5;
+  for (const ch of letters || raw.replace(/\s+/g, ' ')) h = Math.imul(h ^ ch.codePointAt(0), 0x01000193) >>> 0;
+  return h.toString(16).padStart(8, '0');
+}
 const previousWeekKey = (ms = Date.now()) => weekKey(Date.parse(`${weekKey(ms)}T00:00:00Z`) - 1);
 const previousMonthKey = (ms = Date.now()) => monthKey(Date.parse(`${monthKey(ms)}-01T00:00:00Z`) - 1);
 
@@ -120,7 +133,7 @@ async function memberInfo(bot, userId) {
 // ---------- Przyznawanie XP i awanse ----------
 
 // Dodaje XP (z cooldownem danego rodzaju) i obsługuje awans. Zwraca { xp, level, previous } albo null (cooldown).
-export async function awardXp(bot, config, { user, amount, kind, cooldown, minutes = 0, channelId = null, roles, displayName = null }) {
+export async function awardXp(bot, config, { user, amount, kind, cooldown, minutes = 0, channelId = null, roles, displayName = null, hash = null }) {
   if (!user?.id || amount <= 0) return null;
   const row = await bot.store.awardXp({
     userId: user.id,
@@ -133,12 +146,15 @@ export async function awardXp(bot, config, { user, amount, kind, cooldown, minut
     minutes,
     weekKey: weekKey(),
     monthKey: monthKey(),
+    dayKey: dayKey(),
+    dailyCap: config.antiFarm.dailyCap,
+    textHash: config.antiFarm.ignoreRepeats ? hash : null,
   });
   if (!row) return null;
   const { level } = levelProgress(row.xp, config.formula);
   if (level !== row.level) await bot.store.setLevel(user.id, level);
   if (level > row.level) await onLevelUp(bot, config, { user, level, previous: row.level, xp: row.xp, channelId, roles });
-  return { xp: row.xp, level, previous: row.level };
+  return { xp: row.xp, level, previous: row.level, granted: row.granted };
 }
 
 // Nagrody w rolach: przy „Stack Rewards” wszystkie do osiągniętego poziomu, inaczej tylko najwyższa.
@@ -240,6 +256,11 @@ export async function onMessageLevels(bot, message) {
   let user = message.author;
   let roles = message.member?.roles;
   let nick = message.member?.nick ?? null;
+  const text = String(message.content ?? '');
+  // Ochrona przed nabijaniem dotyczy treści pisanej przez osobę (nie odpowiedzi botów na komendy slash).
+  const own = !user?.bot;
+  const files = (message.attachments ?? []).length + (message.sticker_items ?? []).length;
+  if (own && config.antiFarm.minChars > 0 && !files && text.trim().length < config.antiFarm.minChars) return;
   if (user?.bot) {
     // Komendy slash dowolnego bota: XP dla osoby, która jej użyła (jeśli włączone).
     const invoker = message.interaction_metadata?.user ?? message.interaction?.user;
@@ -253,7 +274,7 @@ export async function onMessageLevels(bot, message) {
   const channel = await channelInfo(bot, message.channel_id);
   if (!channelAllowed(config, channel)) return;
 
-  const words = String(message.content ?? '').split(/\s+/).filter(Boolean).length;
+  const words = text.split(/\s+/).filter(Boolean).length;
   const images = (message.attachments ?? []).filter((a) => String(a.content_type ?? '').startsWith('image/')).length;
   const base = config.message.mode === 'perWord' ? Math.min(Math.max(words, config.message.min), config.message.max) : random(config.message.min, config.message.max);
   const effort = (config.boosters.effort.words > 0 && words >= config.boosters.effort.words) || (config.boosters.effort.images > 0 && images >= config.boosters.effort.images);
@@ -266,6 +287,7 @@ export async function onMessageLevels(bot, message) {
     channelId: message.channel_id,
     roles,
     displayName: nick,
+    hash: own ? textHash(text) : null,
   });
 }
 
@@ -294,7 +316,7 @@ export async function onReactionLevels(bot, data) {
 
 // Co przebieg crona: XP dla osób na kanałach głosowych (co „cooldown” sekund dla każdej osoby).
 // Kanał liczy się, gdy jest na nim co najmniej „minimum osób” (bez botów); anty-AFK pomija wyciszonych,
-// ogłuszonych i kanał AFK serwera.
+// ogłuszonych i kanał AFK serwera, a ogłuszonych (nic nie słyszą) nie liczy też do minimum.
 export async function voiceXpTick(bot) {
   const config = (await bot.store.getConfig()).levels;
   if (!config.enabled || !config.voice.enabled) return 0;
@@ -305,7 +327,8 @@ export async function voiceXpTick(bot) {
   for (const s of states) byChannel.set(s.channelId, [...(byChannel.get(s.channelId) ?? []), s]);
   let awarded = 0;
   for (const [channelId, members] of byChannel) {
-    if (members.length < config.voice.minMembers) continue;
+    const counted = config.voice.antiAfk ? members.filter((s) => !s.deafened) : members;
+    if (counted.length < config.voice.minMembers) continue;
     if (config.voice.antiAfk && channelId === guild.afkChannelId) continue;
     const channel = await channelInfo(bot, channelId);
     const listCheck = channel ? { ...channel, voiceText: false } : null;

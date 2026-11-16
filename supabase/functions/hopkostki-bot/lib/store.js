@@ -12,6 +12,8 @@ const XP_KINDS = {
   voice: { last: 'last_voice_at', counter: 'voice_minutes' },
   reaction: { last: 'last_reaction_at', counter: 'reactions' },
 };
+// Kolumny w bot.level_daily dla każdego rodzaju XP.
+const DAILY_COUNTERS = { message: 'messages', voice: 'voice_minutes', reaction: 'reactions' };
 
 const mapLevel = (r) => ({
   userId: r.user_id,
@@ -967,28 +969,65 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
     // ---------- Poziomy ----------
     // XP z cooldownem danego rodzaju (wiadomość / głosowe / reakcja) — atomowo: przy cooldownie nic się nie
     // zmienia i wynik to null. Zwraca nowe łączne XP i POPRZEDNI poziom (kolumna level zmienia się osobno).
-    async awardXp({ userId, userTag, displayName = null, avatar, amount, kind, cooldownSec, minutes = 0, weekKey, monthKey }) {
+    // XP z cooldownem danego rodzaju. dailyCap > 0 — najwyżej tyle XP na dobę (dayKey, czas polski), reszta przepada;
+    // textHash — skrót wiadomości: ta sama wiadomość co ostatnio nagrodzona nie daje XP (null = bez sprawdzania).
+    // Zwraca null (cooldown / powtórka) albo { xp, level, granted }. Dzienne sumy trafiają do bot.level_daily.
+    async awardXp({ userId, userTag, displayName = null, avatar, amount, kind, cooldownSec, minutes = 0, weekKey, monthKey, dayKey, dailyCap = 0, textHash = null }) {
       const k = XP_KINDS[kind];
+      const counter = kind === 'voice' ? minutes : 1;
+      const day = dayKey ?? new Date().toISOString().slice(0, 10);
       const row = await one(
-        `insert into bot.levels as l (user_id, user_tag, display_name, avatar, xp, ${k.counter}, ${k.last}, week_key, week_xp, month_key, month_xp, updated_at)
-         values ($1::text, $2::text, $9::text, $3::text, $4::bigint, $8::int, now(), $5::text, $4::bigint, $6::text, $4::bigint, now())
-         on conflict (user_id) do update set
-           xp = l.xp + excluded.xp,
-           ${k.counter} = l.${k.counter} + excluded.${k.counter},
-           ${k.last} = now(),
-           user_tag = coalesce(excluded.user_tag, l.user_tag),
-           display_name = coalesce(excluded.display_name, l.display_name),
-           avatar = coalesce(excluded.avatar, l.avatar),
-           week_xp = case when l.week_key = excluded.week_key then l.week_xp + excluded.xp else excluded.xp end,
-           week_key = excluded.week_key,
-           month_xp = case when l.month_key = excluded.month_key then l.month_xp + excluded.xp else excluded.xp end,
-           month_key = excluded.month_key,
-           updated_at = now()
-         where l.${k.last} is null or l.${k.last} <= now() - make_interval(secs => $7::double precision)
-         returning xp, level`,
-        [userId, userTag ?? null, avatar ?? null, amount, weekKey, monthKey, cooldownSec, kind === 'voice' ? minutes : 1, displayName ?? null],
+        `with today as (
+           select coalesce((select d.xp from bot.level_daily d where d.user_id = $1::text and d.day = $10::date), 0) as xp
+         ),
+         given as (
+           select case when $11::bigint > 0 then greatest(0, least($4::bigint, $11::bigint - today.xp)) else $4::bigint end as xp from today
+         ),
+         up as (
+           insert into bot.levels as l (user_id, user_tag, display_name, avatar, xp, ${k.counter}, ${k.last}, week_key, week_xp, month_key, month_xp, last_text_hash, updated_at)
+           values ($1::text, $2::text, $9::text, $3::text, (select xp from given), $8::int, now(), $5::text, (select xp from given), $6::text, (select xp from given), $12::text, now())
+           on conflict (user_id) do update set
+             xp = l.xp + excluded.xp,
+             ${k.counter} = l.${k.counter} + excluded.${k.counter},
+             ${k.last} = now(),
+             user_tag = coalesce(excluded.user_tag, l.user_tag),
+             display_name = coalesce(excluded.display_name, l.display_name),
+             avatar = coalesce(excluded.avatar, l.avatar),
+             week_xp = case when l.week_key = excluded.week_key then l.week_xp + excluded.xp else excluded.xp end,
+             week_key = excluded.week_key,
+             month_xp = case when l.month_key = excluded.month_key then l.month_xp + excluded.xp else excluded.xp end,
+             month_key = excluded.month_key,
+             last_text_hash = coalesce(excluded.last_text_hash, l.last_text_hash),
+             updated_at = now()
+           where (l.${k.last} is null or l.${k.last} <= now() - make_interval(secs => $7::double precision))
+             and ($12::text is null or l.last_text_hash is distinct from $12::text)
+           returning l.xp, l.level
+         ),
+         daily as (
+           insert into bot.level_daily as d (user_id, day, xp, ${DAILY_COUNTERS[kind]})
+           select $1::text, $10::date, (select xp from given), $8::int where exists (select 1 from up)
+           on conflict (user_id, day) do update set
+             xp = d.xp + excluded.xp,
+             ${DAILY_COUNTERS[kind]} = d.${DAILY_COUNTERS[kind]} + excluded.${DAILY_COUNTERS[kind]}
+         )
+         select up.xp, up.level, (select xp from given) as granted from up`,
+        [userId, userTag ?? null, avatar ?? null, amount, weekKey, monthKey, cooldownSec, counter, displayName ?? null, day, dailyCap, textHash],
       );
-      return row ? { xp: Number(row.xp), level: row.level } : null;
+      return row ? { xp: Number(row.xp), level: row.level, granted: Number(row.granted) } : null;
+    },
+
+    // Dzienne XP osoby (wykres na stronie rankingu) od dnia `since` (YYYY-MM-DD), od najstarszego.
+    async levelDaily(userId, { since }) {
+      const rows = await query(
+        `select to_char(day, 'YYYY-MM-DD') as day, xp, messages, voice_minutes, reactions from bot.level_daily
+         where user_id = $1::text and day >= $2::date order by day`,
+        [userId, since],
+      );
+      return rows.map((r) => ({ day: r.day, xp: Number(r.xp), messages: r.messages, voiceMinutes: r.voice_minutes, reactions: r.reactions }));
+    },
+
+    async pruneLevelDaily(days = 400) {
+      await query('delete from bot.level_daily where day < current_date - $1::int', [days]);
     },
 
     async setLevel(userId, level) {

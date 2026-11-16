@@ -259,6 +259,10 @@ export const DEFAULT_CONFIG = {
     message: { enabled: true, mode: 'random', min: 15, max: 40, cooldown: 60 },
     voice: { enabled: false, min: 15, max: 40, cooldown: 180, minMembers: 2, antiAfk: true },
     reaction: { enabled: false, awards: 'both', min: 25, max: 25, cooldown: 300 },
+    // Ochrona przed nabijaniem: dailyCap — najwyżej tyle XP na dobę (czas polski; 0 = bez limitu, w wydarzeniu XP
+    // limit rośnie razem z mnożnikiem); ignoreRepeats — ta sama wiadomość co ostatnio nagrodzona nie daje XP;
+    // minChars — krótsze wiadomości (bez załączników) nie dają XP.
+    antiFarm: { dailyCap: 0, ignoreRepeats: true, minChars: 0 },
     levelUp: {
       enabled: true,
       target: 'current',

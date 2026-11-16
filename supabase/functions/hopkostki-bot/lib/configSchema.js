@@ -161,6 +161,8 @@ function cleanLevelValue(path, input, current) {
   if (/^levels\.(message|voice|reaction)\.(min|max)$/.test(path)) return intIn(input, current, 0, 10_000);
   if (/^levels\.(message|voice|reaction)\.cooldown$/.test(path)) return intIn(input, current, 0, 86_400);
   if (path === 'levels.voice.minMembers') return intIn(input, current, 1, 99);
+  if (path === 'levels.antiFarm.dailyCap') return intIn(input, current, 0, 1_000_000);
+  if (path === 'levels.antiFarm.minChars') return intIn(input, current, 0, 200);
   if (/^levels\.boosters\.effort\.(words|images)$/.test(path)) return intIn(input, current, 0, 10_000);
   if (path === 'levels.boosters.effort.percent') return intIn(input, current, 1, 1000);
   if (path === 'levels.firstPlaceRoleId' || path === 'levels.highlights.roleId') return input === '' || input === null ? '' : ROLE_ID(input) ? String(input) : current;

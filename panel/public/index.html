@@ -515,7 +515,7 @@
           </div>
           <div class="card">
             <div class="card-head"><h3>XP za kanały głosowe</h3><label class="toggle small"><input type="checkbox" data-path="levels.voice.enabled"><span></span>Włączone</label></div>
-            <p class="muted small">Co „cooldown” sekund każda osoba na kanale głosowym dostaje losowe XP — o ile na kanale jest co najmniej tyle osób (bez botów). Anty-AFK pomija wyciszonych, ogłuszonych i kanał AFK.</p>
+            <p class="muted small">Co „cooldown” sekund każda osoba na kanale głosowym dostaje losowe XP — o ile na kanale jest co najmniej tyle osób (bez botów). Anty-AFK pomija wyciszonych, ogłuszonych i kanał AFK, a ogłuszonych nie liczy też do minimum osób.</p>
             <div class="grid three tight">
               <label class="field"><span>Min</span><input type="number" min="0" max="10000" data-path="levels.voice.min"></label>
               <label class="field"><span>Max</span><input type="number" min="0" max="10000" data-path="levels.voice.max"></label>
@@ -534,6 +534,17 @@
               <label class="field"><span>Cooldown (s)</span><input type="number" min="0" max="86400" data-path="levels.reaction.cooldown"></label>
             </div>
           </div>
+        </div>
+
+        <h3 class="section-title">Ochrona przed nabijaniem</h3>
+        <div class="card">
+          <p class="muted small">Dzienny limit liczy całe XP z wiadomości, głosowych i reakcji w ciągu doby (czas polski). Po jego osiągnięciu statystyki (wiadomości, minuty) dalej rosną, ale XP już nie. W czasie wydarzenia XP limit rośnie razem z mnożnikiem. 0 = bez limitu.</p>
+          <div class="grid three tight">
+            <label class="field"><span>Dzienny limit XP</span><input type="number" min="0" max="1000000" data-path="levels.antiFarm.dailyCap"></label>
+            <label class="field"><span>Min. długość wiadomości (znaki)</span><input type="number" min="0" max="200" data-path="levels.antiFarm.minChars"></label>
+          </div>
+          <label class="toggle"><input type="checkbox" data-path="levels.antiFarm.ignoreRepeats"><span></span>Powtórzona wiadomość nie daje XP (ta sama co poprzednia nagrodzona — bez względu na wielkość liter, znaki i „przeciągnięte” litery)</label>
+          <p class="muted small">Wiadomości krótsze niż minimum nie dają XP, chyba że mają załącznik albo naklejkę.</p>
         </div>
 
         <h3 class="section-title">Awans</h3>

@@ -21,6 +21,8 @@ import {
   levelProfilesTick,
   levelAccentTick,
   nitroLook,
+  dayKey,
+  textHash,
 } from '../supabase/functions/hopkostki-bot/lib/levels.js';
 
 const LVL5 = '100000000000000060';
@@ -170,6 +172,60 @@ test('XP za reakcje (dający i autor) i za kanały głosowe (minimum osób, anty
   assert.equal((await s.store.getLevel('owner')).voiceMinutes, 3);
   assert.equal(await voiceXpTick(s.bot), 0, 'cooldown 180 s');
   assert.equal(await s.store.getLevel('robot'), null);
+});
+
+test('ochrona przed nabijaniem: dzienny limit XP, powtórki i za krótkie wiadomości, ogłuszeni poza minimum osób', async () => {
+  const s = await setup({
+    message: { min: 40, max: 40, cooldown: 0 },
+    antiFarm: { dailyCap: 100, ignoreRepeats: true, minChars: 3 },
+    voice: { enabled: true, min: 20, max: 20, cooldown: 180, minMembers: 2, antiAfk: true },
+  });
+  await onMessageLevels(s.bot, message('target', { content: 'pierwsza wiadomość' }));
+  await onMessageLevels(s.bot, message('target', { content: 'Pierwsza   wiadomośććć!!' }));
+  let row = await s.store.getLevel('target');
+  assert.equal(row.xp, 40, 'powtórka (wielkość liter, znaki, przeciągnięte litery) bez XP');
+  assert.equal(row.messages, 1);
+  await onMessageLevels(s.bot, message('target', { content: 'ok' }));
+  assert.equal((await s.store.getLevel('target')).messages, 1, 'za krótka wiadomość pominięta');
+
+  // Sam obrazek (bez tekstu) daje XP mimo minimum znaków; potem limit 100 XP na dobę: 40 + 40 + 20, dalej 0.
+  await onMessageLevels(s.bot, message('target', { content: '', attachments: [{ id: '1', content_type: 'image/png' }] }));
+  await onMessageLevels(s.bot, message('target', { content: 'druga' }));
+  await onMessageLevels(s.bot, message('target', { content: 'trzecia' }));
+  row = await s.store.getLevel('target');
+  assert.equal(row.xp, 100, 'dzienny limit');
+  assert.equal(row.messages, 4, 'statystyki rosną dalej');
+  assert.equal(row.weekXp, 100);
+  assert.deepEqual(await s.store.levelDaily('target', { since: dayKey() }), [{ day: dayKey(), xp: 100, messages: 4, voiceMinutes: 0, reactions: 0 }]);
+
+  // Wczorajsze XP nie liczy się do dzisiejszego limitu.
+  await s.store.query("update bot.level_daily set day = day - 1");
+  await onMessageLevels(s.bot, message('target', { content: 'nowy dzień' }));
+  assert.equal((await s.store.getLevel('target')).xp, 140);
+
+  // Komenda slash innego bota: treść to odpowiedź bota — bez sprawdzania długości i powtórek.
+  await s.store.updateConfig({ levels: { restrictions: { slashCommands: true } } });
+  await onMessageLevels(s.bot, message('innybot', { author: { id: 'innybot', bot: true }, content: '', interaction_metadata: { user: { id: 'slash', username: 'slash' } } }));
+  assert.equal((await s.store.getLevel('slash')).xp, 40);
+
+  // Głosowe: ogłuszony nie liczy się do minimum 2 osób, wyciszony (słucha) — tak.
+  await s.store.setVoiceState('a', 'vc1');
+  await s.store.setVoiceState('b', 'vc1', { deafened: true });
+  assert.equal(await voiceXpTick(s.bot), 0, 'ogłuszony nie liczy się do minimum');
+  await s.store.setVoiceState('c', 'vc1', { muted: true });
+  assert.equal(await voiceXpTick(s.bot), 1);
+  assert.equal((await s.store.getLevel('a')).xp, 20);
+});
+
+test('skrót wiadomości do wykrywania powtórek', () => {
+  assert.equal(textHash(''), null);
+  assert.equal(textHash('   '), null);
+  assert.equal(textHash('Siemaaa!!'), textHash('siema'));
+  assert.equal(textHash('Zażółć gęślą'), textHash('zazolc gesla'));
+  assert.notEqual(textHash('siema'), textHash('siemka'));
+  assert.equal(textHash('😂😂'), textHash('😂😂'));
+  assert.notEqual(textHash('😂'), textHash('🔥'));
+  assert.match(textHash('hej'), /^[0-9a-f]{8}$/);
 });
 
 test('rankingi tygodnia i miesiąca: najwięcej XP w okresie, ping roli; rola za 1. miejsce; auto reset po wyjściu', async () => {
