@@ -351,6 +351,11 @@
     .hist-tip span { color: var(--muted); }
     .hist-note { margin: 8px 0 0; color: var(--faint); font-size: 0.75rem; }
     .pf-roles { display: flex; flex-wrap: wrap; gap: 6px; }
+    .pf-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+    .pf-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 8px; border: 1px solid var(--border); border-radius: 999px; font-size: 0.82rem; font-weight: 600; cursor: help; }
+    .pf-badge i { font-style: normal; font-size: 1rem; line-height: 1; }
+    .pf-badge small { color: var(--muted); font-weight: 600; }
+    .pf-badge.top { border-color: color-mix(in srgb, #f5c542 60%, var(--border)); background: color-mix(in srgb, #f5c542 10%, transparent); }
     .pf-role { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 3px 8px; border-radius: 6px; background: var(--surface-2); font-size: 0.8rem; }
     .pf-role i { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--rc, var(--faint)); }
     .pf-role span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1239,6 +1244,10 @@
               ${loading || !s.event ? '' : item(`<span title="${esc(s.event.name)}">Wydarzenie XP</span>`, period(s.event.xp, s.event.rank))}
             </dl>`}
           </div>
+
+          ${!loading && p.badges?.length ? `<div class="pf-sec"><div class="pf-h">Odznaki</div><div class="pf-badges">${p.badges
+            .map((b) => `<span class="pf-badge${b.tier && b.tier === b.tiers ? ' top' : ''}" title="${esc(b.description)}"><i>${esc(b.emoji)}</i>${esc(b.name)}${b.count > 1 ? `<small>×${b.count}</small>` : b.tiers ? `<small>${b.tier}/${b.tiers}</small>` : ''}</span>`)
+            .join('')}</div></div>` : ''}
 
           ${loading ? '' : historyHtml(p.history)}
 
