@@ -478,10 +478,12 @@ export async function publicProfile(bot, userId) {
   const week = row.weekKey === weekKey() ? row.weekXp : 0;
   const month = row.monthKey === monthKey() ? row.monthXp : 0;
   const event = rankedXpEvent(config);
-  const [weekRank, monthRank, eventStanding] = await Promise.all([
+  const [weekRank, monthRank, eventStanding, history] = await Promise.all([
     week > 0 ? bot.store.periodRank({ period: 'week', key: weekKey(), xp: week }) : null,
     month > 0 ? bot.store.periodRank({ period: 'month', key: monthKey(), xp: month }) : null,
     event ? bot.store.eventStanding(event.id, userId) : null,
+    // Dzienne XP z ostatnich 30 dni (wykres w profilu na stronie rankingu).
+    bot.store.levelDaily(userId, { since: dayKey(Date.now() - 29 * DAY) }),
   ]);
   const roles = (member?.roles ?? [])
     .map((id) => byId.get(id))
@@ -531,6 +533,7 @@ export async function publicProfile(bot, userId) {
       monthRank,
       event: event ? { name: event.name, xp: eventStanding?.xp ?? 0, rank: eventStanding?.rank ?? null } : null,
     },
+    history,
   };
 }
 

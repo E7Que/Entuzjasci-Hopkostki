@@ -528,6 +528,7 @@ test('publiczny ranking: pseudonim + nazwa, tydzień/miesiąc, liczba osób, syn
     ['Kasia z serwera', 'kasia_123', '2025-01-02T10:00:00.000Z', 1, 10, 1, 2],
   );
   assert.ok(profile.body.lastActive, 'ostatnia aktywność');
+  assert.deepEqual(profile.body.history.map((d) => [d.day, d.xp, d.messages]), [[dayKey(), 10, 1]], 'dzienne XP do wykresu w profilu');
   assert.equal((await get('profile?id=100000000000000099')).status, 404, 'tylko osoby z rankingu');
   assert.equal((await get('profile?id=../../users/@me')).status, 404);
 
