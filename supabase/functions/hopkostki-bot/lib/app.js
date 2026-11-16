@@ -13,7 +13,7 @@ import { runGatewaySession } from './gateway.js';
 import { handlePanel, describeAuth } from './panel.js';
 import { getApp, getGuildContext } from './moderation.js';
 import { avatarUrl, guildIconUrl } from './rest.js';
-import { levelProgress, weekKey, monthKey, publicProfile, publicLook } from './levels.js';
+import { levelProgress, monthKey, publicLook, publicProfile, rankedXpEvent, weekKey, xpEventsOverview } from './levels.js';
 import { AccessError, PANEL_SITE, PASSWORD_AUTH, authenticateSession, signIn } from './access.js';
 import { verifyDiscordRequest, ed25519Supported, safeEqual } from './verify.js';
 
@@ -106,21 +106,29 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
     return json({ started: true }, 202);
   }
 
-  // ?period=all|week|month, ?offset=, ?limit= (do 100), ?search= (nazwa, pseudonim albo ID).
+  // ?period=all|week|month|event, ?event= (ID wydarzenia XP), ?offset=, ?limit= (do 100),
+  // ?search= (nazwa, pseudonim albo ID). Ranking wydarzenia bez wydarzenia → ranking ogólny.
   async function publicLeaderboard(url) {
     const { levels } = await bot.store.getConfig();
     if (!levels.enabled || !levels.publicLeaderboard) return { enabled: false, entries: [] };
     const params = url.searchParams;
     const offset = Math.min(Math.max(Math.floor(Number(params.get('offset'))) || 0, 0), 100_000);
     const limit = Math.min(Math.max(Math.floor(Number(params.get('limit'))) || 100, 1), 100);
-    const period = ['week', 'month'].includes(params.get('period')) ? params.get('period') : 'all';
+    const event = params.get('period') === 'event' ? rankedXpEvent(levels, params.get('event')) : null;
+    const period = event ? 'event' : ['week', 'month'].includes(params.get('period')) ? params.get('period') : 'all';
     const search = String(params.get('search') ?? '').trim().slice(0, 64);
-    const periodKey = period === 'week' ? weekKey() : period === 'month' ? monthKey() : null;
+    const periodKey = period === 'week' ? weekKey() : period === 'month' ? monthKey() : period === 'event' ? event.id : null;
     const [rows, total, totals, gctx] = await Promise.all([
       period === 'all'
         ? bot.store.levelLeaderboard({ limit, offset, search })
-        : bot.store.levelPeriodTop({ period, key: periodKey, limit, offset, search }),
-      period === 'all' ? bot.store.countLevels(search) : bot.store.countPeriod({ period, key: periodKey, search }),
+        : period === 'event'
+          ? bot.store.levelEventTop({ eventId: event.id, limit, offset, search })
+          : bot.store.levelPeriodTop({ period, key: periodKey, limit, offset, search }),
+      period === 'all'
+        ? bot.store.countLevels(search)
+        : period === 'event'
+          ? bot.store.countEvent({ eventId: event.id, search })
+          : bot.store.countPeriod({ period, key: periodKey, search }),
       bot.store.levelTotals(),
       bot.discord ? getGuildContext(bot).catch(() => null) : null,
     ]);
@@ -139,6 +147,8 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
       guild: gctx ? { name: gctx.guild.name, icon: guildIconUrl(gctx.guild), memberCount: gctx.guild.memberCount } : null,
       color: levels.card.color,
       totals,
+      events: xpEventsOverview(levels),
+      event: event ? { id: event.id, name: event.name, multiplier: event.multiplier, startsAt: event.startsAt, endsAt: event.endsAt, theme: event.theme, kinds: event.kinds } : null,
       rates: {
         message: rate(levels.message, ['mode', 'min', 'max', 'cooldown']),
         voice: rate(levels.voice, ['min', 'max', 'cooldown', 'minMembers']),

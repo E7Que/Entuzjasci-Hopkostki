@@ -17,6 +17,38 @@ export const RAID_ACTIONS = ['alert', 'kick'];
 export const ACTIVITY_TYPES = ['custom', 'playing', 'listening', 'watching', 'competing'];
 export const PRESENCE_STATUSES = ['online', 'idle', 'dnd'];
 export const NEW_ACCOUNT_MENTIONS = ['here', 'everyone', 'roles'];
+export const XP_EVENT_THEMES = ['confetti', 'fire', 'snow', 'stars', 'neon'];
+export const XP_EVENT_KINDS = ['message', 'voice', 'reaction'];
+const XP_EVENT_MAX_MS = 31 * 24 * 60 * 60_000;
+
+// Wydarzenia XP z panelu: poprawne daty (koniec po początku, najwyżej 31 dni), mnożnik 1,1–10, co najmniej jeden
+// rodzaj XP; najwyżej 50, posortowane po początku.
+function cleanXpEvents(input, current) {
+  if (!Array.isArray(input)) return current;
+  const seen = new Set();
+  const out = [];
+  for (const e of input.slice(0, 60)) {
+    const id = String(e?.id ?? '');
+    const start = Date.parse(e?.startsAt);
+    const end = Date.parse(e?.endsAt);
+    const multiplier = Math.round(Number(e?.multiplier) * 100) / 100;
+    const kinds = Array.isArray(e?.kinds) ? XP_EVENT_KINDS.filter((k) => e.kinds.includes(k)) : [];
+    if (!/^[a-z0-9]{6,24}$/i.test(id) || seen.has(id)) continue;
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || end - start > XP_EVENT_MAX_MS) continue;
+    if (!(multiplier >= 1.1 && multiplier <= 10) || !kinds.length) continue;
+    seen.add(id);
+    out.push({
+      id,
+      name: String(e?.name ?? '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'Wydarzenie XP',
+      multiplier,
+      startsAt: new Date(start).toISOString(),
+      endsAt: new Date(end).toISOString(),
+      kinds,
+      theme: XP_EVENT_THEMES.includes(e?.theme) ? e.theme : 'confetti',
+    });
+  }
+  return out.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)).slice(-50);
+}
 
 function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -163,6 +195,7 @@ function cleanLevelValue(path, input, current) {
   if (path === 'levels.voice.minMembers') return intIn(input, current, 1, 99);
   if (path === 'levels.antiFarm.dailyCap') return intIn(input, current, 0, 1_000_000);
   if (path === 'levels.antiFarm.minChars') return intIn(input, current, 0, 200);
+  if (path === 'levels.events') return cleanXpEvents(input, current);
   if (/^levels\.boosters\.effort\.(words|images)$/.test(path)) return intIn(input, current, 0, 10_000);
   if (path === 'levels.boosters.effort.percent') return intIn(input, current, 1, 1000);
   if (path === 'levels.firstPlaceRoleId' || path === 'levels.highlights.roleId') return input === '' || input === null ? '' : ROLE_ID(input) ? String(input) : current;

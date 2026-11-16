@@ -7,6 +7,7 @@ import { P, has } from './permissions.js';
 import { avatarUrl, guildIconUrl } from './rest.js';
 import { cached, getGuildContext, isOurGuild } from './moderation.js';
 import { BRAND, colorInt, escapeMarkdown } from './embeds.js';
+import { PANEL_SITE } from './access.js';
 
 const DAY = 24 * 60 * 60_000;
 const THREAD_TYPES = new Set([10, 11, 12]);
@@ -135,20 +136,24 @@ async function memberInfo(bot, userId) {
 // Dodaje XP (z cooldownem danego rodzaju) i obsługuje awans. Zwraca { xp, level, previous } albo null (cooldown).
 export async function awardXp(bot, config, { user, amount, kind, cooldown, minutes = 0, channelId = null, roles, displayName = null, hash = null }) {
   if (!user?.id || amount <= 0) return null;
+  // Wydarzenie XP: XP i dzienny limit razy mnożnik, XP liczone też do rankingu wydarzenia.
+  const event = activeXpEvent(config, { kind });
+  const mult = event?.multiplier ?? 1;
   const row = await bot.store.awardXp({
     userId: user.id,
     userTag: userTag(user),
     displayName: displayName ?? user.global_name ?? null,
     avatar: user.avatar ?? null,
-    amount,
+    amount: Math.round(amount * mult),
     kind,
     cooldownSec: cooldown,
     minutes,
     weekKey: weekKey(),
     monthKey: monthKey(),
     dayKey: dayKey(),
-    dailyCap: config.antiFarm.dailyCap,
+    dailyCap: config.antiFarm.dailyCap > 0 ? Math.round(config.antiFarm.dailyCap * mult) : 0,
     textHash: config.antiFarm.ignoreRepeats ? hash : null,
+    eventId: event?.id ?? null,
   });
   if (!row) return null;
   const { level } = levelProgress(row.xp, config.formula);
@@ -472,9 +477,11 @@ export async function publicProfile(bot, userId) {
   const p = levelProgress(row.xp, config.formula);
   const week = row.weekKey === weekKey() ? row.weekXp : 0;
   const month = row.monthKey === monthKey() ? row.monthXp : 0;
-  const [weekRank, monthRank] = await Promise.all([
+  const event = rankedXpEvent(config);
+  const [weekRank, monthRank, eventStanding] = await Promise.all([
     week > 0 ? bot.store.periodRank({ period: 'week', key: weekKey(), xp: week }) : null,
     month > 0 ? bot.store.periodRank({ period: 'month', key: monthKey(), xp: month }) : null,
+    event ? bot.store.eventStanding(event.id, userId) : null,
   ]);
   const roles = (member?.roles ?? [])
     .map((id) => byId.get(id))
@@ -522,14 +529,175 @@ export async function publicProfile(bot, userId) {
       weekRank,
       monthXp: month,
       monthRank,
+      event: event ? { name: event.name, xp: eventStanding?.xp ?? 0, rank: eventStanding?.rank ?? null } : null,
     },
   };
+}
+
+// ---------- Wydarzenia XP ----------
+
+export const XP_EVENT_STYLE = {
+  confetti: { emoji: '🎉', color: 0xff4fa3 },
+  fire: { emoji: '🔥', color: 0xff6a1a },
+  snow: { emoji: '❄️', color: 0x7cc8ff },
+  stars: { emoji: '✨', color: 0xf5c04a },
+  neon: { emoji: '⚡', color: 0x22e5c8 },
+};
+const XP_KIND_NAMES = { message: 'wiadomości', voice: 'kanały głosowe', reaction: 'reakcje' };
+const listText = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} i ${items.at(-1)}` : (items[0] ?? ''));
+export const multiplierText = (m) => `×${String(m).replace('.', ',')}`;
+const eventTime = (e, key) => Date.parse(e[key]);
+
+// Wydarzenie trwające w chwili `now` (dla rodzaju XP `kind`, jeśli podany); przy kilku — największy mnożnik.
+export function activeXpEvent(config, { kind = null, now = Date.now() } = {}) {
+  let best = null;
+  for (const e of config.events ?? []) {
+    if (eventTime(e, 'startsAt') > now || eventTime(e, 'endsAt') <= now) continue;
+    if (kind && !e.kinds.includes(kind)) continue;
+    if (!best || e.multiplier > best.multiplier) best = e;
+  }
+  return best;
+}
+
+// Ostatnie zakończone wydarzenie (najwyżej `within` ms temu).
+function lastXpEvent(config, now, within = 3 * DAY) {
+  return (config.events ?? [])
+    .filter((e) => eventTime(e, 'endsAt') <= now && now - eventTime(e, 'endsAt') <= within)
+    .sort((a, b) => eventTime(b, 'endsAt') - eventTime(a, 'endsAt'))[0] ?? null;
+}
+
+export const publicXpEvent = (e) => (e ? { id: e.id, name: e.name, multiplier: e.multiplier, startsAt: e.startsAt, endsAt: e.endsAt, kinds: e.kinds, theme: e.theme } : null);
+
+// Dla strony rankingu: trwające wydarzenie, najbliższe zaplanowane (do 14 dni) i ostatnie zakończone (do 3 dni).
+export function xpEventsOverview(config, now = Date.now()) {
+  const next = (config.events ?? [])
+    .filter((e) => eventTime(e, 'startsAt') > now && eventTime(e, 'startsAt') - now <= 14 * DAY)
+    .sort((a, b) => eventTime(a, 'startsAt') - eventTime(b, 'startsAt'))[0];
+  return { current: publicXpEvent(activeXpEvent(config, { now })), next: publicXpEvent(next), last: publicXpEvent(lastXpEvent(config, now)) };
+}
+
+// Wydarzenie dla rankingu wydarzenia: wskazane (jeśli już się zaczęło), inaczej trwające albo ostatnie zakończone.
+export function rankedXpEvent(config, id = null, now = Date.now()) {
+  if (id) {
+    const picked = (config.events ?? []).find((e) => e.id === id && eventTime(e, 'startsAt') <= now);
+    if (picked) return picked;
+  }
+  return activeXpEvent(config, { now }) ?? lastXpEvent(config, now);
+}
+
+function eventChannel(config) {
+  return config.eventsAnnounce.channelId || config.levelUp.channelId || config.highlights.weekly.channelId || config.highlights.monthly.channelId || '';
+}
+
+function eventFooter(guild) {
+  return { text: `${guild?.name ?? BRAND} • wydarzenie XP`, ...(guildIconUrl(guild) ? { icon_url: guildIconUrl(guild) } : {}) };
+}
+
+export function xpEventStartEmbed(config, event, guild = null) {
+  const style = XP_EVENT_STYLE[event.theme] ?? XP_EVENT_STYLE.confetti;
+  const end = Math.floor(eventTime(event, 'endsAt') / 1000);
+  const cap = config.antiFarm.dailyCap > 0 ? Math.round(config.antiFarm.dailyCap * event.multiplier) : 0;
+  const lines = [
+    `Zdobywasz **${multiplierText(event.multiplier)} XP** za ${listText(event.kinds.map((k) => XP_KIND_NAMES[k]))}!`,
+    `Koniec <t:${end}:R> (<t:${end}:f>).`,
+    cap ? `Dzienny limit XP w tym czasie: **${pl(cap)} XP**.` : null,
+    config.publicLeaderboard ? `\n[Ranking wydarzenia na żywo](${PANEL_SITE}ranking.html#event)` : null,
+  ];
+  return {
+    color: style.color,
+    title: `${style.emoji} Wydarzenie XP: ${event.name}`,
+    description: lines.filter(Boolean).join('\n'),
+    footer: eventFooter(guild),
+    timestamp: new Date(Math.max(eventTime(event, 'startsAt'), 0)).toISOString(),
+  };
+}
+
+// „5 osób zdobyło”, „2 osoby zdobyły”, „1 osoba zdobyła”.
+function peopleEarned(n) {
+  if (n === 1) return '**1** osoba zdobyła';
+  const few = n % 10 >= 2 && n % 10 <= 4 && !(n % 100 >= 12 && n % 100 <= 14);
+  return `**${pl(n)}** ${few ? 'osoby zdobyły' : 'osób zdobyło'}`;
+}
+
+export function xpEventEndEmbed(config, event, top, summary, guild = null) {
+  const style = XP_EVENT_STYLE[event.theme] ?? XP_EVENT_STYLE.confetti;
+  const lines = top.map((row, i) => `${MEDALS[i] ?? `\`${String(i + 1).padStart(2, ' ')}.\``} <@${row.userId}> — **${pl(row.periodXp)} XP**`);
+  const description = top.length
+    ? `Najwięcej XP w czasie wydarzenia:\n\n${lines.join('\n')}\n\nŁącznie ${peopleEarned(summary.people)} **${pl(summary.xp)} XP**. Dzięki za udział!`
+    : 'Nikt nie zdobył XP w czasie wydarzenia.';
+  const thumb = winnerThumbnail(top[0], guild);
+  return {
+    color: style.color,
+    title: `🏁 Koniec wydarzenia XP: ${event.name}`,
+    description: description + (config.publicLeaderboard && top.length ? `\n\n[Pełne wyniki](${PANEL_SITE}ranking.html#event)` : ''),
+    ...(thumb ? { thumbnail: { url: thumb } } : {}),
+    footer: eventFooter(guild),
+    timestamp: new Date(eventTime(event, 'endsAt')).toISOString(),
+  };
+}
+
+// Co przebieg crona: ogłoszenie początku i końca każdego wydarzenia (raz), sprzątanie XP usuniętych wydarzeń.
+// Wydarzenie dodane już po końcu nie jest ogłaszane; koniec ogłaszamy tylko, gdy był ogłoszony początek.
+export async function xpEventsTick(bot, { now = Date.now() } = {}) {
+  const config = (await bot.store.getConfig()).levels;
+  const events = config.events ?? [];
+  const seen = (await bot.store.getState('xp_events')) ?? {};
+  const channelId = eventChannel(config);
+  const announce = Boolean(config.enabled && config.eventsAnnounce.enabled && channelId && bot.discord);
+  const next = {};
+  const report = { started: 0, ended: 0 };
+  let guild;
+  const send = async (payload) => {
+    guild ??= (await getGuildContext(bot).catch(() => null))?.guild ?? null;
+    await bot.discord.post(`/channels/${channelId}/messages`, payload(guild));
+    return true;
+  };
+  for (const event of events) {
+    const mark = { ...(seen[event.id] ?? {}) };
+    const started = eventTime(event, 'startsAt') <= now;
+    const ended = eventTime(event, 'endsAt') <= now;
+    if (started && !ended && !mark.started) {
+      mark.started = true;
+      if (announce) {
+        const roleId = config.eventsAnnounce.roleId;
+        const sent = await send((g) => ({
+          ...(roleId ? { content: `<@&${roleId}>` } : {}),
+          embeds: [xpEventStartEmbed(config, event, g)],
+          allowed_mentions: { parse: [], roles: roleId ? [roleId] : [] },
+        })).catch((error) => console.warn(`[poziomy] Wydarzenie XP (start): ${error.message}`));
+        if (sent) report.started += 1;
+      }
+    } else if (ended && !mark.ended) {
+      const wasAnnounced = mark.started;
+      mark.started = true;
+      mark.ended = true;
+      if (announce && wasAnnounced) {
+        const [top, summary] = await Promise.all([bot.store.levelEventTop({ eventId: event.id, limit: 5 }), bot.store.eventSummary(event.id)]);
+        const sent = await send((g) => ({ embeds: [xpEventEndEmbed(config, event, top, summary, g)], allowed_mentions: { parse: [] } }))
+          .catch((error) => console.warn(`[poziomy] Wydarzenie XP (koniec): ${error.message}`));
+        if (sent) report.ended += 1;
+      }
+    }
+    next[event.id] = mark;
+  }
+  if (JSON.stringify(next) !== JSON.stringify(seen)) {
+    await bot.store.setState('xp_events', next);
+    await bot.store.pruneEventXp(events.map((e) => e.id));
+  }
+  return report;
 }
 
 // ---------- Rankingi tygodnia i miesiąca ----------
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 const pl = (n) => Number(n).toLocaleString('pl-PL');
+
+// Avatar zwycięzcy (serwerowy, jeśli jest) — miniatura embedów z rankingami.
+function winnerThumbnail(winner, guild) {
+  if (!winner) return null;
+  if (winner.guildAvatar && guild?.id) return cdnImage(`guilds/${guild.id}/users/${winner.userId}/avatars`, winner.guildAvatar, 256);
+  return winner.avatar ? cdnImage(`avatars/${winner.userId}`, winner.avatar, 256) : avatarUrl({ id: winner.userId }, 256);
+}
 
 // Ranking tygodnia — turkus, miesiąca — złoto; miniatura: avatar zwycięzcy.
 export function highlightsEmbed(config, period, key, top, guild = null) {
@@ -543,14 +711,7 @@ export function highlightsEmbed(config, period, key, top, guild = null) {
         })()
       : new Date(`${key}-01T00:00:00Z`).toLocaleDateString('pl-PL', { month: 'long', year: 'numeric', timeZone: 'UTC' });
   const lines = top.map((row, i) => `${MEDALS[i] ?? `\`${String(i + 1).padStart(2, ' ')}.\``} <@${row.userId}> — **${pl(row.periodXp)} XP** · poziom ${row.level}`);
-  const winner = top[0];
-  const winnerAvatar = winner
-    ? winner.guildAvatar && guild?.id
-      ? cdnImage(`guilds/${guild.id}/users/${winner.userId}/avatars`, winner.guildAvatar, 256)
-      : winner.avatar
-        ? cdnImage(`avatars/${winner.userId}`, winner.avatar, 256)
-        : avatarUrl({ id: winner.userId }, 256)
-    : null;
+  const winnerAvatar = winnerThumbnail(top[0], guild);
   return {
     color: config.card.autoColor === false ? colorInt(config.card.color, LEVEL_COLOR) : period === 'week' ? LEVEL_COLOR : 0xffc83d,
     title,

@@ -972,7 +972,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
     // XP z cooldownem danego rodzaju. dailyCap > 0 — najwyżej tyle XP na dobę (dayKey, czas polski), reszta przepada;
     // textHash — skrót wiadomości: ta sama wiadomość co ostatnio nagrodzona nie daje XP (null = bez sprawdzania).
     // Zwraca null (cooldown / powtórka) albo { xp, level, granted }. Dzienne sumy trafiają do bot.level_daily.
-    async awardXp({ userId, userTag, displayName = null, avatar, amount, kind, cooldownSec, minutes = 0, weekKey, monthKey, dayKey, dailyCap = 0, textHash = null }) {
+    async awardXp({ userId, userTag, displayName = null, avatar, amount, kind, cooldownSec, minutes = 0, weekKey, monthKey, dayKey, dailyCap = 0, textHash = null, eventId = null }) {
       const k = XP_KINDS[kind];
       const counter = kind === 'voice' ? minutes : 1;
       const day = dayKey ?? new Date().toISOString().slice(0, 10);
@@ -1009,9 +1009,15 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
            on conflict (user_id, day) do update set
              xp = d.xp + excluded.xp,
              ${DAILY_COUNTERS[kind]} = d.${DAILY_COUNTERS[kind]} + excluded.${DAILY_COUNTERS[kind]}
+         ),
+         ev as (
+           insert into bot.level_event_xp as e (event_id, user_id, xp)
+           select $13::text, $1::text, (select xp from given)
+           where $13::text is not null and (select xp from given) > 0 and exists (select 1 from up)
+           on conflict (event_id, user_id) do update set xp = e.xp + excluded.xp
          )
          select up.xp, up.level, (select xp from given) as granted from up`,
-        [userId, userTag ?? null, avatar ?? null, amount, weekKey, monthKey, cooldownSec, counter, displayName ?? null, day, dailyCap, textHash],
+        [userId, userTag ?? null, avatar ?? null, amount, weekKey, monthKey, cooldownSec, counter, displayName ?? null, day, dailyCap, textHash, eventId],
       );
       return row ? { xp: Number(row.xp), level: row.level, granted: Number(row.granted) } : null;
     },
@@ -1024,6 +1030,56 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
         [userId, since],
       );
       return rows.map((r) => ({ day: r.day, xp: Number(r.xp), messages: r.messages, voiceMinutes: r.voice_minutes, reactions: r.reactions }));
+    },
+
+    // ---------- Wydarzenia XP ----------
+    // Najwięcej XP w czasie wydarzenia (periodXp = XP z wydarzenia, już z mnożnikiem).
+    async levelEventTop({ eventId, limit = 10, offset = 0, search = '' }) {
+      const rows = await query(
+        `select * from (
+           select l.*, e.xp as period_xp, rank() over (order by e.xp desc) as period_rank
+           from bot.level_event_xp e join bot.levels l on l.user_id = e.user_id
+           where e.event_id = $1::text and e.xp > 0
+         ) r
+         where ($4::text = '' or r.user_id = $4::text or r.user_tag ilike '%' || $4::text || '%' or r.display_name ilike '%' || $4::text || '%')
+         order by r.period_xp desc, r.user_id limit $2::int offset $3::int`,
+        [eventId, limit, offset, search],
+      );
+      return rows.map((r) => ({ ...mapLevel(r), periodXp: Number(r.period_xp), periodRank: Number(r.period_rank) }));
+    },
+
+    async countEvent({ eventId, search = '' }) {
+      const row = await one(
+        `select count(*)::int as n from bot.level_event_xp e join bot.levels l on l.user_id = e.user_id
+         where e.event_id = $1::text and e.xp > 0
+           and ($2::text = '' or l.user_id = $2::text or l.user_tag ilike '%' || $2::text || '%' or l.display_name ilike '%' || $2::text || '%')`,
+        [eventId, search],
+      );
+      return row.n;
+    },
+
+    // XP osoby w wydarzeniu i jej miejsce ({ xp, rank } albo null).
+    async eventStanding(eventId, userId) {
+      const row = await one(
+        `select e.xp, (select count(*)::int + 1 from bot.level_event_xp o where o.event_id = e.event_id and o.xp > e.xp) as rank
+         from bot.level_event_xp e where e.event_id = $1::text and e.user_id = $2::text and e.xp > 0`,
+        [eventId, userId],
+      );
+      return row ? { xp: Number(row.xp), rank: row.rank } : null;
+    },
+
+    // Ile osób zdobyło XP w wydarzeniu i ile łącznie.
+    async eventSummary(eventId) {
+      const row = await one(
+        'select count(*)::int as people, coalesce(sum(xp), 0)::bigint as xp from bot.level_event_xp where event_id = $1::text and xp > 0',
+        [eventId],
+      );
+      return { people: row.people, xp: Number(row.xp) };
+    },
+
+    // Usuwa XP wydarzeń, których nie ma już w ustawieniach.
+    async pruneEventXp(keepIds) {
+      await query('delete from bot.level_event_xp where event_id not in (select jsonb_array_elements_text($1::text::jsonb))', [JSON.stringify(keepIds)]);
     },
 
     async pruneLevelDaily(days = 400) {

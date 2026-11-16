@@ -23,6 +23,10 @@ import {
   nitroLook,
   dayKey,
   textHash,
+  xpEventsTick,
+  activeXpEvent,
+  xpEventsOverview,
+  multiplierText,
 } from '../supabase/functions/hopkostki-bot/lib/levels.js';
 
 const LVL5 = '100000000000000060';
@@ -215,6 +219,86 @@ test('ochrona przed nabijaniem: dzienny limit XP, powtórki i za krótkie wiadom
   await s.store.setVoiceState('c', 'vc1', { muted: true });
   assert.equal(await voiceXpTick(s.bot), 1);
   assert.equal((await s.store.getLevel('a')).xp, 20);
+});
+
+test('wydarzenia XP: mnożnik, limit dzienny × mnożnik, ranking wydarzenia, ogłoszenia startu i końca, publiczne API', async () => {
+  const now = Date.now();
+  const EVENT_CH = '100000000000000069';
+  const iso = (ms) => new Date(ms).toISOString();
+  const event = { id: 'ev2x01', name: 'Podwójne XP', multiplier: 2, startsAt: iso(now - 60_000), endsAt: iso(now + 3_600_000), kinds: ['message'], theme: 'fire' };
+  const s = await setup({
+    publicLeaderboard: true,
+    message: { min: 10, max: 10, cooldown: 0 },
+    reaction: { enabled: true, awards: 'giver', min: 5, max: 5, cooldown: 0 },
+    antiFarm: { dailyCap: 25, ignoreRepeats: false, minChars: 0 },
+    events: [event, { id: 'bad', name: 'Złe ID', multiplier: 2, startsAt: iso(now), endsAt: iso(now + 1000), kinds: ['message'] }],
+    eventsAnnounce: { enabled: true, channelId: EVENT_CH, roleId: PING },
+  });
+  assert.deepEqual((await s.store.getConfig()).levels.events.map((e) => e.id), ['ev2x01'], 'błędne wydarzenia odrzucone');
+
+  // ×2 za wiadomości: 10 → 20 XP; limit 25 × 2 = 50 → 20 + 20 + 10. Reakcje (spoza wydarzenia): bez mnożnika.
+  for (const content of ['a1', 'b2', 'c3']) await onMessageLevels(s.bot, message('target', { content }));
+  assert.equal((await s.store.getLevel('target')).xp, 50);
+  await onReactionLevels(s.bot, { guild_id: GUILD, channel_id: 'chan', user_id: 'mod', member: { user: { id: 'mod', username: 'mod' }, roles: [] }, message_author_id: 'target' });
+  assert.equal((await s.store.getLevel('mod')).xp, 5);
+  assert.deepEqual((await s.store.levelEventTop({ eventId: 'ev2x01' })).map((r) => [r.userId, r.periodXp, r.periodRank]), [['target', 50, 1]]);
+
+  // Ogłoszenie startu (raz) z pingiem roli.
+  assert.deepEqual(await xpEventsTick(s.bot, { now }), { started: 1, ended: 0 });
+  assert.deepEqual(await xpEventsTick(s.bot, { now }), { started: 0, ended: 0 });
+  let posts = s.discord.state.channels.get(EVENT_CH);
+  assert.equal(posts.length, 1);
+  assert.equal(posts[0].content, `<@&${PING}>`);
+  assert.deepEqual(posts[0].allowed_mentions, { parse: [], roles: [PING] });
+  assert.equal(posts[0].embeds[0].title, '🔥 Wydarzenie XP: Podwójne XP');
+  assert.match(posts[0].embeds[0].description, /\*\*×2 XP\*\* za wiadomości!/);
+  assert.match(posts[0].embeds[0].description, /Dzienny limit XP w tym czasie: \*\*50 XP\*\*/);
+  assert.match(posts[0].embeds[0].description, /ranking\.html#event/);
+
+  // Publiczne API: wydarzenie trwa → ranking wydarzenia i profil z XP z wydarzenia.
+  const handle = createHandler(s.bot);
+  const get = async (path) => (await handle(new Request(`https://x.supabase.co/functions/v1/hopkostki-bot/panel/public/${path}`))).json();
+  let body = await get('leaderboard?period=event');
+  assert.equal(body.period, 'event');
+  assert.equal(body.event.id, 'ev2x01');
+  assert.deepEqual(body.entries.map((e) => [e.userId, e.periodXp, e.rank]), [['target', 50, 1]]);
+  assert.equal(body.events.current.id, 'ev2x01');
+  assert.equal(body.events.current.theme, 'fire');
+  body = await get('leaderboard?period=event&event=nieznane');
+  assert.equal(body.event.id, 'ev2x01', 'nieznane ID → trwające wydarzenie');
+
+  // Koniec: podsumowanie z najlepszymi osobami, bez pingu.
+  assert.deepEqual(await xpEventsTick(s.bot, { now: now + 2 * 3_600_000 }), { started: 0, ended: 1 });
+  posts = s.discord.state.channels.get(EVENT_CH);
+  assert.equal(posts.length, 2);
+  assert.equal(posts[1].embeds[0].title, '🏁 Koniec wydarzenia XP: Podwójne XP');
+  assert.match(posts[1].embeds[0].description, /🥇 <@target> — \*\*50 XP\*\*/);
+  assert.match(posts[1].embeds[0].description, /Łącznie \*\*1\*\* osoba zdobyła \*\*50 XP\*\*/);
+  assert.deepEqual(posts[1].allowed_mentions, { parse: [] });
+
+  // Wydarzenie dodane już po końcu: bez ogłoszeń. Bez wydarzeń w ustawieniach: brak rankingu wydarzenia, XP sprzątnięte.
+  await s.store.updateConfig({ levels: { events: [event, { ...event, id: 'old0001', startsAt: iso(now - 7_200_000), endsAt: iso(now - 3_600_000) }] } });
+  assert.deepEqual(await xpEventsTick(s.bot, { now: now + 2 * 3_600_000 }), { started: 0, ended: 0 });
+  assert.equal(s.discord.state.channels.get(EVENT_CH).length, 2);
+  await s.store.updateConfig({ levels: { events: [] } });
+  await xpEventsTick(s.bot, { now: now + 2 * 3_600_000 });
+  assert.deepEqual(await s.store.levelEventTop({ eventId: 'ev2x01' }), []);
+  body = await get('leaderboard?period=event');
+  assert.deepEqual([body.period, body.event, body.events], ['all', null, { current: null, next: null, last: null }]);
+});
+
+test('wydarzenia XP: wybór wydarzenia dla strony, nakładające się wydarzenia, tekst mnożnika', () => {
+  const now = Date.parse('2026-11-20T12:00:00Z');
+  const mk = (id, start, end, multiplier = 2, kinds = ['message', 'voice', 'reaction']) => ({ id, name: id, multiplier, startsAt: new Date(now + start * 3_600_000).toISOString(), endsAt: new Date(now + end * 3_600_000).toISOString(), kinds, theme: 'confetti' });
+  const config = { events: [mk('teraz2', -1, 5), mk('teraz3', -2, 1, 3, ['voice']), mk('jutro', 24, 30), mk('wczoraj', -30, -20), mk('dawno', -200, -150), mk('zamiesiac', 24 * 30, 24 * 31)] };
+  assert.equal(activeXpEvent(config, { now }).id, 'teraz3', 'największy mnożnik');
+  assert.equal(activeXpEvent(config, { kind: 'message', now }).id, 'teraz2', 'tylko wydarzenia z danym rodzajem XP');
+  assert.equal(activeXpEvent(config, { kind: 'message', now: now + 6 * 3_600_000 }), null);
+  const overview = xpEventsOverview(config, now);
+  assert.deepEqual([overview.current.id, overview.next.id, overview.last.id], ['teraz3', 'jutro', 'wczoraj']);
+  assert.equal(xpEventsOverview(config, now + 10 * 3_600_000).current, null);
+  assert.equal(multiplierText(1.5), '×1,5');
+  assert.equal(multiplierText(2), '×2');
 });
 
 test('skrót wiadomości do wykrywania powtórek', () => {
