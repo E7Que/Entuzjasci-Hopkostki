@@ -32,7 +32,7 @@ const rank = {
     const config = await levelsConfig(bot);
     const user = ix.getUser('uzytkownik') ?? ix.user;
     if (user.bot) throw new ActionError('Boty nie zdobywają poziomów.');
-    return ix.edit({ embeds: [await rankCardEmbed(bot, config, user)] });
+    return ix.edit({ embeds: [await rankCardEmbed(bot, config, user, { self: user.id === ix.user.id })] });
   },
 };
 

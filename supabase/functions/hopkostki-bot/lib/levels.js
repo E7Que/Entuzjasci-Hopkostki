@@ -930,7 +930,8 @@ export async function levelUpEmbed(bot, config, { user, level, previous, xp, ear
   };
 }
 
-export async function rankCardEmbed(bot, config, user) {
+// self — własna karta: link na stronę rankingu zapamiętuje tę osobę jako „ja” (przycisk „Moje miejsce”).
+export async function rankCardEmbed(bot, config, user, { self = false } = {}) {
   const person = await levelPerson(bot, user, { banner: config.card.userBanner !== false });
   const { roles } = await getGuildContext(bot);
   const row = (await bot.store.getLevel(user.id)) ?? { xp: 0, messages: 0, voiceMinutes: 0, reactions: 0, weekXp: 0, rank: null };
@@ -941,9 +942,11 @@ export async function rankCardEmbed(bot, config, user) {
     color: levelColor(config, p.level, roles),
     author: { name: person.name, icon_url: person.avatar(64) },
     title: `Poziom ${p.level}${row.rank ? ` • #${row.rank} w rankingu` : ''}`,
-    description: p.maxed
-      ? `${progressBar(1, 1)} maksymalny poziom`
-      : `${progressBar(p.current, p.needed)} **${pct}%**\n${pl(p.current)} / ${pl(p.needed)} XP do poziomu ${p.level + 1}`,
+    description:
+      (p.maxed
+        ? `${progressBar(1, 1)} maksymalny poziom`
+        : `${progressBar(p.current, p.needed)} **${pct}%**\n${pl(p.current)} / ${pl(p.needed)} XP do poziomu ${p.level + 1}`) +
+      (config.publicLeaderboard && row.xp > 0 && !row.hidden ? `\n[Zobacz na stronie rankingu](${PANEL_SITE}ranking.html?u=${user.id}${self ? '&me=1' : ''})` : ''),
     fields: [
       { name: 'Łącznie XP', value: pl(row.xp), inline: true },
       { name: 'Wiadomości', value: pl(row.messages), inline: true },
