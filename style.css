@@ -189,6 +189,26 @@ textarea { resize: vertical; }
 #rules-table td:nth-child(4) { min-width: 120px; }
 #rules-table td:last-child { width: 1%; }
 .table .reason { max-width: 340px; overflow-wrap: anywhere; }
+/* Telefon: tabele z danymi (sprawy, bany, tickety…) jako karty z podpisami zamiast wąskich kolumn,
+   w których długi powód rozciągał wiersze do ogromnej wysokości. Tabele-formularze (.compact) zostają tabelami. */
+@media (max-width: 700px) {
+  .table:not(.compact) thead { display: none; }
+  .table:not(.compact), .table:not(.compact) tbody, .table:not(.compact) tr { display: block; width: 100%; }
+  .table:not(.compact) tr { padding: .45rem .75rem; margin-bottom: .6rem; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+  .table:not(.compact) tr:last-child { margin-bottom: 0; }
+  .table:not(.compact) td { display: block; padding: .3rem 0; border: none; overflow-wrap: anywhere; }
+  .table:not(.compact) tr:last-child td { border: none; }
+  .table:not(.compact) td[data-label]:not([data-label=""]) { position: relative; min-height: 1.7rem; padding-left: 7.2rem; }
+  .table:not(.compact) td[data-label]:not([data-label=""])::before {
+    content: attr(data-label); position: absolute; left: 0; top: .42rem; width: 6.6rem;
+    color: var(--muted); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+  }
+  .table .reason { max-width: none; }
+  .table:not(.compact) .empty { padding: 1rem 0; }
+  /* Sprawy (pulpit i zakładka Sprawy): numer i typ w jednej linii na górze karty. */
+  #cases-table td:nth-child(-n + 2), #recent-table td:nth-child(-n + 2) { display: inline-block; min-height: 0; margin-right: .5rem; padding-left: 0; }
+  #cases-table td:nth-child(-n + 2)::before, #recent-table td:nth-child(-n + 2)::before { display: none; }
+}
 .empty { color: var(--muted); text-align: center; padding: 1.5rem; }
 .badge { display: inline-block; padding: .1rem .5rem; border-radius: 4px; font-size: .78rem; font-weight: 700; color: #111; white-space: nowrap; }
 .note { display: block; color: var(--muted); font-size: .8rem; }
