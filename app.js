@@ -594,6 +594,18 @@ function renderSetup(status) {
     .join('');
 }
 
+$('#alerts-test').addEventListener('click', async () => {
+  if (isDirty()) return toast('Najpierw zapisz zmiany (przycisk na dole ekranu).', 'error');
+  $('#alerts-test').disabled = true;
+  try {
+    const result = await api('/alerts/test', { method: 'POST' });
+    toast(result.watchdog ? 'Wysłano 2 testy: od bota i od strażnika' : `Test od bota wysłany, strażnik nie działa: ${result.error}`, result.watchdog ? undefined : 'error');
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+  $('#alerts-test').disabled = false;
+});
+
 $('#setup-run').addEventListener('click', async () => {
   $('#setup-run').disabled = true;
   try {
@@ -715,6 +727,7 @@ function renderChannelSelects() {
         pick: '— wybierz kanał —',
         inherit: 'Jak kanał domyślny',
         bump: 'Kanał, na którym ktoś użył /bump',
+        modlog: 'Jak kanał logów moderacji',
       }[kind] ?? 'Kanał, na którym użyto komendy';
     let html = `<option value="">${emptyLabel}</option>`;
     html += list
