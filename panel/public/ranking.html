@@ -115,8 +115,9 @@
 
     /* ---------- Pasek ---------- */
     .toolbar {
-      position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-      margin: 22px 0 18px; padding: 10px 0; background: var(--bg); border-bottom: 1px solid var(--border);
+      position: sticky; top: 8px; z-index: 5; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      margin: 22px 0 18px; padding: 8px; border-radius: 12px; border: 1px solid var(--border);
+      background: rgba(21, 27, 30, 0.88); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     }
     .tabs { display: flex; gap: 4px; flex: 1 1 auto; }
     .tab { padding: 8px 12px; border: 0; border-radius: 8px; background: none; color: var(--muted); font-weight: 500; cursor: pointer; }
@@ -292,12 +293,6 @@
       .profile { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; max-height: 86vh; overflow-y: auto; border-radius: 14px 14px 0 0; border-bottom: 0; animation: up 0.25s ease-out both; }
     }
 
-    /* Nitro: obwódka avatara w kolorze akcentu, karta profilu w kolorach osoby (jak motyw profilu na Discordzie) */
-    .nitro .avatar { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ac, transparent); }
-    .row.nitro:hover .avatar { box-shadow: 0 0 0 2px var(--hover), 0 0 0 4px var(--ac, transparent); }
-    .row.nitro.sel .avatar { box-shadow: 0 0 0 2px var(--surface-2), 0 0 0 4px var(--ac, transparent); }
-    .top.nitro .avatar { box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px var(--ac, transparent); }
-    .has-deco .avatar, .top.has-deco .avatar { box-shadow: none; }
     .pf-tags { position: absolute; right: 14px; top: 10px; display: flex; align-items: center; gap: 8px; }
     .pf-tags .pf-place { position: static; }
     .pf-nitro { padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); color: #f3c4ff; font-size: 0.72rem; font-weight: 600; }
@@ -542,7 +537,7 @@
     }
     const validColor = (c) => typeof c === 'string' && (/^#[0-9a-f]{6}$/i.test(c) || /^rgb\(\d{1,3}, \d{1,3}, \d{1,3}\)$/.test(c));
     // Osoby z Nitro: kolor akcentu z Discorda, a gdy go nie ma — kolor wzięty z avatara (dociągany w tle).
-    const nitroAttrs = (e) => (!e.nitro ? '' : validColor(e.accent) ? ` style="--ac:${e.accent}"` : ` data-sample="${esc(e.avatar)}"`);
+    const nitroAttrs = () => '';
 
     // Dominujący kolor obrazka (jak Discord, gdy ktoś nie ustawił koloru): średnia ważona nasyceniem.
     const colorCache = new Map();
@@ -635,8 +630,7 @@
       const xp = e.periodXp != null ? `<span class="plus">+${fmt(e.periodXp)}</span>` : fmt(e.xp);
       const plate = e.look?.nameplate;
       const plateStyle = plate && PALETTES[plate.palette] ? `--pl:${PALETTES[plate.palette]};` : '';
-      const ac = e.nitro && validColor(e.accent) ? `--ac:${e.accent};` : '';
-      const attrs = `${ac || plateStyle ? ` style="${ac}${plateStyle}"` : ''}${e.nitro && !ac ? ` data-sample="${esc(e.avatar)}"` : ''}`;
+      const attrs = plateStyle ? ` style="${plateStyle}"` : '';
       return `<li class="row${e.rank <= 3 ? ` r${e.rank}` : ''}${e.nitro ? ' nitro' : ''}${plate ? ' plated' : ''}${e.look?.decoration ? ' has-deco' : ''}${e.userId === state.selected ? ' sel' : ''}"${attrs} data-id="${esc(e.userId)}" tabindex="0" role="button" aria-label="Profil: ${esc(display(e))}">
         ${plate ? `<img class="plate" src="${esc(plate.image)}" alt="" loading="lazy">` : ''}
         <span class="rank">${e.rank}</span>
@@ -894,8 +888,10 @@
       el.style.removeProperty('--c2');
     }
     // Karta w kolorach osoby z Nitro: kolor akcentu (albo z banera) u góry, kolor avatara u dołu.
+    // Kolory profili wyłączone — karta profilu ma zawsze ten sam wygląd.
+    const PROFILE_COLORS = false;
     async function applyTheme(p, id) {
-      if (!p.nitro) return;
+      if (!PROFILE_COLORS || !p.nitro) return;
       const c1 = (validColor(p.accentColor) && p.accentColor) || (await sampleColor(p.banner)) || (await sampleColor(p.avatar));
       const c2 = (await sampleColor(p.avatar)) || c1;
       if (state.selected !== id || !validColor(c1)) return;
