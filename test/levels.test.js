@@ -464,6 +464,7 @@ test('/rank, /ranking, /xp (tylko Zarządzanie serwerem; blokada dla właścicie
 
   reply = await run('rank', [{ name: 'uzytkownik', type: 6, value: 'target' }], { permissions: '0' });
   assert.equal(reply.embeds[0].title, 'Poziom 10 • #1 w rankingu');
+  assert.deepEqual(reply.embeds[0].fields.at(-1), { name: 'Odznaki', value: '⭐ **Poziom 10**' }, 'odznaki na karcie /rank');
   assert.match(reply.embeds[0].description, /\[Zobacz na stronie rankingu\]\(https:\/\/\S+ranking\.html\?u=target\)$/, 'cudza karta: link bez „to ja”');
   reply = await run('rank', [], { invoker: 'target', permissions: '0' });
   assert.match(reply.embeds[0].description, /ranking\.html\?u=target&me=1\)$/, 'własna karta: link zapamiętuje „ja”');

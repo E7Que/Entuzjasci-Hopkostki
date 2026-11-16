@@ -1421,6 +1421,21 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return rows.map((r) => ({ ...mapLevel(r), periodXp: Number(r.period_xp), periodRank: Number(r.period_rank) }));
     },
 
+    // Ile razy osoba wygrała tydzień/miesiąc (1. miejsce) i ile razy była na podium (1–3) — odznaki.
+    async levelWins(userId) {
+      const rows = await query(
+        `select period, count(*) filter (where rank = 1)::int as wins, count(*)::int as podium
+         from bot.level_winners where user_id = $1::text and rank <= 3 group by period`,
+        [userId],
+      );
+      const out = { week: 0, month: 0, weekPodium: 0, monthPodium: 0 };
+      for (const r of rows) {
+        out[r.period] = Number(r.wins);
+        out[`${r.period}Podium`] = Number(r.podium);
+      }
+      return out;
+    },
+
     async periodRank({ period, key, xp }) {
       const [keyCol, xpCol] = period === 'week' ? ['week_key', 'week_xp'] : ['month_key', 'month_xp'];
       const row = await one(`select count(*)::int + 1 as n from bot.levels where ${keyCol} = $1::text and ${xpCol} > $2::bigint`, [key, xp]);

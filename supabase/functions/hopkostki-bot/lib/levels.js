@@ -478,12 +478,13 @@ export async function publicProfile(bot, userId) {
   const week = row.weekKey === weekKey() ? row.weekXp : 0;
   const month = row.monthKey === monthKey() ? row.monthXp : 0;
   const event = rankedXpEvent(config);
-  const [weekRank, monthRank, eventStanding, history] = await Promise.all([
+  const [weekRank, monthRank, eventStanding, history, wins] = await Promise.all([
     week > 0 ? bot.store.periodRank({ period: 'week', key: weekKey(), xp: week }) : null,
     month > 0 ? bot.store.periodRank({ period: 'month', key: monthKey(), xp: month }) : null,
     event ? bot.store.eventStanding(event.id, userId) : null,
     // Dzienne XP z ostatnich 30 dni (wykres w profilu na stronie rankingu).
     bot.store.levelDaily(userId, { since: dayKey(Date.now() - 29 * DAY) }),
+    bot.store.levelWins(userId).catch(() => ({})),
   ]);
   const roles = (member?.roles ?? [])
     .map((id) => byId.get(id))
@@ -518,6 +519,7 @@ export async function publicProfile(bot, userId) {
     lastActive: lastActive.length ? new Date(Math.max(...lastActive)).toISOString() : null,
     roles,
     nextReward: nextRole ? { level: nextReward.level, name: nextRole.name, color: hexColor(nextRole.color) } : null,
+    badges: levelBadges({ ...row, level: p.level }, wins),
     stats: {
       rank: row.rank,
       xp: row.xp,
@@ -930,6 +932,41 @@ export async function levelUpEmbed(bot, config, { user, level, previous, xp, ear
   };
 }
 
+// ---------- Odznaki ----------
+// Liczone na bieżąco z danych poziomów (bez osobnej tabeli): najwyższy zdobyty stopień w każdej kategorii
+// i wygrane tygodnie/miesiące z archiwum zwycięzców.
+const BADGE_TIERS = [
+  ['level', '⭐', [[10, 'Poziom 10'], [25, 'Poziom 25'], [50, 'Poziom 50'], [100, 'Poziom 100']], (n) => `poziom ${n}`],
+  ['messages', '💬', [[100, 'Rozmowny'], [1000, 'Gaduła'], [10000, 'Legenda czatu']], (n) => `${pl(n)} wiadomości`],
+  ['voice', '🎙️', [[600, 'Na fali'], [6000, 'Głos serwera'], [30000, 'Mieszka na głosowym']], (n) => `${pl(n / 60)} h na kanałach głosowych`],
+];
+const timesText = (n) => `${n} ${n === 1 ? 'raz' : 'razy'}`;
+
+export function levelBadges({ level = 0, messages = 0, voiceMinutes = 0 } = {}, wins = {}) {
+  const values = { level, messages, voice: voiceMinutes };
+  const badges = [];
+  for (const [id, emoji, tiers, label] of BADGE_TIERS) {
+    const reached = tiers.filter(([min]) => values[id] >= min);
+    if (!reached.length) continue;
+    const [min, name] = reached.at(-1);
+    const next = tiers[reached.length];
+    badges.push({
+      id,
+      emoji,
+      name,
+      tier: reached.length,
+      tiers: tiers.length,
+      description: `Zdobyta za ${label(min)}.${next ? ` Następny stopień: ${next[1].toLowerCase() === label(next[0]) ? label(next[0]) : `${next[1]} (${label(next[0])})`}.` : ' Najwyższy stopień!'}`,
+    });
+  }
+  if (wins.month) badges.push({ id: 'month', emoji: '👑', name: 'Zwycięzca miesiąca', count: wins.month, description: `Najaktywniejsza osoba miesiąca — ${timesText(wins.month)}.` });
+  if (wins.week) badges.push({ id: 'week', emoji: '🏆', name: 'Zwycięzca tygodnia', count: wins.week, description: `Najaktywniejsza osoba tygodnia — ${timesText(wins.week)}.` });
+  const podium = (wins.weekPodium ?? 0) + (wins.monthPodium ?? 0) - (wins.week ?? 0) - (wins.month ?? 0);
+  if (podium > 0) badges.push({ id: 'podium', emoji: '🥉', name: 'Na podium', count: podium, description: `Miejsce 2–3 w tygodniu albo miesiącu — ${timesText(podium)}.` });
+  return badges;
+}
+export const badgesText = (badges) => badges.map((b) => `${b.emoji} **${b.name}**${b.count > 1 ? ` ×${b.count}` : ''}`).join(' · ');
+
 // self — własna karta: link na stronę rankingu zapamiętuje tę osobę jako „ja” (przycisk „Moje miejsce”).
 export async function rankCardEmbed(bot, config, user, { self = false } = {}) {
   const person = await levelPerson(bot, user, { banner: config.card.userBanner !== false });
@@ -938,6 +975,7 @@ export async function rankCardEmbed(bot, config, user, { self = false } = {}) {
   const p = levelProgress(row.xp, config.formula);
   const pct = p.needed ? Math.floor((p.current / p.needed) * 100) : 100;
   const image = await cardImage(bot, config, person);
+  const badges = levelBadges({ ...row, level: p.level }, await bot.store.levelWins(user.id).catch(() => ({})));
   return {
     color: levelColor(config, p.level, roles),
     author: { name: person.name, icon_url: person.avatar(64) },
@@ -954,6 +992,7 @@ export async function rankCardEmbed(bot, config, user, { self = false } = {}) {
       { name: 'Ten tydzień', value: `${pl(row.weekKey === weekKey() ? row.weekXp : 0)} XP`, inline: true },
       { name: 'Ten miesiąc', value: `${pl(row.monthKey === monthKey() ? row.monthXp : 0)} XP`, inline: true },
       { name: 'Reakcje', value: pl(row.reactions), inline: true },
+      ...(badges.length ? [{ name: 'Odznaki', value: badgesText(badges) }] : []),
     ],
     thumbnail: { url: person.avatar(256) },
     ...(image ? { image: { url: image } } : {}),
