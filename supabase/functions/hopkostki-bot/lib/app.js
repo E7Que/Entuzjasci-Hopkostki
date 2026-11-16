@@ -15,6 +15,7 @@ import { getApp, getGuildContext } from './moderation.js';
 import { avatarUrl, guildIconUrl } from './rest.js';
 import { levelProgress, monthKey, publicArchive, publicLook, publicProfile, rankedXpEvent, weekKey, xpEventsOverview } from './levels.js';
 import { AccessError, PANEL_SITE, PASSWORD_AUTH, authenticateSession, signIn } from './access.js';
+import { RateLimitError, clientIp, clientKey, guardLogin, loginFailed, loginOk } from './loginGuard.js';
 import { verifyDiscordRequest, ed25519Supported, safeEqual } from './verify.js';
 
 // Supabase nie serwuje stron HTML z funkcji Edge (text/html zamienia na text/plain), więc sama strona
@@ -223,11 +224,18 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
   }
 
   // Kto pyta: hasło panelu = pełny dostęp, sesja z loginu z /login = części panelu odblokowane rolami tej osoby.
+  // Hasło panelu chroni limit nieudanych prób na adres (loginGuard.js); tokenów sesji nie da się zgadnąć.
   async function panelAuth(request) {
     const session = request.headers.get('x-panel-session');
     if (session) return authenticateSession(bot, session);
+    const key = await clientKey(request);
+    const attempt = await guardLogin(bot, key);
     const password = await resolvePanelPassword(bot);
-    if (!(await safeEqual(request.headers.get('x-panel-password'), password))) throw new AccessError('Złe hasło panelu.');
+    if (!(await safeEqual(request.headers.get('x-panel-password'), password))) {
+      await loginFailed(bot, key, { kind: 'hasło panelu', ip: clientIp(request) });
+      throw new AccessError('Złe hasło panelu.');
+    }
+    await loginOk(bot, key, attempt);
     return PASSWORD_AUTH;
   }
 
@@ -247,14 +255,23 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
       }
       // Jedyne zapytanie panelu bez hasła panelu i sesji: login i hasło z /login → sesja przeglądarki.
       if (request.method === 'POST' && route === '/login') {
-        const { token, auth } = await signIn(bot, { login: body?.login, password: body?.password });
-        return json({ token, me: describeAuth(auth) }, 200, cors);
+        const key = await clientKey(request);
+        const attempt = await guardLogin(bot, key);
+        try {
+          const { token, auth } = await signIn(bot, { login: body?.login, password: body?.password });
+          await loginOk(bot, key, attempt);
+          return json({ token, me: describeAuth(auth) }, 200, cors);
+        } catch (error) {
+          if (error instanceof AccessError && error.message.startsWith('Zły login')) await loginFailed(bot, key, { kind: 'login z /login', ip: clientIp(request) });
+          throw error;
+        }
       }
       const auth = await panelAuth(request);
       const result = await handlePanel(bot, { method: request.method, path: route, query: Object.fromEntries(url.searchParams), body, auth });
       return json(result.body, result.status, cors);
     } catch (error) {
       if (error instanceof AccessError) return json({ error: error.message }, 401, cors);
+      if (error instanceof RateLimitError) return json({ error: error.message }, 429, { ...cors, 'Retry-After': String(error.retryAfter) });
       throw error;
     }
   }

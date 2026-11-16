@@ -164,6 +164,7 @@ export async function runCron(bot, { force = false } = {}) {
       await bot.store.pruneMessageCache(7);
       await bot.store.prunePanelSessions();
       await bot.store.pruneLevelDaily(400);
+      await bot.store.pruneLoginAttempts();
     });
     report.health = await step('health', () => healthTick(bot, report));
     await bot.store.setState('cron_last_run', { at: Date.now(), report });

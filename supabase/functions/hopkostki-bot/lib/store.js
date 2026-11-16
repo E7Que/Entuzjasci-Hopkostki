@@ -325,6 +325,38 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return { total: total.n, items: rows.map(mapCase) };
     },
 
+    // ---------- Ochrona logowania do panelu ----------
+    async loginAttempt(key) {
+      const row = await one('select fails, first_at, locked_until from bot.login_attempts where key = $1::text', [key]);
+      return row ? { fails: row.fails, firstAt: ms(row.first_at), lockedUntil: ms(row.locked_until) } : null;
+    },
+
+    // Kolejny błąd: licznik w oknie `windowMin` minut; przy `limit` błędach blokada na `lockMin` minut.
+    async loginFailed(key, { limit = 10, windowMin = 15, lockMin = 15 } = {}) {
+      const row = await one(
+        `insert into bot.login_attempts as a (key, fails, first_at, locked_until)
+         values ($1::text, 1, now(), case when 1 >= $2::int then now() + make_interval(mins => $4::int) end)
+         on conflict (key) do update set
+           fails = case when a.first_at < now() - make_interval(mins => $3::int) then 1 else a.fails + 1 end,
+           first_at = case when a.first_at < now() - make_interval(mins => $3::int) then now() else a.first_at end,
+           locked_until = case
+             when (case when a.first_at < now() - make_interval(mins => $3::int) then 1 else a.fails + 1 end) >= $2::int
+               then greatest(a.locked_until, now() + make_interval(mins => $4::int))
+             else a.locked_until end
+         returning fails, locked_until`,
+        [key, limit, windowMin, lockMin],
+      );
+      return { fails: row.fails, lockedUntil: ms(row.locked_until) };
+    },
+
+    async loginSucceeded(key) {
+      await query('delete from bot.login_attempts where key = $1::text', [key]);
+    },
+
+    async pruneLoginAttempts() {
+      await query("delete from bot.login_attempts where first_at < now() - interval '1 day' and (locked_until is null or locked_until < now())");
+    },
+
     // ---------- Dziennik zmian ustawień ----------
     // changes = { klucz: { before, after } } — tylko zmienione sekcje. Zostaje ostatnie 100 wpisów.
     async addConfigHistory({ changedBy, changes }) {
