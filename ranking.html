@@ -18,6 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
   <style>
     :root {
       --bg: #0d1113;
@@ -271,6 +272,23 @@
     @keyframes pod-drop { from { opacity: 0; transform: translateY(-22px) scale(0.86); } }
     @keyframes beam-on { 0% { opacity: 0; } 10% { opacity: 0.85; } 18% { opacity: 0.1; } 30% { opacity: 1; } 40% { opacity: 0.35; } 55%, 100% { opacity: 1; } }
     @keyframes crown-drop { from { opacity: 0; transform: translateY(-26px) rotate(-24deg) scale(0.6); } }
+
+    /* ---------- Podium 3D (three.js): scena w canvasie, napisy z HTML nad kolumnami ---------- */
+    .top3.is3d { height: 410px; padding: 0; gap: 0; background: #0b1114; }
+    .top3.is3d .pod3d { position: absolute; inset: 0; z-index: 0; display: block; width: 100%; height: 100%; }
+    .top3.is3d .top { position: static; z-index: 1; height: 100%; border-radius: 0; }
+    .top3.is3d .lamp, .top3.is3d .beam, .top3.is3d .pod-col, .top3.is3d .crown, .top3.is3d .spark,
+    .top3.is3d .pod-av .av, .top3.is3d .pod-av::before, .top3.is3d .pod-av::after { display: none; }
+    .top3.is3d .pod-person { position: absolute; z-index: 2; left: 0; top: 0; width: 29%; padding: 2px 4px; pointer-events: none; text-shadow: 0 1px 2px #000, 0 0 14px rgba(0, 0, 0, 0.85); }
+    .top3.is3d .top.t1 .pod-person { width: 33%; }
+    .top3.is3d .pod-av { display: flex; justify-content: center; align-items: center; gap: 5px; padding: 0; margin: 0 0 3px; transition: none; }
+    .top3.is3d .pod-lvl { position: static; transform: none; text-shadow: none; }
+    .top3.is3d .pod-av .me-tag { position: static; text-shadow: none; }
+    .top3.is3d .top:hover .pod-av { transform: none; }
+    .top3.is3d .top.vacant .pod-av { display: none; }
+    .top3.is3d .top.sel .nick { color: var(--accent); }
+    .top3.is3d.enter .pod-person { animation: pod-drop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3) calc(var(--d) + 1.05s) both; }
+    .top3.is3d .top:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
 
     /* ---------- Lista ---------- */
     .table { border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); overflow: hidden; }
@@ -632,6 +650,10 @@
       .tab { flex: 1; padding: 8px 6px; }
       .search { flex: 1 1 auto; }
       .top3 { --pad: 27px; --apex: 90px; gap: 0 5px; padding: var(--pad) 8px 0; }
+      .top3.is3d { height: 350px; padding: 0; gap: 0; }
+      .top3.is3d .top .tag { display: none; }
+      .top3.is3d .pod-person { width: 32%; padding: 2px 1px; }
+      .top3.is3d .top.t1 .pod-person { width: 35%; }
       .top { --avs: 52px; --ph: 62px; --num: 2rem; --lamp: 30px; }
       .top.t1 { --avs: 68px; --ph: 86px; --num: 2.6rem; --lamp: 44px; }
       .top.t3 { --ph: 46px; --num: 1.6rem; --lamp: 28px; }
@@ -1009,7 +1031,7 @@
     const CROWN_SVG = '<svg viewBox="0 0 32 24" aria-hidden="true"><path d="M4 17.4 2.3 7.2l7.2 4.9L16 3.6l6.5 8.5 7.2-4.9L28 17.4z"/><rect x="4" y="18.8" width="24" height="3.6" rx="1.3"/><circle cx="2.3" cy="5.8" r="1.7"/><circle cx="16" cy="2.3" r="1.9"/><circle cx="29.7" cy="5.8" r="1.7"/></svg>';
     const POD_AVATAR = [96, 72, 72];
     const POD_ATTRS = ['data-id', 'tabindex', 'role', 'aria-label', 'aria-hidden', 'title'];
-    const pod = { built: false, shown: [null, null, null], flips: [[], [], []], timer: 0 };
+    const pod = { built: false, shown: [null, null, null], flips: [[], [], []], timer: 0, articles: [], data3d: [] };
     function podStat(e) {
       if (e.periodXp != null) return `+${fmt(e.periodXp)} XP`;
       if (state.period === 'all' && state.sort === 'messages') return `${fmt(e.messages)} wiad.`;
@@ -1057,19 +1079,85 @@
       article.querySelector('.pod-person').innerHTML = slot.html;
       article.classList.toggle('sel', Boolean(state.selected) && article.dataset.id === state.selected);
       pod.shown[i] = slot;
+      pod3dSelection();
     }
-    // Pierwsze pokazanie: animacja wejścia, gdy podium jest widoczne na ekranie.
+    // Pierwsze pokazanie: animacja wejścia, gdy podium jest widoczne na ekranie (z podium 3D — gdy scena jest gotowa).
     function podEntrance(box) {
       if (reduceMotion.matches || !('IntersectionObserver' in window)) return;
       box.classList.add('pre');
       const io = new IntersectionObserver((seen) => {
         if (!seen.some((x) => x.isIntersecting)) return;
         io.disconnect();
-        box.classList.remove('pre');
-        box.classList.add('enter');
-        pod.timer = setTimeout(() => box.classList.remove('enter'), 2700);
+        Promise.race([pod3d.ready ?? Promise.resolve(null), new Promise((r) => setTimeout(r, 2500))]).then(() => {
+          box.classList.remove('pre');
+          box.classList.add('enter');
+          pod3d.api?.enter();
+          pod.timer = setTimeout(() => box.classList.remove('enter'), 3200);
+        });
       }, { threshold: 0.2 });
       io.observe(box);
+    }
+
+    // ---------- Podium 3D (three.js, ładowane z CDN) ----------
+    // Bez WebGL, przy błędzie ładowania albo z ?no3d zostaje podium w CSS.
+    const pod3d = { api: null, ready: null, started: false };
+    const WEBGL = (() => {
+      try {
+        const c = document.createElement('canvas');
+        return Boolean(c.getContext('webgl2') || c.getContext('webgl'));
+      } catch {
+        return false;
+      }
+    })();
+    const pod3dModule = !WEBGL || new URLSearchParams(location.search).has('no3d')
+      ? Promise.resolve(null)
+      : import('./podium3d.js?v=f6ce91e').catch((error) => {
+          console.warn('[podium 3D]', error);
+          return null;
+        });
+    const podIndex = (el) => pod.articles.indexOf(el?.closest?.('.top'));
+    function pod3dData(top) {
+      return [0, 1, 2].map((i) => {
+        const e = top[i];
+        if (!e) return { kind: 'vacant', key: '' };
+        if (e.hidden) return { kind: 'hidden', key: 'hidden', name: '?' };
+        return { kind: 'person', key: `${e.userId}|${e.avatar}`, avatar: e.avatar, name: display(e) };
+      });
+    }
+    const pod3dAccent = () => (state.period === 'event' ? getComputedStyle(document.body).getPropertyValue('--evc').trim() || '#ff4fa3' : '#3cc3d6');
+    function pod3dSelection() {
+      pod3d.api?.setSelected(pod.articles.findIndex((a) => a.classList.contains('sel')));
+    }
+    function start3d(box) {
+      if (pod3d.started) return;
+      pod3d.started = true;
+      pod3d.ready = pod3dModule.then((mod) => {
+        if (!mod) return null;
+        try {
+          const waiting = box.classList.contains('pre');
+          box.classList.add('is3d');
+          const api = mod.createPodium3D(box, { overlays: pod.articles.map((a) => a.querySelector('.pod-person')), reduced: reduceMotion.matches, waitForEnter: waiting });
+          pod3d.api = api;
+          api.setAccent(pod3dAccent());
+          api.setSlots(pod.data3d, { animate: false });
+          pod3dSelection();
+          box.addEventListener('pod3d-lost', () => {
+            box.classList.remove('is3d');
+            pod3d.api = null;
+          }, { once: true });
+          box.addEventListener('pointerover', (event) => api.setHover(podIndex(event.target)));
+          box.addEventListener('pointerleave', () => api.setHover(-1));
+          box.addEventListener('focusin', (event) => api.setHover(podIndex(event.target)));
+          box.addEventListener('focusout', () => api.setHover(-1));
+          return api;
+        } catch (error) {
+          console.warn('[podium 3D]', error);
+          box.classList.remove('is3d');
+          box.querySelector('.pod3d')?.remove();
+          pod3d.api = null;
+          return null;
+        }
+      });
     }
     function renderPodium(top) {
       const box = $('#top3');
@@ -1083,9 +1171,12 @@
           .map((n) => `<article class="top t${n}"><i class="lamp" aria-hidden="true"></i><i class="beam" aria-hidden="true"></i><div class="pod-person"></div><div class="pod-col" aria-hidden="true"><b>${n}</b></div></article>`)
           .join('');
         pod.built = true;
-        slots.forEach((slot, i) => podApply(box.children[i], slot, i));
+        pod.articles = [...box.querySelectorAll('.top')];
+        pod.data3d = pod3dData(top);
+        slots.forEach((slot, i) => podApply(pod.articles[i], slot, i));
         box.hidden = false;
         podEntrance(box);
+        start3d(box);
         return;
       }
       const animate = !box.hidden && !box.classList.contains('pre') && !reduceMotion.matches && typeof box.animate === 'function';
@@ -1095,8 +1186,11 @@
         clearTimeout(pod.timer);
         box.classList.remove('enter');
       }
+      pod.data3d = pod3dData(top);
+      pod3d.api?.setAccent(pod3dAccent());
+      pod3d.api?.setSlots(pod.data3d, { animate });
       slots.forEach((slot, i) => {
-        const article = box.children[i];
+        const article = pod.articles[i];
         const person = article.querySelector('.pod-person');
         const shown = pod.shown[i];
         // Przerwana podmiana (szybkie przełączanie zakładek): wracamy do tego, co faktycznie stoi na kolumnie.
@@ -1345,6 +1439,7 @@
     }
     function markSelected() {
       document.querySelectorAll('[data-id]').forEach((el) => el.classList.toggle('sel', el.dataset.id === state.selected));
+      pod3dSelection();
     }
     const lockScroll = (lock) => { document.body.style.overflow = lock && !desktop.matches ? 'hidden' : ''; };
 
@@ -1967,6 +2062,7 @@
         el.classList.remove('flash');
         void el.offsetWidth;
         el.classList.add('flash');
+        if (podIndex(el) >= 0) pod3d.api?.flash(podIndex(el));
       } else {
         const note = $('#note');
         note.innerHTML = '<b>Nie ma Cię w tym rankingu</b> — zdobądź trochę XP na serwerze.';
