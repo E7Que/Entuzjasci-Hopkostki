@@ -2577,7 +2577,7 @@ function siSectionCard(section, s, total) {
   const uploading = si.uploading === s;
   return `<div class="card si-section" data-si-section="${s}" data-no-search>
     <div class="card-head">
-      <h3><span class="si-num">${s + 1}</span><span class="si-title">${esc(str(section.title).trim() || SI_KINDS[section.kind] || 'Sekcja')}</span></h3>
+      <h3><span class="si-num">${s + 1}</span><span class="si-title">${md(str(section.title).trim() || SI_KINDS[section.kind] || 'Sekcja')}</span></h3>
       <div class="si-section-tools">
         <select data-si-sec-field="kind" aria-label="Rodzaj sekcji" title="Rodzaj sekcji — „Uzupełnij role z serwera” dopisuje role do sekcji Role i Role za poziomy">${Object.entries(SI_KINDS)
           .map(([value, label]) => `<option value="${value}" ${value === section.kind ? 'selected' : ''}>${label}</option>`)
@@ -2702,7 +2702,7 @@ $('#si-sections').addEventListener('input', (event) => {
   if (!ctx) return;
   if (el.dataset.siSecField) {
     ctx.section[el.dataset.siSecField] = el.value;
-    if (el.dataset.siSecField === 'title') $('.si-title', ctx.card).textContent = el.value.trim() || SI_KINDS[ctx.section.kind] || 'Sekcja';
+    if (el.dataset.siSecField === 'title') $('.si-title', ctx.card).innerHTML = md(el.value.trim() || SI_KINDS[ctx.section.kind] || 'Sekcja');
   } else if (el.dataset.siItemField && ctx.row) {
     ctx.section.items[ctx.i][el.dataset.siItemField] = el.value;
   } else {
