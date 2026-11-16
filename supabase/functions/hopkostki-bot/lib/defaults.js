@@ -335,12 +335,12 @@ export const DEFAULT_CONFIG = {
     bullet: '🔹',
     footer: 'Entuzjaści Hopkostki',
     sections: [
-      { id: 'roles', kind: 'roles', title: 'Entuzjaści Hopkostki | Informacje o rolach 📋', intro: '', banner: '', items: [] },
+      { id: 'roles', kind: 'roles', title: 'Entuzjaści Hopkostki | Informacje o rolach 📋 *(Główne)*', intro: '', banner: '', items: [] },
       {
         id: 'levels',
         kind: 'levels',
         title: 'Role za poziomy 📈',
-        intro: 'Za aktywność na serwerze zdobywasz XP — za wiadomości, czas na kanałach głosowych i reakcje. Kolejne poziomy dają nowe role. Swój poziom sprawdzisz komendą {/rank}.',
+        intro: 'Za aktywność na serwerze zdobywasz XP — za wiadomości i czas na kanałach głosowych. Kolejne poziomy dają nowe role. Swój poziom sprawdzisz komendą {/rank}.',
         banner: '',
         items: [],
       },
@@ -363,7 +363,7 @@ export const DEFAULT_CONFIG = {
           { kind: 'command', command: 'rolainfo', commandId: '', text: 'informacje o wybranej roli' },
           { kind: 'command', command: 'zaproszenia', commandId: '', text: 'kto kogo zaprosił' },
           { kind: 'heading', text: 'Przydatne' },
-          { kind: 'command', command: 'afk', commandId: '', text: 'status AFK — bot odpowie, gdy ktoś Cię oznaczy' },
+          { kind: 'command', command: 'afk', commandId: '', text: 'status AFK (bot odpowie za Ciebie, gdy ktoś Cię oznaczy)' },
           { kind: 'command', command: 'przypomnij dodaj', commandId: '', text: 'przypomnienie o wybranej porze' },
           { kind: 'command', command: 'propozycja', commandId: '', text: 'zgłoś pomysł na serwer' },
           { kind: 'command', command: 'pomoc', commandId: '', text: 'lista wszystkich komend bota' },

@@ -12,6 +12,7 @@ import {
   fillServerInfoSections,
   itemsText,
   pruneBannerAssets,
+  serverInfoContext,
   suggestServerInfoRoles,
 } from '../supabase/functions/hopkostki-bot/lib/serverInfo.js';
 
@@ -35,7 +36,7 @@ test('serwer info: role w cytatach, klikalne komendy, nagłówki, baner jako oso
         items: [
           { kind: 'heading', text: 'Administracja' },
           { kind: 'role', roleId: id(1), text: 'Właściciel serwera.' },
-          { kind: 'role', roleId: id(2), text: 'Linia 1\nSprawdź {/rank}' },
+          { kind: 'role', roleId: id(2), text: 'Linia 1\n\nSprawdź {/rank} i {/bump}' },
         ],
       }),
       section({
@@ -66,7 +67,7 @@ test('serwer info: role w cytatach, klikalne komendy, nagłówki, baner jako oso
   assert.equal(payload.embeds[1].title, 'Role 📋');
   assert.equal(
     payload.embeds[1].description,
-    `**Administracja**\n🔹 <@&${id(1)}>\n> Właściciel serwera.\n\n🔹 <@&${id(2)}>\n> Linia 1\n> Sprawdź </rank:111111111111111111>`,
+    `**Administracja**\n🔹 <@&${id(1)}>\n> Właściciel serwera.\n\n🔹 <@&${id(2)}>\n> Linia 1\n> Sprawdź </rank:111111111111111111> i </bump:947088344167366698>`,
   );
   assert.equal(
     payload.embeds[2].description,
@@ -100,44 +101,76 @@ test('serwer info: limity Discorda — opis sekcji, liczba embedów, suma znakó
   assert.throws(() => buildServerInfoPayload({ ...base, sections: long }), /6000/);
 });
 
-test('serwer info: propozycja ról — administracja, wyróżnienia, pingi i role za poziomy; bez ról custom i integracji', () => {
+test('serwer info: propozycja ról — grupy i kolejność jak w starym embedzie, role do wzięcia, role za poziomy z nagród', () => {
   const role = (n, name, position, extra = {}) => ({ id: id(n), name, position, permissions: '0', color: 0, ...extra });
   const rawRoles = [
     { id: 'g', name: '@everyone', position: 0, permissions: String(1n << 10n) },
-    role(1, '| Właściciel', 30, { permissions: '8' }),
-    role(2, '| Admin', 29),
-    role(3, '| Moderator', 28),
+    role(15, 'Techink Serwera', 37, { permissions: '8' }),
+    role(14, '| Custom - Kasia', 35),
+    role(1, '| Właściciel', 33, { permissions: '8' }),
+    role(2, '| Admin', 31),
+    role(18, '| Bot', 30),
+    role(3, '| Moderator', 29),
+    role(5, '| Helper', 28),
     role(4, '| Test Helper', 27),
-    role(5, '| Helper', 26),
-    role(6, '| Twórca Wideo', 20),
-    role(7, 'Server Booster', 19, { managed: true, tags: { premium_subscriber: null } }),
-    role(8, '| Członek', 10),
-    role(9, '| Ping TT Hopkostki', 9),
-    role(10, '| Bump Ping', 8),
-    role(11, 'Level 10', 5, { permissions: String((1n << 15n) | (1n << 10n)) }),
-    role(12, 'Level 5', 4, { permissions: String(1n << 14n) }),
+    role(7, '| Server Booster', 26, { managed: true, tags: { premium_subscriber: null } }),
+    role(6, '| Twórca wideo', 25),
+    role(19, '| Ex-Moderator', 24),
+    role(11, '| Level 10', 19, { permissions: String((1n << 15n) | (1n << 10n)) }),
+    role(12, '| Level 5', 18, { permissions: String(1n << 14n) }),
+    role(20, '| Level 2', 17),
+    role(8, '| Członek', 16),
+    role(21, 'Collab', 15),
+    role(9, 'Ping TT HdQd', 14),
+    role(22, 'Ping YT HdQd', 12),
+    role(23, '| Dead Chat', 11),
+    role(10, '| Bump Reminder', 9),
+    role(24, 'MC Serwer Ping', 4),
     role(13, 'Weteran', 3),
-    role(14, 'Custom • Kasia', 2),
-    role(15, 'Technik', 2),
+    role(17, 'C', 2),
     role(16, 'MEE6', 1, { managed: true, tags: { bot_id: '1' } }),
-    role(17, 'Coś innego', 1),
   ];
-  const gctx = { guild: { id: 'g' }, roles: new Map(rawRoles.map((r) => [r.id, r])), rawRoles };
-  const { main, levels } = suggestServerInfoRoles(gctx, { levels: { rewards: [{ level: 20, roleId: id(13) }] } });
+  const emojis = [
+    { id: '500000000000000001', name: 'TT', animated: false, available: true },
+    { id: '500000000000000002', name: 'YT', animated: false, available: true },
+  ];
+  const gctx = { guild: { id: 'g' }, roles: new Map(rawRoles.map((r) => [r.id, r])), rawRoles, emojis };
+  const config = { levels: { rewards: [{ level: 5, roleId: id(12) }, { level: 10, roleId: id(11) }, { level: 20, roleId: id(13) }] } };
+  const ROLES_CHANNEL = '600000000000000003';
+  const ctx = { ticketChannelId: '600000000000000001', bumpChannelId: '600000000000000002', selfRoles: new Map([[id(23), ROLES_CHANNEL], [id(10), ROLES_CHANNEL]]) };
+  const { main, levels } = suggestServerInfoRoles(gctx, config, ctx);
   const name = (roleId) => rawRoles.find((r) => r.id === roleId).name;
-  assert.deepEqual(main.map((i) => (i.kind === 'heading' ? `# ${i.text}` : name(i.roleId))), [
-    '# Administracja', '| Właściciel', '| Admin', '| Moderator', '| Test Helper', '| Helper',
-    '# Wyróżnienia', '| Twórca Wideo', 'Server Booster', '| Członek',
-    '# Powiadomienia — role do wzięcia', '| Ping TT Hopkostki', '| Bump Ping',
+  const outline = (items) => items.map((i) => (i.kind === 'heading' ? `# ${i.text}` : i.kind === 'text' ? `> ${i.text}` : name(i.roleId)));
+  assert.deepEqual(outline(main), [
+    '# Administracja', '| Właściciel', '| Admin', '| Moderator', '| Helper', '| Test Helper', '| Bot',
+    '# Społeczność', '| Twórca wideo', '| Server Booster', '| Ex-Moderator', '| Członek',
+    '# Role do wzięcia', `> Weźmiesz je sam na kanale <#${ROLES_CHANNEL}>.`, '| Bump Reminder', '| Dead Chat',
+    '# Powiadomienia', 'Ping TT HdQd', 'Ping YT HdQd', 'MC Serwer Ping', 'Collab',
   ]);
-  assert.equal(main.find((i) => i.roleId === id(9)).text, 'Powiadomienia o nowych filmach Hopkostki na TikToku.');
-  assert.match(main.find((i) => i.roleId === id(10)).text, /\{\/bump\}/);
-  assert.match(main.find((i) => i.roleId === id(6)).text, /1000 obserwujących/);
+  assert.equal(
+    main.find((i) => i.roleId === id(6)).text,
+    [
+      '***Wymagania:*** *więcej niż 1000 obserwujących na TikToku <:TT:500000000000000001> lub więcej niż 500 subskrypcji na YouTube <:YT:500000000000000002>.*',
+      '**1.** Aby otrzymać tę rolę, otwórz ticket na <#600000000000000001>.',
+      '**2.** Wiadomość powinna zawierać link do konta na TikToku/YouTube.',
+      '**3.** Następnie pokaż nam, że masz dostęp do tego konta i że możesz je edytować.',
+      `**4.** Wtedy dostaniesz rolę <@&${id(6)}>.`,
+    ].join('\n'),
+  );
+  assert.equal(main.find((i) => i.roleId === id(10)).text, 'Ping na <#600000000000000002>, kiedy znowu można podbić serwer komendą {/bump}.');
+  assert.equal(main.find((i) => i.roleId === id(9)).text, 'Powiadomienia o nowych filmach HdQd na TikToku.');
+  assert.equal(main.find((i) => i.roleId === id(1)).text, 'Właściciel serwera — nic dodać, nic ująć.');
   assert.deepEqual(levels.map((i) => [name(i.roleId), i.text]), [
-    ['Level 5', 'Za **5 poziom**. Odblokowuje: podglądy linków.'],
-    ['Level 10', 'Za **10 poziom**. Odblokowuje: wysyłanie zdjęć i plików.'],
+    ['| Level 5', 'Za **5 poziom**. Odblokowuje: podglądy linków.'],
+    ['| Level 10', 'Za **10 poziom**. Odblokowuje: wysyłanie zdjęć i plików.'],
     ['Weteran', 'Za **20 poziom**.'],
-  ]);
+  ], 'nagrody z Poziomów; „Level 2” spoza nagród — pominięta');
+
+  // Bez kontekstu: bez ticketów i emoji, bez grupy „do wzięcia”; bez nagród — role „Level N” z nazwy.
+  const plain = suggestServerInfoRoles({ ...gctx, emojis: [] }, { levels: { rewards: [] } });
+  assert.match(plain.main.find((i) => i.roleId === id(6)).text, /^\*\*\*Wymagania:\*\*\* \*więcej niż 1000 obserwujących na TikToku lub .*\n\*\*1\.\*\* Aby otrzymać tę rolę, napisz do administracji\./);
+  assert.ok(!plain.main.some((i) => i.kind === 'heading' && i.text === 'Role do wzięcia'));
+  assert.deepEqual(plain.levels.map((i) => name(i.roleId)), ['| Level 2', '| Level 5', '| Level 10']);
 
   // Uzupełnianie: pusta sekcja dostaje całą propozycję, wypełniona — tylko brakujące role na końcu.
   const sections = [
@@ -146,13 +179,31 @@ test('serwer info: propozycja ról — administracja, wyróżnienia, pingi i rol
     section({ id: 'commands', kind: 'commands', items: [{ kind: 'text', text: 'x' }] }),
   ];
   const filled = fillServerInfoSections(sections, { main, levels });
-  assert.equal(filled.added, 12);
+  assert.equal(filled.added, 15 + 3);
   assert.deepEqual(filled.sections[0].items[0], { kind: 'role', roleId: id(1), text: 'Mój opis' }, 'własny opis zostaje');
-  assert.equal(filled.sections[0].items.length, 10);
-  assert.ok(filled.sections[0].items.every((i) => i.kind === 'role'));
+  assert.equal(filled.sections[0].items.length, 16);
+  assert.ok(filled.sections[0].items.every((i) => i.kind === 'role'), 'do wypełnionej sekcji tylko role, bez nagłówków');
   assert.deepEqual(filled.sections[1].items.map((i) => i.kind), ['role', 'role', 'role']);
   assert.deepEqual(filled.sections[2], sections[2], 'sekcja komend bez zmian');
   assert.equal(fillServerInfoSections(filled.sections, { main, levels }).added, 0, 'drugi raz nie ma czego dopisać');
+  const empty = fillServerInfoSections([section({ id: 'roles', kind: 'roles' })], { main, levels });
+  assert.deepEqual(outline(empty.sections[0].items), outline(main), 'pusta sekcja — cała propozycja z nagłówkami');
+});
+
+test('serwer info: kontekst opisów — kanał ticketów, kanał bumpów i role do wzięcia z wiadomości bota', async () => {
+  const { store } = await createTestStore();
+  const bot = makeBot({ store, discord: fakeDiscord() });
+  await store.setState('ticket_panel', { channelId: '700000000000000001', messageId: '700000000000000009' });
+  await store.addSentMessage({ channelId: '700000000000000002', messageId: '1', data: { roles: { mode: 'buttons', items: [{ roleId: id(1) }, { roleId: id(2) }] } } });
+  await store.addSentMessage({ channelId: '700000000000000003', messageId: '2', data: { roles: { mode: 'select', items: [{ roleId: id(2) }, { roleId: id(3) }] } } });
+  await store.addSentMessage({ channelId: '700000000000000004', messageId: '3', data: { roles: { mode: 'none', items: [{ roleId: id(4) }] } } });
+  const config = sanitizeConfig({ tickets: { enabled: true }, bump: { channelId: '700000000000000005' } }, structuredClone(DEFAULT_CONFIG));
+  const ctx = await serverInfoContext(bot, config);
+  assert.equal(ctx.ticketChannelId, '700000000000000001');
+  assert.equal(ctx.bumpChannelId, '700000000000000005');
+  assert.deepEqual([...ctx.selfRoles], [[id(1), '700000000000000002'], [id(2), '700000000000000002'], [id(3), '700000000000000003']], 'rola z kilku wiadomości — pierwsza wysłana; „bez wyboru” się nie liczy');
+  const off = await serverInfoContext(bot, structuredClone(DEFAULT_CONFIG));
+  assert.equal(off.ticketChannelId, '', 'tickety wyłączone — bez linku do ticketów');
 });
 
 test('serwer info w panelu: podpowiedzi komend, wysyłka, aktualizacja, nowa wiadomość i ponowne wysłanie po usunięciu', async () => {
@@ -181,7 +232,7 @@ test('serwer info w panelu: podpowiedzi komend, wysyłka, aktualizacja, nowa wia
   assert.equal(sent.body.result.action, 'sent');
   const message = discord.state.channels.get(CHANNEL).at(-1);
   assert.equal(message.embeds.length, 3, 'domyślnie: role, role za poziomy, komendy');
-  assert.equal(message.embeds[0].title, 'Entuzjaści Hopkostki | Informacje o rolach 📋');
+  assert.equal(message.embeds[0].title, 'Entuzjaści Hopkostki | Informacje o rolach 📋 *(Główne)*');
   assert.match(message.embeds[1].description, /Swój poziom sprawdzisz komendą <\/rank:200000000000000000>\./);
   assert.match(message.embeds[2].description, /🔹 <\/rank:200000000000000000> — Twoja karta poziomu/);
   assert.match(message.embeds[2].description, /🔹 <\/bump:947088344167366698> — podbij serwer na DISBOARD/);
@@ -249,7 +300,7 @@ test('serwer info: „Uzupełnij role z serwera” — do szkicu z panelu albo o
   const saved = await call('POST', '/serverinfo/fill', { save: true });
   assert.equal(saved.status, 200);
   const sections = (await store.getConfig()).serverInfo.sections;
-  assert.deepEqual(sections[0].items.map((i) => (i.kind === 'heading' ? i.text : i.roleId)), ['Administracja', id(1), 'Powiadomienia — role do wzięcia', id(2)]);
+  assert.deepEqual(sections[0].items.map((i) => (i.kind === 'heading' ? i.text : i.roleId)), ['Administracja', id(1), 'Powiadomienia', id(2)]);
   assert.deepEqual(sections[1].items.map((i) => i.roleId), [id(3)]);
   assert.equal(sections[2].items.length, DEFAULT_CONFIG.serverInfo.sections[2].items.length, 'komendy bez zmian');
   assert.deepEqual((await store.listConfigHistory(5))[0].keys, ['serverInfo']);

@@ -16,11 +16,21 @@ const DEFAULT_COLOR = 0x3cc3d6;
 
 // ---------- Treść wiadomości ----------
 
-const quote = (text) => text.split('\n').map((line) => `> ${line}`).join('\n');
+// Puste linie pomijamy — sama „> ” na Discordzie nie jest cytatem i przerwałaby blok.
+const quote = (text) =>
+  text
+    .split('\n')
+    .filter((line) => line.trim())
+    .map((line) => `> ${line}`)
+    .join('\n');
+
+// Komendy innych botów, które znamy z ID (DISBOARD /bump) — klikalne także jako {/bump}.
+export const KNOWN_COMMANDS = { bump: '947088344167366698' };
 
 // {/rank} w tekście → klikalna komenda (albo `/rank`, gdy bot nie zna jej ID).
 function commandMention(command, { commandIds = {}, commandId = '' } = {}) {
-  const id = commandId || commandIds[command.split(' ')[0]];
+  const base = command.split(' ')[0];
+  const id = commandId || commandIds[base] || KNOWN_COMMANDS[base];
   return id ? `</${command}:${id}>` : `\`/${command}\``;
 }
 const withCommands = (text, opts) => String(text ?? '').replace(/\{\/([\p{Ll}\p{N}_-]{1,32}(?: [\p{Ll}\p{N}_-]{1,32}){0,2})\}/gu, (_, c) => commandMention(c, opts));
@@ -137,62 +147,108 @@ const MEMBER_PERMS = [
 
 const TIKTOK = /^ping\s+(?:tt|tiktok)\s+(.+)$/i;
 const YOUTUBE = /^ping\s+(?:yt|youtube)\s+(.+)$/i;
-// [grupa, test nazwy (bez „| ” na początku), opis]
+
+// Twórca wideo: wymagania i kroki jak w dotychczasowym embedzie „Role Info” (ticket zamiast usuniętego bota).
+function creatorText(m, ctx) {
+  const tt = ctx.emoji(/^(tt|tiktok)$/i);
+  const yt = ctx.emoji(/^(yt|youtube)$/i);
+  return [
+    `***Wymagania:*** *więcej niż 1000 obserwujących na TikToku${tt ? ` ${tt}` : ''} lub więcej niż 500 subskrypcji na YouTube${yt ? ` ${yt}` : ''}.*`,
+    `**1.** Aby otrzymać tę rolę, ${ctx.ticketChannelId ? `otwórz ticket na <#${ctx.ticketChannelId}>` : 'napisz do administracji'}.`,
+    '**2.** Wiadomość powinna zawierać link do konta na TikToku/YouTube.',
+    '**3.** Następnie pokaż nam, że masz dostęp do tego konta i że możesz je edytować.',
+    `**4.** Wtedy dostaniesz rolę <@&${ctx.role.id}>.`,
+  ].join('\n');
+}
+
+// [grupa, test nazwy (bez „| ” na początku), opis albo (dopasowanie, kontekst) => opis].
+// Kolejność reguł = kolejność ról w grupie (jak w dotychczasowym embedzie), przy remisie — pozycja roli.
 const ROLE_RULES = [
   ['staff', /właściciel|wlasciciel|owner/i, 'Właściciel serwera — nic dodać, nic ująć.'],
   ['staff', /^admin/i, 'Administrator serwera. Najsilniejsza rola, jaką możesz dostać.'],
-  ['staff', /^moderator/i, 'Moderator — pilnuje porządku, taki admin, ale może mniej.'],
-  ['staff', /^test\s*helper/i, 'Helper na okresie próbnym — uczy się moderacji pod okiem ekipy.'],
+  ['staff', /^moderator/i, 'Moderator, taki admin, ale może mniej.'],
   ['staff', /^helper/i, 'Pomocnik moderatorów i adminów.'],
-  ['staff', /^bot$/i, '„Bep Bop” — dźwięki robota. Rola botów serwera.'],
-  [
-    'honor',
-    /twórca|tworca|creator/i,
-    '**Wymagania:** ponad 1000 obserwujących na TikToku albo ponad 500 subskrypcji na YouTube.\n1. Napisz do administracji (np. przez ticket) i podaj link do konta na TikToku/YouTube.\n2. Pokaż, że masz dostęp do tego konta i możesz je edytować.\n3. Wtedy dostaniesz tę rolę.',
-  ],
-  ['honor', /booster/i, 'Osoba, która zboostowała serwer — dziękujemy! 💜'],
-  ['honor', /^ex-?\s*moderator/i, 'Były moderator — dziękujemy za pomoc przy serwerze.'],
-  ['honor', /członek|czlonek|^member$/i, 'Podstawowa rola każdej osoby na serwerze.'],
+  ['staff', /^test\s*helper/i, 'Helper na okresie próbnym — uczy się moderacji pod okiem ekipy.'],
+  ['staff', /^bot$/i, '„Bep Bop” — dźwięki robota.'],
+  ['community', /twórca|tworca|creator/i, creatorText],
+  ['community', /booster/i, 'Osoba, która zboostowała serwer.'],
+  ['community', /^ex-?\s*moderator/i, 'Były moderator — dziękujemy za pomoc przy serwerze.'],
+  ['community', /członek|czlonek|^member$/i, 'Członek serwera — podstawowa rola każdej osoby na serwerze.'],
   ['notify', TIKTOK, (m) => `Powiadomienia o nowych filmach ${m[1]} na TikToku.`],
   ['notify', YOUTUBE, (m) => `Powiadomienia o nowych filmach ${m[1]} na YouTube.`],
   ['notify', /(mc|minecraft).*ping|ping.*(mc|minecraft)/i, 'Powiadomienia o serwerze Minecraft.'],
-  ['notify', /bump/i, 'Przypomnienie, kiedy znowu można podbić serwer komendą {/bump}.'],
-  ['notify', /highlight/i, 'Ping przy rankingu najaktywniejszych osób tygodnia i miesiąca.'],
+  ['notify', /bump/i, (m, ctx) => `Ping${ctx.bumpChannelId ? ` na <#${ctx.bumpChannelId}>` : ''}, kiedy znowu można podbić serwer komendą {/bump}.`],
+  ['notify', /highlight/i, 'Ping przy podsumowaniu najaktywniejszych osób tygodnia i miesiąca.'],
   ['notify', /dead\s*chat/i, 'Ping, gdy na czacie robi się pusto — wpadnij pogadać.'],
-  ['notify', /collab/i, 'Dla chętnych do wspólnych projektów i collabów.'],
+  ['notify', /collab/i, 'Powiadomienia o collabach i ogłoszeniach Serwer Collab.'],
   ['notify', /ping/i, 'Rola z powiadomieniami.'],
 ];
-const GROUP_HEADINGS = { staff: 'Administracja', honor: 'Wyróżnienia', notify: 'Powiadomienia — role do wzięcia' };
+const GROUP_HEADINGS = { staff: 'Administracja', community: 'Społeczność', self: 'Role do wzięcia', notify: 'Powiadomienia' };
 const cleanName = (name) => String(name ?? '').replace(/^[\s|]+/, '').trim();
 
-// Role serwera → proponowane elementy sekcji „Role” i „Role za poziomy” (z opisami).
-export function suggestServerInfoRoles(gctx, config) {
+// Kontekst opisów ról: kanał ticketów i bumpów oraz role do wzięcia z wiadomości bota (zakładka Wiadomości).
+export async function serverInfoContext(bot, config) {
+  const [ticketPanel, sent] = await Promise.all([
+    bot.store.getState('ticket_panel').catch(() => null),
+    bot.store.listSentMessages().catch(() => []),
+  ]);
+  const selfRoles = new Map();
+  for (const message of [...sent].reverse()) {
+    const roles = message.data?.roles;
+    if (!roles || roles.mode === 'none') continue;
+    for (const item of roles.items ?? []) if (item.roleId && !selfRoles.has(item.roleId)) selfRoles.set(item.roleId, message.channelId);
+  }
+  return {
+    ticketChannelId: config.tickets?.enabled && ticketPanel?.channelId ? ticketPanel.channelId : '',
+    bumpChannelId: config.bump?.channelId ?? '',
+    selfRoles,
+  };
+}
+
+// Role serwera → proponowane elementy sekcji „Role” i „Role za poziomy” (z opisami). Role za poziomy: nagrody
+// z ustawień Poziomów (gdy są) albo role „Level N”; role do wzięcia: te z wiadomości bota z wyborem ról.
+export function suggestServerInfoRoles(gctx, config, { ticketChannelId = '', bumpChannelId = '', selfRoles = new Map() } = {}) {
   const everyone = BigInt(gctx.roles.get(gctx.guild.id)?.permissions ?? 0);
-  const rewardLevel = new Map((config.levels?.rewards ?? []).map((r) => [r.roleId, r.level]));
-  const groups = { staff: [], honor: [], notify: [] };
+  const rewards = config.levels?.rewards ?? [];
+  const rewardLevel = new Map(rewards.map((r) => [r.roleId, r.level]));
+  const emoji = (test) => {
+    const found = (gctx.emojis ?? []).find((e) => e.available !== false && test.test(e.name ?? ''));
+    return found ? `<${found.animated ? 'a' : ''}:${found.name}:${found.id}>` : '';
+  };
+  const groups = { staff: [], community: [], self: [], notify: [] };
   const levels = [];
-  const roles = [...(gctx.rawRoles ?? [])].filter((r) => r.id !== gctx.guild.id).sort((a, b) => b.position - a.position);
-  for (const role of roles) {
+  for (const role of gctx.rawRoles ?? []) {
+    if (role.id === gctx.guild.id) continue;
     const name = cleanName(role.name);
     if (name.length < 2 || /^custom\b/i.test(name) || /techni|techink/i.test(name)) continue;
     if (role.tags?.bot_id || role.tags?.integration_id) continue;
     const levelMatch = /^(?:level|poziom|lvl)\s*(\d+)$/i.exec(name);
-    const level = rewardLevel.get(role.id) ?? (levelMatch ? Number(levelMatch[1]) : null);
-    if (level != null) {
+    if (rewardLevel.has(role.id) || levelMatch) {
+      // Rola „Level N” spoza nagród — bot jej nie daje, więc jej nie opisujemy.
+      if (rewards.length && !rewardLevel.has(role.id)) continue;
+      const level = rewardLevel.get(role.id) ?? Number(levelMatch[1]);
       const extra = BigInt(role.permissions ?? 0) & ~everyone;
       const unlocks = MEMBER_PERMS.filter(([bit]) => (extra & bit) === bit).map(([, label]) => label);
       levels.push({ level, item: { kind: 'role', roleId: role.id, text: `Za **${level} poziom**.${unlocks.length ? ` Odblokowuje: ${unlocks.join(', ')}.` : ''}` } });
       continue;
     }
     const premium = role.tags && 'premium_subscriber' in role.tags;
-    const rule = premium ? ROLE_RULES.find((r) => r[1].source === 'booster') : ROLE_RULES.find(([, test]) => test.test(name));
-    if (!rule) continue;
-    const [group, test, describe] = rule;
-    groups[group].push({ kind: 'role', roleId: role.id, text: typeof describe === 'function' ? describe(test.exec(name)) : describe });
+    const index = premium ? ROLE_RULES.findIndex((r) => r[1].source === 'booster') : ROLE_RULES.findIndex(([, test]) => test.test(name));
+    if (index < 0) continue;
+    const [group, test, describe] = ROLE_RULES[index];
+    const text = typeof describe === 'function' ? describe(test.exec(name), { ticketChannelId, bumpChannelId, emoji, role }) : describe;
+    const target = group === 'notify' && selfRoles.has(role.id) ? 'self' : group;
+    groups[target].push({ index, position: role.position, item: { kind: 'role', roleId: role.id, text } });
   }
   const main = [];
-  for (const group of ['staff', 'honor', 'notify']) {
-    if (groups[group].length) main.push({ kind: 'heading', text: GROUP_HEADINGS[group] }, ...groups[group]);
+  for (const [group, list] of Object.entries(groups)) {
+    if (!list.length) continue;
+    main.push({ kind: 'heading', text: GROUP_HEADINGS[group] });
+    if (group === 'self') {
+      const channels = [...new Set(list.map((r) => selfRoles.get(r.item.roleId)).filter(Boolean))].map((id) => `<#${id}>`);
+      if (channels.length) main.push({ kind: 'text', text: `Weźmiesz je sam na ${channels.length > 1 ? 'kanałach' : 'kanale'} ${channels.join(', ')}.` });
+    }
+    main.push(...list.sort((a, b) => a.index - b.index || b.position - a.position).map((r) => r.item));
   }
   return { main, levels: levels.sort((a, b) => a.level - b.level).map((l) => l.item) };
 }

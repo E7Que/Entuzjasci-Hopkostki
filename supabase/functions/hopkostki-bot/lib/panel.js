@@ -16,7 +16,7 @@ import { endGiveaway } from './community.js';
 import { PANEL_SECTIONS, PASSWORD_AUTH, SECTION_CONFIG_KEYS, allowedConfigInput, sectionAccess } from './access.js';
 import { activeXpEvent, changeXp, dayKey, importLevels, levelProgress, levelUpMessage, parseImport } from './levels.js';
 import { alertChannel, sendAlertTest } from './health.js';
-import { commandIdMap, fillServerInfoSections, saveBannerAsset, sendServerInfo, suggestServerInfoRoles } from './serverInfo.js';
+import { commandIdMap, fillServerInfoSections, saveBannerAsset, sendServerInfo, serverInfoContext, suggestServerInfoRoles } from './serverInfo.js';
 import { sanitizeConfig } from './configSchema.js';
 
 // Wersja kodu: funkcja na Supabase importuje bota z GitHuba pod adresem z pełnym SHA commita.
@@ -409,7 +409,7 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
     return attempt(async () => {
       const before = await store.getConfig();
       const gctx = await getGuildContext(bot, { force: true });
-      const suggestion = suggestServerInfoRoles(gctx, before);
+      const suggestion = suggestServerInfoRoles(gctx, before, await serverInfoContext(bot, before));
       // Bez save: uzupełnia przysłany szkic z panelu (zapisuje się go potem paskiem zapisu); save: true — od razu zapis.
       if (body?.save !== true) {
         const draft = Array.isArray(body?.sections) ? sanitizeConfig({ serverInfo: { sections: body.sections } }, before).serverInfo.sections : before.serverInfo.sections;

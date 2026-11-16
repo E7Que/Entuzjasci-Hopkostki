@@ -2422,8 +2422,10 @@ const si = { posted: null, commands: [], commandIds: {}, guildId: null, uploadin
 const siInfo = () => state.draft?.serverInfo;
 const str = (value) => String(value ?? '');
 
+const SI_KNOWN_COMMANDS = { bump: '947088344167366698' }; // DISBOARD
 function siCommand(command, commandId = '') {
-  const id = /^\d{15,25}$/.test(commandId) ? commandId : si.commandIds[command.split(' ')[0]];
+  const base = command.split(' ')[0];
+  const id = /^\d{15,25}$/.test(commandId) ? commandId : si.commandIds[base] || SI_KNOWN_COMMANDS[base];
   return id ? `</${command}:${id}>` : `\`/${command}\``;
 }
 const siWithCommands = (text) => str(text).replace(/\{\/([\p{Ll}\p{N}_-]{1,32}(?: [\p{Ll}\p{N}_-]{1,32}){0,2})\}/gu, (_, c) => siCommand(c));
@@ -2441,7 +2443,10 @@ function siCleanItem(item) {
 function siItemText(item, bullet) {
   const b = bullet ? `${bullet} ` : '';
   if (item.kind === 'heading') return `**${item.text}**`;
-  if (item.kind === 'role') return `${b}<@&${item.roleId}>${item.text ? `\n${siWithCommands(item.text).split('\n').map((l) => `> ${l}`).join('\n')}` : ''}`;
+  if (item.kind === 'role') {
+    const quoted = siWithCommands(item.text).split('\n').filter((l) => l.trim()).map((l) => `> ${l}`).join('\n');
+    return `${b}<@&${item.roleId}>${quoted ? `\n${quoted}` : ''}`;
+  }
   if (item.kind === 'command') return `${b}${siCommand(item.command, item.commandId)}${item.text ? ` — ${siWithCommands(item.text)}` : ''}`;
   return siWithCommands(item.text);
 }
@@ -2933,6 +2938,7 @@ function md(text) {
         .replace(/&lt;(a?):(\w+):(\d+)&gt;/g, (_, a, name, id) => `<img class="emoji" alt=":${name}:" src="https://cdn.discordapp.com/emojis/${id}.${a ? 'gif' : 'webp'}?size=48">`)
         .replace(/&lt;@!?(\d+)&gt;/g, (_, id) => `<span class="mention">@${esc(names[id] ?? 'użytkownik')}</span>`)
         .replace(/&lt;@&amp;(\d+)&gt;/g, (_, id) => roleMention(id))
+        .replace(/&lt;#(\d+)&gt;/g, (_, id) => `<span class="mention">#${esc(state.guild.channels.find((c) => c.id === id)?.name ?? 'kanał')}</span>`)
         .replace(/&lt;\/([\w -]+):\d+&gt;/g, (_, name) => `<span class="mention">/${esc(name)}</span>`)
         .replace(/&lt;t:(\d+):([a-zA-Z])&gt;/g, (_, ts, style) => `<span class="ts">${style === 'R' ? relTime(ts * 1000) : fullDate(ts * 1000)}</span>`)
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
