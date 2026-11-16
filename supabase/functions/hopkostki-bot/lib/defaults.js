@@ -312,6 +312,8 @@ export const DEFAULT_CONFIG = {
     logChannelId: '',
     exemptRoleIds: [],
     exemptChannelIds: [],
+    // Pomijanie administracji i moderacji (role moderatorów, właściciel, uprawnienia do usuwania wiadomości / timeoutów).
+    exemptStaff: true,
     notify: true,
     timeoutMinutes: 10,
     warnPoints: 1,

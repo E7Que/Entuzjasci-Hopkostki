@@ -40,8 +40,15 @@ export function normalizeText(text) {
     .replace(/[013457@$!]/g, (c) => LEET[c]);
 }
 
-// Lista: jedno słowo/fraza na wpis; „słowo*” = wszystko, co się od niego zaczyna. Litery rozstrzelone spacjami
-// („k u r w a”) też są łapane. Zwraca pierwszy pasujący wpis albo null.
+// Lista w formacie AutoModa Discorda („Własne słowa”): słowa i frazy oddzielone przecinkami albo w osobnych liniach.
+export function splitWordList(input) {
+  const raw = Array.isArray(input) ? input : [input];
+  return raw.flatMap((entry) => String(entry ?? '').split(/[\n\r,;]+/)).map((w) => w.trim()).filter(Boolean);
+}
+
+// Jak w AutoModzie Discorda: „słowo” = całe słowo, „słowo*” = początek słowa, „*słowo” = koniec słowa,
+// „*słowo*” = w środku dowolnego słowa. Litery rozstrzelone spacjami („k u r w a”) też są łapane.
+// Zwraca pierwszy pasujący wpis albo null.
 export function findBannedWord(text, list = []) {
   const norm = normalizeText(text);
   const tokens = norm.split(/[^a-z0-9]+/).filter(Boolean);
@@ -56,14 +63,18 @@ export function findBannedWord(text, list = []) {
   }
   if (run.length >= 3) joined.push(run);
   const words = [...tokens, ...joined];
-  for (const raw of list) {
+  const sentence = ` ${tokens.join(' ')} `;
+  for (const raw of splitWordList(list)) {
+    // Gwiazdki są w normalizacji bezpieczne (nie zmienia ich leetspeak), więc liczą się jak w Discordzie.
     const entry = normalizeText(raw).trim();
-    const prefix = entry.endsWith('*');
-    const word = entry.replace(/\*+$/, '').trim();
+    const starts = entry.endsWith('*');
+    const ends = entry.startsWith('*');
+    const word = entry.replace(/^\*+|\*+$/g, '').trim();
     if (word.length < 2) continue;
     if (/\s/.test(word)) {
-      if (` ${tokens.join(' ')} `.includes(` ${word.split(/\s+/).join(' ')} `)) return raw;
-    } else if (words.some((t) => (prefix ? t.startsWith(word) : t === word))) {
+      const phrase = word.split(/\s+/).join(' ');
+      if (starts && ends ? sentence.includes(phrase) : sentence.includes(`${ends ? '' : ' '}${phrase}${starts ? '' : ' '}`)) return raw;
+    } else if (words.some((t) => (starts && ends ? t.includes(word) : starts ? t.startsWith(word) : ends ? t.endsWith(word) : t === word))) {
       return raw;
     }
   }
@@ -81,11 +92,21 @@ export function inviteCodes(text) {
   return [...String(text ?? '').matchAll(INVITE_RE)].map((m) => m[1]);
 }
 
-function mentionCount(message) {
-  const users = new Set((message.mentions ?? []).map((u) => u.id).filter((id) => id !== message.author?.id));
-  const everyone = /@(everyone|here)\b/.test(message.content ?? '') ? 1 : 0;
-  return users.size + (message.mention_roles ?? []).length + everyone;
+// Każde oznaczenie się liczy — także ta sama osoba wpisana kilka razy (7× @ktoś = 7). Do tego oznaczenie
+// z odpowiedzi (jest w mentions, ale nie w treści). Własne oznaczenie się nie liczy.
+export function mentionCount(message) {
+  const content = String(message.content ?? '');
+  const self = message.author?.id;
+  const users = [...content.matchAll(/<@!?(\w+)>/g)].map((m) => m[1]).filter((id) => id !== self);
+  const roles = [...content.matchAll(/<@&(\w+)>/g)].map((m) => m[1]);
+  const everyone = (content.match(/@(?:everyone|here)\b/g) ?? []).length;
+  const typed = new Set(users);
+  const replyPings = (message.mentions ?? []).filter((u) => u.id !== self && !typed.has(u.id)).length;
+  const typedRoles = new Set(roles);
+  const otherRoles = (message.mention_roles ?? []).filter((id) => !typedRoles.has(id)).length;
+  return users.length + roles.length + everyone + replyPings + otherRoles;
 }
+const mentionsText = (n) => `${n} ${n === 1 ? 'oznaczenie' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'oznaczenia' : 'oznaczeń'}`;
 
 // ---------- Wyjątki ----------
 
@@ -93,7 +114,10 @@ async function isExempt(bot, config, message) {
   const a = config.automod;
   const roles = message.member?.roles ?? [];
   if (a.exemptChannelIds.includes(message.channel_id)) return true;
-  if (roles.some((id) => a.exemptRoleIds.includes(id) || config.modRoleIds.includes(id))) return true;
+  if (roles.some((id) => a.exemptRoleIds.includes(id))) return true;
+  // Administracja i moderacja — chyba że w panelu wyłączono ten wyjątek (np. żeby przetestować filtry na sobie).
+  if (a.exemptStaff === false) return false;
+  if (roles.some((id) => config.modRoleIds.includes(id))) return true;
   const { guild, roles: byId } = await getGuildContext(bot);
   if (message.author.id === guild.ownerId) return true;
   return (memberPermissions(roles, byId, guild.id) & EXEMPT_PERMS) !== 0n;
@@ -239,7 +263,7 @@ export async function onMessageAutomod(bot, message, { edited = false, now } = {
   }
   if (a.mentions.enabled) {
     const count = mentionCount(message);
-    if (count >= a.mentions.limit) return punish(bot, config, message, { filter: 'mentions', detail: `${count} oznaczeń`, action: a.mentions.action });
+    if (count >= a.mentions.limit) return punish(bot, config, message, { filter: 'mentions', detail: mentionsText(count), action: a.mentions.action });
   }
   if (a.caps.enabled) {
     const caps = capsStats(content);

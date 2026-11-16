@@ -10,6 +10,8 @@ import {
   capsStats,
   inviteCodes,
   resetSpamMemory,
+  mentionCount,
+  splitWordList,
 } from '../supabase/functions/hopkostki-bot/lib/automod.js';
 import { sanitizeConfig } from '../supabase/functions/hopkostki-bot/lib/configSchema.js';
 import { DEFAULT_CONFIG } from '../supabase/functions/hopkostki-bot/lib/defaults.js';
@@ -79,11 +81,51 @@ test('masowe oznaczenia → timeout (sprawa automatyczna), ostrzeżenie za słow
   assert.ok(timeout.body.communication_disabled_until);
   const cases = await s.store.listCases({ limit: 10 });
   assert.deepEqual([cases.items[0].type, cases.items[0].auto, cases.items[0].moderatorTag], ['timeout', true, 'AutoMod']);
-  assert.match(cases.items[0].reason, /AutoMod: masowe oznaczenia \(3 oznaczeń\)/);
+  assert.match(cases.items[0].reason, /AutoMod: masowe oznaczenia \(3 oznaczenia\)/);
 
   const warned = await onMessageAutomod(s.bot, msg('kup spamik'));
   assert.equal(warned.outcome, 'ostrzeżenie (2 pkt)');
   assert.equal((await s.store.warnSummary('target')).points, 2);
+});
+
+test('oznaczenia: liczy się każde — także 7× ta sama osoba (jak na serwerze), odpowiedź z pingiem, bez własnych', async () => {
+  const ID = '1031166440297996379';
+  const seven = Array(7).fill(`<@${ID}>`).join(' ');
+  assert.equal(mentionCount({ content: seven, author: { id: 'x' }, mentions: [{ id: ID }] }), 7);
+  assert.equal(mentionCount({ content: '<@a> <@!a> <@&r1> @everyone', author: { id: 'x' }, mentions: [{ id: 'a' }], mention_roles: ['r1'] }), 4);
+  assert.equal(mentionCount({ content: 'hej', author: { id: 'x' }, mentions: [{ id: 'reply' }] }), 1, 'oznaczenie z odpowiedzi');
+  assert.equal(mentionCount({ content: '<@x> <@x>', author: { id: 'x' }, mentions: [{ id: 'x' }] }), 0, 'własne oznaczenia się nie liczą');
+
+  const s = await setup({ mentions: { enabled: true, limit: 6, action: 'warn' } });
+  const hit = await onMessageAutomod(s.bot, msg(seven, { mentions: [{ id: ID }] }));
+  assert.deepEqual([hit?.filter, hit?.outcome], ['mentions', 'ostrzeżenie (1 pkt)']);
+  assert.match(lastLog(s).embeds[0].description, /\*\*Powód:\*\* 7 oznaczeń/);
+  assert.equal(await onMessageAutomod(s.bot, msg(Array(5).fill(`<@${ID}>`).join(' '), { mentions: [{ id: ID }] })), null, '5 < 6');
+});
+
+test('zakazane słowa w formacie AutoModa Discorda: przecinki i gwiazdki (całe słowo, początek, koniec, środek)', async () => {
+  const list = ['kurwa, chuj, *jeb*, pierdol*, *dupa, głupi koń'];
+  assert.deepEqual(splitWordList(list), ['kurwa', 'chuj', '*jeb*', 'pierdol*', '*dupa', 'głupi koń']);
+  const cases = [
+    ['kurwa mać', 'kurwa'], ['k u r w a', 'kurwa'], ['ty kurwo', null],
+    ['zajebiście', '*jeb*'], ['JEBAĆ', '*jeb*'],
+    ['pierdolony', 'pierdol*'], ['spierdalaj', null],
+    ['oddupa', '*dupa'], ['dupa', '*dupa'], ['dupek', null],
+    ['Głupi Koń biega', 'głupi koń'], ['zwykła wiadomość', null],
+  ];
+  for (const [text, want] of cases) assert.equal(findBannedWord(text, list), want, text);
+  assert.equal(findBannedWord('ale *jeb*ane', ['**']), null, 'same gwiazdki to nie słowo');
+
+  // Zapis z panelu: lista wklejona jako jedna linia (albo tekst) → osobne wpisy, bez powtórzeń i za krótkich.
+  const current = structuredClone(DEFAULT_CONFIG);
+  const saved = sanitizeConfig({ automod: { words: { list: ['kurwa, chuj, *jeb*', 'Chuj', 'a', '*b*', 'pierdol*;dupa'] } } }, current).automod.words.list;
+  assert.deepEqual(saved, ['kurwa', 'chuj', '*jeb*', 'pierdol*', 'dupa']);
+  assert.deepEqual(sanitizeConfig({ automod: { words: { list: 'raz, dwa\ntrzy' } } }, current).automod.words.list, ['raz', 'dwa', 'trzy']);
+  const many = Array.from({ length: 1200 }, (_, i) => `slowo${i}`).join(', ');
+  assert.equal(sanitizeConfig({ automod: { words: { list: [many] } } }, current).automod.words.list.length, 1000, 'jak w Discordzie: maks. 1000');
+
+  const s = await setup({ words: { enabled: true, list: ['kurwa, *jeb*'], action: 'delete' } });
+  assert.equal((await onMessageAutomod(s.bot, msg('no zajebiste'))).filter, 'words');
 });
 
 test('CAPS i spam (flood oraz powtarzanie) — po karze chwila przerwy', async () => {
@@ -118,6 +160,14 @@ test('wyjątki: moderatorzy, właściciel, role i kanały z wyjątków; wyłącz
   assert.ok(await onMessageAutomod(s.bot, msg(bad)));
   await s.store.updateConfig({ automod: { enabled: false } });
   assert.equal(await onMessageAutomod(s.bot, msg(bad)), null);
+
+  // Wyjątek dla administracji wyłączony (np. do testów): moderator i właściciel też są sprawdzani,
+  // a role i kanały z wyjątków dalej są pomijane.
+  await s.store.updateConfig({ automod: { enabled: true, exemptStaff: false } });
+  assert.ok(await onMessageAutomod(s.bot, msg(bad, { member: { roles: ['r-mod'] } })), 'moderator sprawdzany');
+  assert.ok(await onMessageAutomod(s.bot, msg(bad, { author: { id: 'owner', username: 'wlasciciel' } })), 'właściciel sprawdzany');
+  assert.equal(await onMessageAutomod(s.bot, msg(bad, { member: { roles: ['100000000000000304'] } })), null);
+  assert.equal(await onMessageAutomod(s.bot, msg(bad, { channel_id: FREE })), null);
 });
 
 test('anty-rajd: X wejść w Y s → alert z pingiem roli alertów i wyrzucenie młodych kont z tej fali', async () => {

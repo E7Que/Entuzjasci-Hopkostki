@@ -5,6 +5,7 @@ import { DEFAULT_CONFIG } from './defaults.js';
 import { isValidUnit } from './duration.js';
 import { COMMAND_MAP } from './commands.js';
 import { cleanEmoji } from './messages.js';
+import { splitWordList } from './automod.js';
 import { LOGIN_DAYS } from './access.js';
 
 const SNOWFLAKE = /^\d{15,25}$/;
@@ -285,12 +286,13 @@ function cleanAutomodValue(path, input, current) {
   if (path === 'automod.raid.action') return RAID_ACTIONS.includes(input) ? input : current;
   if (path.endsWith('.action')) return AUTOMOD_ACTIONS.includes(input) ? input : current;
   if (path === 'automod.words.list') {
-    if (!Array.isArray(input)) return current;
+    // Lista z AutoModa Discorda (słowa po przecinku) rozbita na osobne wpisy; jak w Discordzie maks. 1000 po 60 znaków.
+    if (!Array.isArray(input) && typeof input !== 'string') return current;
     const seen = new Set();
-    return input
-      .map((w) => String(w ?? '').trim().slice(0, 60))
-      .filter((w) => w.length >= 2 && !seen.has(w.toLowerCase()) && seen.add(w.toLowerCase()))
-      .slice(0, 300);
+    return splitWordList(input)
+      .map((w) => w.slice(0, 60))
+      .filter((w) => w.replace(/\*/g, '').trim().length >= 2 && !seen.has(w.toLowerCase()) && seen.add(w.toLowerCase()))
+      .slice(0, 1000);
   }
   return undefined;
 }
