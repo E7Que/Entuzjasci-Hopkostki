@@ -19,6 +19,7 @@ const STATIC_FILES = new Set([
   'app.js',
   'style.css',
   'ranking.html',
+  'podium3d.js',
   'img/banner.webp',
   'img/banner-og.jpg',
   'img/icon.webp',
