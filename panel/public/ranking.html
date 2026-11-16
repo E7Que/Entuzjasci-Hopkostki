@@ -218,6 +218,26 @@
     .board.grid .lvl b { font-size: 0.75rem; }
     .board.grid .empty, .board.grid .skeleton { grid-column: 1 / -1; border: 0; }
 
+    /* Archiwum zwycięzców */
+    .seg { display: flex; gap: 3px; margin: 0 0 12px; padding: 3px; border-radius: 8px; background: var(--surface-2); }
+    .seg button { flex: 1; padding: 5px 6px; border: 0; border-radius: 6px; background: none; color: var(--muted); font-size: 0.8rem; font-weight: 500; cursor: pointer; }
+    .seg button:hover { color: var(--text); }
+    .seg button[aria-selected="true"] { background: var(--hover); color: var(--text); }
+    .archive { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; max-height: 440px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+    .arch-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px; font-size: 0.82rem; color: var(--muted); }
+    .arch-head b { color: var(--text); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .arch-podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+    .arch-p { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; padding: 8px 4px 7px; border: 1px solid var(--border); border-top: 2px solid var(--m, var(--border)); border-radius: 8px; background: none; color: inherit; font: inherit; text-align: center; cursor: pointer; }
+    .arch-p:hover { background: var(--hover); }
+    .arch-p.p1 { --m: var(--gold); } .arch-p.p2 { --m: var(--silver); } .arch-p.p3 { --m: var(--bronze); }
+    .arch-p.anon { cursor: default; }
+    .arch-p.anon:hover { background: none; }
+    .arch-p .avatar { width: 32px; height: 32px; }
+    .arch-p .who-n { max-width: 100%; font-size: 0.78rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .arch-p.anon .who-n { color: var(--muted); font-style: italic; }
+    .arch-p small { color: var(--muted); font-size: 0.72rem; }
+    .arch-empty { color: var(--muted); font-size: 0.86rem; }
+
     /* Osoby ukryte komendą /prywatnosc */
     .anon-av { display: grid; place-items: center; color: var(--faint); background: var(--surface-2); }
     .anon-av svg { width: 44%; height: 44%; }
@@ -561,6 +581,15 @@
             <dl class="kv" id="countdowns"></dl>
             <p id="highlights-text"></p>
           </section>
+          <section class="card" id="card-archive" hidden>
+            <h2>Poprzedni zwycięzcy</h2>
+            <div class="seg" role="tablist" aria-label="Archiwum">
+              <button type="button" role="tab" data-archive="weeks" aria-selected="true">Tygodnie</button>
+              <button type="button" role="tab" data-archive="months" aria-selected="false">Miesiące</button>
+              <button type="button" role="tab" data-archive="events" aria-selected="false">Wydarzenia</button>
+            </div>
+            <ol class="archive" id="archive-list"></ol>
+          </section>
           <section class="card" id="card-xp" hidden>
             <h2>Jak zdobywać XP</h2>
             <ul class="ways" id="ways"></ul>
@@ -797,6 +826,58 @@
       </article>`;
     }
 
+    // ---------- Archiwum zwycięzców ----------
+    const archive = { data: null, tab: 'weeks' };
+    function archivePerson(p) {
+      const xp = `${fmt(p.xp)} XP`;
+      if (p.hidden) return `<div class="arch-p p${p.rank} anon" title="${ANON_TITLE}">${anonAvatar(32)}<span class="who-n">Ukryta osoba</span><small>${xp}</small></div>`;
+      return `<button type="button" class="arch-p p${p.rank}" data-id="${esc(p.userId)}" title="${esc(display(p))} — profil">
+        <img class="avatar" src="${esc(p.avatar ?? FALLBACK_AVATAR)}" alt="" loading="lazy" width="32" height="32">
+        <span class="who-n">${esc(display(p))}</span><small>${xp}</small></button>`;
+    }
+    function renderArchive() {
+      const d = archive.data;
+      const groups = d?.[archive.tab] ?? [];
+      document.querySelectorAll('[data-archive]').forEach((b) => {
+        b.setAttribute('aria-selected', String(b.dataset.archive === archive.tab));
+        b.hidden = !d?.[b.dataset.archive]?.length;
+      });
+      $('#archive-list').innerHTML = groups.length
+        ? groups
+            .map((g) => {
+              const title = archive.tab === 'events' ? `${esc(g.name)} <span class="muted">(${multText(g.multiplier)})</span>` : esc(g.label);
+              const sub = archive.tab === 'events' ? esc(new Date(g.endsAt).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' })) : '';
+              return `<li><div class="arch-head"><b>${title}</b><span>${sub}</span></div><div class="arch-podium">${g.winners.map(archivePerson).join('')}</div></li>`;
+            })
+            .join('')
+        : '<li class="arch-empty">Brak zakończonych okresów.</li>';
+    }
+    async function loadArchive() {
+      try {
+        const res = await fetch(`${BASE}/archive`);
+        const data = await res.json();
+        if (!data || data.enabled === false) return;
+        archive.data = data;
+        const first = ['weeks', 'months', 'events'].find((k) => data[k]?.length);
+        if (!first) return;
+        archive.tab = first;
+        renderArchive();
+        $('#card-archive').hidden = false;
+      } catch {
+        // Archiwum to dodatek — bez niego strona działa normalnie.
+      }
+    }
+    document.querySelectorAll('[data-archive]').forEach((b) =>
+      b.addEventListener('click', () => {
+        archive.tab = b.dataset.archive;
+        renderArchive();
+      }),
+    );
+    $('#archive-list').addEventListener('click', (event) => {
+      const person = event.target.closest('[data-id]');
+      if (person) openProfile(person.dataset.id);
+    });
+
     // ---------- Rankingi okresowe ----------
     function nextWeekStart(now = Date.now()) {
       const d = new Date(now);
@@ -927,7 +1008,7 @@
         if (!PREVIEW) setEvents(data.events);
         state.total = data.total ?? data.entries.length;
         state.entries = append ? state.entries.concat(data.entries) : data.entries;
-        if (!state.metaDone) { renderMeta(data); state.metaDone = true; }
+        if (!state.metaDone) { renderMeta(data); state.metaDone = true; loadArchive(); }
         renderNote();
         renderBoard(append ? data.entries : null);
         renderMore();

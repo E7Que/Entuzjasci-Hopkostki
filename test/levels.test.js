@@ -27,6 +27,8 @@ import {
   activeXpEvent,
   xpEventsOverview,
   multiplierText,
+  winnersArchiveTick,
+  periodLabel,
 } from '../supabase/functions/hopkostki-bot/lib/levels.js';
 
 const LVL5 = '100000000000000060';
@@ -337,6 +339,48 @@ test('prywatność: /prywatnosc ukrywa osobę na stronie rankingu (anonimowe mie
   assert.match(await run('pokaz'), /Znów jesteś widoczny/);
   ({ body } = await get('leaderboard'));
   assert.equal(body.entries[1].name, 'hurownik_og');
+});
+
+test('archiwum zwycięzców: zapis przy końcu tygodnia i miesiąca, publiczne archiwum z wydarzeniami i ukrytymi', async () => {
+  const now = Date.parse('2026-11-22T00:05:00Z'); // niedziela — zaczyna się tydzień 2026-11-22
+  const s = await setup({
+    publicLeaderboard: true,
+    events: [{ id: 'evarch1', name: 'Halloween XP', multiplier: 2, startsAt: '2026-10-30T18:00:00Z', endsAt: '2026-11-01T22:00:00Z', kinds: ['message'], theme: 'fire' }],
+  });
+  const ids = ['100000000000000081', '100000000000000082', '100000000000000083', '100000000000000084'];
+  for (const [i, id] of ids.entries()) {
+    await s.store.query(
+      `insert into bot.levels (user_id, user_tag, xp, week_key, week_xp, month_key, month_xp, hidden)
+       values ($1::text, $2::text, 1000, '2026-11-15', $3::bigint, '2026-10', $4::bigint, $5::boolean)`,
+      [id, `osoba${i}`, 400 - i * 100, 100 + i * 100, i === 1],
+    );
+  }
+  await s.store.query(`insert into bot.level_event_xp (event_id, user_id, xp) values ('evarch1', $1::text, 300), ('evarch1', $2::text, 500)`, [ids[0], ids[2]]);
+
+  // Pierwszy przebieg tylko zapamiętuje okresy.
+  assert.deepEqual(await winnersArchiveTick(s.bot, { now }), {});
+  assert.deepEqual(await winnersArchiveTick(s.bot, { now }), {});
+  // Okresy, które minęły od ostatniego razu → top 10 do archiwum (raz).
+  await s.store.setState('levels_archive_week', '2026-11-08');
+  await s.store.setState('levels_archive_month', '2026-09');
+  assert.deepEqual(await winnersArchiveTick(s.bot, { now }), { week: 4, month: 4 });
+  assert.deepEqual(await winnersArchiveTick(s.bot, { now }), {});
+
+  const handle = createHandler(s.bot);
+  const res = await handle(new Request('https://x.supabase.co/functions/v1/hopkostki-bot/panel/public/archive'));
+  const body = await res.json();
+  assert.equal(body.weeks[0].key, '2026-11-15');
+  assert.equal(body.weeks[0].label, '15 – 21 listopada');
+  assert.deepEqual(body.weeks[0].winners.map((w) => [w.rank, w.name, w.xp, w.hidden ?? false]), [
+    [1, 'osoba0', 400, false],
+    [2, 'Ukryta osoba', 300, true],
+    [3, 'osoba2', 200, false],
+  ]);
+  assert.equal(body.weeks[0].winners[1].userId, null, 'ukryta osoba bez ID');
+  assert.equal(body.months[0].label, 'Październik 2026');
+  assert.deepEqual(body.months[0].winners.map((w) => w.name), ['osoba3', 'osoba2', 'Ukryta osoba']);
+  assert.deepEqual(body.events.map((e) => [e.name, e.winners.map((w) => [w.name, w.xp])]), [['Halloween XP', [['osoba2', 500], ['osoba0', 300]]]]);
+  assert.equal(periodLabel('week', '2026-11-29'), '29 listopada – 5 grudnia');
 });
 
 test('skrót wiadomości do wykrywania powtórek', () => {

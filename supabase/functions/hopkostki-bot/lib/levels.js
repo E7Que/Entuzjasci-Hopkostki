@@ -759,6 +759,74 @@ export async function highlightsTick(bot, { now = Date.now() } = {}) {
   return report;
 }
 
+// ---------- Archiwum zwycięzców ----------
+
+// Przy końcu tygodnia i miesiąca zapisuje 10 najlepszych osób zakończonego okresu (niezależnie od ogłoszeń
+// na Discordzie). Przy pierwszym uruchomieniu tylko zapamiętuje okres — wcześniejsze dane mogą być niepełne.
+export async function winnersArchiveTick(bot, { now = Date.now() } = {}) {
+  const config = (await bot.store.getConfig()).levels;
+  if (!config.enabled) return null;
+  const report = {};
+  for (const [period, key, stateKey] of [
+    ['week', previousWeekKey(now), 'levels_archive_week'],
+    ['month', previousMonthKey(now), 'levels_archive_month'],
+  ]) {
+    const done = await bot.store.getState(stateKey);
+    if (done === key) continue;
+    await bot.store.setState(stateKey, key);
+    if (!done) continue;
+    report[period] = await bot.store.archiveWinners(period, key, await bot.store.levelPeriodTop({ period, key, limit: 10 }));
+  }
+  return report;
+}
+
+export function periodLabel(period, key) {
+  if (period === 'week') {
+    const start = Date.parse(`${key}T00:00:00Z`);
+    const fmt = (ms, month = true) => new Date(ms).toLocaleDateString('pl-PL', { day: 'numeric', ...(month ? { month: 'long' } : {}), timeZone: 'UTC' });
+    const sameMonth = new Date(start).getUTCMonth() === new Date(start + 6 * DAY).getUTCMonth();
+    return `${fmt(start, !sameMonth)} – ${fmt(start + 6 * DAY)}`;
+  }
+  const label = new Date(`${key}-01T00:00:00Z`).toLocaleDateString('pl-PL', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+// Archiwum na stronę rankingu: ostatnie tygodnie, miesiące i zakończone wydarzenia (po 3 osoby).
+export async function publicArchive(bot, { now = Date.now() } = {}) {
+  const config = (await bot.store.getConfig()).levels;
+  if (!config.enabled || !config.publicLeaderboard) return null;
+  const gctx = bot.discord ? await getGuildContext(bot).catch(() => null) : null;
+  const person = (r) =>
+    r.hidden
+      ? { rank: r.rank, xp: r.xp, hidden: true, userId: null, name: 'Ukryta osoba', displayName: null, avatar: null }
+      : {
+          rank: r.rank,
+          xp: r.xp,
+          userId: r.userId,
+          name: r.userTag ?? 'Użytkownik',
+          displayName: r.displayName && r.displayName !== r.userTag ? r.displayName : null,
+          avatar: r.guildAvatar && gctx
+            ? `https://cdn.discordapp.com/guilds/${gctx.guild.id}/users/${r.userId}/avatars/${r.guildAvatar}.png?size=64`
+            : avatarUrl({ id: r.userId, avatar: r.avatar }, 64),
+        };
+  const ended = (config.events ?? [])
+    .filter((e) => eventTime(e, 'endsAt') <= now)
+    .sort((a, b) => eventTime(b, 'endsAt') - eventTime(a, 'endsAt'))
+    .slice(0, 10);
+  const [weeks, months, eventRows] = await Promise.all([
+    bot.store.listWinners({ period: 'week' }),
+    bot.store.listWinners({ period: 'month' }),
+    bot.store.eventWinners(ended.map((e) => e.id), 3),
+  ]);
+  return {
+    weeks: weeks.map((g) => ({ key: g.key, label: periodLabel('week', g.key), winners: g.winners.map(person) })),
+    months: months.map((g) => ({ key: g.key, label: periodLabel('month', g.key), winners: g.winners.map(person) })),
+    events: ended
+      .map((e) => ({ ...publicXpEvent(e), winners: eventRows.filter((r) => r.eventId === e.id).map(person) }))
+      .filter((e) => e.winners.length),
+  };
+}
+
 // ---------- Karta poziomu ----------
 
 const BAR = 12;

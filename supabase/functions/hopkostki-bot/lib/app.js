@@ -13,7 +13,7 @@ import { runGatewaySession } from './gateway.js';
 import { handlePanel, describeAuth } from './panel.js';
 import { getApp, getGuildContext } from './moderation.js';
 import { avatarUrl, guildIconUrl } from './rest.js';
-import { levelProgress, monthKey, publicLook, publicProfile, rankedXpEvent, weekKey, xpEventsOverview } from './levels.js';
+import { levelProgress, monthKey, publicArchive, publicLook, publicProfile, rankedXpEvent, weekKey, xpEventsOverview } from './levels.js';
 import { AccessError, PANEL_SITE, PASSWORD_AUTH, authenticateSession, signIn } from './access.js';
 import { verifyDiscordRequest, ed25519Supported, safeEqual } from './verify.js';
 
@@ -235,6 +235,9 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
     try {
       // Publiczny ranking poziomów (strona ranking.html) — bez logowania, o ile włączony w panelu.
       if (request.method === 'GET' && route === '/public/leaderboard') return json(await publicLeaderboard(url), 200, cors);
+      if (request.method === 'GET' && route === '/public/archive') {
+        return json((await publicArchive(bot)) ?? { enabled: false }, 200, cors);
+      }
       if (request.method === 'GET' && route === '/public/profile') {
         const profile = bot.discord ? await publicProfile(bot, url.searchParams.get('id')) : null;
         return profile ? json(profile, 200, cors) : json({ error: 'Nie ma takiej osoby w rankingu.' }, 404, cors);

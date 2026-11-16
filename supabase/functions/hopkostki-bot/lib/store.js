@@ -120,6 +120,17 @@ function mapAppeal(r) {
   };
 }
 
+const mapWinner = (r) => ({
+  rank: Number(r.rank),
+  xp: Number(r.xp),
+  userId: r.user_id,
+  userTag: r.user_tag ?? null,
+  displayName: r.display_name ?? null,
+  avatar: r.avatar ?? null,
+  guildAvatar: r.guild_avatar ?? null,
+  hidden: Boolean(r.hidden),
+});
+
 const CASE_COLUMNS = { reason: 'reason', note: 'note', dmStatus: 'dm_status', messageUrl: 'message_url' };
 const ACTIVE_WARN = '(expires_at is null or expires_at > now())';
 
@@ -1145,6 +1156,53 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
         [userId, since],
       );
       return rows.map((r) => ({ day: r.day, xp: Number(r.xp), messages: r.messages, voiceMinutes: r.voice_minutes, reactions: r.reactions }));
+    },
+
+    // ---------- Archiwum zwycięzców ----------
+    // rows = wynik levelPeriodTop (kolejność = miejsca). Zapis raz na okres.
+    async archiveWinners(period, key, rows) {
+      if (!rows.length) return 0;
+      const data = rows.map((r, i) => ({ rank: i + 1, user_id: r.userId, xp: r.periodXp }));
+      const out = await query(
+        `insert into bot.level_winners (period, key, rank, user_id, xp)
+         select $1::text, $2::text, (x->>'rank')::int, x->>'user_id', (x->>'xp')::bigint from jsonb_array_elements($3::text::jsonb) x
+         on conflict (period, key, rank) do nothing returning rank`,
+        [period, key, JSON.stringify(data)],
+      );
+      return out.length;
+    },
+
+    // Ostatnie `periods` okresów, w każdym `top` osób: [{ key, winners: [{ rank, xp, userId, … }] }].
+    async listWinners({ period, periods = 12, top = 3 }) {
+      const rows = await query(
+        `select w.key, w.rank, w.xp, w.user_id, l.user_tag, l.display_name, l.avatar, l.guild_avatar, coalesce(l.hidden, false) as hidden
+         from bot.level_winners w left join bot.levels l on l.user_id = w.user_id
+         where w.period = $1::text and w.rank <= $3::int
+           and w.key in (select k.key from (select distinct key from bot.level_winners where period = $1::text) k order by k.key desc limit $2::int)
+         order by w.key desc, w.rank`,
+        [period, periods, top],
+      );
+      const out = [];
+      for (const r of rows) {
+        if (out.at(-1)?.key !== r.key) out.push({ key: r.key, winners: [] });
+        out.at(-1).winners.push(mapWinner(r));
+      }
+      return out;
+    },
+
+    // Najlepsze osoby zakończonych wydarzeń XP: [{ eventId, rank, xp, userId, … }].
+    async eventWinners(eventIds, top = 3) {
+      if (!eventIds.length) return [];
+      const rows = await query(
+        `select * from (
+           select e.event_id, e.user_id, e.xp, row_number() over (partition by e.event_id order by e.xp desc, e.user_id) as rank,
+                  l.user_tag, l.display_name, l.avatar, l.guild_avatar, coalesce(l.hidden, false) as hidden
+           from bot.level_event_xp e left join bot.levels l on l.user_id = e.user_id
+           where e.event_id in (select jsonb_array_elements_text($1::text::jsonb)) and e.xp > 0
+         ) r where r.rank <= $2::int order by r.event_id, r.rank`,
+        [JSON.stringify(eventIds), top],
+      );
+      return rows.map((r) => ({ eventId: r.event_id, ...mapWinner(r) }));
     },
 
     // ---------- Wydarzenia XP ----------
