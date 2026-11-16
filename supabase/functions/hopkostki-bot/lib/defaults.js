@@ -6,6 +6,9 @@ export const ACTIONS = ['ban', 'unban', 'kick', 'timeout', 'untimeout', 'warn'];
 export const DEFAULT_CONFIG = {
   // Kanał z logami moderacji (pełne szczegóły, punkty ostrzeżeń, status DM). Puste = brak logów.
   modLogChannelId: '',
+  // Alerty, gdy bot przestaje działać (brak połączenia z Discordem, komendy nie docierają, funkcja bota nie odpowiada).
+  // channelId puste = kanał logów moderacji; minutes — po ilu minutach problemu wysłać alert (3–120).
+  alerts: { enabled: true, channelId: '', pingRoleId: '', minutes: 5 },
   // Kanał, na który trafiają ogłoszenia o karach. Puste = odpowiedź na kanale, na którym użyto komendy.
   announceChannelId: '',
   // Role, które mogą używać komend moderacyjnych (oprócz osób z odpowiednimi uprawnieniami Discorda).

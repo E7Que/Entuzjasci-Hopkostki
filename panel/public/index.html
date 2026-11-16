@@ -132,6 +132,15 @@
             </label>
           </div>
           <div class="card">
+            <h3>Alerty o awarii bota</h3>
+            <p class="muted small">Bot sam napisze, gdy przestanie łączyć się z Discordem, komendy nie będą docierać albo jakieś zadanie ciągle się psuje. Osobny strażnik w bazie wyśle alarm nawet wtedy, gdy cała funkcja bota przestanie działać (przez webhook na tym kanale). Po naprawie przychodzi wiadomość „działa”.</p>
+            <label class="toggle"><input type="checkbox" data-path="alerts.enabled"><span></span>Włączone</label>
+            <label class="field"><span>Kanał alertów</span><select data-path="alerts.channelId" data-channel-select="modlog"></select></label>
+            <label class="field"><span>Rola oznaczana przy alercie</span><select data-path="alerts.pingRoleId" data-role-select="none"></select></label>
+            <label class="field"><span>Po ilu minutach problemu wysłać alert (3–120)</span><input type="number" min="3" max="120" data-path="alerts.minutes"></label>
+            <div class="card-actions"><button type="button" class="btn ghost small" id="alerts-test">Wyślij test</button></div>
+          </div>
+          <div class="card">
             <h3>Role moderatorów</h3>
             <p class="muted small">Te role są oznaczane przy alertach o przekroczeniu progu ostrzeżeń i dostają komendy moderacyjne przy ustawianiu uprawnień od nowa. O tym, kto może używać której komendy, decyduje zakładka <a href="#uprawnienia">Uprawnienia</a>.</p>
             <div data-picker-slot="cfg:modRoleIds"></div>

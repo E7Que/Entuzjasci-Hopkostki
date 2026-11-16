@@ -15,6 +15,7 @@ import { seedMemberProfiles } from './logs.js';
 import { ensureInviteSnapshot } from './invites.js';
 import { sendDueReminders, finishDueGiveaways } from './community.js';
 import { voiceXpTick, highlightsTick, firstPlaceTick, levelProfilesTick, levelAccentTick } from './levels.js';
+import { healthTick } from './health.js';
 
 const SETUP_EVERY_MS = 10 * 60_000;
 const PAGES_PER_CHANNEL = 5;
@@ -161,6 +162,7 @@ export async function runCron(bot, { force = false } = {}) {
       await bot.store.pruneMessageCache(7);
       await bot.store.prunePanelSessions();
     });
+    report.health = await step('health', () => healthTick(bot, report));
     await bot.store.setState('cron_last_run', { at: Date.now(), report });
   } finally {
     await bot.store.releaseCronLock();

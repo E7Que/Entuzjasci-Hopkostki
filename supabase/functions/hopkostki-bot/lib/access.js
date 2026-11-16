@@ -36,7 +36,7 @@ const ALL_SECTIONS = Object.keys(PANEL_SECTIONS);
 // Klucze konfiguracji należące do części panelu — zapis z panelu zmienia tylko odblokowane części.
 // panelAccess (kto ma dostęp do czego) zmienia wyłącznie pełny dostęp.
 export const SECTION_CONFIG_KEYS = {
-  ustawienia: ['modLogChannelId', 'announceChannelId', 'modRoleIds', 'mentionTarget', 'dmUsers', 'dmShowModerator', 'appealText', 'replyReaction', 'presence'],
+  ustawienia: ['modLogChannelId', 'alerts', 'announceChannelId', 'modRoleIds', 'mentionTarget', 'dmUsers', 'dmShowModerator', 'appealText', 'replyReaction', 'presence'],
   uprawnienia: ['commandPermissions'],
   czlonkowie: ['members'],
   logi: ['logs'],

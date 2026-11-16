@@ -224,6 +224,12 @@ function cleanValue(path, input, current, def) {
     return SNOWFLAKE.test(String(input)) ? String(input) : current;
   }
   if (path.endsWith('.color')) return HEX_COLOR.test(String(input)) ? String(input).toUpperCase() : current;
+  if (path === 'alerts.minutes') {
+    const n = Math.floor(Number(input));
+    return Number.isFinite(n) ? Math.min(120, Math.max(3, n)) : current;
+  }
+  // Pojedyncza rola (np. alerts.pingRoleId): ID roli albo puste.
+  if (/roleId$/i.test(path) && typeof def === 'string') return input === '' || input === null ? '' : SNOWFLAKE.test(String(input)) ? String(input) : current;
   if (path === 'warns.defaultPoints') {
     const n = Math.floor(Number(input));
     return Number.isFinite(n) && n >= 1 && n <= 100 ? n : current;

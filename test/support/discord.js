@@ -58,6 +58,9 @@ export function fakeDiscord({ dmFails = false, banError = null, endpoint = null 
     // Zaproszenia sprawdzane po kodzie (GET /invites/:kod), np. link w formularzu partnerstwa.
     publicInvites: {},
     roleEdits: [],
+    channelWebhooks: [],
+    webhookPosts: [],
+    webhooksFail: false,
     // Rodzaj i kanał nadrzędny wybranych kanałów (np. wątek na forum) — dla GET /channels/:id.
     channelInfo: {},
     createdRoles: [],
@@ -247,6 +250,21 @@ export function fakeDiscord({ dmFails = false, banError = null, endpoint = null 
     ['POST', /^\/webhooks\/app\/([\w-]+)$/, ([, token], body) => {
       state.webhook.push({ op: 'followup', token, body });
       return { id: snowflake(), channel_id: 'chan', ...body };
+    }],
+    // Webhooki kanałów (strażnik alertów) — po trasach /webhooks/app/…, żeby ich nie przesłonić.
+    ['POST', /^\/channels\/([\w-]+)\/webhooks$/, ([, channel], body) => {
+      if (state.webhooksFail) throw new DiscordError(403, { message: 'Missing Permissions', code: 50013 });
+      const hook = { id: `wh-${channel}-${state.channelWebhooks.length}`, token: 'sekret', channel_id: channel, name: body?.name };
+      state.channelWebhooks.push(hook);
+      return hook;
+    }],
+    ['DELETE', /^\/webhooks\/([\w-]+)$/, ([, id]) => {
+      state.channelWebhooks = state.channelWebhooks.filter((h) => h.id !== id);
+      return null;
+    }],
+    ['POST', /^\/webhooks\/([\w-]+)\/([\w-]+)$/, ([, id, token], body) => {
+      state.webhookPosts.push({ id, token, body });
+      return null;
     }],
   ];
 

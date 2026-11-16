@@ -15,6 +15,7 @@ import { ensureIntentFlags, membersIntentOn, contentIntentOn } from './members.j
 import { endGiveaway } from './community.js';
 import { PANEL_SECTIONS, PASSWORD_AUTH, allowedConfigInput, sectionAccess } from './access.js';
 import { changeXp, importLevels, levelProgress, levelUpMessage, parseImport } from './levels.js';
+import { sendAlertTest } from './health.js';
 
 const TEXT_CHANNELS = new Set([0, 5]);
 const byPosition = (a, b) => a.position - b.position;
@@ -30,7 +31,7 @@ const ROUTE_SECTIONS = [
   [/^\/tickets(\/|$)/, 'tickety'],
   [/^\/bump$/, 'bump'],
   [/^\/giveaways(\/|$)/, 'spolecznosc'],
-  [/^\/setup$/, 'ustawienia'],
+  [/^\/(setup|alerts\/test)$/, 'ustawienia'],
   [/^\/voice(\/|$)/, 'glosowe'],
   [/^\/messages(\/|$)/, 'wiadomosci'],
   [/^\/cases$/, 'sprawy'],
@@ -269,6 +270,12 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
   if (method === 'POST' && path === '/setup') {
     if (!bot.discord) return fail(503, 'Brak sekretu DISCORD_TOKEN w Supabase.');
     return ok(await ensureSetup(bot, { force: true }));
+  }
+
+  // Test alertów o awarii: wiadomość przez API bota i przez webhook strażnika w bazie.
+  if (method === 'POST' && path === '/alerts/test') {
+    if (!bot.discord) return fail(503, 'Brak sekretu DISCORD_TOKEN w Supabase.');
+    return attempt(async () => sendAlertTest(bot, auth.user?.tag ?? 'hasło panelu'));
   }
 
   // Zmiana hasła panelu (wywołujący już przeszedł logowanie obecnym hasłem). Hasło z bazy ma pierwszeństwo
