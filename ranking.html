@@ -229,6 +229,19 @@
     .board.grid .lvl b { font-size: 0.75rem; }
     .board.grid .empty, .board.grid .skeleton { grid-column: 1 / -1; border: 0; }
 
+    /* Moje miejsce */
+    .me-btn { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 0.9rem; font-weight: 500; cursor: pointer; }
+    .me-btn:hover { background: var(--hover); }
+    .me-btn svg { width: 16px; height: 16px; color: var(--accent); }
+    .me-tag { flex: none; align-self: center; padding: 0 6px; border-radius: 5px; background: color-mix(in srgb, var(--accent) 24%, transparent); color: var(--text); font-size: 0.7rem; font-weight: 600; line-height: 18px; }
+    .row.me { box-shadow: inset 3px 0 0 var(--accent); }
+    .board.grid .row.me { box-shadow: inset 0 0 0 1px var(--accent); }
+    .row.flash, .top.flash { animation: flash 1.8s ease-out; }
+    @keyframes flash { 0%, 35% { background: color-mix(in srgb, var(--accent) 24%, var(--surface)); } }
+    .pf-me { margin-top: 8px; padding: 3px 10px; border: 1px solid var(--border); border-radius: 999px; background: none; color: var(--muted); font-size: 0.78rem; cursor: pointer; }
+    .pf-me:hover { color: var(--text); background: var(--hover); }
+    .pf-me[aria-pressed="true"] { border-color: color-mix(in srgb, var(--accent) 50%, var(--border)); color: var(--text); }
+
     /* Archiwum zwycięzców */
     .seg { display: flex; gap: 3px; margin: 0 0 12px; padding: 3px; border-radius: 8px; background: var(--surface-2); }
     .seg button { flex: 1; padding: 5px 6px; border: 0; border-radius: 6px; background: none; color: var(--muted); font-size: 0.8rem; font-weight: 500; cursor: pointer; }
@@ -523,6 +536,8 @@
       .ev-clock b { font-size: 1.15rem; }
       .tab { font-size: 0.86rem; padding: 8px 4px; }
       .tab .tl { display: none; }
+      .me-btn span { display: none; }
+      .me-btn { padding: 0 11px; }
       .tab .ts { display: inline; }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -582,6 +597,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
         <input id="search" type="search" placeholder="Szukaj osoby…" title="Szukaj po pseudonimie albo nazwie użytkownika" autocomplete="off" spellcheck="false">
       </label>
+      <button type="button" class="me-btn" id="me-btn" hidden title="Przewiń do swojego miejsca"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span>Moje miejsce</span></button>
       <label class="sort" title="Kolejność (ranking „Cały czas”)">
         <span class="sr-only">Kolejność</span>
         <select id="sort"><option value="xp">Wg XP</option><option value="messages">Wg wiadomości</option><option value="voice">Wg głosowych</option></select>
@@ -669,7 +685,18 @@
       get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
       set: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
     };
-    const state = { sort: 'xp', period: 'all', search: '', entries: [], total: 0, data: null, req: 0, metaDone: false, selected: null, view: saved.get('ranking-view') === 'grid' ? 'grid' : 'list' };
+    // Kim jestem na tej stronie (link z /rank albo przycisk „To ja” w profilu) — tylko w tej przeglądarce.
+    const ME_KEY = 'ranking-me';
+    const validId = (id) => (/^\d{15,25}$/.test(String(id ?? '')) ? String(id) : null);
+    try {
+      const url = new URL(location.href);
+      if (url.searchParams.get('me') === '1' && validId(url.searchParams.get('u'))) {
+        localStorage.setItem(ME_KEY, url.searchParams.get('u'));
+        url.searchParams.delete('me');
+        history.replaceState(null, '', url);
+      }
+    } catch {}
+    const state = { me: validId(saved.get(ME_KEY)), sort: 'xp', period: 'all', search: '', entries: [], total: 0, data: null, req: 0, metaDone: false, selected: null, view: saved.get('ranking-view') === 'grid' ? 'grid' : 'list' };
 
     // ---------- Ozdoby po bokach ----------
     const pt = (r, a) => `${(50 + r * Math.cos(a)).toFixed(1)},${(50 + r * Math.sin(a)).toFixed(1)}`;
@@ -826,12 +853,13 @@
       const plate = e.look?.nameplate;
       const plateStyle = plate && PALETTES[plate.palette] ? `--pl:${PALETTES[plate.palette]};` : '';
       const attrs = plateStyle ? ` style="${plateStyle}"` : '';
-      return `<li class="row${e.rank <= 3 ? ` r${e.rank}` : ''}${e.nitro ? ' nitro' : ''}${plate ? ' plated' : ''}${e.look?.decoration ? ' has-deco' : ''}${e.userId === state.selected ? ' sel' : ''}"${attrs} data-id="${esc(e.userId)}" tabindex="0" role="button" aria-label="Profil: ${esc(display(e))}">
+      const mine = state.me && e.userId === state.me;
+      return `<li class="row${mine ? ' me' : ''}${e.rank <= 3 ? ` r${e.rank}` : ''}${e.nitro ? ' nitro' : ''}${plate ? ' plated' : ''}${e.look?.decoration ? ' has-deco' : ''}${e.userId === state.selected ? ' sel' : ''}"${attrs} data-id="${esc(e.userId)}" tabindex="0" role="button" aria-label="Profil: ${esc(display(e))}">
         ${plate ? `<img class="plate" src="${esc(plate.image)}" alt="" loading="lazy">` : ''}
         <span class="rank">${e.rank}</span>
         <span class="who">
           ${avatarHtml(e, 38)}
-          <span class="name"><span class="nick">${styledName(display(e), e.look)}</span>${tagHtml(e.look)}${e.displayName ? `<span class="tag">(${esc(e.name)})</span>` : ''}</span>
+          <span class="name"><span class="nick">${styledName(display(e), e.look)}</span>${tagHtml(e.look)}${e.displayName ? `<span class="tag">(${esc(e.name)})</span>` : ''}${mine ? '<span class="me-tag">Ty</span>' : ''}</span>
         </span>
         <span class="num msgs">${fmt(e.messages)}</span>
         <span class="num voice">${voiceText(e.voiceMinutes)}</span>
@@ -1184,6 +1212,7 @@
         <div class="pf-body">
           <div class="pf-name">${styledName(p.displayName || p.username || 'Użytkownik', look, true)}${tagHtml(look)}</div>
           <div class="pf-user">${esc(p.username ?? '')}</div>
+          <button type="button" class="pf-me" data-me-toggle aria-pressed="${String(state.selected === state.me)}" title="Zapamiętaj w tej przeglądarce, który profil jest Twój — przycisk „Moje miejsce” przewinie do niego">${state.selected === state.me ? '✓ To Ty' : 'To ja'}</button>
           ${p.boostingSince ? `<div class="pf-boost">Boostuje serwer od ${esc(dateText(p.boostingSince))}</div>` : ''}
 
           <div class="pf-sec">
@@ -1236,6 +1265,7 @@
       lockScroll(true);
       $('#pf-close').addEventListener('click', closeProfile);
       bindHistory(el);
+      el.querySelector('[data-me-toggle]')?.addEventListener('click', () => setMe(state.selected === state.me ? null : state.selected));
     }
 
     function resetTheme() {
@@ -1668,6 +1698,46 @@
     }
     document.querySelectorAll('.views button').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
     setView(state.view);
+
+    function setMe(id) {
+      state.me = validId(id);
+      try {
+        if (state.me) localStorage.setItem(ME_KEY, state.me);
+        else localStorage.removeItem(ME_KEY);
+      } catch {}
+      $('#me-btn').hidden = !state.me;
+      const toggle = document.querySelector('[data-me-toggle]');
+      if (toggle) {
+        toggle.setAttribute('aria-pressed', String(state.selected === state.me));
+        toggle.textContent = state.selected === state.me ? '✓ To Ty' : 'To ja';
+      }
+      if (state.entries.length) renderBoard(null);
+    }
+    // Przewija do własnego miejsca (dociąga kolejne strony, jeśli trzeba) i otwiera profil.
+    async function goToMe() {
+      const id = state.me;
+      if (!id) return;
+      if (state.search) {
+        $('#search').value = '';
+        state.search = '';
+        await load();
+      }
+      for (let guard = 0; !state.entries.some((e) => e.userId === id) && state.entries.length < state.total && guard < 40; guard++) await load(true);
+      const el = document.querySelector(`#board [data-id="${id}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'center' });
+        el.classList.remove('flash');
+        void el.offsetWidth;
+        el.classList.add('flash');
+      } else {
+        const note = $('#note');
+        note.innerHTML = '<b>Nie ma Cię w tym rankingu</b> — zdobądź trochę XP na serwerze.';
+        note.hidden = false;
+      }
+      openProfile(id);
+    }
+    $('#me-btn').hidden = !state.me;
+    $('#me-btn').addEventListener('click', goToMe);
 
     function syncSort() {
       const all = state.period === 'all';
