@@ -444,6 +444,7 @@ function route() {
   const open = canEdit(state.view);
   if (state.view === 'pulpit') refreshStatus();
   if (state.view === 'ostrzezenia' && open) loadWarns();
+  if (state.view === 'ustawienia') loadHistory();
   if (state.view === 'sprawy' && open) {
     loadCases();
     loadAppeals();
@@ -2256,6 +2257,95 @@ $('#msg-sent').addEventListener('click', async (event) => {
   loadSentMessages();
 });
 
+// ---------- Kopia i historia ustawień ----------
+const isPlain = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+// Wczytane ustawienia na wzór obecnych: tylko znane klucze i zgodne typy, tablice w całości (jak w bocie).
+function mergeKnown(current, incoming) {
+  if (Array.isArray(current)) return Array.isArray(incoming) ? clone(incoming) : clone(current);
+  if (!isPlain(current)) return incoming !== undefined && typeof incoming === typeof current ? incoming : current;
+  const out = {};
+  for (const [key, value] of Object.entries(current)) {
+    const next = isPlain(incoming) ? incoming[key] : undefined;
+    out[key] = key === 'commandPermissions' && isPlain(next) ? clone(next) : next === undefined ? clone(value) : mergeKnown(value, next);
+  }
+  return out;
+}
+function applyToDraft(config, label) {
+  state.draft = mergeKnown(state.config, config);
+  renderConfigUi();
+  renderPreview();
+  const changed = Object.keys(state.draft).filter((k) => JSON.stringify(state.draft[k]) !== JSON.stringify(state.config[k]));
+  toast(changed.length ? `${label} — zmienione części: ${changed.length}. Sprawdź i zapisz (przycisk na dole ekranu).` : `${label} — bez różnic względem obecnych ustawień.`);
+}
+function downloadJson(name, data) {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+  const link = Object.assign(document.createElement('a'), { href: url, download: name });
+  document.body.append(link);
+  link.click();
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+    link.remove();
+  }, 1000);
+}
+$('#backup-export').addEventListener('click', () => {
+  downloadJson(`hopkostki-ustawienia-${new Date().toISOString().slice(0, 10)}.json`, { format: 'hopkostki-config', version: 1, exportedAt: new Date().toISOString(), config: state.config });
+  toast('Pobrano kopię ustawień');
+});
+$('#backup-import').addEventListener('click', () => $('#backup-file').click());
+$('#backup-file').addEventListener('change', async (event) => {
+  event.stopPropagation();
+  const file = event.target.files?.[0];
+  event.target.value = '';
+  if (!file) return;
+  try {
+    if (file.size > 2_000_000) throw new Error('Plik jest za duży jak na kopię ustawień.');
+    let data;
+    try {
+      data = JSON.parse(await file.text());
+    } catch {
+      throw new Error('Nie udało się odczytać pliku — to nie jest poprawny JSON.');
+    }
+    const config = data?.format === 'hopkostki-config' ? data.config : data;
+    if (!isPlain(config) || !('actions' in config || 'levels' in config)) throw new Error('To nie jest kopia ustawień tego bota.');
+    applyToDraft(config, `Wczytano kopię${data?.exportedAt ? ` z ${shortDate(Date.parse(data.exportedAt))}` : ''}`);
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+});
+async function loadHistory() {
+  const box = $('#backup-section');
+  box.hidden = !state.me?.full;
+  if (box.hidden) return;
+  try {
+    const { items } = await api('/config/history?limit=30');
+    $('#history-list').innerHTML = items.length
+      ? items
+          .map(
+            (h) => `<div class="history-item">
+          <div class="history-main"><strong>${esc(h.sections.join(', '))}</strong><div class="muted small">${esc(shortDate(h.createdAt))} · ${esc(h.changedBy ?? '—')}</div></div>
+          <button type="button" class="btn ghost small" data-history-undo="${h.id}">Cofnij</button>
+        </div>`,
+          )
+          .join('')
+      : '<span class="muted small">Jeszcze nic nie zapisano z panelu.</span>';
+  } catch (error) {
+    $('#history-list').innerHTML = `<span class="muted small">${esc(error.message)}</span>`;
+  }
+}
+$('#history-list').addEventListener('click', async (event) => {
+  const button = event.target.closest('[data-history-undo]');
+  if (!button) return;
+  if (isDirty() && !confirm('Masz niezapisane zmiany. Cofnięcie zastąpi je w tych częściach ustawień. Kontynuować?')) return;
+  try {
+    const entry = await api(`/config/history/${button.dataset.historyUndo}`);
+    const restored = clone(state.draft);
+    for (const [key, change] of Object.entries(entry.changes)) restored[key] = change.before;
+    applyToDraft(restored, `Cofnięto zmianę z ${shortDate(entry.createdAt)} (${entry.sections.join(', ')})`);
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+});
+
 // ---------- Zapis ----------
 function isDirty() {
   return state.draft && JSON.stringify(state.draft) !== JSON.stringify(state.config);
@@ -2276,6 +2366,7 @@ $('#save').addEventListener('click', async () => {
     renderConfigUi();
     renderPreview();
     toast('Zapisano ustawienia');
+    if (state.view === 'ustawienia') loadHistory();
   } catch (error) {
     toast(error.message, 'error');
   } finally {
