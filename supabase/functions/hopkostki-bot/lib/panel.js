@@ -34,7 +34,7 @@ const ROUTE_SECTIONS = [
   [/^\/(setup|alerts\/test)$/, 'ustawienia'],
   [/^\/voice(\/|$)/, 'glosowe'],
   [/^\/messages(\/|$)/, 'wiadomosci'],
-  [/^\/cases$/, 'sprawy'],
+  [/^\/(cases|appeals)$/, 'sprawy'],
   [/^\/warns(\/|$)/, 'ostrzezenia'],
   [/^\/tempbans(\/|$)/, 'bany'],
   [/^\/levels(\/|$)/, 'poziomy'],
@@ -314,6 +314,13 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
   if (method === 'DELETE' && messageMatch) {
     if (!(await deletePanelMessage(bot, Number(messageMatch[1])))) return fail(404, 'Nie ma takiej wiadomości');
     return ok({ ok: true });
+  }
+
+  if (method === 'GET' && path === '/appeals') {
+    const status = ['pending', 'accepted', 'rejected'].includes(query.status) ? query.status : null;
+    const limit = Math.min(Number(query.limit) || 30, 100);
+    const guildId = bot.discord ? ((await getGuildContext(bot).catch(() => null))?.guild.id ?? null) : null;
+    return ok({ ...(await store.listAppeals({ status, limit })), guildId });
   }
 
   if (method === 'GET' && path === '/cases') {

@@ -9,6 +9,7 @@ import { isVoiceCustomId, handleVoiceInteraction } from './voice.js';
 import { isRoleCustomId, handleRoleInteraction } from './messages.js';
 import { isTicketCustomId, handleTicketInteraction } from './tickets.js';
 import { isGiveawayCustomId, handleGiveawayInteraction } from './community.js';
+import { isAppealCustomId, handleAppealInteraction } from './appeals.js';
 
 const TYPE = { PING: 1, COMMAND: 2, COMPONENT: 3, AUTOCOMPLETE: 4, MODAL_SUBMIT: 5 };
 const RESPONSE = { PONG: 1, MESSAGE: 4, DEFERRED: 5, DEFERRED_UPDATE: 6, AUTOCOMPLETE: 8 };
@@ -92,6 +93,10 @@ const ephemeralMessage = (text) => ({ type: RESPONSE.MESSAGE, data: { flags: EPH
  */
 export async function handleInteraction(body, bot) {
   if (body.type === TYPE.PING) return { response: { type: RESPONSE.PONG } };
+  // Odwołania od kar: przycisk i formularz w wiadomości prywatnej (bez serwera), decyzje — na serwerze.
+  if ((body.type === TYPE.COMPONENT || body.type === TYPE.MODAL_SUBMIT) && isAppealCustomId(body.data?.custom_id)) {
+    return handleAppealInteraction(body, bot);
+  }
   if (!body.guild_id) return { response: ephemeralMessage('Komendy działają tylko na serwerze.') };
   if (bot.env.guildId && body.guild_id !== bot.env.guildId) {
     return { response: ephemeralMessage('Ten bot działa tylko na serwerze Entuzjaści Hopkostki.') };

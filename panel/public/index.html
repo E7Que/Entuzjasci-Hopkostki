@@ -157,6 +157,15 @@
             </label>
           </div>
           <div class="card">
+            <div class="card-head"><h3>Odwołania od kar</h3><label class="toggle small"><input type="checkbox" data-path="appeals.enabled"><span></span>Włączone</label></div>
+            <p class="muted small">Pod wiadomością prywatną o banie, wyrzuceniu, timeoucie i ostrzeżeniu pojawia się przycisk <b>Odwołaj się</b>. Odwołanie trafia na kanał moderacji z przyciskami <b>Przyjmij</b> / <b>Odrzuć</b>: przyjęcie zdejmuje bana albo timeout i usuwa ostrzeżenie, a osoba dostaje odpowiedź w DM. Jedno odwołanie na karę. Lista odwołań jest w zakładce <a href="#sprawy">Sprawy</a>.</p>
+            <label class="field"><span>Kanał odwołań (tylko dla moderacji)</span><select data-path="appeals.channelId" data-channel-select="modlog"></select></label>
+            <div class="grid two tight">
+              <label class="field"><span>Rola oznaczana przy nowym odwołaniu</span><select data-path="appeals.pingRoleId" data-role-select="none"></select></label>
+              <label class="field"><span>Dni na odwołanie (1–90)</span><input type="number" min="1" max="90" data-path="appeals.days"></label>
+            </div>
+          </div>
+          <div class="card">
             <h3>Reakcja na odpowiedzi</h3>
             <p class="muted small">Gdy ktoś odpowie (reply) na wiadomość bota o karze, bot doda pod jego odpowiedzią tę reakcję.</p>
             <label class="toggle"><input type="checkbox" data-path="replyReaction.enabled"><span></span>Włączone</label>
@@ -985,6 +994,14 @@
           <h2>Sprawy</h2>
           <p class="muted">Historia wszystkich akcji moderacyjnych.</p>
         </header>
+        <div class="card" id="appeals-card">
+          <div class="card-head">
+            <h3>Odwołania od kar <span class="appeal-count" id="appeals-pending" hidden></span></h3>
+            <select id="appeal-status" aria-label="Które odwołania"><option value="">Wszystkie</option><option value="pending">Czekające</option><option value="accepted">Przyjęte</option><option value="rejected">Odrzucone</option></select>
+          </div>
+          <p class="muted small">Decyzje zapadają przyciskami <b>Przyjmij</b> / <b>Odrzuć</b> pod odwołaniem na kanale odwołań w Discordzie. Włączysz je w <a href="#ustawienia">Ustawieniach</a>.</p>
+          <div class="table-wrap"><table class="table" id="appeals-table"></table></div>
+        </div>
         <div class="card">
           <div class="filters">
             <input type="search" id="case-search" placeholder="Nick lub ID użytkownika…">

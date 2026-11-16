@@ -27,6 +27,10 @@ export const DEFAULT_CONFIG = {
   dmShowModerator: true,
   // Tekst dopisywany do DM (np. informacja o odwołaniach). Puste = brak.
   appealText: 'Jeśli uważasz, że kara była niesłuszna, skontaktuj się z administracją serwera.',
+  // Odwołania od kar: przycisk „Odwołaj się” pod DM z karą (ban, wyrzucenie, timeout, ostrzeżenie) → formularz →
+  // kanał channelId (puste = kanał logów moderacji) z przyciskami Przyjmij/Odrzuć; pingRoleId — ping przy nowym
+  // odwołaniu. Przyjęcie cofa karę. Jedno odwołanie na sprawę, najwyżej `days` dni po karze.
+  appeals: { enabled: false, channelId: '', pingRoleId: '', days: 14 },
 
   // Reakcja na odpowiedzi do wiadomości o karach (domyślnie :flatbread:).
   replyReaction: {

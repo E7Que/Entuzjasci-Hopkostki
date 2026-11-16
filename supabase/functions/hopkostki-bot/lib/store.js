@@ -70,6 +70,7 @@ function mapCase(r) {
     auto: r.auto,
     note: r.note,
     dmStatus: r.dm_status,
+    appealStatus: r.appeal_status ?? null,
     messageUrl: r.message_url,
     createdAt: ms(r.created_at),
   };
@@ -93,6 +94,25 @@ function mapWarn(r) {
 
 function mapTempBan(r) {
   return { guildId: r.guild_id, userId: r.user_id, userTag: r.user_tag, expiresAt: ms(r.expires_at), caseId: r.case_id };
+}
+
+function mapAppeal(r) {
+  return {
+    id: r.id,
+    caseId: r.case_id,
+    userId: r.user_id,
+    userTag: r.user_tag,
+    text: r.text,
+    status: r.status,
+    channelId: r.channel_id,
+    messageId: r.message_id,
+    decidedBy: r.decided_by,
+    decidedTag: r.decided_tag,
+    decisionNote: r.decision_note,
+    undoResult: r.undo_result,
+    decidedAt: ms(r.decided_at),
+    createdAt: ms(r.created_at),
+  };
 }
 
 const CASE_COLUMNS = { reason: 'reason', note: 'note', dmStatus: 'dm_status', messageUrl: 'message_url' };
@@ -282,10 +302,77 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       const clause = where.length ? `where ${where.join(' and ')}` : '';
       const total = await one(`select count(*)::int as n from bot.cases ${clause}`, params);
       const rows = await query(
-        `select * from bot.cases ${clause} order by id desc limit $${params.length + 1}::int offset $${params.length + 2}::int`,
+        `select c.*, (select a.status from bot.appeals a where a.case_id = c.id) as appeal_status
+         from bot.cases c ${clause} order by id desc limit $${params.length + 1}::int offset $${params.length + 2}::int`,
         [...params, limit, offset],
       );
       return { total: total.n, items: rows.map(mapCase) };
+    },
+
+    // ---------- Odwołania od kar ----------
+    async addAppeal({ caseId, userId, userTag, text }) {
+      const row = await one(
+        `insert into bot.appeals (case_id, user_id, user_tag, text) values ($1::int, $2::text, $3::text, $4::text)
+         on conflict (case_id) do nothing returning *`,
+        [caseId, userId, userTag ?? null, text],
+      );
+      return row ? mapAppeal(row) : null;
+    },
+
+    async getAppeal(id) {
+      const row = await one('select * from bot.appeals where id = $1::int', [id]);
+      return row ? mapAppeal(row) : null;
+    },
+
+    async getAppealByCase(caseId) {
+      const row = await one('select * from bot.appeals where case_id = $1::int', [caseId]);
+      return row ? mapAppeal(row) : null;
+    },
+
+    async deleteAppeal(id) {
+      await query('delete from bot.appeals where id = $1::int', [id]);
+    },
+
+    async setAppealMessage(id, { channelId, messageId }) {
+      await query('update bot.appeals set channel_id = $2::text, message_id = $3::text where id = $1::int', [id, channelId, messageId]);
+    },
+
+    // Decyzja tylko dla oczekującego odwołania (null, gdy ktoś był szybszy).
+    async decideAppeal(id, { status, decidedBy, decidedTag, note }) {
+      const row = await one(
+        `update bot.appeals set status = $2::text, decided_by = $3::text, decided_tag = $4::text, decision_note = $5::text, decided_at = now()
+         where id = $1::int and status = 'pending' returning *`,
+        [id, status, decidedBy, decidedTag ?? null, note ?? null],
+      );
+      return row ? mapAppeal(row) : null;
+    },
+
+    async setAppealUndo(id, result) {
+      const row = await one('update bot.appeals set undo_result = $2::text where id = $1::int returning *', [id, result]);
+      return row ? mapAppeal(row) : null;
+    },
+
+    // Lista do panelu (z karą, której dotyczy): najpierw oczekujące, potem najnowsze.
+    async listAppeals({ status = null, limit = 30, offset = 0 } = {}) {
+      const rows = await query(
+        `select a.*, c.type as case_type, c.reason as case_reason, c.moderator_tag as case_moderator, c.created_at as case_created_at
+         from bot.appeals a join bot.cases c on c.id = a.case_id
+         where ($1::text is null or a.status = $1::text)
+         order by (a.status = 'pending') desc, a.created_at desc limit $2::int offset $3::int`,
+        [status, limit, offset],
+      );
+      const total = await one('select count(*)::int as n from bot.appeals where ($1::text is null or status = $1::text)', [status]);
+      const pending = await one("select count(*)::int as n from bot.appeals where status = 'pending'", []);
+      return {
+        total: total.n,
+        pending: pending.n,
+        items: rows.map((r) => ({ ...mapAppeal(r), caseType: r.case_type, caseReason: r.case_reason, caseModerator: r.case_moderator, caseCreatedAt: ms(r.case_created_at) })),
+      };
+    },
+
+    async removeWarnsByCase(caseId) {
+      const rows = await query('delete from bot.warns where case_id = $1::int returning id', [caseId]);
+      return rows.length;
     },
 
     async caseCounts(userId) {

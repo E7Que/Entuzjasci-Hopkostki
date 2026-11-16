@@ -226,6 +226,12 @@ textarea { resize: vertical; }
 }
 .empty { color: var(--muted); text-align: center; padding: 1.5rem; }
 .badge { display: inline-block; padding: .1rem .5rem; border-radius: 4px; font-size: .78rem; font-weight: 700; color: #111; white-space: nowrap; }
+.appeal-status { display: inline-block; padding: .05rem .5rem; border-radius: 999px; font-size: .78rem; font-weight: 600; background: var(--bg-hover); color: var(--muted); }
+.appeal-status.pending { background: color-mix(in srgb, var(--yellow) 22%, transparent); color: #f5cf73; }
+.appeal-status.accepted { background: color-mix(in srgb, var(--green) 22%, transparent); color: #7fe0a6; }
+.appeal-status.rejected { background: color-mix(in srgb, var(--red) 22%, transparent); color: #f08a8d; }
+.appeal-count { margin-left: .4rem; padding: .05rem .5rem; border-radius: 999px; background: var(--yellow); color: #111; font-size: .75rem; font-weight: 700; vertical-align: 2px; }
+#appeals-card .card-head select { width: auto; }
 .note { display: block; color: var(--muted); font-size: .8rem; }
 .filters { display: flex; gap: .6rem; margin-bottom: .75rem; flex-wrap: wrap; }
 .filters input { flex: 1 1 220px; }

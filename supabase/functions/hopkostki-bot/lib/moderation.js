@@ -234,7 +234,7 @@ export async function runAction(bot, {
   const deliverDm = async () => {
     if (!config.dmUsers) return;
     try {
-      dm = await sendDm(bot, target.id, { embeds: [embeds.buildDmEmbed(ctx, config)] });
+      dm = await sendDm(bot, target.id, { embeds: [embeds.buildDmEmbed(ctx, config)], components: embeds.appealComponents(ctx, config) });
       dmStatus = '✅ dostarczono';
     } catch {
       dmStatus = '❌ nie udało się (zamknięte DM)';

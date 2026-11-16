@@ -444,7 +444,10 @@ function route() {
   const open = canEdit(state.view);
   if (state.view === 'pulpit') refreshStatus();
   if (state.view === 'ostrzezenia' && open) loadWarns();
-  if (state.view === 'sprawy' && open) loadCases();
+  if (state.view === 'sprawy' && open) {
+    loadCases();
+    loadAppeals();
+  }
   if (state.view === 'bany' && open) loadBans();
   if (state.view === 'embedy') renderPreview();
   if (state.view === 'uprawnienia') {
@@ -632,7 +635,7 @@ function casesTable(items) {
       const expiry = c.expiresAt ? `<span class="note">do ${esc(shortDate(c.expiresAt))}</span>` : '';
       return `<tr>
         <td><strong>#${c.id}</strong></td>
-        <td>${caseBadge(c)}</td>
+        <td>${caseBadge(c)}${c.appealStatus ? `<span class="note">odwołanie: ${APPEAL_STATUS[c.appealStatus]?.[0] ?? esc(c.appealStatus)}</span>` : ''}</td>
         <td>${esc(c.userTag)}<span class="note">${esc(c.userId)}</span></td>
         <td>${esc(c.moderatorTag)}${c.auto ? ' (auto)' : ''}</td>
         <td class="reason">${esc(c.reason)}${c.note ? `<span class="note">Notatka: ${esc(c.note)}</span>` : ''}</td>
@@ -2590,6 +2593,40 @@ $('#warn-users').addEventListener('click', async (event) => {
   } catch (error) {
     toast(error.message, 'error');
   }
+});
+
+// ---------- Odwołania od kar ----------
+const APPEAL_STATUS = { pending: ['czeka', 'pending'], accepted: ['przyjęte', 'accepted'], rejected: ['odrzucone', 'rejected'] };
+async function loadAppeals() {
+  try {
+    const status = $('#appeal-status').value;
+    const data = await api(`/appeals?limit=30${status ? `&status=${status}` : ''}`);
+    $('#appeals-pending').hidden = !data.pending;
+    $('#appeals-pending').textContent = `${data.pending} czeka`;
+    $('#appeals-table').innerHTML = data.items.length
+      ? `<thead><tr><th>Sprawa</th><th>Osoba</th><th>Kara</th><th>Odwołanie</th><th>Status</th><th>Data</th></tr></thead><tbody>${data.items
+          .map((a) => {
+            const [label, cls] = APPEAL_STATUS[a.status] ?? [a.status, ''];
+            const link = data.guildId && a.channelId && a.messageId ? `<a class="note" href="https://discord.com/channels/${esc(data.guildId)}/${esc(a.channelId)}/${esc(a.messageId)}" target="_blank" rel="noopener">otwórz w Discordzie</a>` : '';
+            const decided = a.decidedTag ? `<span class="note">${esc(a.decidedTag)}${a.undoResult ? ` · ${esc(a.undoResult)}` : ''}</span>` : '';
+            return `<tr>
+          <td><strong>#${a.caseId}</strong></td>
+          <td>${esc(a.userTag ?? a.userId)}<span class="note">${esc(a.userId)}</span></td>
+          <td>${caseBadge({ type: a.caseType })}<span class="note">${esc(a.caseReason ?? '')}</span></td>
+          <td class="reason">${esc(a.text)}${a.decisionNote ? `<span class="note">Odpowiedź: ${esc(a.decisionNote)}</span>` : ''}</td>
+          <td><span class="appeal-status ${cls}">${esc(label)}</span>${decided}${link}</td>
+          <td>${esc(shortDate(a.createdAt))}</td>
+        </tr>`;
+          })
+          .join('')}</tbody>`
+      : '<tr><td class="empty">Brak odwołań.</td></tr>';
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+$('#appeal-status').addEventListener('change', (event) => {
+  event.stopPropagation();
+  loadAppeals();
 });
 
 // ---------- Sprawy ----------

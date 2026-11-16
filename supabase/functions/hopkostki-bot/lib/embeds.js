@@ -145,6 +145,14 @@ export function buildChannelEmbed(ctx, config) {
   };
 }
 
+const APPEALABLE = ['ban', 'kick', 'timeout', 'warn'];
+
+// Przycisk „Odwołaj się” pod DM z karą (gdy odwołania są włączone w panelu).
+export function appealComponents(ctx, config) {
+  if (!config.appeals?.enabled || !APPEALABLE.includes(ctx.action)) return [];
+  return [{ type: 1, components: [{ type: 2, style: 2, label: 'Odwołaj się', emoji: { name: '📨' }, custom_id: `apl|open|${ctx.caseId}` }] }];
+}
+
 // Embed wysyłany prywatnie do ukaranego użytkownika.
 export function buildDmEmbed(ctx, config) {
   const style = config.actions[ctx.action];
@@ -155,8 +163,11 @@ export function buildDmEmbed(ctx, config) {
     fields.push({ name: '🛡️ Moderator', value: ctx.auto ? '🤖 Automatyczna kara' : escapeMarkdown(ctx.moderator.username), inline: true });
   }
   fields.push({ name: '📝 Powód', value: reasonBlock(ctx.reason) });
-  if (config.appealText && ['ban', 'kick', 'timeout', 'warn'].includes(ctx.action)) {
-    fields.push({ name: '💬 Odwołania', value: config.appealText.slice(0, 1000) });
+  if (APPEALABLE.includes(ctx.action)) {
+    const lines = [];
+    if (config.appealText) lines.push(config.appealText.slice(0, 900));
+    if (config.appeals?.enabled) lines.push(`Możesz kliknąć **Odwołaj się** poniżej — masz czas do ${discordTimestamp(ctx.createdAt + config.appeals.days * 86_400_000, 'D')}.`);
+    if (lines.length) fields.push({ name: '💬 Odwołania', value: lines.join('\n') });
   }
   const icon = guildIconUrl(ctx.guild);
   const embed = {

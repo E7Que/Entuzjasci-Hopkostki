@@ -298,6 +298,10 @@ function cleanValue(path, input, current, def) {
     const cleaned = cleanAutomodValue(path, input, current);
     if (cleaned !== undefined) return cleaned;
   }
+  if (path === 'appeals.days') {
+    const n = Math.floor(Number(input));
+    return Number.isFinite(n) ? Math.min(90, Math.max(1, n)) : current;
+  }
   if (path === 'alerts.minutes') {
     const n = Math.floor(Number(input));
     return Number.isFinite(n) ? Math.min(120, Math.max(3, n)) : current;
