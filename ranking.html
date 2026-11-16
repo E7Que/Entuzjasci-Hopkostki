@@ -310,6 +310,22 @@
     .pf-stats dt { color: var(--muted); font-size: 0.78rem; }
     .pf-stats dd { margin: 0; font-weight: 600; }
     .pf-stats dd small { color: var(--muted); font-weight: 400; margin-left: 4px; }
+    /* Wykres: XP dziennie z ostatnich 30 dni (jeden szereg — bez legendy, tytuł mówi, co jest na wykresie) */
+    .hist-sum { margin: 0 0 10px; color: var(--muted); font-size: 0.84rem; }
+    .hist-sum b { color: var(--text); font-weight: 600; }
+    .hist { position: relative; }
+    .hist-max { position: absolute; top: -2px; right: 0; color: var(--faint); font-size: 0.7rem; line-height: 1; pointer-events: none; }
+    .hist-bars { display: flex; align-items: stretch; gap: 2px; height: 72px; padding-top: 12px; border-bottom: 1px solid var(--border); background: linear-gradient(var(--border), var(--border)) 0 12px / 100% 1px no-repeat; }
+    .hist-col { position: relative; flex: 1 1 0; max-width: 24px; cursor: default; }
+    .hist-col i { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 3px 3px 0 0; background: var(--accent); }
+    .hist-col.today i { background: color-mix(in srgb, var(--accent) 70%, #fff); }
+    .hist-col:hover i, .hist-col.on i { background: color-mix(in srgb, var(--accent) 55%, #fff); }
+    .hist-col.on::after { content: ''; position: absolute; inset: -12px 0 0; border-radius: 4px; background: rgba(255, 255, 255, 0.05); }
+    .hist-axis { display: flex; justify-content: space-between; margin-top: 4px; color: var(--faint); font-size: 0.72rem; }
+    .hist-tip { position: absolute; z-index: 2; bottom: calc(100% + 6px); padding: 6px 9px; border-radius: 7px; border: 1px solid var(--border); background: #0f1416; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4); font-size: 0.78rem; white-space: nowrap; pointer-events: none; }
+    .hist-tip strong { display: block; color: var(--text); font-size: 0.86rem; }
+    .hist-tip span { color: var(--muted); }
+    .hist-note { margin: 8px 0 0; color: var(--faint); font-size: 0.75rem; }
     .pf-roles { display: flex; flex-wrap: wrap; gap: 6px; }
     .pf-role { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 3px 8px; border-radius: 6px; background: var(--surface-2); font-size: 0.8rem; }
     .pf-role i { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--rc, var(--faint)); }
@@ -1040,6 +1056,80 @@
     }
     const lockScroll = (lock) => { document.body.style.overflow = lock && !desktop.matches ? 'hidden' : ''; };
 
+    // ---------- Historia XP (profil) ----------
+    const HIST_DAYS = 30;
+    const HIST_START = '2026-11-16'; // od tego dnia bot zapisuje XP dzień po dniu
+    const warsawToday = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Warsaw' });
+    // Ostatnie 30 dni kalendarza (czas polski) — dni bez XP jako zera.
+    function historyDays(history) {
+      const byDay = new Map((history ?? []).map((d) => [d.day, d]));
+      const [y, m, d] = warsawToday().split('-').map(Number);
+      const out = [];
+      for (let i = HIST_DAYS - 1; i >= 0; i--) {
+        const day = new Date(Date.UTC(y, m - 1, d - i, 12)).toISOString().slice(0, 10);
+        out.push(byDay.get(day) ?? { day, xp: 0, messages: 0, voiceMinutes: 0, reactions: 0 });
+      }
+      return out;
+    }
+    const dayText = (day, opts = { day: 'numeric', month: 'short' }) => new Date(`${day}T12:00:00Z`).toLocaleDateString('pl-PL', { ...opts, timeZone: 'UTC' });
+    function historyHtml(history) {
+      const days = historyDays(history);
+      const total = days.reduce((sum, d) => sum + d.xp, 0);
+      const best = days.reduce((top, d) => (d.xp > top.xp ? d : top), days[0]);
+      const max = Math.max(1, best.xp);
+      const today = days.at(-1).day;
+      const cols = days
+        .map((d, i) => `<div class="hist-col${d.day === today ? ' today' : ''}" data-i="${i}">${d.xp ? `<i style="height:${Math.max(3, (d.xp / max) * 100).toFixed(1)}%"></i>` : ''}</div>`)
+        .join('');
+      const rows = days.map((d) => `<tr><td>${esc(dayText(d.day))}</td><td>${fmt(d.xp)} XP</td><td>${fmt(d.messages)}</td><td>${voiceText(d.voiceMinutes)}</td></tr>`).join('');
+      const summary = total
+        ? `<b>${fmt(total)} XP</b> w 30 dni · najlepszy dzień: ${esc(dayText(best.day))} (${fmt(best.xp)} XP)`
+        : 'Brak XP w ostatnich 30 dniach.';
+      const note = days[0].day < HIST_START ? `<p class="hist-note">Historia dzień po dniu jest zapisywana od ${esc(dayText(HIST_START, { day: 'numeric', month: 'long', year: 'numeric' }))}.</p>` : '';
+      return `<div class="pf-sec">
+            <div class="pf-h">XP dziennie — ostatnie 30 dni</div>
+            <p class="hist-sum">${summary}</p>
+            <div class="hist" data-hist='${esc(JSON.stringify(days))}'>
+              ${total ? `<span class="hist-max">${fmt(best.xp)}</span>` : ''}
+              <div class="hist-bars" aria-hidden="true">${cols}</div>
+              <div class="hist-axis" aria-hidden="true"><span>${esc(dayText(days[0].day))}</span><span>dziś</span></div>
+              <div class="hist-tip" hidden></div>
+            </div>
+            <table class="sr-only"><caption>XP dziennie w ostatnich 30 dniach</caption><thead><tr><th>Dzień</th><th>XP</th><th>Wiadomości</th><th>Na głosowych</th></tr></thead><tbody>${rows}</tbody></table>
+            ${note}
+          </div>`;
+    }
+    // Podpowiedź po najechaniu na słupek (wartości są też w ukrytej tabeli dla czytników ekranu).
+    function bindHistory(root) {
+      const box = root.querySelector('.hist');
+      if (!box) return;
+      const days = JSON.parse(box.dataset.hist);
+      const tip = box.querySelector('.hist-tip');
+      const hide = () => {
+        tip.hidden = true;
+        box.querySelectorAll('.hist-col.on').forEach((c) => c.classList.remove('on'));
+      };
+      box.addEventListener('pointermove', (event) => {
+        const col = event.target.closest('.hist-col');
+        if (!col) return hide();
+        const d = days[Number(col.dataset.i)];
+        box.querySelectorAll('.hist-col.on').forEach((c) => c !== col && c.classList.remove('on'));
+        col.classList.add('on');
+        tip.replaceChildren();
+        const strong = document.createElement('strong');
+        strong.textContent = `${fmt(d.xp)} XP`;
+        const sub = document.createElement('span');
+        sub.textContent = `${dayText(d.day, { weekday: 'short', day: 'numeric', month: 'short' })} · ${fmt(d.messages)} wiad. · ${voiceText(d.voiceMinutes)}`;
+        tip.append(strong, sub);
+        tip.hidden = false;
+        const boxRect = box.getBoundingClientRect();
+        const colRect = col.getBoundingClientRect();
+        const left = Math.min(Math.max(colRect.left + colRect.width / 2 - boxRect.left - tip.offsetWidth / 2, 0), boxRect.width - tip.offsetWidth);
+        tip.style.left = `${left}px`;
+      });
+      box.addEventListener('pointerleave', hide);
+    }
+
     function profileHtml(p, loading) {
       const s = p.stats ?? {};
       const banner = p.banner ? `background-image:url('${esc(p.banner)}')` : validColor(p.accentColor) ? `background:${p.accentColor}` : '';
@@ -1091,6 +1181,8 @@
             </dl>`}
           </div>
 
+          ${loading ? '' : historyHtml(p.history)}
+
           <div class="pf-sec">
             <div class="pf-h">Na serwerze</div>
             ${loading ? skel : `<dl class="pf-stats">
@@ -1113,6 +1205,7 @@
       $('#backdrop').hidden = desktop.matches;
       lockScroll(true);
       $('#pf-close').addEventListener('click', closeProfile);
+      bindHistory(el);
     }
 
     function resetTheme() {
