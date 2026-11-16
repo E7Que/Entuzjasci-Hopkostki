@@ -2875,6 +2875,119 @@ function tick() {
   }
 }
 
+// ---------- Wyszukiwarka ustawień ----------
+// Szuka w tytułach kart, podpisach pól i przełącznikach wszystkich zakładek (bez wielkości liter i polskich
+// znaków); wynik otwiera zakładkę, przewija do pola i je podświetla. Skrót: „/”.
+const normText = (text) => String(text ?? '').toLowerCase().replace(/ł/g, 'l').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+const search = { index: null, results: [], active: 0 };
+function buildSearchIndex() {
+  const items = [];
+  for (const section of $$('section.view')) {
+    const view = section.id.replace(/^view-/, '');
+    const viewName = viewLabel(view);
+    const add = (el, text, title, kind) => {
+      const clean = String(text ?? '').replace(/\s+/g, ' ').trim();
+      if (!clean || clean.length > 160) return;
+      if (items.some((i) => i.view === view && i.text === clean && i.title === title)) return;
+      items.push({ view, viewName, title, text: clean, el, kind, key: normText(`${viewName} ${title} ${clean}`) });
+    };
+    section.querySelectorAll('.section-title').forEach((el) => add(el, el.textContent, '', 'section'));
+    for (const card of section.querySelectorAll('.card')) {
+      const title = card.querySelector('h3')?.textContent.replace(/\s+/g, ' ').trim() ?? '';
+      add(card, title || viewName, '', 'card');
+      card.querySelectorAll('label.field > span:first-child, label.toggle, .card-head h3 ~ h3, h4').forEach((el) => {
+        add(el.closest('label') ?? el, el.textContent, title, 'field');
+      });
+    }
+  }
+  return items;
+}
+function findSettings(query) {
+  const words = normText(query).split(' ').filter(Boolean);
+  if (!words.length) return [];
+  search.index ??= buildSearchIndex();
+  const phrase = words.join(' ');
+  return search.index
+    .filter((item) => canSee(item.view) && !$(`#nav a[data-view="${item.view}"]`)?.hidden && words.every((w) => item.key.includes(w)))
+    .map((item) => ({ item, score: (normText(item.text).includes(phrase) ? 0 : 2) + (item.kind === 'field' ? 0.5 : 0) + item.text.length / 400 }))
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 12)
+    .map((r) => r.item);
+}
+function renderSearch() {
+  const box = $('#search-results');
+  const query = $('#settings-search').value;
+  const open = Boolean(query.trim());
+  box.classList.toggle('hidden', !open);
+  $('#settings-search').setAttribute('aria-expanded', String(open));
+  if (!open) return;
+  box.innerHTML = search.results.length
+    ? search.results
+        .map(
+          (r, i) => `<button type="button" class="search-hit-row${i === search.active ? ' active' : ''}" role="option" aria-selected="${i === search.active}" data-hit="${i}">
+        <strong>${esc(r.text)}</strong><small>${esc(r.viewName)}${r.title && r.title !== r.text ? ` › ${esc(r.title)}` : ''}</small></button>`,
+        )
+        .join('')
+    : '<div class="search-empty">Nic nie znaleziono — spróbuj innego słowa.</div>';
+}
+function openSearchHit(item) {
+  $('#settings-search').value = '';
+  search.results = [];
+  renderSearch();
+  $('#settings-search').blur();
+  closeMobileMenu();
+  if (state.view !== item.view) location.hash = item.view;
+  setTimeout(() => {
+    const el = item.el;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.remove('search-flash');
+    void el.offsetWidth;
+    el.classList.add('search-flash');
+    const field = el.matches('input, select, textarea') ? el : el.querySelector('input:not([type=hidden]), select, textarea');
+    if (field && item.kind === 'field') field.focus({ preventScroll: true });
+  }, 80);
+}
+$('#settings-search').addEventListener('input', (event) => {
+  event.stopPropagation();
+  search.results = findSettings(event.target.value);
+  search.active = 0;
+  renderSearch();
+});
+$('#settings-search').addEventListener('keydown', (event) => {
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    event.preventDefault();
+    if (!search.results.length) return;
+    search.active = (search.active + (event.key === 'ArrowDown' ? 1 : -1) + search.results.length) % search.results.length;
+    renderSearch();
+    $(`#search-results [data-hit="${search.active}"]`)?.scrollIntoView({ block: 'nearest' });
+  } else if (event.key === 'Enter') {
+    event.preventDefault();
+    const hit = search.results[search.active];
+    if (hit) openSearchHit(hit);
+  } else if (event.key === 'Escape') {
+    event.target.value = '';
+    search.results = [];
+    renderSearch();
+  }
+});
+$('#settings-search').addEventListener('change', (event) => event.stopPropagation());
+// Klik w wynik bez utraty fokusu w polu (inaczej lista znika przed kliknięciem).
+$('#search-results').addEventListener('pointerdown', (event) => event.preventDefault());
+$('#search-results').addEventListener('click', (event) => {
+  const row = event.target.closest('[data-hit]');
+  if (row) openSearchHit(search.results[Number(row.dataset.hit)]);
+});
+$('#settings-search').addEventListener('blur', () => setTimeout(() => $('#search-results').classList.add('hidden'), 150));
+$('#settings-search').addEventListener('focus', () => {
+  if ($('#settings-search').value.trim()) renderSearch();
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (event.target.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+  event.preventDefault();
+  $('#settings-search').focus();
+});
+
 // ---------- Tabele na telefonie ----------
 // Na wąskim ekranie tabele z danymi stają się kartami (CSS) — każda komórka dostaje podpis z nagłówka kolumny.
 function labelTable(table) {
