@@ -6,7 +6,7 @@
   <title>Panel — Entuzjaści Hopkostki</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%235865f2'/><text x='50' y='66' font-size='46' font-weight='700' font-family='sans-serif' text-anchor='middle' fill='white'>EH</text></svg>">
   <!-- ?v= zmienia się przy każdej publikacji, żeby telefony nie trzymały starej wersji z pamięci -->
-  <link rel="stylesheet" href="style.css?v=4991b86">
+  <link rel="stylesheet" href="style.css?v=1bff24e">
 </head>
 <body>
   <div id="login-gate" class="login-gate">
@@ -443,7 +443,7 @@
       <section id="view-automod" class="view">
         <header class="view-head">
           <h2>Automoderacja</h2>
-          <p class="muted">Bot sam usuwa reklamy, spam i wulgaryzmy oraz pilnuje rajdów. Moderatorzy (role moderatorów i osoby z uprawnieniem do zarządzania wiadomościami, serwerem albo timeoutów) są pomijani. Ostrzeżenia z automoderacji liczą się do progów z zakładki <a href="#ostrzezenia">Ostrzeżenia</a>.</p>
+          <p class="muted">Bot sam usuwa reklamy, spam i wulgaryzmy oraz pilnuje rajdów. Administracja i moderacja są domyślnie pomijane (patrz „Wyjątki”). Ostrzeżenia z automoderacji liczą się do progów z zakładki <a href="#ostrzezenia">Ostrzeżenia</a>.</p>
         </header>
         <div class="grid two">
           <div class="card">
@@ -458,6 +458,8 @@
           </div>
           <div class="card">
             <h3>Wyjątki</h3>
+            <label class="toggle"><input type="checkbox" data-path="automod.exemptStaff"><span></span>Pomijaj administrację i moderację</label>
+            <p class="muted small">Właściciel, role moderatorów z Ustawień i osoby z uprawnieniem do usuwania wiadomości, timeoutów albo administratora. <b>Test z takiego konta nic nie da</b> — wyłącz to na chwilę albo poproś kogoś bez tych ról.</p>
             <div class="field"><span>Role pomijane przez automoderację</span><div data-picker-slot="cfg:automod.exemptRoleIds"></div></div>
             <div class="field"><span>Kanały pomijane</span><div data-channel-picker-slot="automod.exemptChannelIds"></div></div>
           </div>
@@ -495,7 +497,9 @@
           <div class="card">
             <h3>Zakazane słowa</h3>
             <label class="toggle"><input type="checkbox" data-path="automod.words.enabled"><span></span>Włączone</label>
-            <label class="field"><span>Lista — jedno słowo albo fraza w linii</span><textarea data-path="automod.words.list" data-lines rows="6" maxlength="20000"></textarea><small><code>słowo*</code> łapie wszystko, co się od niego zaczyna. Wielkość liter, polskie znaki, cyfry zamiast liter (k0rwa) i r o z s t r z e l e n i e nie pomagają w obejściu.</small></label>
+            <label class="field"><span>Lista — słowa po przecinku albo w osobnych liniach</span><textarea id="automod-words" data-path="automod.words.list" data-lines data-split rows="6" maxlength="60000" placeholder="np. słowo, fraza z kilku słów, *środek*, początek*, *koniec"></textarea>
+              <small>Format jak w AutoModzie Discorda — możesz wkleić listę skopiowaną z „Własnych słów”. <code>słowo</code> = całe słowo, <code>słowo*</code> = początek, <code>*słowo</code> = koniec, <code>*słowo*</code> = w środku innego słowa. Wielkość liter, polskie znaki, cyfry zamiast liter (k0rwa) i r o z s t r z e l e n i e nie pomagają w obejściu.</small></label>
+            <div class="words-tools"><button type="button" class="btn ghost small" id="automod-words-fix">Dostosuj do bota</button><span class="muted small" id="automod-words-count"></span></div>
             <label class="field"><span>Kara</span><select data-path="automod.words.action"><option value="delete">Usuń wiadomość</option><option value="warn">Usuń + ostrzeżenie</option><option value="timeout">Usuń + timeout</option></select></label>
           </div>
           <div class="card">
@@ -1170,6 +1174,6 @@
   </div>
   <div id="toast" class="toast"></div>
 
-  <script src="app.js?v=4991b86"></script>
+  <script src="app.js?v=1bff24e"></script>
 </body>
 </html>

@@ -149,6 +149,7 @@ main { padding: 2rem clamp(1rem, 3vw, 2.5rem) 6rem; min-width: 0; }
   .si-banner-row { flex-wrap: wrap; }
   .si-section-tools { width: 100%; }
 }
+.words-tools { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin: -.4rem 0 .85rem; }
 .health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .6rem; margin-top: .75rem; }
 .health-tile { padding: .7rem .8rem; border-radius: 8px; background: var(--bg-3); border: 1px solid var(--line); border-left: 3px solid var(--line); min-width: 0; }
 .health-tile.ok { border-left-color: var(--green); }

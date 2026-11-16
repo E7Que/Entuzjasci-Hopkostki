@@ -740,6 +740,7 @@ function fillInputs() {
     const value = getPath(state.draft, el.dataset.path);
     if (el.type === 'checkbox') el.checked = Boolean(value);
     else if ('lines' in el.dataset) el.value = Array.isArray(value) ? value.join('\n') : '';
+    if (el.id === 'automod-words') renderWordsCount();
     else el.value = value ?? '';
   });
   $$('input[type=color][data-color-for]').forEach((picker) => {
@@ -754,7 +755,8 @@ function fillInputs() {
 function readValue(el) {
   if (el.type === 'checkbox') return el.checked;
   // Lista w polu tekstowym: jedna pozycja w linii.
-  if ('lines' in el.dataset) return el.value.split('\n').map((line) => line.trim()).filter(Boolean);
+  // data-split: lista może być też po przecinkach (np. wklejona z AutoModa Discorda).
+  if ('lines' in el.dataset) return el.value.split('split' in el.dataset ? /[\n\r,;]+/ : '\n').map((line) => line.trim()).filter(Boolean);
   if ('number' in el.dataset) return Number(el.value);
   if (el.type === 'number') return Math.max(0, Math.floor(Number(el.value) || 0));
   return el.value;
@@ -2408,6 +2410,31 @@ $('#history-list').addEventListener('click', async (event) => {
   } catch (error) {
     toast(error.message, 'error');
   }
+});
+
+// ---------- Automoderacja: lista słów (format AutoModa Discorda) ----------
+function wordList(text) {
+  const seen = new Set();
+  return String(text ?? '')
+    .split(/[\n\r,;]+/)
+    .map((w) => w.trim().slice(0, 60))
+    .filter((w) => w.replace(/\*/g, '').trim().length >= 2 && !seen.has(w.toLowerCase()) && seen.add(w.toLowerCase()));
+}
+function renderWordsCount() {
+  const el = $('#automod-words');
+  if (!el) return;
+  const n = wordList(el.value).length;
+  $('#automod-words-count').textContent = n ? `${n} ${plural(n, ['słowo', 'słowa', 'słów'])} na liście` : '';
+}
+$('#automod-words').addEventListener('input', renderWordsCount);
+// „Dostosuj do bota”: lista z przecinkami → jedno słowo w linii, bez pustych i powtórzeń (gwiazdki zostają).
+$('#automod-words-fix').addEventListener('click', () => {
+  const el = $('#automod-words');
+  const before = el.value;
+  const words = wordList(before);
+  el.value = words.join('\n');
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+  toast(words.length ? `Gotowe: ${words.length} ${plural(words.length, ['słowo', 'słowa', 'słów'])} — zapisz zmiany.` : 'Lista jest pusta.');
 });
 
 // ---------- Serwer info ----------
