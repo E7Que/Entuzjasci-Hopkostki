@@ -190,8 +190,9 @@ textarea { resize: vertical; }
 #rules-table td:last-child { width: 1%; }
 .table .reason { max-width: 340px; overflow-wrap: anywhere; }
 /* Telefon: tabele z danymi (sprawy, bany, tickety…) jako karty z podpisami zamiast wąskich kolumn,
-   w których długi powód rozciągał wiersze do ogromnej wysokości. Tabele-formularze (.compact) zostają tabelami. */
-@media (max-width: 700px) {
+   w których długi powód rozciągał wiersze do ogromnej wysokości. Tabele-formularze (.compact) zostają tabelami.
+   Ta sama granica co menu telefonu (860 px) — także telefon poziomo i małe tablety. */
+@media (max-width: 860px) {
   .table:not(.compact) thead { display: none; }
   .table:not(.compact), .table:not(.compact) tbody, .table:not(.compact) tr { display: block; width: 100%; }
   .table:not(.compact) tr { padding: .45rem .75rem; margin-bottom: .6rem; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
@@ -340,13 +341,15 @@ textarea { resize: vertical; }
 #gateway-line { text-align: right; }
 
 /* ---------- Logowanie do panelu ---------- */
+/* margin: auto zamiast wyśrodkowania flexem — na niskim ekranie (telefon poziomo) formularz da się przewinąć,
+   zamiast uciekać poza ekran razem z przyciskiem logowania. */
 .login-gate {
-  position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center;
+  position: fixed; inset: 0; background: var(--bg); display: flex; overflow-y: auto;
   padding: 1rem; z-index: 100;
 }
 .login-gate.hidden { display: none; }
 .login-card {
-  background: var(--bg-2); border-radius: var(--radius); padding: 2rem; width: min(380px, 100%);
+  margin: auto; background: var(--bg-2); border-radius: var(--radius); padding: 2rem; width: min(380px, 100%);
   text-align: center; box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
 }
 .login-card h2 { font-size: 1.2rem; }
