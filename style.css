@@ -244,6 +244,33 @@ textarea { resize: vertical; }
   #cases-table td:nth-child(-n + 2), #recent-table td:nth-child(-n + 2) { display: inline-block; min-height: 0; margin-right: .5rem; padding-left: 0; }
   #cases-table td:nth-child(-n + 2)::before, #recent-table td:nth-child(-n + 2)::before { display: none; }
 }
+/* Macierz „kto może użyć jakiej komendy”: przy przewijaniu w bok kolumna z rolami zostaje na miejscu. */
+#permission-matrix th:first-child, #permission-matrix td:first-child { position: sticky; left: 0; z-index: 1; background: var(--bg-2); box-shadow: 1px 0 0 var(--line); }
+.mobile-only { display: none; }
+/* Telefon: tabele-formularze (generatory kanałów, role w wiadomości, progi ostrzeżeń) jako karty
+   z podpisanymi polami — bez przewijania w bok. */
+@media (max-width: 860px) {
+  .mobile-only { display: block; }
+  .table.form-cards thead { display: none; }
+  .table.form-cards, .table.form-cards tbody, .table.form-cards tfoot { display: block; width: 100%; }
+  .table.form-cards tbody tr { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem .6rem; margin-bottom: .6rem; padding: .7rem; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-3); }
+  .table.form-cards td { display: block; min-width: 0 !important; width: auto !important; padding: 0 !important; border: none !important; }
+  .table.form-cards td[data-label]:not([data-label=""])::before {
+    content: attr(data-label); display: block; margin-bottom: .25rem;
+    color: var(--muted); font-size: .7rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .table.form-cards td.grow, .table.form-cards td:last-child { grid-column: 1 / -1; }
+  .table.form-cards td:last-child { display: flex; justify-content: flex-end; }
+  .table.form-cards input:not([type=checkbox]), .table.form-cards select { width: 100%; }
+  .table.form-cards td.empty { display: block; padding: .8rem 0 !important; text-align: center; }
+  .table.form-cards td.empty::before { display: none !important; }
+  .table.form-cards tbody tr:has(td.empty) { display: block; }
+  .table.form-cards tfoot tr { display: block; }
+  .table.form-cards tfoot td { display: block; padding: .2rem 0 0 !important; }
+  .table.form-cards tfoot td::before { display: none !important; }
+  #generators-table td:nth-child(-n + 2), #msg-items td:first-child, #msg-items td:nth-child(3) { grid-column: 1 / -1; }
+  #generators-table td:nth-child(5) { align-self: end; padding-bottom: .45rem !important; }
+}
 .empty { color: var(--muted); text-align: center; padding: 1.5rem; }
 .badge { display: inline-block; padding: .1rem .5rem; border-radius: 4px; font-size: .78rem; font-weight: 700; color: #111; white-space: nowrap; }
 .appeal-status { display: inline-block; padding: .05rem .5rem; border-radius: 999px; font-size: .78rem; font-weight: 600; background: var(--bg-hover); color: var(--muted); }
