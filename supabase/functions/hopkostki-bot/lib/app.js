@@ -117,10 +117,12 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
     const event = params.get('period') === 'event' ? rankedXpEvent(levels, params.get('event')) : null;
     const period = event ? 'event' : ['week', 'month'].includes(params.get('period')) ? params.get('period') : 'all';
     const search = String(params.get('search') ?? '').trim().slice(0, 64);
+    // Kolejność według wiadomości albo minut na głosowych — tylko w rankingu ogólnym.
+    const sort = period === 'all' && ['messages', 'voice'].includes(params.get('sort')) ? params.get('sort') : 'xp';
     const periodKey = period === 'week' ? weekKey() : period === 'month' ? monthKey() : period === 'event' ? event.id : null;
     const [rows, total, totals, gctx] = await Promise.all([
       period === 'all'
-        ? bot.store.levelLeaderboard({ limit, offset, search, publicOnly: true })
+        ? bot.store.levelLeaderboard({ limit, offset, search, publicOnly: true, sort })
         : period === 'event'
           ? bot.store.levelEventTop({ eventId: event.id, limit, offset, search, publicOnly: true })
           : bot.store.levelPeriodTop({ period, key: periodKey, limit, offset, search, publicOnly: true }),
@@ -142,6 +144,7 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
       enabled: true,
       period,
       periodKey,
+      sort,
       total,
       offset,
       guild: gctx ? { name: gctx.guild.name, icon: guildIconUrl(gctx.guild), memberCount: gctx.guild.memberCount } : null,

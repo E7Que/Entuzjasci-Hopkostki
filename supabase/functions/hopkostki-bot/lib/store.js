@@ -1306,11 +1306,13 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return row ? mapLevel(row) : null;
     },
 
-    async levelLeaderboard({ limit = 10, offset = 0, search = '', publicOnly = false } = {}) {
+    // sort: xp (domyślnie), messages albo voice — miejsca liczone według wybranej kolejności.
+    async levelLeaderboard({ limit = 10, offset = 0, search = '', publicOnly = false, sort = 'xp' } = {}) {
+      const col = { messages: 'messages', voice: 'voice_minutes' }[sort] ?? 'xp';
       const rows = await query(
-        `select * from (select l.*, rank() over (order by l.xp desc) as rank from bot.levels l where l.xp > 0) r
+        `select * from (select l.*, rank() over (order by l.${col} desc) as rank from bot.levels l where l.xp > 0) r
          where ${levelSearch(3, 'r.', publicOnly)}
-         order by r.xp desc, r.user_id limit $1::int offset $2::int`,
+         order by r.${col} desc, r.xp desc, r.user_id limit $1::int offset $2::int`,
         [limit, offset, search],
       );
       return rows.map(mapLevel);

@@ -129,6 +129,17 @@
     .search input { width: 100%; padding: 8px 12px 8px 34px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; }
     .search input::placeholder { color: var(--faint); }
     .search input:focus { outline: none; border-color: var(--accent); }
+    .sort select { height: 38px; padding: 0 30px 0 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2367757b' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 9px center / 14px; color: var(--text); font: inherit; font-size: 0.9rem; appearance: none; -webkit-appearance: none; cursor: pointer; }
+    .sort select:focus { outline: none; border-color: var(--accent); }
+    .sort select:disabled { opacity: 0.5; cursor: default; }
+    .cols button { all: unset; cursor: pointer; text-align: inherit; }
+    .cols button:hover, .cols button[aria-pressed="true"] { color: var(--text); }
+    .cols button[aria-pressed="true"]::after { content: ' ↓'; }
+    .cols button:disabled { cursor: default; color: inherit; }
+    .board.sort-messages .num.msgs, .board.sort-voice .num.voice { color: var(--text); font-weight: 500; }
+    .board.sort-messages .num.xp, .board.sort-voice .num.xp { color: var(--muted); font-weight: 400; }
+    .board.grid.sort-messages .num.msgs, .board.grid.sort-voice .num.voice { display: block; }
+    .board.grid.sort-messages .num.xp, .board.grid.sort-voice .num.xp { display: none; }
     .views { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
     .views button { width: 38px; height: 36px; display: grid; place-items: center; border: 0; background: var(--surface); color: var(--faint); cursor: pointer; }
     .views button + button { border-left: 1px solid var(--border); }
@@ -494,6 +505,8 @@
       .cols { display: none; }
       .row { grid-template-columns: 26px minmax(0, 1fr) auto 40px; gap: 10px; padding: 0 12px; }
       .num.msgs, .num.voice { display: none; }
+      .board.sort-messages .num.msgs, .board.sort-voice .num.voice { display: block; }
+      .board.sort-messages .num.xp, .board.sort-voice .num.xp { display: none; }
       .avatar { width: 34px; height: 34px; }
       .who { gap: 10px; }
       .name { flex-direction: column; gap: 0; }
@@ -569,6 +582,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
         <input id="search" type="search" placeholder="Szukaj osoby…" title="Szukaj po pseudonimie albo nazwie użytkownika" autocomplete="off" spellcheck="false">
       </label>
+      <label class="sort" title="Kolejność (ranking „Cały czas”)">
+        <span class="sr-only">Kolejność</span>
+        <select id="sort"><option value="xp">Wg XP</option><option value="messages">Wg wiadomości</option><option value="voice">Wg głosowych</option></select>
+      </label>
       <div class="views" role="group" aria-label="Widok">
         <button type="button" data-view="list" aria-pressed="true" title="Lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><span class="sr-only">Lista</span></button>
         <button type="button" data-view="grid" aria-pressed="false" title="Siatka"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg><span class="sr-only">Siatka</span></button>
@@ -581,7 +598,7 @@
         <div class="top3" id="top3" hidden></div>
         <p class="found" id="found" hidden></p>
         <div class="table">
-          <div class="cols" aria-hidden="true"><span>#</span><span>Osoba</span><span>Wiadomości</span><span>Na głosowych</span><span id="xp-col">XP</span><span>Poziom</span></div>
+          <div class="cols"><span>#</span><span>Osoba</span><span><button type="button" data-sort="messages">Wiadomości</button></span><span><button type="button" data-sort="voice">Na głosowych</button></span><span><button type="button" data-sort="xp" id="xp-col">XP</button></span><span>Poziom</span></div>
           <ol class="list" id="list">
             <li class="skeleton"></li><li class="skeleton"></li><li class="skeleton"></li><li class="skeleton"></li><li class="skeleton"></li>
           </ol>
@@ -652,7 +669,7 @@
       get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
       set: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
     };
-    const state = { period: 'all', search: '', entries: [], total: 0, data: null, req: 0, metaDone: false, selected: null, view: saved.get('ranking-view') === 'grid' ? 'grid' : 'list' };
+    const state = { sort: 'xp', period: 'all', search: '', entries: [], total: 0, data: null, req: 0, metaDone: false, selected: null, view: saved.get('ranking-view') === 'grid' ? 'grid' : 'list' };
 
     // ---------- Ozdoby po bokach ----------
     const pt = (r, a) => `${(50 + r * Math.cos(a)).toFixed(1)},${(50 + r * Math.sin(a)).toFixed(1)}`;
@@ -824,7 +841,13 @@
     }
 
     function topHtml(e, i) {
-      const xp = e.periodXp != null ? `+${fmt(e.periodXp)} XP` : `${fmt(e.xp)} XP`;
+      const xp = e.periodXp != null
+        ? `+${fmt(e.periodXp)} XP`
+        : state.sort === 'messages' && state.period === 'all'
+          ? `${fmt(e.messages)} wiad.`
+          : state.sort === 'voice' && state.period === 'all'
+            ? voiceText(e.voiceMinutes)
+            : `${fmt(e.xp)} XP`;
       if (e.hidden) {
         return `<article class="top t${i + 1} anon" title="${ANON_TITLE}">
         <span class="place">#${e.rank}</span>
@@ -945,7 +968,11 @@
     function renderNote() {
       const note = $('#note');
       $('#xp-col').textContent = { all: 'XP', week: 'XP w tyg.', month: 'XP w mies.', event: 'XP wydarz.' }[state.period] ?? 'XP';
-      if (state.period === 'all') { note.hidden = true; return; }
+      if (state.period === 'all') {
+        note.hidden = state.sort === 'xp';
+        if (state.sort !== 'xp') note.innerHTML = `Kolejność według <b>${state.sort === 'messages' ? 'liczby wiadomości' : 'czasu na kanałach głosowych'}</b> — miejsca liczone w tej kolejności.`;
+        return;
+      }
       if (state.period === 'event') {
         const e = state.data?.event;
         note.innerHTML = e ? `XP zdobyte w czasie wydarzenia <b>${esc(e.name)}</b> (${esc(whenText(e.startsAt))} – ${esc(whenText(e.endsAt))}) — już z mnożnikiem ${multText(e.multiplier)}.` : '';
@@ -979,6 +1006,8 @@
       const top3 = $('#top3');
       const table = list.closest('.table');
       $('#board').classList.toggle('ev-mode', state.period === 'event');
+      for (const s of ['messages', 'voice']) $('#board').classList.toggle(`sort-${s}`, state.period === 'all' && state.sort === s);
+      syncSort();
       $('#found').hidden = !state.search;
       if (state.search) $('#found').innerHTML = `Wyniki dla „${esc(state.search)}”: <b>${fmt(state.total)}</b>`;
       if (appended) {
@@ -1009,6 +1038,7 @@
       const params = new URLSearchParams({ period: state.period, offset: String(append ? state.entries.length : 0), limit: String(PAGE) });
       if (state.search) params.set('search', state.search);
       if (state.period === 'event' && ev.pick?.ranked) params.set('event', ev.pick.ranked.id);
+      if (state.period === 'all' && state.sort !== 'xp') params.set('sort', state.sort);
       try {
         const res = await fetch(`${BASE}/leaderboard?${params}`);
         const data = await res.json();
@@ -1638,6 +1668,24 @@
     }
     document.querySelectorAll('.views button').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
     setView(state.view);
+
+    function syncSort() {
+      const all = state.period === 'all';
+      $('#sort').disabled = !all;
+      $('#sort').value = all ? state.sort : 'xp';
+      document.querySelectorAll('.cols [data-sort]').forEach((b) => {
+        b.setAttribute('aria-pressed', String(all ? b.dataset.sort === state.sort : b.dataset.sort === 'xp'));
+        b.disabled = !all;
+      });
+    }
+    function setSort(sort) {
+      if (state.period !== 'all' || sort === state.sort) return;
+      state.sort = sort;
+      syncSort();
+      load();
+    }
+    $('#sort').addEventListener('change', (event) => setSort(event.target.value));
+    document.querySelectorAll('.cols [data-sort]').forEach((b) => b.addEventListener('click', () => setSort(b.dataset.sort)));
 
     function markPeriod(period) {
       state.period = period;

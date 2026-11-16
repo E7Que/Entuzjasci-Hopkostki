@@ -513,6 +513,10 @@ test('publiczny ranking: pseudonim + nazwa, tydzień/miesiąc, liczba osób, syn
   ({ body } = await get('leaderboard?period=week&search=bartek'));
   assert.deepEqual([body.total, body.entries.length], [0, 0]);
   assert.deepEqual(body.rewards, [], 'nagrody bez ról na serwerze są pomijane');
+  ({ body } = await get('leaderboard?sort=messages'));
+  assert.deepEqual([body.sort, body.entries.map((e) => [e.rank, e.name])], ['messages', [[1, 'kasia_123'], [2, 'bartek']]], 'kolejność według wiadomości');
+  ({ body } = await get('leaderboard?period=week&sort=voice'));
+  assert.equal(body.sort, 'xp', 'w rankingach okresowych tylko XP');
   assert.equal(body.totals.members, 2);
 
   s.discord.state.members.set(B, { user: { id: B, username: 'bartek', global_name: 'Bartuś', avatar: 'abc' }, roles: [] });
