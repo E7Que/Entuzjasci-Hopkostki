@@ -542,6 +542,7 @@ async function refreshStatus() {
     : status.error ?? 'Sprawdź sekrety w Supabase.';
   renderSetup(status);
   renderGatewayLine(status.gateway);
+  renderHealth(status);
 
   const s = status.stats;
   const cards = [
@@ -573,6 +574,60 @@ async function refreshStatus() {
 }
 
 const gatewayOk = (gateway) => Boolean(gateway?.startedAt && !gateway.error && Date.now() - gateway.startedAt < 3 * MINUTE);
+
+// ---------- Stan bota ----------
+const STEP_NAMES = {
+  setup: 'połączenie i komendy', tempBans: 'tymczasowe bany', warns: 'ostrzeżenia', reactions: 'reakcje na odpowiedzi', tempVoice: 'kanały głosowe',
+  permissions: 'uprawnienia komend', autoRole: 'autorole', bump: 'przypomnienia o bumpie', reminders: 'przypomnienia', profiles: 'profile członków',
+  invites: 'zaproszenia', giveaways: 'konkursy', voiceXp: 'XP za głosowe', winners: 'archiwum zwycięzców', levelHighlights: 'rankingi tygodnia i miesiąca',
+  xpEvents: 'wydarzenia XP', firstPlace: 'rola za 1. miejsce', levelProfiles: 'nazwy w rankingu', levelAccents: 'wygląd profili', prune: 'sprzątanie', health: 'strażnik',
+};
+const MB = 1024 * 1024;
+const mb = (bytes) => `${(bytes / MB).toLocaleString('pl-PL', { maximumFractionDigits: bytes < 10 * MB ? 1 : 0 })} MB`;
+function healthTile(label, value, sub = '', tone = '') {
+  return `<div class="health-tile ${tone}"><div class="label">${esc(label)}</div><b>${value}</b>${sub ? `<small>${sub}</small>` : ''}</div>`;
+}
+function renderHealth(status) {
+  const h = status.health;
+  $('#health-card').classList.toggle('hidden', !h);
+  if (!h) return;
+  $('#health-version').innerHTML = h.version
+    ? `wersja <a href="https://github.com/E7Que/Entuzjasci-Hopkostki/commit/${esc(h.version)}" target="_blank" rel="noopener"><code>${esc(h.version.slice(0, 7))}</code></a>`
+    : '';
+  const issues = [
+    ...h.problems.map((p) => `${esc(p.text)} <span class="muted">(od ${esc(relTime(p.since))})</span>`),
+    ...h.steps.filter((s) => !h.problems.some((p) => p.text.includes(`„${s.name}”`))).map((s) => `Zadanie „${esc(STEP_NAMES[s.name] ?? s.name)}” zgłosiło błąd: ${esc(s.error)}`),
+  ];
+  $('#health-issues').innerHTML = issues.length
+    ? `<div class="health-alert"><strong>Wymaga uwagi</strong><ul>${issues.map((i) => `<li>${i}</li>`).join('')}</ul></div>`
+    : '<div class="health-ok"><span class="dot ok"></span>Wszystko działa — żadnych problemów w ostatnich przebiegach.</div>';
+
+  const cronAt = status.cron?.at;
+  const cronFresh = cronAt && Date.now() - cronAt < 3 * MINUTE;
+  const channelName = (id) => (id ? `#${state.guild.channels.find((c) => c.id === id)?.name ?? id}` : '');
+  const tiles = [
+    healthTile('Zadania okresowe', cronAt ? `${relTime(cronAt)}` : 'jeszcze nie było', 'co 30 sekund (pg_cron)', cronFresh ? 'ok' : 'bad'),
+    healthTile(
+      'Alerty o awarii',
+      h.alerts.enabled && h.alerts.channelId ? 'włączone' : 'wyłączone',
+      h.alerts.enabled && h.alerts.channelId
+        ? `${esc(channelName(h.alerts.channelId))} · strażnik ${h.alerts.watchdog ? 'gotowy' : `nie działa${h.alerts.watchdogError ? `: ${esc(h.alerts.watchdogError)}` : ''}`}`
+        : 'włączysz w Ustawieniach',
+      h.alerts.enabled && h.alerts.channelId ? (h.alerts.watchdog ? 'ok' : 'warn') : 'warn',
+    ),
+  ];
+  if (h.db) {
+    const pct = Math.min(100, (h.db.bytes / h.db.limit) * 100);
+    const top = h.db.schemas.slice(0, 3).map((s) => `${esc(s.name)} ${mb(s.bytes)}`).join(' · ');
+    tiles.push(`<div class="health-tile ${pct > 90 ? 'bad' : pct > 70 ? 'warn' : ''}"><div class="label">Baza danych</div><b>${mb(h.db.bytes)} <span class="muted">z ${mb(h.db.limit)}</span></b><div class="meter" role="img" aria-label="Zajęte ${Math.round(pct)}% miejsca"><span style="width:${pct.toFixed(1)}%"></span></div><small>${top}</small></div>`);
+  }
+  tiles.push(
+    healthTile('Dziś na serwerze', `${h.today.xp.toLocaleString('pl-PL')} XP`, `${h.today.messages.toLocaleString('pl-PL')} wiadomości · ${h.today.voiceMinutes.toLocaleString('pl-PL')} min na głosowych · ${h.today.people} os.`),
+    healthTile('Odwołania od kar', h.appeals ? `${h.appeals} czeka` : 'brak czekających', h.appeals ? '<a href="#sprawy">przejdź do Spraw</a>' : '', h.appeals ? 'warn' : ''),
+    healthTile('Wydarzenie XP', h.event ? `×${String(h.event.multiplier).replace('.', ',')} · ${esc(h.event.name)}` : 'brak', h.event ? `koniec ${esc(relTime(Date.parse(h.event.endsAt)))}` : '<a href="#poziomy">zaplanuj w Poziomach</a>'),
+  );
+  $('#health-grid').innerHTML = tiles.join('');
+}
 
 function renderSetup(status) {
   const setup = status.setup ?? {};

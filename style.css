@@ -90,6 +90,22 @@ main { padding: 2rem clamp(1rem, 3vw, 2.5rem) 6rem; min-width: 0; }
 /* Poziomy: listy nagród i boosterów, ranking. */
 .levels-list { display: flex; flex-wrap: wrap; gap: .35rem; margin: .5rem 0; }
 .levels-list .role-chip strong { margin-right: .25rem; }
+.health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .6rem; margin-top: .75rem; }
+.health-tile { padding: .7rem .8rem; border-radius: 8px; background: var(--bg-3); border: 1px solid var(--line); border-left: 3px solid var(--line); min-width: 0; }
+.health-tile.ok { border-left-color: var(--green); }
+.health-tile.warn { border-left-color: var(--yellow); }
+.health-tile.bad { border-left-color: var(--red); }
+.health-tile .label { font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.health-tile b { display: block; margin-top: .15rem; color: var(--text-strong); font-size: 1.05rem; overflow-wrap: anywhere; }
+.health-tile small { display: block; margin-top: .2rem; color: var(--muted); font-size: .8rem; overflow-wrap: anywhere; }
+.meter { height: 6px; margin-top: .45rem; border-radius: 3px; background: var(--bg); overflow: hidden; }
+.meter > span { display: block; height: 100%; border-radius: 3px; background: var(--blurple); }
+.health-tile.warn .meter > span { background: var(--yellow); }
+.health-tile.bad .meter > span { background: var(--red); }
+.health-ok { display: flex; align-items: center; gap: .5rem; color: var(--muted); font-size: .9rem; }
+.health-alert { padding: .7rem .85rem; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--red) 45%, var(--line)); background: color-mix(in srgb, var(--red) 10%, transparent); }
+.health-alert strong { color: #f08a8d; }
+.health-alert ul { margin: .35rem 0 0; padding-left: 1.1rem; display: grid; gap: .25rem; font-size: .9rem; }
 .history-list { display: grid; gap: .4rem; max-height: 420px; overflow-y: auto; }
 .history-item { display: flex; align-items: center; gap: .75rem; padding: .5rem .7rem; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-3); }
 .history-main { flex: 1; min-width: 0; }
