@@ -46,3 +46,21 @@ test('dziennik zmian: tylko zmienione klucze i najwyżej 100 wpisów', async () 
   assert.equal(items[0].changedBy, 'osoba 104');
   assert.deepEqual(items[0].keys, ['appealText']);
 });
+
+test('pulpit: stan bota — błędy zadań, problemy strażnika, dzisiejsza aktywność, odwołania, baza', async () => {
+  const { store } = await createTestStore();
+  const bot = makeBot({ store, discord: fakeDiscord() });
+  await store.setState('cron_last_run', { at: Date.now(), report: { voiceXp: { error: 'timeout bazy' }, bump: { found: 0 } } });
+  await store.setState('health_state', { active: { gateway: { since: Date.now() - 600_000, text: 'Bot nie łączy się z Discordem od 10 min' } } });
+  await store.query("insert into bot.level_daily (user_id, day, xp, messages, voice_minutes) values ('a', $1::date, 120, 7, 30), ('b', $1::date, 30, 2, 0)", [new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Warsaw' })]);
+  const { status, body } = await handlePanel(bot, { method: 'GET', path: '/status' });
+  assert.equal(status, 200);
+  const h = body.health;
+  assert.deepEqual(h.steps, [{ name: 'voiceXp', error: 'timeout bazy' }]);
+  assert.deepEqual(h.problems.map((p) => p.text), ['Bot nie łączy się z Discordem od 10 min']);
+  assert.deepEqual(h.today, { people: 2, xp: 150, messages: 9, voiceMinutes: 30 });
+  assert.equal(h.appeals, 0);
+  assert.equal(h.event, null);
+  assert.equal(h.version, null, 'lokalnie (file://) bez wersji');
+  assert.ok(h.db === null || (h.db.bytes > 0 && h.db.limit === 500 * 1024 * 1024));
+});

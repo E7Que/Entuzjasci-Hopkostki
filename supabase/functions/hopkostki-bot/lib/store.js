@@ -325,6 +325,35 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return { total: total.n, items: rows.map(mapCase) };
     },
 
+    // ---------- Stan bota (pulpit panelu) ----------
+    // Rozmiar bazy (Supabase Free: 500 MB) i największe schematy.
+    async dbUsage() {
+      const total = await one('select pg_database_size(current_database())::bigint as bytes', []);
+      const schemas = await query(
+        `select n.nspname as name, coalesce(sum(pg_total_relation_size(c.oid)), 0)::bigint as bytes
+         from pg_class c join pg_namespace n on n.oid = c.relnamespace
+         where c.relkind in ('r', 'm') and n.nspname not in ('pg_catalog', 'information_schema') and n.nspname not like 'pg_toast%'
+         group by n.nspname order by 2 desc limit 6`,
+        [],
+      );
+      return { bytes: Number(total.bytes), schemas: schemas.map((s) => ({ name: s.name, bytes: Number(s.bytes) })) };
+    },
+
+    // XP, wiadomości i minuty na głosowych z danego dnia (czas polski) — z bot.level_daily.
+    async dayActivity(day) {
+      const row = await one(
+        `select count(*)::int as people, coalesce(sum(xp), 0)::bigint as xp, coalesce(sum(messages), 0)::int as messages,
+           coalesce(sum(voice_minutes), 0)::int as voice from bot.level_daily where day = $1::date`,
+        [day],
+      );
+      return { people: row.people, xp: Number(row.xp), messages: row.messages, voiceMinutes: row.voice };
+    },
+
+    async countPendingAppeals() {
+      const row = await one("select count(*)::int as n from bot.appeals where status = 'pending'", []);
+      return row.n;
+    },
+
     // ---------- Ochrona logowania do panelu ----------
     async loginAttempt(key) {
       const row = await one('select fails, first_at, locked_until from bot.login_attempts where key = $1::text', [key]);

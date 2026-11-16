@@ -3,7 +3,7 @@
 // tylko części panelu odblokowane jego rolami) — samo API działa na Supabase razem z botem.
 
 import { DEFAULT_CONFIG } from './defaults.js';
-import { getApp, getGuildContext, unbanUser, sendModLog, describeError, ActionError } from './moderation.js';
+import { cached, getApp, getGuildContext, unbanUser, sendModLog, describeError, ActionError } from './moderation.js';
 import { avatarUrl, guildIconUrl, DiscordError } from './rest.js';
 import { simpleEmbed } from './embeds.js';
 import { ensureSetup } from './cron.js';
@@ -14,8 +14,11 @@ import { sendTicketPanel, closeTicket } from './tickets.js';
 import { ensureIntentFlags, membersIntentOn, contentIntentOn } from './members.js';
 import { endGiveaway } from './community.js';
 import { PANEL_SECTIONS, PASSWORD_AUTH, SECTION_CONFIG_KEYS, allowedConfigInput, sectionAccess } from './access.js';
-import { changeXp, importLevels, levelProgress, levelUpMessage, parseImport } from './levels.js';
-import { sendAlertTest } from './health.js';
+import { activeXpEvent, changeXp, dayKey, importLevels, levelProgress, levelUpMessage, parseImport } from './levels.js';
+import { alertChannel, sendAlertTest } from './health.js';
+
+// Wersja kodu: funkcja na Supabase importuje bota z GitHuba pod adresem z pełnym SHA commita.
+const SOURCE_SHA = (import.meta.url.match(/\/([0-9a-f]{40})\//) ?? [])[1] ?? null;
 
 const TEXT_CHANNELS = new Set([0, 5]);
 const byPosition = (a, b) => a.position - b.position;
@@ -124,13 +127,40 @@ async function setRolePermission(bot, auth, roleId, name, value) {
   return { id: updated.id, name: updated.name, permissions: updated.permissions };
 }
 
+// Czytelny stan bota na pulpit: błędy zadań okresowych, problemy wykryte przez strażnika, alerty, baza,
+// dzisiejsza aktywność, odwołania, trwające wydarzenie XP i wersja kodu.
+async function statusHealth(bot, { cron, config }) {
+  const [healthState, hook, db, today, appeals] = await Promise.all([
+    bot.store.getState('health_state'),
+    bot.store.getState('alert_webhook'),
+    cached(bot, 'status:db', 10 * 60_000, () => bot.store.dbUsage()).catch(() => null),
+    bot.store.dayActivity(dayKey()),
+    bot.store.countPendingAppeals(),
+  ]);
+  const steps = Object.entries(cron?.report ?? {})
+    .filter(([, r]) => r && typeof r === 'object' && 'error' in r && Object.keys(r).length === 1)
+    .map(([name, r]) => ({ name, error: r.error }));
+  const event = activeXpEvent(config.levels);
+  return {
+    steps,
+    problems: Object.values(healthState?.active ?? {}).map((p) => ({ since: p.since, text: p.text })),
+    alerts: { enabled: config.alerts.enabled, channelId: alertChannel(config) || null, watchdog: Boolean(hook?.url) && !hook?.error, watchdogError: hook?.error ?? null },
+    db: db ? { ...db, limit: 500 * 1024 * 1024 } : null,
+    today,
+    appeals,
+    event: event ? { name: event.name, multiplier: event.multiplier, endsAt: event.endsAt } : null,
+    version: SOURCE_SHA,
+  };
+}
+
 async function status(bot) {
-  const [stats, recent, setup, cron, gateway] = await Promise.all([
+  const [stats, recent, setup, cron, gateway, config] = await Promise.all([
     bot.store.stats(),
     bot.store.listCases({ limit: 8 }),
     bot.store.getState('setup'),
     bot.store.getState('cron_last_run'),
     bot.store.getState('gateway_status'),
+    bot.store.getConfig(),
   ]);
   const result = {
     ready: false,
@@ -142,6 +172,7 @@ async function status(bot) {
     setup: { ...(setup ?? {}), tokenConfigured: Boolean(bot.env.token), selfUrl: bot.env.selfUrl },
     cron,
     gateway,
+    health: await statusHealth(bot, { cron, config }),
   };
   if (!bot.discord) {
     result.error = 'Brak sekretu DISCORD_TOKEN w Supabase (Edge Functions → Secrets).';
