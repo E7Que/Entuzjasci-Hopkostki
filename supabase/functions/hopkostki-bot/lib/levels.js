@@ -467,7 +467,7 @@ export async function publicProfile(bot, userId) {
   const config = (await bot.store.getConfig()).levels;
   if (!config.enabled || !config.publicLeaderboard || !/^\d{15,22}$/.test(String(userId ?? ''))) return null;
   const row = await bot.store.getLevel(userId);
-  if (!row || row.xp <= 0) return null;
+  if (!row || row.xp <= 0 || row.hidden) return null;
   const { guild, roles: byId } = await getGuildContext(bot);
   const [user, member] = await Promise.all([
     cached(bot, `publicUser:${userId}`, 10 * 60_000, () => bot.discord.get(`/users/${userId}`).catch(() => null)),

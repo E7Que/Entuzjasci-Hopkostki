@@ -138,4 +138,41 @@ const xp = {
   },
 };
 
-export const LEVEL_COMMANDS = [rank, ranking, xp];
+// Prywatność: ukrycie się na publicznej stronie rankingu (na serwerze /rank i /ranking działają jak dotąd).
+const prywatnosc = {
+  permission: null,
+  defer: 'ephemeral',
+  data: {
+    name: 'prywatnosc',
+    description: '🔒 Ukryj się albo pokaż na publicznej stronie rankingu',
+    ...GUILD_ONLY,
+    options: [
+      {
+        type: T.STRING,
+        name: 'strona-rankingu',
+        description: '🌐 Czy pokazywać Twój pseudonim i avatar na stronie rankingu w internecie',
+        required: true,
+        choices: [
+          { name: 'Ukryj mnie', value: 'ukryj' },
+          { name: 'Pokaż mnie', value: 'pokaz' },
+        ],
+      },
+    ],
+  },
+  async execute(ix, bot) {
+    const hidden = ix.opt('strona-rankingu') === 'ukryj';
+    await bot.store.setLevelHidden(ix.user.id, hidden);
+    const site = `${PANEL_SITE}ranking.html`;
+    return ix.edit({
+      embeds: [
+        embeds.successEmbed(
+          hidden
+            ? `Ukryto Cię na [stronie rankingu](${site}): zamiast pseudonimu i avatara jest tam „Ukryta osoba”, a Twojego profilu nie da się otworzyć ani wyszukać. Na serwerze (/rank, /ranking) nic się nie zmienia.`
+            : `Znów jesteś widoczny(a) na [stronie rankingu](${site}).`,
+        ),
+      ],
+    });
+  },
+};
+
+export const LEVEL_COMMANDS = [rank, ranking, xp, prywatnosc];

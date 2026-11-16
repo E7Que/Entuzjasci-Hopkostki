@@ -218,6 +218,14 @@
     .board.grid .lvl b { font-size: 0.75rem; }
     .board.grid .empty, .board.grid .skeleton { grid-column: 1 / -1; border: 0; }
 
+    /* Osoby ukryte komendą /prywatnosc */
+    .anon-av { display: grid; place-items: center; color: var(--faint); background: var(--surface-2); }
+    .anon-av svg { width: 44%; height: 44%; }
+    .row.anon, .top.anon { cursor: default; }
+    .row.anon:hover, .top.anon:hover { background: var(--surface); }
+    .board.grid .row.anon:hover { background: var(--surface); }
+    .row.anon .nick, .top.anon .nick { color: var(--muted); font-style: italic; }
+
     .more { display: block; margin: 14px auto 0; padding: 9px 18px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-weight: 500; cursor: pointer; }
     .more:hover { background: var(--hover); }
     .more:disabled { opacity: 0.6; cursor: default; }
@@ -566,7 +574,12 @@
             <div class="cmds">
               <div><code>/rank</code>Twoja karta poziomu</div>
               <div><code>/ranking</code>ranking na serwerze</div>
+              <div><code>/prywatnosc</code>ukryj się na tej stronie</div>
             </div>
+          </section>
+          <section class="card">
+            <h2>Prywatność</h2>
+            <p>Strona pokazuje pseudonim, avatar i statystyki aktywności osób, które zdobyły XP na serwerze. Nie chcesz tu być? Wpisz na serwerze <code>/prywatnosc</code> i wybierz <b>Ukryj mnie</b> — Twoje miejsce zostanie jako „Ukryta osoba”, bez pseudonimu, avatara i profilu.</p>
           </section>
         </div>
       </aside>
@@ -732,8 +745,22 @@
 
     const ring = (p, level) => `<div class="lvl" title="Poziom ${level} — ${p}% do kolejnego"><svg viewBox="0 0 36 36" aria-hidden="true"><circle class="track" cx="18" cy="18" r="15"/><circle class="val" cx="18" cy="18" r="15" pathLength="100" stroke-dasharray="${Math.max(p, 1)} 100"/></svg><b>${level}</b></div>`;
 
+    const LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+    const anonAvatar = (size) => `<span class="av"><span class="avatar anon-av" style="width:${size}px;height:${size}px" aria-hidden="true">${LOCK_SVG}</span></span>`;
+    const ANON_TITLE = 'Ta osoba ukryła się na stronie rankingu (/prywatnosc)';
+
     function rowHtml(e) {
       const xp = e.periodXp != null ? `<span class="plus">+${fmt(e.periodXp)}</span>` : fmt(e.xp);
+      if (e.hidden) {
+        return `<li class="row anon${e.rank <= 3 ? ` r${e.rank}` : ''}" title="${ANON_TITLE}">
+        <span class="rank">${e.rank}</span>
+        <span class="who">${anonAvatar(38)}<span class="name"><span class="nick">Ukryta osoba</span></span></span>
+        <span class="num msgs">${fmt(e.messages)}</span>
+        <span class="num voice">${voiceText(e.voiceMinutes)}</span>
+        <span class="num xp">${xp}</span>
+        ${ring(pct(e), e.level)}
+      </li>`;
+      }
       const plate = e.look?.nameplate;
       const plateStyle = plate && PALETTES[plate.palette] ? `--pl:${PALETTES[plate.palette]};` : '';
       const attrs = plateStyle ? ` style="${plateStyle}"` : '';
@@ -753,6 +780,14 @@
 
     function topHtml(e, i) {
       const xp = e.periodXp != null ? `+${fmt(e.periodXp)} XP` : `${fmt(e.xp)} XP`;
+      if (e.hidden) {
+        return `<article class="top t${i + 1} anon" title="${ANON_TITLE}">
+        <span class="place">#${e.rank}</span>
+        ${anonAvatar(72)}
+        <span class="nick">Ukryta osoba</span>
+        <span class="meta">Poziom <b>${e.level}</b> · ${xp}</span>
+      </article>`;
+      }
       return `<article class="top t${i + 1}${e.nitro ? ' nitro' : ''}${e.look?.decoration ? ' has-deco' : ''}${e.userId === state.selected ? ' sel' : ''}"${nitroAttrs(e)} data-id="${esc(e.userId)}" tabindex="0" role="button" aria-label="Profil: ${esc(display(e))}">
         <span class="place">#${e.rank}</span>
         ${avatarHtml(e, 72)}

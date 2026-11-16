@@ -120,15 +120,15 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
     const periodKey = period === 'week' ? weekKey() : period === 'month' ? monthKey() : period === 'event' ? event.id : null;
     const [rows, total, totals, gctx] = await Promise.all([
       period === 'all'
-        ? bot.store.levelLeaderboard({ limit, offset, search })
+        ? bot.store.levelLeaderboard({ limit, offset, search, publicOnly: true })
         : period === 'event'
-          ? bot.store.levelEventTop({ eventId: event.id, limit, offset, search })
-          : bot.store.levelPeriodTop({ period, key: periodKey, limit, offset, search }),
+          ? bot.store.levelEventTop({ eventId: event.id, limit, offset, search, publicOnly: true })
+          : bot.store.levelPeriodTop({ period, key: periodKey, limit, offset, search, publicOnly: true }),
       period === 'all'
-        ? bot.store.countLevels(search)
+        ? bot.store.countLevels(search, { publicOnly: true })
         : period === 'event'
-          ? bot.store.countEvent({ eventId: event.id, search })
-          : bot.store.countPeriod({ period, key: periodKey, search }),
+          ? bot.store.countEvent({ eventId: event.id, search, publicOnly: true })
+          : bot.store.countPeriod({ period, key: periodKey, search, publicOnly: true }),
       bot.store.levelTotals(),
       bot.discord ? getGuildContext(bot).catch(() => null) : null,
     ]);
@@ -167,6 +167,29 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
       },
       entries: rows.map((r) => {
         const p = levelProgress(r.xp, levels.formula);
+        // Osoba ukryta komendą /prywatnosc: miejsce i statystyki zostają, bez nazwy, avatara i ID.
+        if (r.hidden) {
+          return {
+            rank: period === 'all' ? r.rank : r.periodRank,
+            hidden: true,
+            userId: null,
+            name: 'Ukryta osoba',
+            displayName: null,
+            nitro: false,
+            accent: null,
+            avatar: null,
+            avatarAnim: null,
+            look: null,
+            xp: r.xp,
+            periodXp: period === 'all' ? null : r.periodXp,
+            level: p.level,
+            current: p.current,
+            needed: p.needed,
+            messages: r.messages,
+            voiceMinutes: r.voiceMinutes,
+            reactions: r.reactions,
+          };
+        }
         return {
           rank: period === 'all' ? r.rank : r.periodRank,
           userId: r.userId,

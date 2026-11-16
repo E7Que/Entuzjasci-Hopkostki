@@ -301,6 +301,44 @@ test('wydarzenia XP: wybór wydarzenia dla strony, nakładające się wydarzenia
   assert.equal(multiplierText(2), '×2');
 });
 
+test('prywatność: /prywatnosc ukrywa osobę na stronie rankingu (anonimowe miejsce, bez wyszukiwania i profilu)', async () => {
+  const s = await setup({ publicLeaderboard: true });
+  const A = '100000000000000074';
+  await s.store.importLevel({ userId: A, userTag: 'kasia', xp: 900 });
+  const run = async (value) => {
+    const out = await handleInteraction(commandPayload('prywatnosc', [{ type: 3, name: 'strona-rankingu', value }], { invoker: 'target', roles: ['r-member'], permissions: '0' }), s.bot);
+    await out.task?.();
+    return s.discord.state.webhook.at(-1).body.embeds[0].description;
+  };
+  assert.match(await run('ukryj'), /Ukryto Cię na \[stronie rankingu\]/);
+  assert.equal((await s.store.getLevel('target')).hidden, true, 'ukrycie działa także przed zdobyciem XP');
+  await s.store.importLevel({ userId: 'target', userTag: 'hurownik_og', xp: 500 });
+
+  const handle = createHandler(s.bot);
+  const get = async (path) => {
+    const res = await handle(new Request(`https://x.supabase.co/functions/v1/hopkostki-bot/panel/public/${path}`));
+    return { status: res.status, body: await res.json() };
+  };
+  let { body } = await get('leaderboard');
+  assert.deepEqual(body.entries.map((e) => [e.rank, e.name, e.userId, e.hidden ?? false]), [
+    [1, 'kasia', A, false],
+    [2, 'Ukryta osoba', null, true],
+  ]);
+  assert.equal(body.entries[1].xp, 500, 'miejsce i XP zostają');
+  assert.equal(body.entries[1].avatar, null);
+  ({ body } = await get('leaderboard?search=hurownik'));
+  assert.equal(body.total, 0, 'ukrytej osoby nie da się wyszukać');
+  ({ body } = await get('leaderboard?search=target'));
+  assert.equal(body.total, 0, 'ani po ID');
+  // Panel (moderacja) widzi wszystkich, z oznaczeniem.
+  const panelRows = await s.store.levelLeaderboard({ search: 'hurownik' });
+  assert.deepEqual(panelRows.map((r) => [r.userId, r.hidden]), [['target', true]]);
+
+  assert.match(await run('pokaz'), /Znów jesteś widoczny/);
+  ({ body } = await get('leaderboard'));
+  assert.equal(body.entries[1].name, 'hurownik_og');
+});
+
 test('skrót wiadomości do wykrywania powtórek', () => {
   assert.equal(textHash(''), null);
   assert.equal(textHash('   '), null);

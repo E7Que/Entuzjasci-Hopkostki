@@ -37,7 +37,12 @@ const mapLevel = (r) => ({
   look: r.look ?? null,
   guildAvatar: r.guild_avatar ?? null,
   rank: r.rank === undefined ? null : Number(r.rank),
+  hidden: Boolean(r.hidden),
 });
+
+// Szukanie po ID, nazwie albo pseudonimie; publicOnly — bez osób ukrytych na stronie rankingu.
+const levelSearch = (n, alias, publicOnly) =>
+  `($${n}::text = '' or (${publicOnly ? `not ${alias}hidden and ` : ''}(${alias}user_id = $${n}::text or ${alias}user_tag ilike '%' || $${n}::text || '%' or ${alias}display_name ilike '%' || $${n}::text || '%')))`;
 
 // Bez skrótu tokenu — ten zostaje w bazie.
 const mapPanelSession = (r) => ({
@@ -1144,25 +1149,25 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
 
     // ---------- Wydarzenia XP ----------
     // Najwięcej XP w czasie wydarzenia (periodXp = XP z wydarzenia, już z mnożnikiem).
-    async levelEventTop({ eventId, limit = 10, offset = 0, search = '' }) {
+    async levelEventTop({ eventId, limit = 10, offset = 0, search = '', publicOnly = false }) {
       const rows = await query(
         `select * from (
            select l.*, e.xp as period_xp, rank() over (order by e.xp desc) as period_rank
            from bot.level_event_xp e join bot.levels l on l.user_id = e.user_id
            where e.event_id = $1::text and e.xp > 0
          ) r
-         where ($4::text = '' or r.user_id = $4::text or r.user_tag ilike '%' || $4::text || '%' or r.display_name ilike '%' || $4::text || '%')
+         where ${levelSearch(4, 'r.', publicOnly)}
          order by r.period_xp desc, r.user_id limit $2::int offset $3::int`,
         [eventId, limit, offset, search],
       );
       return rows.map((r) => ({ ...mapLevel(r), periodXp: Number(r.period_xp), periodRank: Number(r.period_rank) }));
     },
 
-    async countEvent({ eventId, search = '' }) {
+    async countEvent({ eventId, search = '', publicOnly = false }) {
       const row = await one(
         `select count(*)::int as n from bot.level_event_xp e join bot.levels l on l.user_id = e.user_id
          where e.event_id = $1::text and e.xp > 0
-           and ($2::text = '' or l.user_id = $2::text or l.user_tag ilike '%' || $2::text || '%' or l.display_name ilike '%' || $2::text || '%')`,
+           and ${levelSearch(2, 'l.', publicOnly)}`,
         [eventId, search],
       );
       return row.n;
@@ -1226,6 +1231,15 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return { xp: Number(row.xp), level: row.level };
     },
 
+    // Ukrycie (albo pokazanie) osoby na publicznej stronie rankingu — także zanim zdobędzie XP.
+    async setLevelHidden(userId, hidden) {
+      await query(
+        `insert into bot.levels (user_id, hidden) values ($1::text, $2::boolean)
+         on conflict (user_id) do update set hidden = excluded.hidden`,
+        [userId, hidden],
+      );
+    },
+
     async getLevel(userId) {
       const row = await one(
         `select l.*, (select count(*)::int + 1 from bot.levels o where o.xp > l.xp) as rank from bot.levels l where l.user_id = $1::text`,
@@ -1234,34 +1248,34 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return row ? mapLevel(row) : null;
     },
 
-    async levelLeaderboard({ limit = 10, offset = 0, search = '' } = {}) {
+    async levelLeaderboard({ limit = 10, offset = 0, search = '', publicOnly = false } = {}) {
       const rows = await query(
         `select * from (select l.*, rank() over (order by l.xp desc) as rank from bot.levels l where l.xp > 0) r
-         where ($3::text = '' or r.user_id = $3::text or r.user_tag ilike '%' || $3::text || '%' or r.display_name ilike '%' || $3::text || '%')
+         where ${levelSearch(3, 'r.', publicOnly)}
          order by r.xp desc, r.user_id limit $1::int offset $2::int`,
         [limit, offset, search],
       );
       return rows.map(mapLevel);
     },
 
-    async countLevels(search = '') {
+    async countLevels(search = '', { publicOnly = false } = {}) {
       const row = await one(
         `select count(*)::int as n from bot.levels where xp > 0
-           and ($1::text = '' or user_id = $1::text or user_tag ilike '%' || $1::text || '%' or display_name ilike '%' || $1::text || '%')`,
+           and ${levelSearch(1, '', publicOnly)}`,
         [search],
       );
       return row.n;
     },
 
     // Najwięcej XP w tygodniu (period 'week', klucz = data niedzieli) albo miesiącu ('month', klucz RRRR-MM).
-    async levelPeriodTop({ period, key, limit = 10, offset = 0, search = '' }) {
+    async levelPeriodTop({ period, key, limit = 10, offset = 0, search = '', publicOnly = false }) {
       const [keyCol, xpCol] = period === 'week' ? ['week_key', 'week_xp'] : ['month_key', 'month_xp'];
       const rows = await query(
         `select * from (
            select l.*, l.${xpCol} as period_xp, rank() over (order by l.${xpCol} desc) as period_rank
            from bot.levels l where l.${keyCol} = $1::text and l.${xpCol} > 0
          ) r
-         where ($4::text = '' or r.user_id = $4::text or r.user_tag ilike '%' || $4::text || '%' or r.display_name ilike '%' || $4::text || '%')
+         where ${levelSearch(4, 'r.', publicOnly)}
          order by r.period_xp desc, r.user_id limit $2::int offset $3::int`,
         [key, limit, offset, search],
       );
@@ -1274,11 +1288,11 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return row.n;
     },
 
-    async countPeriod({ period, key, search = '' }) {
+    async countPeriod({ period, key, search = '', publicOnly = false }) {
       const [keyCol, xpCol] = period === 'week' ? ['week_key', 'week_xp'] : ['month_key', 'month_xp'];
       const row = await one(
         `select count(*)::int as n from bot.levels where ${keyCol} = $1::text and ${xpCol} > 0
-           and ($2::text = '' or user_id = $2::text or user_tag ilike '%' || $2::text || '%' or display_name ilike '%' || $2::text || '%')`,
+           and ${levelSearch(2, '', publicOnly)}`,
         [key, search],
       );
       return row.n;

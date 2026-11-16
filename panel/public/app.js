@@ -1771,7 +1771,7 @@ async function loadLevels() {
             const pct = e.needed ? Math.floor((e.current / e.needed) * 100) : 100;
             return `<tr>
           <td>${e.rank}</td>
-          <td><strong>${esc(e.displayName || e.userTag || e.userId)}</strong>${e.displayName && e.userTag && e.displayName !== e.userTag ? ` <small class="muted">(${esc(e.userTag)})</small>` : ''}<span class="note">${esc(e.userId)}</span></td>
+          <td><strong>${esc(e.displayName || e.userTag || e.userId)}</strong>${e.hidden ? ' <span title="Ukryty(a) na publicznej stronie rankingu (/prywatnosc)">🔒</span>' : ''}${e.displayName && e.userTag && e.displayName !== e.userTag ? ` <small class="muted">(${esc(e.userTag)})</small>` : ''}<span class="note">${esc(e.userId)}</span></td>
           <td>${e.level}</td>
           <td class="xp-bar">${e.xp.toLocaleString('pl-PL')}<div class="xp-progress" title="${e.current} / ${e.needed} XP do kolejnego poziomu"><span style="width:${pct}%"></span></div></td>
           <td>${e.messages.toLocaleString('pl-PL')}</td>

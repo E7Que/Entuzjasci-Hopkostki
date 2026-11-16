@@ -24,6 +24,7 @@ const LEVEL_DAILY = new URL('../../supabase/migrations/20261116020000_bot_levels
 const LEVEL_EVENTS = new URL('../../supabase/migrations/20261116030000_bot_level_events.sql', import.meta.url);
 const APPEALS = new URL('../../supabase/migrations/20261116040000_bot_appeals.sql', import.meta.url);
 const CONFIG_HISTORY = new URL('../../supabase/migrations/20261116050000_bot_config_history.sql', import.meta.url);
+const LEVELS_HIDDEN = new URL('../../supabase/migrations/20261116060000_bot_levels_hidden.sql', import.meta.url);
 const withoutCron = (sql) => sql.split(/^select cron\.schedule/m)[0];
 const withoutGrants = (sql) => sql.replace(/revoke .*? from anon, authenticated;/g, '');
 let shared = null;
@@ -50,6 +51,7 @@ async function database() {
       await db.exec(withoutGrants(fs.readFileSync(LEVEL_EVENTS, 'utf8')));
       await db.exec(withoutGrants(fs.readFileSync(APPEALS, 'utf8')));
       await db.exec(withoutGrants(fs.readFileSync(CONFIG_HISTORY, 'utf8')));
+      await db.exec(withoutGrants(fs.readFileSync(LEVELS_HIDDEN, 'utf8')));
       return db;
     })();
   }
