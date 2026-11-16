@@ -261,6 +261,7 @@
         <div class="card">
           <h3>Kto może użyć jakiej komendy — podgląd na żywo</h3>
           <p class="muted small">Liczone z list powyżej (także niezapisanych). Administratorzy mają dostęp zawsze.</p>
+          <p class="muted small mobile-only">Przesuń tabelę w bok, żeby zobaczyć wszystkie komendy — kolumna z rolami zostaje na miejscu.</p>
           <div class="table-wrap"><table class="table compact" id="permission-matrix"></table></div>
         </div>
         <div class="card" id="role-perms-card">
@@ -864,7 +865,7 @@
           <label class="toggle"><input type="checkbox" data-path="tempVoice.enabled"><span></span>Włącz kanały na żądanie</label>
           <h3>Kanały do dołączenia</h3>
           <p class="muted small">W nazwie możesz użyć <code>{nick}</code> (nazwa osoby) i <code>{numer}</code> (kolejny numer kanału). „Prywatny” oznacza, że nowy kanał od razu jest zamknięty dla innych — właściciel może to zmienić przyciskiem.</p>
-          <div class="table-wrap"><table class="table compact" id="generators-table"></table></div>
+          <div class="table-wrap"><table class="table compact form-cards" id="generators-table"></table></div>
           <button type="button" class="btn ghost" id="add-generator">Dodaj kanał do dołączenia</button>
         </div>
         <div class="card">
@@ -928,7 +929,7 @@
                 <label class="field"><span>Tekst na zamkniętej liście</span><input type="text" id="msg-placeholder" maxlength="150" placeholder="Wybierz role"></label>
                 <label class="toggle"><input type="checkbox" id="msg-multiple"><span></span>Można wybrać kilka ról</label>
               </div>
-              <div class="table-wrap"><table class="table compact" id="msg-items"></table></div>
+              <div class="table-wrap"><table class="table compact form-cards" id="msg-items"></table></div>
               <button type="button" class="btn ghost" id="msg-add-item">Dodaj rolę</button>
               <p class="muted small">Na liście są tylko role, które bot może nadać (niższe niż jego rola i bez uprawnień administratora).</p>
             </div>
@@ -999,7 +1000,7 @@
             <h3>Automatyczne kary</h3>
             <label class="toggle"><input type="checkbox" data-path="escalation.enabled"><span></span>Włącz automatyczne kary po przekroczeniu progu</label>
             <p class="muted small">„Alert” tylko pinguje role moderatorów na kanale logów — decyzję podejmujecie sami.</p>
-            <div class="table-wrap"><table class="table compact" id="rules-table"></table></div>
+            <div class="table-wrap"><table class="table compact form-cards" id="rules-table"></table></div>
             <button type="button" class="btn ghost" id="add-rule">+ Dodaj próg</button>
           </div>
         </div>
