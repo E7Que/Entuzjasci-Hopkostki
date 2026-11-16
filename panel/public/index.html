@@ -199,6 +199,25 @@
             <div class="chips" id="presence-chips"></div>
           </div>
         </div>
+        <div id="backup-section">
+          <h3 class="section-title">Kopia i historia ustawień</h3>
+          <div class="grid two">
+            <div class="card">
+              <h3>Kopia ustawień</h3>
+              <p class="muted small">Plik JSON ze wszystkimi ustawieniami bota (bez haseł i tokenów — tych nie ma w ustawieniach). Wczytana kopia trafia do edycji: sprawdź zmiany i kliknij <b>Zapisz</b> na dole ekranu.</p>
+              <div class="bulk-row">
+                <button type="button" class="btn ghost" id="backup-export">Pobierz kopię</button>
+                <button type="button" class="btn ghost" id="backup-import">Wczytaj kopię…</button>
+                <input type="file" id="backup-file" accept="application/json,.json" hidden>
+              </div>
+            </div>
+            <div class="card">
+              <h3>Ostatnie zmiany</h3>
+              <p class="muted small">Każdy zapis z panelu: kiedy, kto i które części. <b>Cofnij</b> wstawia do edycji poprzednią wersję tych części — potem zapisz.</p>
+              <div id="history-list" class="history-list"><span class="muted small">Wczytywanie…</span></div>
+            </div>
+          </div>
+        </div>
         <div class="card" id="password-card">
           <h3>Hasło panelu</h3>
           <p class="muted small" id="password-status">—</p>

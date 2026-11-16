@@ -309,6 +309,29 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return { total: total.n, items: rows.map(mapCase) };
     },
 
+    // ---------- Dziennik zmian ustawień ----------
+    // changes = { klucz: { before, after } } — tylko zmienione sekcje. Zostaje ostatnie 100 wpisów.
+    async addConfigHistory({ changedBy, changes }) {
+      const keys = Object.keys(changes);
+      if (!keys.length) return null;
+      const row = await one(
+        'insert into bot.config_history (changed_by, keys, changes) values ($1::text, $2::text::jsonb, $3::text::jsonb) returning id',
+        [changedBy ?? null, JSON.stringify(keys), JSON.stringify(changes)],
+      );
+      await query('delete from bot.config_history where id <= $1::int - 100', [row.id]);
+      return row.id;
+    },
+
+    async listConfigHistory(limit = 30) {
+      const rows = await query('select id, changed_by, keys, created_at from bot.config_history order by id desc limit $1::int', [limit]);
+      return rows.map((r) => ({ id: r.id, changedBy: r.changed_by, keys: r.keys ?? [], createdAt: ms(r.created_at) }));
+    },
+
+    async getConfigHistory(id) {
+      const row = await one('select * from bot.config_history where id = $1::int', [id]);
+      return row ? { id: row.id, changedBy: row.changed_by, keys: row.keys ?? [], changes: row.changes, createdAt: ms(row.created_at) } : null;
+    },
+
     // ---------- Odwołania od kar ----------
     async addAppeal({ caseId, userId, userTag, text }) {
       const row = await one(

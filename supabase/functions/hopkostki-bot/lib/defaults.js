@@ -293,7 +293,7 @@ export const DEFAULT_CONFIG = {
     // roleId — rola pingowana przy każdym nowym rankingu.
     highlights: { weekly: { enabled: false, channelId: '' }, monthly: { enabled: false, channelId: '' }, roleId: '' },
     // autoColor — kolor embedów z roli za poziom (albo progu poziomu); userBanner — baner osoby z Discorda jako obrazek.
-    card: { color: '#3cc3d6', image: '', autoColor: true, userBanner: true },
+    card: { color: '#3CC3D6', image: '', autoColor: true, userBanner: true },
     management: { lockXpCommand: false, lockReset: false },
     autoReset: true,
     restrictions: { channelMode: 'deny', channelIds: [], roleIds: [], threads: true, forums: true, voiceText: true, slashCommands: false },

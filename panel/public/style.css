@@ -90,6 +90,10 @@ main { padding: 2rem clamp(1rem, 3vw, 2.5rem) 6rem; min-width: 0; }
 /* Poziomy: listy nagród i boosterów, ranking. */
 .levels-list { display: flex; flex-wrap: wrap; gap: .35rem; margin: .5rem 0; }
 .levels-list .role-chip strong { margin-right: .25rem; }
+.history-list { display: grid; gap: .4rem; max-height: 420px; overflow-y: auto; }
+.history-item { display: flex; align-items: center; gap: .75rem; padding: .5rem .7rem; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-3); }
+.history-main { flex: 1; min-width: 0; }
+.history-main strong { color: var(--text-strong); word-break: break-word; }
 .ev-kinds { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; margin: .4rem 0 .6rem; }
 .ev-list { display: grid; gap: .5rem; margin: .4rem 0 1rem; }
 .ev-item { display: flex; align-items: center; gap: .75rem; padding: .6rem .75rem; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-3); }

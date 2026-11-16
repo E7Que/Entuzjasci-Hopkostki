@@ -23,6 +23,7 @@ const LEVEL_PROFILE_LOOK = new URL('../../supabase/migrations/20261115233000_bot
 const LEVEL_DAILY = new URL('../../supabase/migrations/20261116020000_bot_levels_daily.sql', import.meta.url);
 const LEVEL_EVENTS = new URL('../../supabase/migrations/20261116030000_bot_level_events.sql', import.meta.url);
 const APPEALS = new URL('../../supabase/migrations/20261116040000_bot_appeals.sql', import.meta.url);
+const CONFIG_HISTORY = new URL('../../supabase/migrations/20261116050000_bot_config_history.sql', import.meta.url);
 const withoutCron = (sql) => sql.split(/^select cron\.schedule/m)[0];
 const withoutGrants = (sql) => sql.replace(/revoke .*? from anon, authenticated;/g, '');
 let shared = null;
@@ -48,6 +49,7 @@ async function database() {
       await db.exec(withoutGrants(fs.readFileSync(LEVEL_DAILY, 'utf8')));
       await db.exec(withoutGrants(fs.readFileSync(LEVEL_EVENTS, 'utf8')));
       await db.exec(withoutGrants(fs.readFileSync(APPEALS, 'utf8')));
+      await db.exec(withoutGrants(fs.readFileSync(CONFIG_HISTORY, 'utf8')));
       return db;
     })();
   }
@@ -59,7 +61,7 @@ export async function createTestStore() {
   await db.exec(`
     truncate bot.warns, bot.cases, bot.temp_bans, bot.mod_messages, bot.channel_cursors, bot.notes,
       bot.voice_states, bot.temp_voice, bot.sent_messages, bot.tickets, bot.message_cache, bot.bumps,
-      bot.reminders, bot.giveaways, bot.afk, bot.member_profiles, bot.invite_joins, bot.panel_sessions, bot.levels, bot.level_daily, bot.level_event_xp, bot.appeals restart identity cascade;
+      bot.reminders, bot.giveaways, bot.afk, bot.member_profiles, bot.invite_joins, bot.panel_sessions, bot.levels, bot.level_daily, bot.level_event_xp, bot.appeals, bot.config_history restart identity cascade;
     update bot.config set data = '{}'::jsonb;
     delete from bot.state where key not in ('cron_secret', 'cron_lock');
     update bot.state set value = to_jsonb('1970-01-01T00:00:00Z'::text) where key = 'cron_lock';

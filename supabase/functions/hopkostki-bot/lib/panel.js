@@ -13,7 +13,7 @@ import { sendPanelMessage, editPanelMessage, deletePanelMessage } from './messag
 import { sendTicketPanel, closeTicket } from './tickets.js';
 import { ensureIntentFlags, membersIntentOn, contentIntentOn } from './members.js';
 import { endGiveaway } from './community.js';
-import { PANEL_SECTIONS, PASSWORD_AUTH, allowedConfigInput, sectionAccess } from './access.js';
+import { PANEL_SECTIONS, PASSWORD_AUTH, SECTION_CONFIG_KEYS, allowedConfigInput, sectionAccess } from './access.js';
 import { changeXp, importLevels, levelProgress, levelUpMessage, parseImport } from './levels.js';
 import { sendAlertTest } from './health.js';
 
@@ -22,6 +22,29 @@ const byPosition = (a, b) => a.position - b.position;
 const ok = (body) => ({ status: 200, body });
 const fail = (status, error) => ({ status, body: { error } });
 const hex = (n) => `#${Number(n ?? 0).toString(16).padStart(6, '0')}`;
+
+// Nazwa części panelu dla klucza ustawień (dziennik zmian).
+const KEY_SECTIONS = Object.fromEntries(Object.entries(SECTION_CONFIG_KEYS).flatMap(([section, keys]) => keys.map((key) => [key, PANEL_SECTIONS[section]])));
+KEY_SECTIONS.panelAccess = 'Dostęp do panelu';
+export const configKeyLabel = (key) => KEY_SECTIONS[key] ?? key;
+
+// Porównanie bez względu na kolejność kluczy (Postgres zapisuje jsonb z innym porządkiem kluczy).
+const canonical = (value) =>
+  Array.isArray(value)
+    ? value.map(canonical)
+    : value && typeof value === 'object'
+      ? Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonical(value[key])]))
+      : value;
+const sameValue = (a, b) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
+
+// Zmienione sekcje ustawień (klucze najwyższego poziomu): { klucz: { before, after } }.
+export function configChanges(before, after) {
+  const changes = {};
+  for (const key of Object.keys(after)) {
+    if (!sameValue(before?.[key], after[key])) changes[key] = { before: before?.[key] ?? null, after: after[key] };
+  }
+  return changes;
+}
 
 // Która część panelu odblokowuje które zapytanie: null = każdy zalogowany, 'full' = tylko pełny dostęp
 // (hasło panelu albo administrator serwera). Nieznane ścieżki też wymagają pełnego dostępu.
@@ -217,7 +240,11 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
   if (method === 'GET' && path === '/guild') return ok(await guildInfo(bot));
   if (method === 'GET' && path === '/config') return ok({ config: await store.getConfig(), defaults: DEFAULT_CONFIG });
   if (method === 'PUT' && path === '/config') {
+    const before = await store.getConfig();
     const config = await store.updateConfig(allowedConfigInput(body ?? {}, auth));
+    await store
+      .addConfigHistory({ changedBy: auth.user?.tag ?? 'hasło panelu', changes: configChanges(before, config) })
+      .catch((error) => console.warn(`[panel] Dziennik zmian: ${error.message}`));
     // Włączone powitania/autorole/tickety potrzebują intencji aplikacji — włączamy je od razu, nie czekając na crona.
     const intents = bot.discord ? await ensureIntentFlags(bot, config).catch((error) => ({ error: error.message })) : null;
     return ok({ config, intents });
@@ -314,6 +341,17 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
   if (method === 'DELETE' && messageMatch) {
     if (!(await deletePanelMessage(bot, Number(messageMatch[1])))) return fail(404, 'Nie ma takiej wiadomości');
     return ok({ ok: true });
+  }
+
+  // Dziennik zmian ustawień (tylko pełny dostęp — pokazuje wszystkie sekcje).
+  if (method === 'GET' && path === '/config/history') {
+    const items = await store.listConfigHistory(Math.min(Number(query.limit) || 30, 100));
+    return ok({ items: items.map((h) => ({ ...h, sections: [...new Set(h.keys.map(configKeyLabel))] })) });
+  }
+  const historyMatch = path.match(/^\/config\/history\/(\d+)$/);
+  if (method === 'GET' && historyMatch) {
+    const entry = await store.getConfigHistory(Number(historyMatch[1]));
+    return entry ? ok({ ...entry, sections: [...new Set(entry.keys.map(configKeyLabel))] }) : fail(404, 'Nie ma takiego wpisu w dzienniku.');
   }
 
   if (method === 'GET' && path === '/appeals') {
