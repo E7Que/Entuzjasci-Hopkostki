@@ -123,6 +123,7 @@
     .tab { padding: 8px 12px; border: 0; border-radius: 8px; background: none; color: var(--muted); font-weight: 500; cursor: pointer; }
     .tab:hover { color: var(--text); background: var(--surface); }
     .tab[aria-selected="true"] { color: var(--text); background: var(--surface-2); }
+    .tab .ts { display: none; }
     .search { position: relative; flex: 0 1 260px; }
     .search svg { position: absolute; left: 11px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%); color: var(--faint); pointer-events: none; }
     .search input { width: 100%; padding: 8px 12px 8px 34px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; }
@@ -341,6 +342,95 @@
 
     footer { margin-top: 40px; color: var(--faint); font-size: 0.82rem; text-align: center; }
 
+    /* ---------- Wydarzenie XP ---------- */
+    body { --evc: #ff4fa3; --evc2: #ffb3e6; }
+    body[data-ev="fire"] { --evc: #ff7a1a; --evc2: #ffc06b; }
+    body[data-ev="snow"] { --evc: #7cc8ff; --evc2: #d6f1ff; }
+    body[data-ev="stars"] { --evc: #f5c04a; --evc2: #ffe39a; }
+    body[data-ev="neon"] { --evc: #22e5c8; --evc2: #ff6fe4; }
+    body[data-ev-live] .blob.b1 { background: var(--evc); opacity: 0.16; }
+    body[data-ev-live] .blob.b2 { background: var(--evc2); opacity: 0.1; }
+    .fx { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .fx-top { position: fixed; inset: 0; z-index: 40; width: 100%; height: 100%; pointer-events: none; }
+
+    .event {
+      --e1: #ff4fa3; --e2: #8a5cff; --e3: #2ec5ff; --eg: #ffb3e6;
+      position: relative; isolation: isolate; overflow: hidden;
+      display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px 20px;
+      margin: 22px 0 0; padding: 18px 22px; border-radius: 14px; color: #fff;
+      background: linear-gradient(115deg, var(--e1), var(--e2) 55%, var(--e3));
+      box-shadow: 0 14px 44px -22px var(--e2);
+      animation: ev-in 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+    }
+    .event::before {
+      content: ''; position: absolute; inset: 0; z-index: -2;
+      background: radial-gradient(120% 160% at 0% 0%, rgba(255, 255, 255, 0.2), transparent 50%), linear-gradient(rgba(8, 6, 18, 0.3), rgba(8, 6, 18, 0.48));
+    }
+    .event::after {
+      content: ''; position: absolute; inset: -60% -30%; z-index: -1; pointer-events: none;
+      background: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.2) 50%, transparent 58%);
+      animation: ev-shine 5s ease-in-out infinite;
+    }
+    @keyframes ev-shine { 0%, 40% { transform: translateX(-55%); } 80%, 100% { transform: translateX(55%); } }
+    @keyframes ev-in { from { opacity: 0; transform: translateY(-10px) scale(0.98); } }
+    .ev-canvas { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none; }
+    .ev-mult {
+      position: relative; display: grid; place-content: center; width: 94px; height: 94px; padding: 0; border: 0; border-radius: 50%;
+      background: radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.07) 62%);
+      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.38), 0 0 34px -6px var(--eg);
+      color: #fff; text-align: center; cursor: pointer; animation: ev-pulse 2.6s ease-in-out infinite;
+    }
+    .ev-mult::before {
+      content: ''; position: absolute; inset: -7px; border-radius: 50%;
+      background: conic-gradient(from 0deg, transparent 0 12%, var(--eg) 25%, transparent 38% 62%, var(--eg) 75%, transparent 88%);
+      -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+      mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+      animation: spin 3.2s linear infinite;
+    }
+    .ev-mult b { display: block; font-size: 2.15rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35), 0 0 20px var(--eg); }
+    .ev-mult small { display: block; margin-top: 2px; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.18em; opacity: 0.92; }
+    @keyframes ev-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+    .ev-body { min-width: 0; }
+    .ev-kicker { display: inline-flex; align-items: center; gap: 8px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; opacity: 0.95; }
+    .ev-dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: ev-live 1.6s ease-out infinite; }
+    @keyframes ev-live { from { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.75); } 70%, to { box-shadow: 0 0 0 9px rgba(255, 255, 255, 0); } }
+    .ev-name { margin: 3px 0 2px; font-size: 1.5rem; font-weight: 700; line-height: 1.2; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3); overflow-wrap: anywhere; }
+    .ev-sub { font-size: 0.9rem; opacity: 0.9; }
+    .ev-side { display: grid; justify-items: end; gap: 10px; }
+    .ev-timer small { display: block; margin-bottom: 4px; text-align: right; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.85; }
+    .ev-clock { display: flex; align-items: baseline; gap: 3px; }
+    .ev-clock b { display: inline-block; min-width: 2.3ch; padding: 4px 5px; border-radius: 7px; background: rgba(0, 0, 0, 0.3); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.18); font-size: 1.35rem; font-weight: 700; line-height: 1.1; text-align: center; }
+    .ev-clock b.tick { animation: ev-tick 0.4s cubic-bezier(0.2, 0.8, 0.3, 1); }
+    @keyframes ev-tick { from { transform: translateY(-40%); opacity: 0.15; } }
+    .ev-clock i { margin-right: 5px; font-size: 0.72rem; font-style: normal; opacity: 0.8; }
+    .ev-cta { padding: 7px 13px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.42); background: rgba(255, 255, 255, 0.14); color: #fff; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+    .ev-cta:hover { background: rgba(255, 255, 255, 0.25); }
+    .ev-next { grid-column: 1 / -1; font-size: 0.82rem; opacity: 0.88; }
+
+    .event.t-fire { --e1: #6e0d02; --e2: #d93a0b; --e3: #ffb020; --eg: #ffc06b; }
+    .event.t-snow { --e1: #0f2658; --e2: #2f6fd0; --e3: #8fd3ff; --eg: #e2f6ff; }
+    .event.t-stars { --e1: #0b0a28; --e2: #33247a; --e3: #b8902a; --eg: #ffe39a; }
+    .event.t-neon { --e1: #021c21; --e2: #057a70; --e3: #b9179f; --eg: #6ffff0; }
+    .event.t-neon .ev-name, .event.t-neon .ev-mult b { text-shadow: 0 0 6px #6ffff0, 0 0 20px #ff3fd6; }
+    .event.t-neon .ev-clock b { box-shadow: inset 0 0 0 1px rgba(111, 255, 240, 0.45), 0 0 10px -2px rgba(111, 255, 240, 0.6); }
+
+    .event.upcoming, .event.ended { box-shadow: none; }
+    .event.upcoming { background: linear-gradient(115deg, color-mix(in srgb, var(--e1) 60%, #151b1e), color-mix(in srgb, var(--e2) 50%, #151b1e) 60%, color-mix(in srgb, var(--e3) 35%, #151b1e)); }
+    .event.ended { background: linear-gradient(115deg, color-mix(in srgb, var(--e1) 34%, #151b1e), color-mix(in srgb, var(--e2) 28%, #151b1e)); }
+    .event.upcoming .ev-mult, .event.ended .ev-mult { animation: none; cursor: default; }
+    .event.upcoming .ev-mult::before, .event.ended .ev-mult::before, .event.ended::after { display: none; }
+    .event.upcoming .ev-dot { animation: none; background: rgba(255, 255, 255, 0.75); }
+    .event.ended .ev-dot { display: none; }
+
+    .tab[data-period="event"] { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+    .tab[data-period="event"]::before { content: ''; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--evc); box-shadow: 0 0 8px var(--evc); }
+    body[data-ev-live] .tab[data-period="event"]::before { animation: ev-blink 1.4s ease-in-out infinite; }
+    @keyframes ev-blink { 50% { opacity: 0.35; } }
+    .board.ev-mode .top { border-top-color: var(--evc); box-shadow: 0 -10px 30px -22px var(--evc); }
+    .board.ev-mode .top.t1 { border-top-color: var(--gold); }
+    .board.ev-mode .num .plus { color: var(--evc2); }
+    .board.ev-mode .row.sel { box-shadow: inset 3px 0 0 var(--evc); }
+
     /* ---------- Telefony ---------- */
     @media (max-width: 720px) {
       main { padding-top: 12px; }
@@ -365,9 +455,22 @@
       .name { flex-direction: column; gap: 0; }
       .name .nick, .name .tag { max-width: 100%; }
       .board.grid .list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .event { grid-template-columns: auto minmax(0, 1fr); padding: 14px 14px 16px; gap: 10px 14px; }
+      .ev-mult { width: 70px; height: 70px; }
+      .ev-mult b { font-size: 1.6rem; }
+      .ev-mult small { font-size: 0.66rem; }
+      .ev-name { font-size: 1.15rem; }
+      .ev-sub { font-size: 0.84rem; }
+      .ev-side { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px; }
+      .ev-timer small { text-align: left; }
+      .ev-clock b { font-size: 1.15rem; }
+      .tab { font-size: 0.86rem; padding: 8px 4px; }
+      .tab .tl { display: none; }
+      .tab .ts { display: inline; }
     }
     @media (prefers-reduced-motion: reduce) {
       .skeleton, .pf-skel, .profile, .blob, .bg-grid, .saw svg, .cog svg, .pillar::after, .chev span, .dn.fx7 { animation: none; }
+      .event, .event::after, .ev-mult, .ev-mult::before, .ev-dot, .ev-clock b.tick, body[data-ev-live] .tab[data-period="event"]::before { animation: none; }
     }
   </style>
 </head>
@@ -408,11 +511,14 @@
       </div>
     </header>
 
+    <section class="event" id="event" hidden aria-label="Wydarzenie XP"></section>
+
     <nav class="toolbar" aria-label="Ranking">
       <div class="tabs" role="tablist">
         <button class="tab" role="tab" aria-selected="true" data-period="all">Cały czas</button>
-        <button class="tab" role="tab" aria-selected="false" data-period="week">Ten tydzień</button>
-        <button class="tab" role="tab" aria-selected="false" data-period="month">Ten miesiąc</button>
+        <button class="tab" role="tab" aria-selected="false" data-period="week"><span class="tl">Ten tydzień</span><span class="ts">Tydzień</span></button>
+        <button class="tab" role="tab" aria-selected="false" data-period="month"><span class="tl">Ten miesiąc</span><span class="ts">Miesiąc</span></button>
+        <button class="tab" role="tab" aria-selected="false" data-period="event" hidden>Wydarzenie</button>
       </div>
       <label class="search">
         <span class="sr-only">Szukaj osoby</span>
@@ -482,7 +588,7 @@
     const relative = new Intl.RelativeTimeFormat('pl', { numeric: 'auto' });
     const desktop = matchMedia('(min-width: 980px)');
     const FALLBACK_AVATAR = 'https://cdn.discordapp.com/embed/avatars/0.png';
-    const PERIODS = ['all', 'week', 'month'];
+    const PERIODS = ['all', 'week', 'month', 'event'];
     const PAGE = 50;
     const saved = {
       get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
@@ -706,8 +812,14 @@
 
     function renderNote() {
       const note = $('#note');
-      $('#xp-col').textContent = state.period === 'all' ? 'XP' : state.period === 'week' ? 'XP w tyg.' : 'XP w mies.';
+      $('#xp-col').textContent = { all: 'XP', week: 'XP w tyg.', month: 'XP w mies.', event: 'XP wydarz.' }[state.period] ?? 'XP';
       if (state.period === 'all') { note.hidden = true; return; }
+      if (state.period === 'event') {
+        const e = state.data?.event;
+        note.innerHTML = e ? `XP zdobyte w czasie wydarzenia <b>${esc(e.name)}</b> (${esc(whenText(e.startsAt))} – ${esc(whenText(e.endsAt))}) — już z mnożnikiem ${multText(e.multiplier)}.` : '';
+        note.hidden = !e;
+        return;
+      }
       const week = state.period === 'week';
       const now = new Date();
       const start = week ? nextWeekStart() - 7 * 86400000 : Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1);
@@ -720,6 +832,7 @@
       if (state.search) return '<li class="empty"><b>Nikogo nie znaleziono</b>Sprawdź pisownię pseudonimu albo nazwy użytkownika.</li>';
       if (state.period === 'week') return '<li class="empty"><b>Nikt jeszcze nie zdobył XP w tym tygodniu</b>Ranking zapełni się, gdy ktoś napisze na serwerze albo wejdzie na kanał głosowy.</li>';
       if (state.period === 'month') return '<li class="empty"><b>Nikt jeszcze nie zdobył XP w tym miesiącu</b></li>';
+      if (state.period === 'event') return '<li class="empty"><b>Nikt jeszcze nie zdobył XP w czasie wydarzenia</b>Napisz coś na serwerze albo wejdź na kanał głosowy — XP liczy się z mnożnikiem.</li>';
       return '<li class="empty"><b>Ranking jest pusty</b></li>';
     }
 
@@ -733,6 +846,7 @@
       const list = $('#list');
       const top3 = $('#top3');
       const table = list.closest('.table');
+      $('#board').classList.toggle('ev-mode', state.period === 'event');
       $('#found').hidden = !state.search;
       if (state.search) $('#found').innerHTML = `Wyniki dla „${esc(state.search)}”: <b>${fmt(state.total)}</b>`;
       if (appended) {
@@ -762,6 +876,7 @@
       $('#more').disabled = true;
       const params = new URLSearchParams({ period: state.period, offset: String(append ? state.entries.length : 0), limit: String(PAGE) });
       if (state.search) params.set('search', state.search);
+      if (state.period === 'event' && ev.pick?.ranked) params.set('event', ev.pick.ranked.id);
       try {
         const res = await fetch(`${BASE}/leaderboard?${params}`);
         const data = await res.json();
@@ -773,6 +888,8 @@
           return;
         }
         state.data = data;
+        if (data.period && data.period !== state.period) markPeriod(data.period);
+        if (!PREVIEW) setEvents(data.events);
         state.total = data.total ?? data.entries.length;
         state.entries = append ? state.entries.concat(data.entries) : data.entries;
         if (!state.metaDone) { renderMeta(data); state.metaDone = true; }
@@ -854,6 +971,7 @@
               ${loading ? '' : item('Ostatnio aktywny', p.lastActive ? esc(ago(p.lastActive)) : '—')}
               ${loading ? '' : item('Ten tydzień', period(s.weekXp, s.weekRank))}
               ${loading ? '' : item('Ten miesiąc', period(s.monthXp, s.monthRank))}
+              ${loading || !s.event ? '' : item(`<span title="${esc(s.event.name)}">Wydarzenie XP</span>`, period(s.event.xp, s.event.rank))}
             </dl>`}
           </div>
 
@@ -947,6 +1065,361 @@
       setUrlUser(null);
     }
 
+    // ---------- Wydarzenia XP: baner, odliczanie i animacje ----------
+    const EV_KINDS = { message: 'wiadomości', voice: 'kanały głosowe', reaction: 'reakcje' };
+    const multText = (m) => `×${String(m).replace('.', ',')}`;
+    const listPl = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} i ${items.at(-1)}` : items[0] ?? '');
+    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+    const PREVIEW = ['confetti', 'fire', 'snow', 'stars', 'neon'].includes(new URLSearchParams(location.search).get('preview'))
+      ? new URLSearchParams(location.search).get('preview')
+      : null;
+    const ev = { events: null, pick: null, key: '', back: null, banner: null, top: null };
+
+    function evStatus(e, now = Date.now()) {
+      return now < Date.parse(e.startsAt) ? 'upcoming' : now < Date.parse(e.endsAt) ? 'active' : 'ended';
+    }
+    // Co pokazać: trwające (z zapowiedzią następnego), zaplanowane (z wynikami poprzedniego) albo zakończone.
+    function pickEvent(events) {
+      const list = [events?.current, events?.next, events?.last].filter(Boolean);
+      const by = (s) => list.filter((e) => evStatus(e) === s);
+      const active = by('active').sort((a, b) => b.multiplier - a.multiplier)[0];
+      const upcoming = by('upcoming').sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt))[0];
+      const ended = by('ended').sort((a, b) => Date.parse(b.endsAt) - Date.parse(a.endsAt))[0];
+      if (active) return { e: active, status: 'active', next: upcoming ?? null, ranked: active };
+      if (upcoming) return { e: upcoming, status: 'upcoming', next: null, ranked: ended ?? null };
+      if (ended) return { e: ended, status: 'ended', next: null, ranked: ended };
+      return null;
+    }
+    const whenText = (iso) => new Date(iso).toLocaleString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+
+    function eventHtml(p) {
+      const { e, status } = p;
+      const kinds = listPl(e.kinds.map((k) => EV_KINDS[k]).filter(Boolean));
+      const kicker = { active: 'Trwa wydarzenie XP', upcoming: 'Wkrótce wydarzenie XP', ended: 'Wydarzenie XP zakończone' }[status];
+      const sub = status === 'ended' ? `${multText(e.multiplier)} XP za ${kinds} · koniec ${esc(whenText(e.endsAt))}` : status === 'upcoming' ? `${multText(e.multiplier)} XP za ${kinds} · start ${esc(whenText(e.startsAt))}` : `${multText(e.multiplier)} XP za ${kinds}`;
+      const target = Date.parse(status === 'active' ? e.endsAt : e.startsAt);
+      const timer = status === 'ended' ? '' : `<div class="ev-timer"><small>${status === 'active' ? 'Koniec za' : 'Start za'}</small><div class="ev-clock" data-target="${target}"><b data-u="d">00</b><i>d</i><b data-u="h">00</b><i>h</i><b data-u="m">00</b><i>min</i><b data-u="s">00</b><i>s</i></div></div>`;
+      const cta = p.ranked && !PREVIEW
+        ? `<button type="button" class="ev-cta" data-ev-go>${status === 'active' ? 'Ranking wydarzenia' : status === 'ended' ? 'Wyniki wydarzenia' : 'Wyniki poprzedniego'} →</button>`
+        : '';
+      const next = p.next ? `<div class="ev-next">Następne: <b>${esc(p.next.name)}</b> (${multText(p.next.multiplier)} XP) — ${esc(whenText(p.next.startsAt))}</div>` : '';
+      return `<canvas class="ev-canvas" aria-hidden="true"></canvas>
+        <button type="button" class="ev-mult" aria-label="Mnożnik XP ${multText(e.multiplier)}"${status === 'active' ? ' title="Jeszcze raz!"' : ''}><b>${multText(e.multiplier)}</b><small>XP</small></button>
+        <div class="ev-body"><div class="ev-kicker"><i class="ev-dot"></i>${kicker}</div><h2 class="ev-name">${esc(e.name)}</h2><div class="ev-sub">${sub}</div></div>
+        <div class="ev-side">${timer}${cta}</div>${next}`;
+    }
+
+    function clockTick() {
+      document.querySelectorAll('.ev-clock[data-target]').forEach((clock) => {
+        const s = Math.max(0, Math.floor((Number(clock.dataset.target) - Date.now()) / 1000));
+        const parts = { d: Math.floor(s / 86400), h: Math.floor((s % 86400) / 3600), m: Math.floor((s % 3600) / 60), s: s % 60 };
+        for (const [unit, value] of Object.entries(parts)) {
+          const b = clock.querySelector(`[data-u="${unit}"]`);
+          const text = String(value).padStart(2, '0');
+          if (!b || b.textContent === text) continue;
+          b.textContent = text;
+          if (reduceMotion.matches) continue;
+          b.classList.remove('tick');
+          void b.offsetWidth;
+          b.classList.add('tick');
+        }
+      });
+      // Start albo koniec wydarzenia przy otwartej stronie — przełączamy widok bez przeładowania.
+      if (ev.pick && evStatus(ev.pick.e) !== ev.pick.status) renderEvent();
+    }
+    setInterval(clockTick, 1000);
+
+    function setEvents(events) {
+      ev.events = events ?? null;
+      renderEvent();
+    }
+
+    function renderEvent() {
+      const box = $('#event');
+      const pick = pickEvent(ev.events);
+      ev.pick = pick;
+      const key = pick ? `${pick.e.id}:${pick.status}:${pick.ranked?.id ?? ''}:${pick.next?.id ?? ''}:${pick.e.endsAt}:${pick.e.name}:${pick.e.multiplier}:${pick.e.theme}` : '';
+      const tab = $('.tab[data-period="event"]');
+      tab.hidden = !pick?.ranked || Boolean(PREVIEW);
+      if (tab.hidden && state.period === 'event') selectPeriod('all');
+      if (key === ev.key) return;
+      const wasActive = ev.key.includes(':active:');
+      ev.key = key;
+      stopFx();
+      if (!pick) {
+        box.hidden = true;
+        box.innerHTML = '';
+        delete document.body.dataset.ev;
+        delete document.body.dataset.evLive;
+        return;
+      }
+      const theme = ['confetti', 'fire', 'snow', 'stars', 'neon'].includes(pick.e.theme) ? pick.e.theme : 'confetti';
+      box.className = `event t-${theme} ${pick.status}`;
+      box.innerHTML = eventHtml(pick);
+      box.hidden = false;
+      document.body.dataset.ev = theme;
+      if (pick.status === 'active') document.body.dataset.evLive = '';
+      else delete document.body.dataset.evLive;
+      clockTick();
+      if (pick.status !== 'active' || reduceMotion.matches) return;
+      // Animacje: cząsteczki w banerze i w tle strony, a przy pierwszej wizycie (albo starcie na żywo) — wybuch.
+      ev.banner = particles(box.querySelector('.ev-canvas'), theme, { ambient: { confetti: 14, fire: 26, snow: 34, stars: 30, neon: 10 }[theme] });
+      const back = document.createElement('canvas');
+      back.className = 'fx';
+      $('.bg').append(back);
+      ev.back = particles(back, theme, { ambient: { confetti: 26, fire: 42, snow: 70, stars: 64, neon: 18 }[theme] });
+      const seenKey = `ev-burst-${pick.e.id}`;
+      if (PREVIEW || saved.get(seenKey) !== '1' || (ev.started && !wasActive)) {
+        saved.set(seenKey, '1');
+        setTimeout(burst, 350);
+      }
+      ev.started = true;
+    }
+
+    function burst() {
+      if (!ev.pick || ev.pick.status !== 'active' || reduceMotion.matches) return;
+      ev.top?.destroy();
+      const canvas = document.createElement('canvas');
+      canvas.className = 'fx-top';
+      canvas.setAttribute('aria-hidden', 'true');
+      document.body.append(canvas);
+      const theme = document.body.dataset.ev;
+      ev.top = particles(canvas, theme, { onDone: () => { canvas.remove(); ev.top = null; } });
+      ev.top.burst();
+    }
+
+    function stopFx() {
+      for (const k of ['banner', 'back', 'top']) {
+        ev[k]?.destroy();
+        ev[k] = null;
+      }
+      document.querySelectorAll('.bg .fx, .fx-top').forEach((c) => c.remove());
+    }
+
+    // ---------- Silnik cząsteczek (canvas) ----------
+    const FX_COLORS = {
+      confetti: ['#ff4fa3', '#8a5cff', '#2ec5ff', '#ffd23f', '#5dffb0', '#ff8a3d'],
+      fire: ['#ffe066', '#ffb020', '#ff7a1a', '#ff4d12'],
+      snow: ['#ffffff', '#eaf7ff', '#d3ecff'],
+      stars: ['#fff7d6', '#ffe39a', '#ffffff', '#d9ccff'],
+      neon: ['#22e5c8', '#ff3fd6', '#6ffff0', '#b45cff'],
+    };
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    const pickOne = (list) => list[Math.floor(Math.random() * list.length)];
+    const TAU = Math.PI * 2;
+    // Miękka, świecąca kropka (iskry, gwiazdy, płatki śniegu) — rysowana raz na kolor i potem tylko skalowana.
+    const glowCache = new Map();
+    function glowSprite(color) {
+      if (!glowCache.has(color)) {
+        const n = parseInt(color.slice(1), 16);
+        const rgba = (a) => `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+        const c = document.createElement('canvas');
+        c.width = c.height = 64;
+        const g = c.getContext('2d');
+        const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+        grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        grad.addColorStop(0.16, rgba(1));
+        grad.addColorStop(0.42, rgba(0.32));
+        grad.addColorStop(1, rgba(0));
+        g.fillStyle = grad;
+        g.fillRect(0, 0, 64, 64);
+        glowCache.set(color, c);
+      }
+      return glowCache.get(color);
+    }
+
+    function particles(canvas, theme, { ambient = 0, onDone = null } = {}) {
+      const ctx = canvas.getContext('2d');
+      const colors = FX_COLORS[theme] ?? FX_COLORS.confetti;
+      let w = 0, h = 0, raf = 0, last = 0, list = [], dead = false, filled = false;
+      const fit = () => {
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        w = canvas.clientWidth;
+        h = canvas.clientHeight;
+        canvas.width = Math.max(1, Math.round(w * dpr));
+        canvas.height = Math.max(1, Math.round(h * dpr));
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      };
+      const radial = (x, y, speed, extra) => { const a = rnd(0, TAU), v = rnd(...speed); return { x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, ...extra }; };
+      // Nowa cząsteczka: burst = wybuch, inaczej spokojne tło. side — strona „armatki” konfetti.
+      const make = (burst, side = 0) => {
+        switch (theme) {
+          case 'fire':
+            return burst
+              ? { t: 'ember', x: rnd(0, w), y: h + rnd(0, 30), vx: rnd(-1.6, 1.6), vy: rnd(-14, -5), g: 0.1, drag: 0.985, r: rnd(1.4, 3.8), life: rnd(70, 150) }
+              : { t: 'ember', x: rnd(0, w), y: h + rnd(0, 40), vx: rnd(-0.3, 0.3), vy: rnd(-1.8, -0.5), g: -0.004, r: rnd(0.8, 2.6), life: rnd(220, 460), sway: rnd(0, TAU), amp: rnd(0.2, 0.7) };
+          case 'snow':
+            return burst
+              ? { t: 'flake', x: rnd(-w * 0.4, w), y: rnd(-h * 0.5, -10), vx: rnd(2, 6.5), vy: rnd(2, 5.5), drag: 0.998, r: rnd(1.5, 4.2), a: rnd(0.6, 1), life: rnd(170, 280) }
+              : { t: 'flake', x: rnd(0, w), y: rnd(-40, -8), vx: rnd(-0.25, 0.25), vy: rnd(0.35, 1.2), r: rnd(0.8, 3.2), a: rnd(0.35, 0.9), sway: rnd(0, TAU), amp: rnd(0.2, 0.7) };
+          case 'stars':
+            if (!burst) return { t: 'twinkle', x: rnd(0, w), y: rnd(0, h), vx: 0, vy: 0, r: rnd(0.6, 2.3), ph: rnd(0, TAU), sp: rnd(0.02, 0.07), life: rnd(400, 900) };
+            return Math.random() < 0.22
+              ? { t: 'comet', x: rnd(w * 0.3, w * 1.15), y: rnd(-60, h * 0.35), vx: rnd(-15, -9), vy: rnd(5, 9), life: rnd(45, 80) }
+              : radial(w / 2, h * 0.3, [2, 10], { t: 'spark', g: 0.06, drag: 0.975, r: rnd(1.5, 3.6), life: rnd(80, 160) });
+          case 'neon':
+            if (!burst) return { t: 'shape', x: rnd(0, w), y: h + rnd(0, 50), vx: rnd(-0.2, 0.2), vy: rnd(-0.9, -0.3), s: rnd(3, 8), k: Math.floor(rnd(0, 3)), life: rnd(300, 700), sway: rnd(0, TAU), amp: rnd(0.2, 0.5), vr: rnd(-0.03, 0.03) };
+            return Math.random() < 0.07
+              ? { t: 'ring', x: w / 2, y: h * 0.4, vx: 0, vy: 0, r: rnd(4, 24), grow: rnd(5, 9), life: rnd(60, 95) }
+              : radial(w / 2, h * 0.4, [3, 12], { t: 'shape', g: 0.05, drag: 0.97, s: rnd(4, 9), k: Math.floor(rnd(0, 3)), life: rnd(70, 140), vr: rnd(-0.15, 0.15) });
+          default:
+            return burst
+              ? { t: 'paper', x: side ? w + 10 : -10, y: h * rnd(0.55, 0.9), vx: (side ? -1 : 1) * rnd(4, 14), vy: rnd(-18, -7), g: 0.32, drag: 0.982, life: rnd(160, 260), vr: rnd(-0.3, 0.3), s: rnd(6, 10) }
+              : { t: 'paper', x: rnd(0, w), y: rnd(-60, -10), vx: rnd(-0.4, 0.4), vy: rnd(0.7, 1.6), sway: rnd(0, TAU), amp: rnd(0.3, 0.9), vr: rnd(-0.05, 0.05), s: rnd(5, 9) };
+        }
+      };
+      const add = (p, amb) => list.push({ g: 0, drag: 1, life: Infinity, rot: rnd(0, TAU), vr: 0, c: pickOne(colors), age: 0, amb, ...p });
+      // Tło strony: liczba cząsteczek zależna od wielkości ekranu; baner: stała.
+      const target = () => Math.round(ambient * (canvas.classList.contains('ev-canvas') ? 1 : Math.min(1.3, Math.max(0.45, (w * h) / (1366 * 768)))));
+      function fillAmbient() {
+        let have = 0;
+        for (const p of list) if (p.amb) have += 1;
+        const want = target();
+        for (let i = have; i < want; i++) {
+          const p = make(false);
+          if (!filled && p.t !== 'twinkle') p.y = rnd(0, h);
+          add(p, true);
+        }
+        filled = true;
+      }
+      function draw(p, alpha) {
+        ctx.globalAlpha = alpha;
+        switch (p.t) {
+          case 'paper': {
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot);
+            ctx.scale(1, Math.cos(p.age * 0.11 + (p.sway ?? 0)));
+            ctx.fillStyle = p.c;
+            ctx.fillRect(-p.s / 2, -p.s * 0.7, p.s, p.s * 1.4);
+            ctx.restore();
+            break;
+          }
+          case 'ember':
+          case 'spark': {
+            // Iskry migoczą; „lighter” — nakładające się świecą mocniej.
+            if (p.t === 'ember') ctx.globalAlpha = alpha * (0.7 + 0.3 * Math.sin(p.age * 0.35 + (p.sway ?? p.rot)));
+            ctx.globalCompositeOperation = 'lighter';
+            const size = p.r * 7;
+            ctx.drawImage(glowSprite(p.c), p.x - size / 2, p.y - size / 2, size, size);
+            ctx.globalCompositeOperation = 'source-over';
+            break;
+          }
+          case 'flake': {
+            const size = p.r * 3.6;
+            ctx.drawImage(glowSprite(p.c), p.x - size / 2, p.y - size / 2, size, size);
+            break;
+          }
+          case 'twinkle': {
+            ctx.globalAlpha = alpha * (0.3 + 0.7 * Math.abs(Math.sin(p.age * p.sp + p.ph)));
+            ctx.fillStyle = p.c;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.fill();
+            if (p.r > 1.5) {
+              ctx.strokeStyle = p.c;
+              ctx.lineWidth = 0.7;
+              ctx.beginPath();
+              ctx.moveTo(p.x - p.r * 3.5, p.y); ctx.lineTo(p.x + p.r * 3.5, p.y);
+              ctx.moveTo(p.x, p.y - p.r * 3.5); ctx.lineTo(p.x, p.y + p.r * 3.5);
+              ctx.stroke();
+            }
+            break;
+          }
+          case 'comet': {
+            const tail = ctx.createLinearGradient(p.x, p.y, p.x - p.vx * 7, p.y - p.vy * 7);
+            tail.addColorStop(0, '#ffffff');
+            tail.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.strokeStyle = tail;
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 7, p.y - p.vy * 7); ctx.stroke();
+            break;
+          }
+          case 'shape': {
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot);
+            ctx.strokeStyle = p.c;
+            ctx.lineWidth = 1.6;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = p.c;
+            ctx.beginPath();
+            if (p.k === 0) ctx.arc(0, 0, p.s, 0, TAU);
+            else if (p.k === 1) ctx.rect(-p.s, -p.s, p.s * 2, p.s * 2);
+            else { ctx.moveTo(0, -p.s * 1.15); ctx.lineTo(p.s, p.s * 0.75); ctx.lineTo(-p.s, p.s * 0.75); ctx.closePath(); }
+            ctx.stroke();
+            ctx.restore();
+            break;
+          }
+          case 'ring': {
+            ctx.save();
+            ctx.strokeStyle = p.c;
+            ctx.lineWidth = 2.2;
+            ctx.shadowBlur = 16;
+            ctx.shadowColor = p.c;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.stroke();
+            ctx.restore();
+            break;
+          }
+        }
+      }
+      function frame(now) {
+        raf = 0;
+        if (dead) return;
+        const dt = last ? Math.min((now - last) / 16.67, 3) : 1;
+        last = now;
+        ctx.clearRect(0, 0, w, h);
+        list = list.filter((p) => {
+          p.age += dt;
+          const drag = p.drag === 1 ? 1 : p.drag ** dt;
+          p.vx *= drag;
+          p.vy = p.vy * drag + p.g * dt;
+          p.x += (p.vx + (p.amp ? Math.sin(p.age * 0.03 + p.sway) * p.amp : 0)) * dt;
+          p.y += p.vy * dt;
+          p.rot += p.vr * dt;
+          if (p.grow) p.r += p.grow * dt * 0.6;
+          const gone = p.age > p.life || p.y > h + 60 || p.x < -120 || p.x > w + 120 || (p.g <= 0 && p.vy < 0 && p.y < -60);
+          if (gone) return false;
+          const fadeIn = Math.min(1, p.age / (p.amb ? 30 : 6));
+          const fadeOut = Number.isFinite(p.life) ? Math.min(1, (p.life - p.age) / 40) : 1;
+          draw(p, Math.max(0, Math.min(fadeIn, fadeOut)) * (p.a ?? 1));
+          return true;
+        });
+        ctx.globalAlpha = 1;
+        if (ambient) fillAmbient();
+        if (list.length) raf = requestAnimationFrame(frame);
+        else if (!ambient) { destroy(); onDone?.(); }
+      }
+      const run = () => { if (!raf && !dead && !document.hidden) { last = 0; raf = requestAnimationFrame(frame); } };
+      const onVisible = () => (document.hidden ? (cancelAnimationFrame(raf), (raf = 0)) : run());
+      const ro = new ResizeObserver(() => fit());
+      function destroy() {
+        dead = true;
+        cancelAnimationFrame(raf);
+        raf = 0;
+        ro.disconnect();
+        document.removeEventListener('visibilitychange', onVisible);
+      }
+      fit();
+      ro.observe(canvas);
+      document.addEventListener('visibilitychange', onVisible);
+      if (ambient) { fillAmbient(); run(); }
+      return {
+        burst() {
+          const n = Math.round({ confetti: 150, fire: 140, snow: 170, stars: 110, neon: 100 }[theme] ?? 120);
+          for (let i = 0; i < n; i++) add(make(true, i % 2), false);
+          run();
+        },
+        destroy,
+      };
+    }
+
+    $('#event').addEventListener('click', (event) => {
+      if (event.target.closest('[data-ev-go]')) {
+        selectPeriod('event');
+        $('.toolbar').scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start' });
+      } else if (event.target.closest('.ev-mult')) burst();
+    });
+
     // ---------- Zdarzenia ----------
     function setView(view) {
       state.view = view;
@@ -957,15 +1430,17 @@
     document.querySelectorAll('.views button').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
     setView(state.view);
 
-    document.querySelectorAll('.tab').forEach((tab) => {
-      tab.addEventListener('click', () => {
-        if (tab.dataset.period === state.period) return;
-        state.period = tab.dataset.period;
-        document.querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
-        try { history.replaceState(null, '', `${location.pathname}${location.search}${state.period === 'all' ? '' : `#${state.period}`}`); } catch {}
-        load();
-      });
-    });
+    function markPeriod(period) {
+      state.period = period;
+      document.querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.period === period)));
+      try { history.replaceState(null, '', `${location.pathname}${location.search}${period === 'all' ? '' : `#${period}`}`); } catch {}
+    }
+    function selectPeriod(period) {
+      if (period === state.period) return;
+      markPeriod(period);
+      load();
+    }
+    document.querySelectorAll('.tab').forEach((tab) => tab.addEventListener('click', () => selectPeriod(tab.dataset.period)));
     let debounce;
     $('#search').addEventListener('input', (event) => {
       clearTimeout(debounce);
@@ -1018,7 +1493,8 @@
     }, true);
 
     const initial = location.hash.slice(1);
-    if (PERIODS.includes(initial) && initial !== 'all') document.querySelector(`.tab[data-period="${initial}"]`).click();
+    if (PREVIEW) setEvents({ current: { id: `preview-${PREVIEW}`, name: 'Podgląd animacji wydarzenia', multiplier: 2, startsAt: new Date(Date.now() - 3600e3).toISOString(), endsAt: new Date(Date.now() + 2 * 86400e3 + 5 * 3600e3 + 42e3).toISOString(), kinds: ['message', 'voice', 'reaction'], theme: PREVIEW } });
+    if (PERIODS.includes(initial) && initial !== 'all') selectPeriod(initial);
     else load();
     const linked = new URLSearchParams(location.search).get('u');
     if (linked) openProfile(linked);

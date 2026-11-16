@@ -731,6 +731,7 @@ function renderChannelSelects() {
         inherit: 'Jak kanał domyślny',
         bump: 'Kanał, na którym ktoś użył /bump',
         modlog: 'Jak kanał logów moderacji',
+        levelup: 'Jak kanał awansów',
       }[kind] ?? 'Kanał, na którym użyto komendy';
     let html = `<option value="">${emptyLabel}</option>`;
     html += list
@@ -1629,7 +1630,85 @@ function renderLevels() {
   if (!$('#levels-test-channel').options.length) $('#levels-test-channel').innerHTML = channelOptions(state.guild.channels, lv.levelUp.channelId ?? '', '— kanał testu —', '#');
   const link = $('#levels-public-link');
   link.href = new URL('ranking.html', location.href).href;
+  renderXpEvents();
 }
+
+// ---------- Wydarzenia XP ----------
+const EV_THEMES = { confetti: '🎉 Konfetti', fire: '🔥 Ogień', snow: '❄️ Śnieg', stars: '✨ Gwiazdy', neon: '⚡ Neon' };
+const EV_KINDS = { message: 'wiadomości', voice: 'głosowe', reaction: 'reakcje' };
+const evMult = (m) => `×${String(m).replace('.', ',')}`;
+const evDate = (ms) => new Date(ms).toLocaleString('pl-PL', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+function localInput(ms) {
+  const d = new Date(ms);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function renderXpEvents() {
+  const events = state.draft?.levels?.events ?? [];
+  const now = Date.now();
+  if (!$('#ev-start').value) {
+    const start = Math.ceil(now / 3600000) * 3600000;
+    $('#ev-start').value = localInput(start);
+    $('#ev-end').value = localInput(start + 48 * 3600000);
+  }
+  $('#ev-list').innerHTML = events.length
+    ? events
+        .map((e, i) => {
+          const start = Date.parse(e.startsAt);
+          const end = Date.parse(e.endsAt);
+          const [label, cls] = now < start ? ['Zaplanowane', 'planned'] : now < end ? ['Trwa', 'live'] : ['Zakończone', 'done'];
+          return `<div class="ev-item ${cls}">
+            <div class="ev-main">
+              <div><strong>${esc(e.name)}</strong> <span class="ev-badge">${evMult(e.multiplier)}</span> <span class="ev-status">${label}</span></div>
+              <div class="muted small">${esc(evDate(start))} – ${esc(evDate(end))} · ${e.kinds.map((k) => EV_KINDS[k]).join(', ')} · ${EV_THEMES[e.theme] ?? ''}</div>
+            </div>
+            <div class="ev-actions">
+              ${cls === 'live' ? `<button type="button" class="btn ghost small" data-ev-end="${i}">Zakończ teraz</button>` : ''}
+              <button type="button" class="btn danger small" data-lv-del="events" data-i="${i}">Usuń</button>
+            </div>
+          </div>`;
+        })
+        .join('')
+    : '<span class="muted small">Brak wydarzeń — dodaj pierwsze obok.</span>';
+}
+$('#ev-theme').addEventListener('change', () => {
+  $('#ev-preview').href = `ranking.html?preview=${encodeURIComponent($('#ev-theme').value)}`;
+});
+$('#ev-add').addEventListener('click', () => {
+  const start = Date.parse($('#ev-start').value);
+  const end = Date.parse($('#ev-end').value);
+  const kinds = Object.keys(EV_KINDS).filter((k) => $(`#ev-k-${k}`).checked);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return toast('Podaj początek i koniec wydarzenia.', 'error');
+  if (end <= start) return toast('Koniec musi być po początku.', 'error');
+  if (end - start > 31 * 86400000) return toast('Wydarzenie może trwać najwyżej 31 dni.', 'error');
+  if (end <= Date.now()) return toast('Ten termin już minął.', 'error');
+  if (!kinds.length) return toast('Zaznacz, za co XP ma być mnożone.', 'error');
+  if ((state.draft.levels.events ?? []).length >= 50) return toast('Za dużo wydarzeń — usuń stare.', 'error');
+  const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  addLevelsItem('events', {
+    id,
+    name: $('#ev-name').value.trim() || 'Wydarzenie XP',
+    multiplier: Number($('#ev-mult').value),
+    startsAt: new Date(start).toISOString(),
+    endsAt: new Date(end).toISOString(),
+    kinds,
+    theme: $('#ev-theme').value,
+  });
+  state.draft.levels.events.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+  $('#ev-name').value = '';
+  renderLevels();
+  toast('Dodano wydarzenie — zapisz zmiany (przycisk na dole ekranu).');
+});
+$('#ev-list').addEventListener('click', (event) => {
+  const btn = event.target.closest('[data-ev-end]');
+  if (!btn) return;
+  const e = state.draft.levels.events[Number(btn.dataset.evEnd)];
+  if (!e) return;
+  e.endsAt = new Date(Math.max(Date.now(), Date.parse(e.startsAt) + 60000)).toISOString();
+  renderLevels();
+  markDirty();
+  toast('Zapisz zmiany, żeby zakończyć wydarzenie.');
+});
 
 function addLevelsItem(path, item) {
   setPath(state.draft, `levels.${path}`, [...getPath(state.draft, `levels.${path}`), item]);
