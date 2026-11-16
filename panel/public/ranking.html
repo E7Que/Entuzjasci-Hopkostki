@@ -652,6 +652,9 @@
       .top3 { --pad: 27px; --apex: 90px; gap: 0 5px; padding: var(--pad) 8px 0; }
       .top3.is3d { height: 350px; padding: 0; gap: 0; }
       .top3.is3d .top .tag { display: none; }
+      /* Tag serwera w podium na wąskim ekranie: sama ikonka (bez napisu), żeby nie ucinać nicku. */
+      .top3.is3d .top .gtag { font-size: 0; gap: 0; padding: 0 3px; }
+      .top3.is3d .top .gtag:not(:has(img)) { display: none; }
       .top3.is3d .pod-person { width: 32%; padding: 2px 1px; }
       .top3.is3d .top.t1 .pod-person { width: 35%; }
       .top { --avs: 52px; --ph: 62px; --num: 2rem; --lamp: 30px; }
