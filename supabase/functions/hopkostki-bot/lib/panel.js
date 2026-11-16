@@ -7,7 +7,7 @@ import { cached, getApp, getGuildContext, unbanUser, sendModLog, describeError, 
 import { avatarUrl, guildIconUrl, DiscordError } from './rest.js';
 import { simpleEmbed } from './embeds.js';
 import { ensureSetup } from './cron.js';
-import { COMMAND_META, fillCommandPermissions } from './commands.js';
+import { COMMANDS, COMMAND_META, fillCommandPermissions } from './commands.js';
 import { P, has, highestPosition, memberPermissions, permissionLabel } from './permissions.js';
 import { sendPanelMessage, editPanelMessage, deletePanelMessage } from './messages.js';
 import { sendTicketPanel, closeTicket } from './tickets.js';
@@ -16,6 +16,8 @@ import { endGiveaway } from './community.js';
 import { PANEL_SECTIONS, PASSWORD_AUTH, SECTION_CONFIG_KEYS, allowedConfigInput, sectionAccess } from './access.js';
 import { activeXpEvent, changeXp, dayKey, importLevels, levelProgress, levelUpMessage, parseImport } from './levels.js';
 import { alertChannel, sendAlertTest } from './health.js';
+import { commandIdMap, fillServerInfoSections, saveBannerAsset, sendServerInfo, suggestServerInfoRoles } from './serverInfo.js';
+import { sanitizeConfig } from './configSchema.js';
 
 // Wersja kodu: funkcja na Supabase importuje bota z GitHuba pod adresem z pełnym SHA commita.
 const SOURCE_SHA = (import.meta.url.match(/\/([0-9a-f]{40})\//) ?? [])[1] ?? null;
@@ -61,6 +63,7 @@ const ROUTE_SECTIONS = [
   [/^\/voice(\/|$)/, 'glosowe'],
   [/^\/messages(\/|$)/, 'wiadomosci'],
   [/^\/(cases|appeals)$/, 'sprawy'],
+  [/^\/serverinfo(\/|$)/, 'serwerinfo'],
   [/^\/warns(\/|$)/, 'ostrzezenia'],
   [/^\/tempbans(\/|$)/, 'bany'],
   [/^\/levels(\/|$)/, 'poziomy'],
@@ -383,6 +386,43 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
   if (method === 'GET' && historyMatch) {
     const entry = await store.getConfigHistory(Number(historyMatch[1]));
     return entry ? ok({ ...entry, sections: [...new Set(entry.keys.map(configKeyLabel))] }) : fail(404, 'Nie ma takiego wpisu w dzienniku.');
+  }
+
+  // ---------- Serwer info ----------
+  if (method === 'GET' && path === '/serverinfo') {
+    // Komendy bota dostępne dla wszystkich (z podkomendami) — podpowiedzi w edytorze.
+    const commands = COMMANDS.filter((c) => !c.permission).flatMap((c) => {
+      const subs = (c.data.options ?? []).filter((o) => o.type === 1);
+      return subs.length ? subs.map((s) => ({ name: `${c.data.name} ${s.name}`, description: s.description })) : [{ name: c.data.name, description: c.data.description }];
+    });
+    // ID komend na serwerze — podgląd pokazuje klikalne komendy tak jak na Discordzie.
+    const commandIds = bot.discord ? await commandIdMap(bot).catch(() => ({})) : {};
+    const guildId = bot.discord ? ((await getGuildContext(bot).catch(() => null))?.guild.id ?? null) : null;
+    return ok({ posted: await store.getState('server_info_message'), commands, commandIds, guildId });
+  }
+  if (method === 'POST' && path === '/serverinfo/send') {
+    if (!bot.discord) return fail(503, 'Bot nie jest skonfigurowany (brak DISCORD_TOKEN).');
+    return attempt(async () => ({ result: await sendServerInfo(bot, { channelId: String(body?.channelId ?? ''), asNew: body?.asNew === true }) }));
+  }
+  if (method === 'POST' && path === '/serverinfo/fill') {
+    if (!bot.discord) return fail(503, 'Bot nie jest skonfigurowany (brak DISCORD_TOKEN).');
+    return attempt(async () => {
+      const before = await store.getConfig();
+      const gctx = await getGuildContext(bot, { force: true });
+      const suggestion = suggestServerInfoRoles(gctx, before);
+      // Bez save: uzupełnia przysłany szkic z panelu (zapisuje się go potem paskiem zapisu); save: true — od razu zapis.
+      if (body?.save !== true) {
+        const draft = Array.isArray(body?.sections) ? sanitizeConfig({ serverInfo: { sections: body.sections } }, before).serverInfo.sections : before.serverInfo.sections;
+        return fillServerInfoSections(draft, suggestion);
+      }
+      const { sections, added } = fillServerInfoSections(before.serverInfo.sections, suggestion);
+      const config = await store.updateConfig({ serverInfo: { sections } });
+      await store.addConfigHistory({ changedBy: auth.user?.tag ?? 'hasło panelu', changes: configChanges(before, config) }).catch(() => {});
+      return { config, added };
+    });
+  }
+  if (method === 'POST' && path === '/serverinfo/banner') {
+    return attempt(async () => saveBannerAsset(bot, body?.data));
   }
 
   if (method === 'GET' && path === '/appeals') {

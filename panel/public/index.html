@@ -61,6 +61,7 @@
         <a href="#tickety" data-view="tickety"><span>Tickety</span></a>
         <a href="#glosowe" data-view="glosowe"><span>Kanały głosowe</span></a>
         <a href="#wiadomosci" data-view="wiadomosci"><span>Wiadomości</span></a>
+        <a href="#serwerinfo" data-view="serwerinfo"><span>Serwer info</span></a>
         <a href="#embedy" data-view="embedy"><span>Wygląd embedów</span></a>
         <a href="#ostrzezenia" data-view="ostrzezenia"><span>Ostrzeżenia</span></a>
         <a href="#sprawy" data-view="sprawy"><span>Sprawy</span></a>
@@ -950,6 +951,48 @@
         </div>
       </section>
 
+      <!-- SERWER INFO -->
+      <section id="view-serwerinfo" class="view">
+        <header class="view-head">
+          <h2>Serwer info</h2>
+          <p class="muted">Wiadomość z informacjami dla społeczności: od góry role, potem role za poziomy, na końcu komendy. Każda sekcja to osobny embed, a nad nim może być baner. Zmiany zapisujesz paskiem na dole — na Discord trafiają dopiero po kliknięciu „Wyślij na kanał”.</p>
+        </header>
+        <div class="grid editor">
+          <div class="si-editor">
+            <div class="card">
+              <div class="card-head"><h3>Wiadomość</h3></div>
+              <div class="grid two tight">
+                <label class="field"><span>Kanał</span><select data-path="serverInfo.channelId" data-channel-select="pick"></select></label>
+                <label class="field"><span>Kolor embedów</span>
+                  <div class="color-row"><input type="color" data-color-for="serverInfo.color"><input type="text" data-path="serverInfo.color" maxlength="7"></div>
+                </label>
+              </div>
+              <div class="grid two tight">
+                <label class="field"><span>Znaczek przed rolą i komendą</span>
+                  <div class="emoji-own"><input type="text" data-path="serverInfo.bullet" maxlength="100"><button type="button" class="btn ghost small emoji-btn" data-emoji-open data-emoji-path="serverInfo.bullet">Wybierz emoji</button></div>
+                </label>
+                <label class="field"><span>Stopka (pod ostatnią sekcją)</span><input type="text" data-path="serverInfo.footer" maxlength="200"></label>
+              </div>
+              <p class="muted small">W opisach wpisz <code>{/rank}</code>, a w wiadomości będzie klikalna komenda. Działa markdown Discorda: <code>**pogrubienie**</code>, <code>*kursywa*</code>, emoji serwera.</p>
+              <div class="si-posted" id="si-posted"></div>
+              <div class="actions si-actions">
+                <button type="button" class="btn ghost" id="si-fill" title="Dopisuje role serwera, których jeszcze nie ma w sekcjach „Role” i „Role za poziomy” (z propozycją opisu)">Uzupełnij role z serwera</button>
+                <button type="button" class="btn ghost hidden" id="si-send-new">Wyślij jako nową</button>
+                <button type="button" class="btn success" id="si-send">Wyślij na kanał</button>
+              </div>
+            </div>
+            <div id="si-sections"></div>
+            <div class="si-add-section"><button type="button" class="btn ghost" id="si-add-section">Dodaj sekcję</button></div>
+            <datalist id="si-command-list"></datalist>
+          </div>
+          <div class="previews si-previews">
+            <div class="preview-label">Podgląd <span id="si-counter" class="si-stats"></span></div>
+            <div id="si-problems" class="banner warn hidden"></div>
+            <div class="discord" id="si-preview"></div>
+          </div>
+        </div>
+      </section>
+
       <!-- EMBEDY -->
       <section id="view-embedy" class="view">
         <header class="view-head">
@@ -1098,6 +1141,7 @@
               <div class="field"><span>Tymczasowe bany</span><div data-picker-slot="cfg:panelAccess.roles.bany"></div></div>
               <div class="field"><span>Poziomy</span><div data-picker-slot="cfg:panelAccess.roles.poziomy"></div></div>
               <div class="field"><span>Automoderacja</span><div data-picker-slot="cfg:panelAccess.roles.automod"></div></div>
+              <div class="field"><span>Serwer info</span><div data-picker-slot="cfg:panelAccess.roles.serwerinfo"></div></div>
             </div>
             <p class="muted small">„Uprawnienia komend” i „Ustawienia” pozwalają zmieniać, kto może używać komend (także /ban) i kto liczy się jako moderacja — dawaj je tylko zaufanym rolom.</p>
           </div>

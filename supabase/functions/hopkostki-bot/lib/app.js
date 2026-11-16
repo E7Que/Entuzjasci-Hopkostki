@@ -246,6 +246,15 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
     try {
       // Publiczny ranking poziomów (strona ranking.html) — bez logowania, o ile włączony w panelu.
       if (request.method === 'GET' && route === '/public/leaderboard') return json(await publicLeaderboard(url), 200, cors);
+      // Obrazki wgrane w panelu (banery „Serwer info”) — publicznie, żeby Discord mógł je pokazać w embedzie.
+      const asset = /^\/public\/asset\/([a-f0-9]{24}\.(?:webp|png|jpg|gif))$/.exec(route);
+      if (['GET', 'HEAD'].includes(request.method) && asset) {
+        const file = await bot.store.getAsset(asset[1]);
+        if (!file) return json({ error: 'Nie ma takiego obrazka.' }, 404, cors);
+        const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
+        const headers = { ...cors, 'Content-Type': file.contentType, 'Content-Length': String(bytes.length), 'Cache-Control': 'public, max-age=31536000, immutable' };
+        return new Response(request.method === 'HEAD' ? null : bytes, { status: 200, headers });
+      }
       if (request.method === 'GET' && route === '/public/archive') {
         return json((await publicArchive(bot)) ?? { enabled: false }, 200, cors);
       }

@@ -1,0 +1,377 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createTestStore } from './support/db.js';
+import { fakeDiscord, makeBot } from './support/discord.js';
+import { handlePanel } from '../supabase/functions/hopkostki-bot/lib/panel.js';
+import { createHandler } from '../supabase/functions/hopkostki-bot/lib/app.js';
+import { DEFAULT_CONFIG } from '../supabase/functions/hopkostki-bot/lib/defaults.js';
+import { sanitizeConfig } from '../supabase/functions/hopkostki-bot/lib/configSchema.js';
+import { DiscordError } from '../supabase/functions/hopkostki-bot/lib/rest.js';
+import {
+  buildServerInfoPayload,
+  fillServerInfoSections,
+  itemsText,
+  pruneBannerAssets,
+  suggestServerInfoRoles,
+} from '../supabase/functions/hopkostki-bot/lib/serverInfo.js';
+
+const CHANNEL = '400000000000000001';
+const OTHER = '400000000000000002';
+const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+const id = (n) => String(300000000000000000n + BigInt(n));
+const section = (extra) => ({ id: 's', kind: 'text', title: 'T', intro: '', banner: '', items: [], ...extra });
+
+test('serwer info: role w cytatach, klikalne komendy, nagłówki, baner jako osobny embed i stopka na końcu', () => {
+  const info = {
+    color: '#3CC3D6',
+    bullet: '🔹',
+    footer: 'Entuzjaści Hopkostki',
+    sections: [
+      section({
+        id: 'roles',
+        kind: 'roles',
+        title: 'Role 📋',
+        banner: 'https://cdn.example/banner.webp',
+        items: [
+          { kind: 'heading', text: 'Administracja' },
+          { kind: 'role', roleId: id(1), text: 'Właściciel serwera.' },
+          { kind: 'role', roleId: id(2), text: 'Linia 1\nSprawdź {/rank}' },
+        ],
+      }),
+      section({
+        id: 'commands',
+        kind: 'commands',
+        title: 'Komendy',
+        intro: 'Wpisz {/pomoc}.',
+        items: [
+          { kind: 'heading', text: 'Poziomy' },
+          { kind: 'command', command: 'rank', commandId: '', text: 'Twoja karta' },
+          { kind: 'command', command: 'przypomnij dodaj', commandId: '', text: 'przypomnienie' },
+          { kind: 'command', command: 'bump', commandId: '947088344167366698', text: 'podbij serwer' },
+          { kind: 'command', command: 'nieznana', commandId: '', text: '' },
+          { kind: 'heading', text: 'Inne' },
+          { kind: 'text', text: 'Zwykły tekst' },
+        ],
+      }),
+      section({ id: 'pusta', title: '' }),
+    ],
+  };
+  const commandIds = { rank: '111111111111111111', przypomnij: '222222222222222222', pomoc: '333333333333333333' };
+  const now = Date.UTC(2026, 10, 16, 12);
+  const payload = buildServerInfoPayload(info, { commandIds, now });
+  assert.deepEqual(payload.allowed_mentions, { parse: [] }, 'wzmianki ról bez pingowania');
+  assert.equal(payload.content, '');
+  assert.equal(payload.embeds.length, 3, 'baner + 2 sekcje; pusta sekcja pominięta');
+  assert.deepEqual(payload.embeds[0], { color: 0x3cc3d6, image: { url: 'https://cdn.example/banner.webp' } });
+  assert.equal(payload.embeds[1].title, 'Role 📋');
+  assert.equal(
+    payload.embeds[1].description,
+    `**Administracja**\n🔹 <@&${id(1)}>\n> Właściciel serwera.\n\n🔹 <@&${id(2)}>\n> Linia 1\n> Sprawdź </rank:111111111111111111>`,
+  );
+  assert.equal(
+    payload.embeds[2].description,
+    [
+      'Wpisz </pomoc:333333333333333333>.',
+      '',
+      '**Poziomy**',
+      '🔹 </rank:111111111111111111> — Twoja karta',
+      '🔹 </przypomnij dodaj:222222222222222222> — przypomnienie',
+      '🔹 </bump:947088344167366698> — podbij serwer',
+      '🔹 `/nieznana`',
+      '',
+      '**Inne**',
+      'Zwykły tekst',
+    ].join('\n'),
+  );
+  assert.deepEqual(payload.embeds[2].footer, { text: 'Entuzjaści Hopkostki' });
+  assert.equal(payload.embeds[2].timestamp, new Date(now).toISOString());
+  assert.equal(payload.embeds[1].footer, undefined, 'stopka tylko pod ostatnią sekcją');
+  assert.equal(itemsText([{ kind: 'role', roleId: id(1), text: '' }], { bullet: '' }), `<@&${id(1)}>`, 'bez znaczka i opisu — sama wzmianka');
+});
+
+test('serwer info: limity Discorda — opis sekcji, liczba embedów, suma znaków i pusta wiadomość', () => {
+  const base = { color: '#3CC3D6', bullet: '', footer: '', sections: [] };
+  assert.throws(() => buildServerInfoPayload(base), /pusta/);
+  assert.throws(() => buildServerInfoPayload({ ...base, sections: [section({ intro: 'x'.repeat(4097) })] }), /4097 znaków.*4096/);
+  assert.equal(buildServerInfoPayload({ ...base, sections: [section({ intro: 'x'.repeat(4096) })] }).embeds[0].description.length, 4096);
+  const banners = Array.from({ length: 6 }, (_, i) => section({ id: `s${i}`, banner: 'https://x.example/b.png' }));
+  assert.throws(() => buildServerInfoPayload({ ...base, sections: banners }), /12 embedów.*10/);
+  const long = Array.from({ length: 2 }, (_, i) => section({ id: `s${i}`, intro: 'x'.repeat(3500) }));
+  assert.throws(() => buildServerInfoPayload({ ...base, sections: long }), /6000/);
+});
+
+test('serwer info: propozycja ról — administracja, wyróżnienia, pingi i role za poziomy; bez ról custom i integracji', () => {
+  const role = (n, name, position, extra = {}) => ({ id: id(n), name, position, permissions: '0', color: 0, ...extra });
+  const rawRoles = [
+    { id: 'g', name: '@everyone', position: 0, permissions: String(1n << 10n) },
+    role(1, '| Właściciel', 30, { permissions: '8' }),
+    role(2, '| Admin', 29),
+    role(3, '| Moderator', 28),
+    role(4, '| Test Helper', 27),
+    role(5, '| Helper', 26),
+    role(6, '| Twórca Wideo', 20),
+    role(7, 'Server Booster', 19, { managed: true, tags: { premium_subscriber: null } }),
+    role(8, '| Członek', 10),
+    role(9, '| Ping TT Hopkostki', 9),
+    role(10, '| Bump Ping', 8),
+    role(11, 'Level 10', 5, { permissions: String((1n << 15n) | (1n << 10n)) }),
+    role(12, 'Level 5', 4, { permissions: String(1n << 14n) }),
+    role(13, 'Weteran', 3),
+    role(14, 'Custom • Kasia', 2),
+    role(15, 'Technik', 2),
+    role(16, 'MEE6', 1, { managed: true, tags: { bot_id: '1' } }),
+    role(17, 'Coś innego', 1),
+  ];
+  const gctx = { guild: { id: 'g' }, roles: new Map(rawRoles.map((r) => [r.id, r])), rawRoles };
+  const { main, levels } = suggestServerInfoRoles(gctx, { levels: { rewards: [{ level: 20, roleId: id(13) }] } });
+  const name = (roleId) => rawRoles.find((r) => r.id === roleId).name;
+  assert.deepEqual(main.map((i) => (i.kind === 'heading' ? `# ${i.text}` : name(i.roleId))), [
+    '# Administracja', '| Właściciel', '| Admin', '| Moderator', '| Test Helper', '| Helper',
+    '# Wyróżnienia', '| Twórca Wideo', 'Server Booster', '| Członek',
+    '# Powiadomienia — role do wzięcia', '| Ping TT Hopkostki', '| Bump Ping',
+  ]);
+  assert.equal(main.find((i) => i.roleId === id(9)).text, 'Powiadomienia o nowych filmach Hopkostki na TikToku.');
+  assert.match(main.find((i) => i.roleId === id(10)).text, /\{\/bump\}/);
+  assert.match(main.find((i) => i.roleId === id(6)).text, /1000 obserwujących/);
+  assert.deepEqual(levels.map((i) => [name(i.roleId), i.text]), [
+    ['Level 5', 'Za **5 poziom**. Odblokowuje: podglądy linków.'],
+    ['Level 10', 'Za **10 poziom**. Odblokowuje: wysyłanie zdjęć i plików.'],
+    ['Weteran', 'Za **20 poziom**.'],
+  ]);
+
+  // Uzupełnianie: pusta sekcja dostaje całą propozycję, wypełniona — tylko brakujące role na końcu.
+  const sections = [
+    section({ id: 'roles', kind: 'roles', items: [{ kind: 'role', roleId: id(1), text: 'Mój opis' }] }),
+    section({ id: 'levels', kind: 'levels' }),
+    section({ id: 'commands', kind: 'commands', items: [{ kind: 'text', text: 'x' }] }),
+  ];
+  const filled = fillServerInfoSections(sections, { main, levels });
+  assert.equal(filled.added, 12);
+  assert.deepEqual(filled.sections[0].items[0], { kind: 'role', roleId: id(1), text: 'Mój opis' }, 'własny opis zostaje');
+  assert.equal(filled.sections[0].items.length, 10);
+  assert.ok(filled.sections[0].items.every((i) => i.kind === 'role'));
+  assert.deepEqual(filled.sections[1].items.map((i) => i.kind), ['role', 'role', 'role']);
+  assert.deepEqual(filled.sections[2], sections[2], 'sekcja komend bez zmian');
+  assert.equal(fillServerInfoSections(filled.sections, { main, levels }).added, 0, 'drugi raz nie ma czego dopisać');
+});
+
+test('serwer info w panelu: podpowiedzi komend, wysyłka, aktualizacja, nowa wiadomość i ponowne wysłanie po usunięciu', async () => {
+  const { store } = await createTestStore();
+  const discord = fakeDiscord();
+  discord.state.commands = [{ name: 'rank' }, { name: 'ranking' }];
+  const bot = makeBot({ store, discord });
+  const call = (method, path, body) => handlePanel(bot, { method, path, body });
+
+  const info = await call('GET', '/serverinfo');
+  assert.equal(info.status, 200);
+  assert.equal(info.body.posted, null);
+  assert.deepEqual(info.body.commandIds, { rank: '200000000000000000', ranking: '200000000000000001' });
+  assert.equal(info.body.guildId, 'g1');
+  const names = info.body.commands.map((c) => c.name);
+  for (const command of ['rank', 'przypomnij dodaj', 'bumpy status', 'prywatnosc']) assert.ok(names.includes(command), command);
+  for (const command of ['ban', 'warn dodaj', 'xp dodaj']) assert.ok(!names.includes(command), `${command} — tylko dla moderacji`);
+
+  const noChannel = await call('POST', '/serverinfo/send', {});
+  assert.equal(noChannel.status, 400);
+  assert.match(noChannel.body.error, /Wybierz kanał/);
+
+  await store.updateConfig({ serverInfo: { channelId: CHANNEL } });
+  const sent = await call('POST', '/serverinfo/send', {});
+  assert.equal(sent.status, 200);
+  assert.equal(sent.body.result.action, 'sent');
+  const message = discord.state.channels.get(CHANNEL).at(-1);
+  assert.equal(message.embeds.length, 3, 'domyślnie: role, role za poziomy, komendy');
+  assert.equal(message.embeds[0].title, 'Entuzjaści Hopkostki | Informacje o rolach 📋');
+  assert.match(message.embeds[1].description, /Swój poziom sprawdzisz komendą <\/rank:200000000000000000>\./);
+  assert.match(message.embeds[2].description, /🔹 <\/rank:200000000000000000> — Twoja karta poziomu/);
+  assert.match(message.embeds[2].description, /🔹 <\/bump:947088344167366698> — podbij serwer na DISBOARD/);
+  assert.match(message.embeds[2].description, /🔹 `\/prywatnosc`/, 'komenda bez znanego ID — jako kod');
+  assert.doesNotMatch(message.embeds[2].description, /losuj|login/, 'bez gier i logowania do panelu');
+  assert.deepEqual(message.allowed_mentions, { parse: [] });
+  assert.deepEqual(message.embeds[2].footer, { text: 'Entuzjaści Hopkostki' });
+  assert.equal((await store.getState('server_info_message')).messageId, message.id);
+
+  const updated = await call('POST', '/serverinfo/send', {});
+  assert.equal(updated.body.result.action, 'updated');
+  assert.equal(discord.state.editedMessages.at(-1).id, message.id);
+  assert.equal(discord.state.channels.get(CHANNEL).length, 1, 'aktualizacja zamiast nowej wiadomości');
+
+  // Wiadomość usunięta na Discordzie — bot wysyła nową.
+  const patch = discord.patch;
+  discord.patch = async () => {
+    throw new DiscordError(404, { code: 10008, message: 'Unknown Message' });
+  };
+  const resent = await call('POST', '/serverinfo/send', {});
+  discord.patch = patch;
+  assert.equal(resent.body.result.action, 'sent');
+  assert.equal(discord.state.channels.get(CHANNEL).length, 2);
+
+  // „Wyślij jako nową” i inny kanał — zawsze nowa wiadomość.
+  assert.equal((await call('POST', '/serverinfo/send', { asNew: true })).body.result.action, 'sent');
+  assert.equal(discord.state.channels.get(CHANNEL).length, 3);
+  const moved = await call('POST', '/serverinfo/send', { channelId: OTHER });
+  assert.equal(moved.body.result.action, 'sent');
+  assert.equal(discord.state.channels.get(OTHER).length, 1);
+  const posted = (await call('GET', '/serverinfo')).body.posted;
+  assert.equal(posted.channelId, OTHER);
+  assert.deepEqual(posted.banners, []);
+});
+
+test('serwer info: „Uzupełnij role z serwera” — do szkicu z panelu albo od razu do ustawień (save)', async () => {
+  const { store } = await createTestStore();
+  const discord = fakeDiscord();
+  const extra = [
+    { id: id(1), name: '| Właściciel', position: 20, permissions: '0', color: 0x1abc9c },
+    { id: id(2), name: '| Ping Dead Chat', position: 3, permissions: '0', color: 0 },
+    { id: id(3), name: 'Level 5', position: 2, permissions: '0', color: 0 },
+  ];
+  const get = discord.get;
+  discord.get = async (path, opts) => {
+    const result = await get(path, opts);
+    return path === '/guilds/g1' ? { ...result, roles: [...result.roles, ...extra] } : result;
+  };
+  const bot = makeBot({ store, discord });
+  const call = (method, path, body) => handlePanel(bot, { method, path, body });
+
+  // Szkic z panelu: przysłane sekcje + brakujące role serwera, bez zapisu.
+  const draft = structuredClone((await store.getConfig()).serverInfo.sections);
+  draft[0].items = [{ kind: 'role', roleId: id(1), text: 'Szef' }];
+  const preview = await call('POST', '/serverinfo/fill', { sections: draft });
+  assert.equal(preview.status, 200);
+  const roles = preview.body.sections[0].items;
+  assert.deepEqual(roles[0], { kind: 'role', roleId: id(1), text: 'Szef' });
+  assert.ok(roles.some((i) => i.roleId === id(2) && /pusto/.test(i.text)));
+  assert.deepEqual(preview.body.sections[1].items.map((i) => i.roleId), [id(3)]);
+  assert.ok(preview.body.added >= 2);
+  assert.deepEqual((await store.getConfig()).serverInfo.sections[0].items, [], 'bez save nic się nie zapisuje');
+
+  // save: true — od razu w ustawieniach (+ wpis w dzienniku zmian). Testowe role bez ID Discorda odpadają przy zapisie.
+  const saved = await call('POST', '/serverinfo/fill', { save: true });
+  assert.equal(saved.status, 200);
+  const sections = (await store.getConfig()).serverInfo.sections;
+  assert.deepEqual(sections[0].items.map((i) => (i.kind === 'heading' ? i.text : i.roleId)), ['Administracja', id(1), 'Powiadomienia — role do wzięcia', id(2)]);
+  assert.deepEqual(sections[1].items.map((i) => i.roleId), [id(3)]);
+  assert.equal(sections[2].items.length, DEFAULT_CONFIG.serverInfo.sections[2].items.length, 'komendy bez zmian');
+  assert.deepEqual((await store.listConfigHistory(5))[0].keys, ['serverInfo']);
+});
+
+test('serwer info: baner z panelu — publiczny adres, typ obrazka, odrzucanie złych plików i sprzątanie nieużywanych', async () => {
+  const { store } = await createTestStore();
+  const selfUrl = 'https://example.supabase.co/functions/v1/hopkostki-bot?forceFunctionRegion=eu-central-1';
+  const bot = makeBot({ store, discord: fakeDiscord(), env: { selfUrl } });
+  const handle = createHandler(bot);
+  const upload = (data) =>
+    handle(
+      new Request('https://example.supabase.co/functions/v1/hopkostki-bot/panel/serverinfo/banner', {
+        method: 'POST',
+        headers: { 'x-panel-password': 'tajne', 'content-type': 'application/json' },
+        body: JSON.stringify({ data }),
+      }),
+    );
+
+  const res = await upload(PNG);
+  assert.equal(res.status, 200);
+  const first = await res.json();
+  assert.match(first.id, /^[a-f0-9]{24}\.png$/);
+  assert.equal(first.url, `https://example.supabase.co/functions/v1/hopkostki-bot/panel/public/asset/${first.id}`, 'bez ?forceFunctionRegion');
+
+  // Bez hasła — Discord pobiera obrazek do embeda.
+  const image = await handle(new Request(first.url));
+  assert.equal(image.status, 200);
+  assert.equal(image.headers.get('content-type'), 'image/png');
+  assert.match(image.headers.get('cache-control'), /immutable/);
+  const bytes = new Uint8Array(await image.arrayBuffer());
+  assert.equal(String.fromCharCode(...bytes.slice(1, 4)), 'PNG');
+  assert.equal(Number(image.headers.get('content-length')), bytes.length);
+  const head = await handle(new Request(first.url, { method: 'HEAD' }));
+  assert.equal(head.status, 200);
+  assert.equal(head.headers.get('content-type'), 'image/png');
+  assert.equal((await handle(new Request(first.url.replace(/[a-f0-9]{24}/, '0'.repeat(24))))).status, 404);
+
+  for (const data of ['data:text/html;base64,PGgxPg==', 'nie obrazek', `data:image/png;base64,${'A'.repeat(4_300_000)}`]) {
+    const bad = await upload(data);
+    assert.equal(bad.status, 400, data.slice(0, 30));
+    assert.match((await bad.json()).error, /obrazek|za duży/i);
+  }
+
+  // Sprzątanie: obrazek z ustawień zostaje, nieużywany starszy niż dzień znika, świeży zostaje (może czekać na zapis).
+  const unused = await (await upload(PNG)).json();
+  const fresh = await (await upload(PNG)).json();
+  const sections = structuredClone((await store.getConfig()).serverInfo.sections);
+  sections[0].banner = first.url;
+  await store.updateConfig({ serverInfo: { sections } });
+  await store.query("update bot.assets set created_at = now() - interval '2 days' where id <> $1", [fresh.id]);
+  await pruneBannerAssets(bot);
+  const left = (await store.query('select id from bot.assets')).map((r) => r.id).sort();
+  assert.deepEqual(left, [first.id, fresh.id].sort());
+  assert.ok(!left.includes(unused.id));
+});
+
+test('serwer info: zapis ustawień czyści sekcje i elementy', () => {
+  const current = structuredClone(DEFAULT_CONFIG);
+  const out = sanitizeConfig(
+    {
+      serverInfo: {
+        bullet: 'nie emoji',
+        footer: `  ${'x'.repeat(250)} `,
+        sections: [
+          {
+            id: 'roles',
+            kind: 'roles',
+            title: ' Role ',
+            intro: 'a\r\nb',
+            banner: 'http://niebezpieczny.example/a.png',
+            items: [
+              { kind: 'role', roleId: '123', text: 'za krótkie ID' },
+              { kind: 'role', roleId: id(1), text: ' Opis ' },
+              { kind: 'heading', text: '   ' },
+              { kind: 'command', command: '/Rank', text: 'x' },
+              { kind: 'command', command: 'przypomnij  dodaj', commandId: 'abc', text: 'y' },
+              { kind: 'command', command: 'zła komenda!', text: 'z' },
+              { kind: 'nieznany', text: 'q' },
+            ],
+          },
+          { id: 'roles', kind: 'cos', title: 'Druga', banner: 'https://ok.example/b.webp', items: 'nie lista' },
+          ...Array.from({ length: 6 }, (_, i) => ({ id: `x${i}`, kind: 'text', title: `S${i}`, items: [] })),
+        ],
+      },
+    },
+    current,
+  );
+  const info = out.serverInfo;
+  assert.equal(info.bullet, DEFAULT_CONFIG.serverInfo.bullet, 'zły znaczek — zostaje poprzedni');
+  assert.equal(info.footer.length, 200);
+  assert.equal(info.sections.length, 6, 'najwyżej 6 sekcji');
+  assert.deepEqual(info.sections[0], {
+    id: 'roles',
+    kind: 'roles',
+    title: 'Role',
+    intro: 'a\nb',
+    banner: '',
+    items: [
+      { kind: 'role', roleId: id(1), text: 'Opis' },
+      { kind: 'command', command: 'rank', commandId: '', text: 'x' },
+      { kind: 'command', command: 'przypomnij dodaj', commandId: '', text: 'y' },
+    ],
+  });
+  assert.deepEqual([info.sections[1].id, info.sections[1].kind, info.sections[1].banner, info.sections[1].items], ['roles-2', 'text', 'https://ok.example/b.webp', []]);
+  assert.equal(sanitizeConfig({ serverInfo: { bullet: '' } }, current).serverInfo.bullet, '', 'bez znaczka');
+  assert.equal(sanitizeConfig({ serverInfo: { bullet: '<:hopka:100000000000000070>' } }, current).serverInfo.bullet, '<:hopka:100000000000000070>');
+  assert.equal(sanitizeConfig({ serverInfo: { sections: 'x' } }, current).serverInfo.sections, current.serverInfo.sections);
+});
+
+test('serwer info: dostęp — osobna część panelu', async () => {
+  const { store } = await createTestStore();
+  const bot = makeBot({ store, discord: fakeDiscord() });
+  const limited = { kind: 'session', full: false, sections: ['serwerinfo'], user: { id: '1', tag: 'kasia' } };
+  const other = { kind: 'session', full: false, sections: ['bump'], user: { id: '2', tag: 'janek' } };
+  const call = (auth, method, path, body) => handlePanel(bot, { method, path, body, auth });
+  assert.equal((await call(limited, 'GET', '/serverinfo')).status, 200);
+  assert.equal((await call(other, 'GET', '/serverinfo')).status, 403);
+  assert.equal((await call(other, 'POST', '/serverinfo/send', {})).status, 403);
+  assert.equal((await call(other, 'POST', '/serverinfo/banner', { data: PNG })).status, 403);
+  await call(limited, 'PUT', '/config', { serverInfo: { footer: 'Nowa stopka' }, bump: { enabled: true } });
+  const config = await store.getConfig();
+  assert.equal(config.serverInfo.footer, 'Nowa stopka');
+  assert.equal(config.bump.enabled, false, 'bez dostępu do Bumpa — pominięte');
+});

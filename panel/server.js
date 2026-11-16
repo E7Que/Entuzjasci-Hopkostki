@@ -34,7 +34,7 @@ const MIME = {
   '.jpg': 'image/jpeg',
 };
 const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]', '::1']);
-const MAX_BODY = 256 * 1024;
+const MAX_BODY = 5 * 1024 * 1024; // banery wgrywane w panelu (base64)
 
 // Prosty parser .env (bez zależności). Nie nadpisuje zmiennych ustawionych w systemie.
 export function loadEnv(file) {

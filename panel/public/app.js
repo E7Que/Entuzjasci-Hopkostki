@@ -20,7 +20,7 @@ const RULE_ACTIONS = { alert: 'Alert', timeout: 'Timeout', kick: 'Kick', ban: 'B
 const PLACEHOLDERS = ['{uzytkownik}', '{nick}', '{moderator}', '{moderatorNick}', '{powod}', '{czas}', '{serwer}', '{sprawa}', '{typ}'];
 const ACTIVITY_LABELS = { custom: 'Własny opis', playing: 'Gra w', listening: 'Słucha', watching: 'Ogląda', competing: 'Rywalizuje w' };
 const PRESENCE_PLACEHOLDERS = ['{czlonkowie}', '{online}', '{serwer}', '{ostrzezenia}', '{sprawy}'];
-const VIEWS = ['pulpit', 'ustawienia', 'uprawnienia', 'czlonkowie', 'logi', 'bump', 'spolecznosc', 'automod', 'poziomy', 'tickety', 'glosowe', 'wiadomosci', 'embedy', 'ostrzezenia', 'sprawy', 'bany', 'dostep'];
+const VIEWS = ['pulpit', 'ustawienia', 'uprawnienia', 'czlonkowie', 'logi', 'bump', 'spolecznosc', 'automod', 'poziomy', 'tickety', 'glosowe', 'wiadomosci', 'serwerinfo', 'embedy', 'ostrzezenia', 'sprawy', 'bany', 'dostep'];
 const MEMBER_VARS = ['{uzytkownik}', '{nick}', '{serwer}', '{liczba}'];
 const TICKET_VARS = ['{uzytkownik}', '{nick}', '{numer}', '{typ}'];
 const BUMP_VARS = ['{uzytkownik}', '{nick}', '{liczba}', '{nastepny}', '{godzina}'];
@@ -471,6 +471,10 @@ function route() {
     renderMessageEditor();
     if (open) loadSentMessages();
   }
+  if (state.view === 'serwerinfo') {
+    renderServerInfo();
+    if (open) loadServerInfo();
+  }
 }
 // Telefon: menu z zakładkami pod przyciskiem w górnym pasku.
 function closeMobileMenu() {
@@ -718,6 +722,7 @@ function renderConfigUi() {
   renderEmbedTabs();
   renderRoleSelects();
   renderLevels();
+  renderServerInfo();
   fillInputs();
   renderEmojiButtons();
   renderBumpPreview();
@@ -761,6 +766,10 @@ function onFieldChange(event) {
     setPath(state.draft, el.dataset.path, readValue(el));
     markDirty();
     if (el.dataset.path.startsWith('levels.formula')) renderLevelsFormula();
+    if (el.dataset.path.startsWith('serverInfo.')) {
+      renderServerInfoPreview();
+      if (el.dataset.path === 'serverInfo.channelId') renderServerInfoPosted();
+    }
     if (el.dataset.path.startsWith('warns') || el.dataset.path === 'dmShowModerator' || el.dataset.path === 'appealText' || el.dataset.path === 'mentionTarget') {
       renderPreview();
     }
@@ -2401,6 +2410,412 @@ $('#history-list').addEventListener('click', async (event) => {
   }
 });
 
+// ---------- Serwer info ----------
+// Wiadomość z informacjami dla społeczności: sekcje (embedy) z rolami, rolami za poziomy i komendami, nad każdą
+// opcjonalny baner. Treść i limity Discorda jak w supabase/functions/hopkostki-bot/lib/serverInfo.js.
+const SI_KINDS = { roles: 'Role', levels: 'Role za poziomy', commands: 'Komendy', text: 'Tekst' };
+const SI_ITEMS = { role: 'Rola', command: 'Komenda', heading: 'Nagłówek', text: 'Tekst' };
+const SI_LIMITS = { embeds: 10, total: 6000, description: 4096, sections: 6, items: 40 };
+const SI_COMMAND = /^[\p{Ll}\p{N}_-]{1,32}(?: [\p{Ll}\p{N}_-]{1,32}){0,2}$/u;
+const SI_BANNER_MAX = 3 * 1024 * 1024;
+const si = { posted: null, commands: [], commandIds: {}, guildId: null, uploading: null };
+const siInfo = () => state.draft?.serverInfo;
+const str = (value) => String(value ?? '');
+
+function siCommand(command, commandId = '') {
+  const id = /^\d{15,25}$/.test(commandId) ? commandId : si.commandIds[command.split(' ')[0]];
+  return id ? `</${command}:${id}>` : `\`/${command}\``;
+}
+const siWithCommands = (text) => str(text).replace(/\{\/([\p{Ll}\p{N}_-]{1,32}(?: [\p{Ll}\p{N}_-]{1,32}){0,2})\}/gu, (_, c) => siCommand(c));
+// Element tak, jak zapisze go bot (puste i niepełne pomija) — null, gdy go nie będzie.
+function siCleanItem(item) {
+  const text = str(item.text).replace(/\r/g, '').trim();
+  if (item.kind === 'heading' || item.kind === 'text') return text ? { kind: item.kind, text } : null;
+  if (item.kind === 'role') return /^\d{15,25}$/.test(str(item.roleId)) ? { kind: 'role', roleId: item.roleId, text } : null;
+  if (item.kind === 'command') {
+    const command = str(item.command).trim().toLowerCase().replace(/^\//, '').replace(/\s+/g, ' ');
+    return SI_COMMAND.test(command) ? { kind: 'command', command, commandId: str(item.commandId).trim(), text } : null;
+  }
+  return null;
+}
+function siItemText(item, bullet) {
+  const b = bullet ? `${bullet} ` : '';
+  if (item.kind === 'heading') return `**${item.text}**`;
+  if (item.kind === 'role') return `${b}<@&${item.roleId}>${item.text ? `\n${siWithCommands(item.text).split('\n').map((l) => `> ${l}`).join('\n')}` : ''}`;
+  if (item.kind === 'command') return `${b}${siCommand(item.command, item.commandId)}${item.text ? ` — ${siWithCommands(item.text)}` : ''}`;
+  return siWithCommands(item.text);
+}
+// Między rolami pusta linia, między komendami nie; nagłówek przylega do pierwszego elementu pod nim.
+function siItemsText(items, bullet) {
+  return items
+    .map((item, i) => {
+      const text = siItemText(item, bullet);
+      if (!i) return text;
+      const prev = items[i - 1];
+      const tight = prev.kind === 'heading' ? item.kind !== 'heading' : item.kind === 'command' && prev.kind === 'command';
+      return (tight ? '\n' : '\n\n') + text;
+    })
+    .join('');
+}
+// Embedy wiadomości ({ banner } albo { title, description }) i problemy z limitami Discorda.
+function siBuild(info) {
+  const embeds = [];
+  const problems = [];
+  info.sections.forEach((section, s) => {
+    const title = str(section.title).trim();
+    const name = title || `sekcja ${s + 1}`;
+    const items = section.items.map(siCleanItem);
+    const skipped = items.filter((item) => !item).length;
+    if (skipped) problems.push(`„${name}”: ${skipped} ${plural(skipped, ['element jest pusty albo niepełny', 'elementy są puste albo niepełne', 'elementów jest pustych albo niepełnych'])} — bot je pominie.`);
+    const description = [siWithCommands(str(section.intro).trim()), siItemsText(items.filter(Boolean), info.bullet)].filter(Boolean).join('\n\n');
+    const bannerText = str(section.banner).trim();
+    const banner = /^https:\/\/\S+$/i.test(bannerText) ? bannerText : '';
+    if (bannerText && !banner) problems.push(`„${name}”: link do baneru musi zaczynać się od https://.`);
+    if (!title && !description && !banner) return;
+    if (description.length > SI_LIMITS.description) problems.push(`„${name}” ma ${description.length} znaków, a embed mieści ${SI_LIMITS.description} — skróć opisy albo podziel sekcję na dwie.`);
+    if (banner) embeds.push({ banner });
+    if (title || description) embeds.push({ title, description });
+  });
+  const footer = str(info.footer).trim();
+  const total = embeds.reduce((sum, e) => sum + str(e.title).length + str(e.description).length, 0) + (embeds.length ? footer.length : 0);
+  if (!embeds.length) problems.push('Wiadomość jest pusta — dodaj sekcję z treścią.');
+  if (embeds.length > SI_LIMITS.embeds) problems.push(`Wiadomość ma ${embeds.length} embedów (banery też się liczą), a Discord pozwala na ${SI_LIMITS.embeds}.`);
+  if (total > SI_LIMITS.total) problems.push(`Wiadomość ma ${total} znaków, a Discord pozwala na ${SI_LIMITS.total} we wszystkich embedach razem.`);
+  return { embeds, problems, total, footer };
+}
+
+function renderServerInfoPreview() {
+  const info = siInfo();
+  if (!info || state.view !== 'serwerinfo') return;
+  const { embeds, problems, total, footer } = siBuild(info);
+  const color = /^#[0-9a-f]{6}$/i.test(info.color) ? info.color : '#3CC3D6';
+  const time = new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+  $('#si-counter').textContent = `${embeds.length}/${SI_LIMITS.embeds} embedów · ${total}/${SI_LIMITS.total} znaków`;
+  $('#si-counter').classList.toggle('over', embeds.length > SI_LIMITS.embeds || total > SI_LIMITS.total);
+  $('#si-problems').classList.toggle('hidden', !problems.length);
+  $('#si-problems').innerHTML = problems.map((p) => `<div>⚠️ ${esc(p)}</div>`).join('');
+  const blocks = embeds
+    .map((e, i) => {
+      const foot = i === embeds.length - 1 && footer ? `<div class="embed-footer">${esc(footer)} • Dzisiaj o ${time}</div>` : '';
+      const body = e.banner
+        ? `<img class="embed-image" src="${esc(e.banner)}" alt="Baner sekcji" loading="lazy">`
+        : `${e.title ? `<div class="embed-title">${md(e.title)}</div>` : ''}${e.description ? `<div class="embed-desc">${md(e.description)}</div>` : ''}`;
+      return `<div class="embed si-embed${e.banner ? ' si-banner-embed' : ''}" style="border-left-color:${esc(color)}"><div>${body}</div>${foot}</div>`;
+    })
+    .join('');
+  const avatar = state.status?.bot?.avatar ? `<img src="${esc(state.status.bot.avatar)}" alt="">` : 'EH';
+  const name = state.status?.bot?.tag?.split('#')[0] ?? 'Entuzjaści Hopkostki';
+  $('#si-preview').innerHTML = `<div class="msg">
+    <div class="msg-avatar">${avatar}</div>
+    <div class="si-msg-body">
+      <div class="msg-head"><span class="msg-name">${esc(name)}</span><span class="msg-app">APP</span><span class="msg-time">Dzisiaj o ${time}</span></div>
+      ${blocks || '<div class="muted small">Wiadomość jest pusta.</div>'}
+    </div>
+  </div>`;
+}
+
+const siChannelName = (id) => `#${state.guild.channels.find((c) => c.id === id)?.name ?? id}`;
+function renderServerInfoPosted() {
+  const info = siInfo();
+  if (!info) return;
+  const p = si.posted;
+  const sameChannel = Boolean(p) && (!info.channelId || info.channelId === p.channelId);
+  $('#si-send').textContent = sameChannel ? 'Zaktualizuj wiadomość' : 'Wyślij na kanał';
+  $('#si-send-new').classList.toggle('hidden', !p);
+  if (!p) {
+    $('#si-posted').innerHTML = '<p class="muted small">Wiadomość nie była jeszcze wysłana — ułóż sekcje, zapisz zmiany i kliknij „Wyślij na kanał”.</p>';
+    return;
+  }
+  const link = si.guildId ? ` · <a href="https://discord.com/channels/${esc(si.guildId)}/${esc(p.channelId)}/${esc(p.messageId)}" target="_blank" rel="noopener">otwórz w Discordzie</a>` : '';
+  const updated = p.updatedAt && p.updatedAt - p.sentAt > 5000 ? ` · zaktualizowano ${relTime(p.updatedAt)}` : '';
+  const moved = sameChannel ? '' : `<span class="note">Wybrany jest inny kanał — „Wyślij na kanał” wyśle nową wiadomość, a stara zostanie na ${esc(siChannelName(p.channelId))}.</span>`;
+  $('#si-posted').innerHTML = `<p class="small">✅ Wysłano na <strong>${esc(siChannelName(p.channelId))}</strong> ${relTime(p.sentAt)}${updated}${link}</p>${moved}`;
+}
+
+function siRoleOptions(selected) {
+  let html = '<option value="">— wybierz rolę —</option>';
+  html += state.guild.roles.map((r) => `<option value="${r.id}" ${r.id === selected ? 'selected' : ''}>${esc(r.name)}</option>`).join('');
+  if (selected && !roleById(selected)) html += `<option value="${esc(selected)}" selected>(usunięta rola ${esc(selected)})</option>`;
+  return html;
+}
+const siBannerHtml = (banner) =>
+  /^https:\/\/\S+$/i.test(str(banner).trim())
+    ? `<div class="si-banner has"><img src="${esc(banner.trim())}" alt="Baner sekcji"></div>`
+    : '<div class="si-banner"><div class="si-banner-empty">Bez baneru — wgraj obrazek albo wklej link</div></div>';
+function siItemRow(item, i, count) {
+  const tools = `<div class="si-item-tools">
+      <span class="si-kind">${item.kind === 'role' ? `<span class="role-dot" style="background:${esc(roleLabel(item.roleId).color)}"></span>` : ''}${SI_ITEMS[item.kind] ?? ''}</span>
+      <button type="button" class="btn ghost small" data-si-item-move="-1" ${i === 0 ? 'disabled' : ''} title="Wyżej" aria-label="Przesuń wyżej">↑</button>
+      <button type="button" class="btn ghost small" data-si-item-move="1" ${i === count - 1 ? 'disabled' : ''} title="Niżej" aria-label="Przesuń niżej">↓</button>
+      <button type="button" class="btn ghost small" data-si-item-del title="Usuń" aria-label="Usuń element">✕</button>
+    </div>`;
+  let body;
+  if (item.kind === 'role') {
+    body = `<select data-si-item-field="roleId" aria-label="Rola">${siRoleOptions(item.roleId)}</select>
+      <textarea data-si-item-field="text" rows="2" maxlength="600" placeholder="Opis roli — pokaże się w cytacie pod rolą" aria-label="Opis roli">${esc(item.text)}</textarea>`;
+  } else if (item.kind === 'command') {
+    body = `<div class="si-command-row">
+        <span class="si-slash">/</span>
+        <input type="text" data-si-item-field="command" list="si-command-list" maxlength="100" value="${esc(item.command)}" placeholder="np. rank albo przypomnij dodaj" aria-label="Komenda" autocomplete="off" spellcheck="false">
+        <input type="text" data-si-item-field="commandId" maxlength="25" value="${esc(item.commandId)}" placeholder="ID (inne boty)" aria-label="ID komendy innego bota" title="Tylko dla komend innych botów (np. /bump z DISBOARD): ID komendy, żeby była klikalna" inputmode="numeric">
+      </div>
+      <input type="text" data-si-item-field="text" maxlength="200" value="${esc(item.text)}" placeholder="Co robi ta komenda" aria-label="Opis komendy">`;
+  } else if (item.kind === 'heading') {
+    body = `<input type="text" data-si-item-field="text" maxlength="100" value="${esc(item.text)}" placeholder="Nagłówek (pogrubiony)" aria-label="Nagłówek">`;
+  } else {
+    body = `<textarea data-si-item-field="text" rows="2" maxlength="1000" placeholder="Dowolny tekst (markdown Discorda)" aria-label="Tekst">${esc(item.text)}</textarea>`;
+  }
+  return `<div class="si-item kind-${esc(item.kind)}" data-si-item="${i}">${tools}<div class="si-item-body">${body}</div></div>`;
+}
+function siSectionCard(section, s, total) {
+  const items = section.items.map((item, i) => siItemRow(item, i, section.items.length)).join('');
+  const uploading = si.uploading === s;
+  return `<div class="card si-section" data-si-section="${s}" data-no-search>
+    <div class="card-head">
+      <h3><span class="si-num">${s + 1}</span><span class="si-title">${esc(str(section.title).trim() || SI_KINDS[section.kind] || 'Sekcja')}</span></h3>
+      <div class="si-section-tools">
+        <select data-si-sec-field="kind" aria-label="Rodzaj sekcji" title="Rodzaj sekcji — „Uzupełnij role z serwera” dopisuje role do sekcji Role i Role za poziomy">${Object.entries(SI_KINDS)
+          .map(([value, label]) => `<option value="${value}" ${value === section.kind ? 'selected' : ''}>${label}</option>`)
+          .join('')}</select>
+        <button type="button" class="btn ghost small" data-si-sec-move="-1" ${s === 0 ? 'disabled' : ''} title="Sekcja wyżej" aria-label="Sekcja wyżej">↑</button>
+        <button type="button" class="btn ghost small" data-si-sec-move="1" ${s === total - 1 ? 'disabled' : ''} title="Sekcja niżej" aria-label="Sekcja niżej">↓</button>
+        <button type="button" class="btn ghost small" data-si-sec-del>Usuń</button>
+      </div>
+    </div>
+    <label class="field"><span>Tytuł</span><input type="text" data-si-sec-field="title" maxlength="256" value="${esc(section.title)}"></label>
+    <label class="field"><span>Wstęp (opcjonalnie)</span><textarea data-si-sec-field="intro" rows="2" maxlength="1500">${esc(section.intro)}</textarea></label>
+    <div class="field si-banner-field"><span>Baner nad sekcją</span>
+      ${siBannerHtml(section.banner)}
+      <div class="si-banner-row">
+        <label class="btn ghost small si-upload${uploading ? ' busy' : ''}">${uploading ? 'Wgrywanie…' : section.banner ? 'Zmień obrazek' : 'Wgraj obrazek'}<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" data-si-banner-file hidden ${uploading ? 'disabled' : ''}></label>
+        <input type="text" data-si-sec-field="banner" maxlength="500" value="${esc(section.banner)}" placeholder="albo link https://…" aria-label="Link do baneru">
+        ${section.banner ? '<button type="button" class="btn ghost small" data-si-banner-clear>Usuń baner</button>' : ''}
+      </div>
+      <small>Najlepiej szeroki obrazek, np. 1200×300 px (PNG, JPG, WebP albo GIF do 3 MB). Większe panel zmniejsza do 1600 px szerokości.</small>
+    </div>
+    <div class="si-items">${items || '<p class="muted small">Sekcja jest pusta — dodaj elementy poniżej.</p>'}</div>
+    <div class="si-add">
+      <span class="muted small">Dodaj:</span>
+      <button type="button" class="btn ghost small" data-si-add="role">+ Rola</button>
+      <button type="button" class="btn ghost small" data-si-add="command">+ Komenda</button>
+      <button type="button" class="btn ghost small" data-si-add="heading">+ Nagłówek</button>
+      <button type="button" class="btn ghost small" data-si-add="text">+ Tekst</button>
+    </div>
+  </div>`;
+}
+function renderServerInfoSections() {
+  const info = siInfo();
+  if (!info) return;
+  $('#si-sections').innerHTML = info.sections.map((section, s) => siSectionCard(section, s, info.sections.length)).join('');
+  $('#si-add-section').disabled = info.sections.length >= SI_LIMITS.sections;
+}
+function renderServerInfo() {
+  if (!state.draft) return;
+  if (!siInfo()) {
+    $('#si-sections').innerHTML = '<p class="muted">Bot nie ma jeszcze „Serwer info” — odśwież stronę za chwilę.</p>';
+    return;
+  }
+  renderServerInfoSections();
+  renderServerInfoPosted();
+  renderServerInfoPreview();
+}
+async function loadServerInfo() {
+  try {
+    const data = await api('/serverinfo');
+    Object.assign(si, { posted: data.posted ?? null, commands: data.commands ?? [], commandIds: data.commandIds ?? {}, guildId: data.guildId ?? null });
+    $('#si-command-list').innerHTML = si.commands.map((c) => `<option value="${esc(c.name)}">${esc(stripEmoji(c.description))}</option>`).join('');
+    renderServerInfoPosted();
+    renderServerInfoPreview();
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+function siChanged({ editor = false } = {}) {
+  if (editor) renderServerInfoSections();
+  markDirty();
+  renderServerInfoPreview();
+}
+function siContext(el) {
+  const card = el.closest('[data-si-section]');
+  if (!card || !siInfo()) return null;
+  const s = Number(card.dataset.siSection);
+  const row = el.closest('[data-si-item]');
+  return { card, s, section: siInfo().sections[s], row, i: row ? Number(row.dataset.siItem) : -1 };
+}
+
+const readAsDataUrl = (blob) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Nie udało się odczytać pliku.'));
+    reader.readAsDataURL(blob);
+  });
+// Obrazek → data URL dla bota: GIF bez zmian (animacja), reszta zmniejszona do 1600 px szerokości (WebP, gdy się da).
+async function siBannerData(file) {
+  if (!/^image\/(png|jpeg|webp|gif)$/.test(file.type)) throw new Error('Wybierz obrazek PNG, JPG, WebP albo GIF.');
+  if (file.type === 'image/gif') {
+    if (file.size > SI_BANNER_MAX) throw new Error('GIF jest za duży (maks. 3 MB).');
+    return readAsDataUrl(file);
+  }
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    throw new Error('Nie da się odczytać tego obrazka.');
+  }
+  const scale = Math.min(1, 1600 / bitmap.width);
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close?.();
+  for (const [type, quality] of [['image/webp', 0.9], ['image/png'], ['image/jpeg', 0.9], ['image/jpeg', 0.75]]) {
+    const url = canvas.toDataURL(type, quality);
+    if (url.startsWith(`data:${type};`) && (url.length - url.indexOf(',') - 1) * 0.75 <= SI_BANNER_MAX) return url;
+  }
+  throw new Error('Obrazek jest za duży nawet po zmniejszeniu (maks. 3 MB).');
+}
+async function uploadServerInfoBanner(section, s, file) {
+  si.uploading = s;
+  renderServerInfoSections();
+  try {
+    const data = await siBannerData(file);
+    const { url } = await api('/serverinfo/banner', { method: 'POST', body: JSON.stringify({ data }) });
+    section.banner = url;
+    toast('Wgrano baner — zapisz zmiany, żeby został w wiadomości.');
+  } catch (error) {
+    toast(error.message, 'error');
+  } finally {
+    si.uploading = null;
+    siChanged({ editor: true });
+  }
+}
+
+$('#si-sections').addEventListener('input', (event) => {
+  const el = event.target;
+  const ctx = siContext(el);
+  if (!ctx) return;
+  if (el.dataset.siSecField) {
+    ctx.section[el.dataset.siSecField] = el.value;
+    if (el.dataset.siSecField === 'title') $('.si-title', ctx.card).textContent = el.value.trim() || SI_KINDS[ctx.section.kind] || 'Sekcja';
+  } else if (el.dataset.siItemField && ctx.row) {
+    ctx.section.items[ctx.i][el.dataset.siItemField] = el.value;
+  } else {
+    return;
+  }
+  siChanged();
+});
+$('#si-sections').addEventListener('change', (event) => {
+  const el = event.target;
+  const ctx = siContext(el);
+  if (!ctx) return;
+  if (el.matches('[data-si-banner-file]')) {
+    const file = el.files?.[0];
+    el.value = '';
+    if (file) uploadServerInfoBanner(ctx.section, ctx.s, file);
+    return;
+  }
+  // Bez przerysowania całego edytora (nie gubimy fokusu): miniatura baneru i kolor kropki roli.
+  if (el.dataset.siSecField === 'banner') $('.si-banner', ctx.card).outerHTML = siBannerHtml(ctx.section.banner);
+  if (el.dataset.siItemField === 'roleId' && ctx.row) $('.role-dot', ctx.row).style.background = roleLabel(el.value).color;
+});
+$('#si-sections').addEventListener('click', (event) => {
+  const button = event.target.closest('button');
+  const ctx = button && siContext(button);
+  if (!ctx) return;
+  const { sections } = siInfo();
+  const { s, section, i } = ctx;
+  const data = button.dataset;
+  if ('siSecMove' in data) {
+    const to = s + Number(data.siSecMove);
+    if (to < 0 || to >= sections.length) return;
+    [sections[s], sections[to]] = [sections[to], sections[s]];
+  } else if ('siSecDel' in data) {
+    const count = section.items.length;
+    if (!confirm(`Usunąć sekcję „${str(section.title).trim() || SI_KINDS[section.kind]}”${count ? ` razem z ${count} ${plural(count, ['elementem', 'elementami', 'elementami'])}` : ''}?`)) return;
+    sections.splice(s, 1);
+  } else if ('siItemMove' in data) {
+    const to = i + Number(data.siItemMove);
+    if (to < 0 || to >= section.items.length) return;
+    [section.items[i], section.items[to]] = [section.items[to], section.items[i]];
+  } else if ('siItemDel' in data) {
+    section.items.splice(i, 1);
+  } else if (data.siAdd) {
+    if (section.items.length >= SI_LIMITS.items) {
+      toast(`Sekcja może mieć najwyżej ${SI_LIMITS.items} elementów.`, 'error');
+      return;
+    }
+    const kind = data.siAdd;
+    section.items.push(kind === 'role' ? { kind, roleId: '', text: '' } : kind === 'command' ? { kind, command: '', commandId: '', text: '' } : { kind, text: '' });
+    siChanged({ editor: true });
+    $(`[data-si-section="${s}"] [data-si-item="${section.items.length - 1}"]`)?.querySelector('select, input, textarea')?.focus();
+    return;
+  } else if ('siBannerClear' in data) {
+    section.banner = '';
+  } else {
+    return;
+  }
+  siChanged({ editor: true });
+});
+$('#si-add-section').addEventListener('click', () => {
+  const info = siInfo();
+  if (!info || info.sections.length >= SI_LIMITS.sections) return;
+  info.sections.push({ id: `sekcja-${Date.now().toString(36)}`, kind: 'text', title: 'Nowa sekcja', intro: '', banner: '', items: [] });
+  siChanged({ editor: true });
+  $(`[data-si-section="${info.sections.length - 1}"] [data-si-sec-field="title"]`)?.select();
+});
+$('#si-fill').addEventListener('click', async () => {
+  const info = siInfo();
+  if (!info) return;
+  $('#si-fill').disabled = true;
+  try {
+    const { sections, added } = await api('/serverinfo/fill', { method: 'POST', body: JSON.stringify({ sections: info.sections }) });
+    info.sections = sections;
+    siChanged({ editor: true });
+    toast(added ? `Dopisano ${added} ${plural(added, ['rolę', 'role', 'ról'])} — sprawdź opisy i zapisz zmiany.` : 'Wszystkie role z serwera już są na liście.');
+  } catch (error) {
+    toast(error.message, 'error');
+  } finally {
+    $('#si-fill').disabled = false;
+  }
+});
+async function sendServerInfoMessage(asNew) {
+  const info = siInfo();
+  if (!info) return;
+  if (JSON.stringify(info) !== JSON.stringify(state.config.serverInfo)) {
+    toast('Najpierw zapisz zmiany (pasek na dole) — bot wysyła zapisaną wersję.', 'error');
+    return;
+  }
+  const { problems } = siBuild(info);
+  const blocking = problems.filter((p) => !p.includes('bot je pominie'));
+  if (blocking.length) {
+    toast(blocking[0], 'error');
+    return;
+  }
+  const p = si.posted;
+  const update = Boolean(p) && !asNew && (!info.channelId || info.channelId === p.channelId);
+  if (!update && !info.channelId) {
+    toast('Wybierz kanał i zapisz zmiany.', 'error');
+    return;
+  }
+  const where = siChannelName(update ? p.channelId : info.channelId);
+  if (!confirm(update ? `Zaktualizować wiadomość „Serwer info” na ${where}?` : `Wysłać wiadomość „Serwer info” na ${where}? Zobaczą ją wszyscy na tym kanale.`)) return;
+  const buttons = [$('#si-send'), $('#si-send-new')];
+  buttons.forEach((b) => (b.disabled = true));
+  try {
+    const { result } = await api('/serverinfo/send', { method: 'POST', body: JSON.stringify({ channelId: info.channelId, asNew }) });
+    si.posted = { channelId: result.channelId, messageId: result.messageId, sentAt: result.sentAt, updatedAt: result.updatedAt, banners: result.banners };
+    renderServerInfoPosted();
+    toast(result.action === 'updated' ? 'Zaktualizowano wiadomość na Discordzie' : 'Wysłano wiadomość na Discord');
+  } catch (error) {
+    toast(error.message, 'error');
+  } finally {
+    buttons.forEach((b) => (b.disabled = false));
+  }
+}
+$('#si-send').addEventListener('click', () => sendServerInfoMessage(false));
+$('#si-send-new').addEventListener('click', () => sendServerInfoMessage(true));
+
 // ---------- Zapis ----------
 function isDirty() {
   return state.draft && JSON.stringify(state.draft) !== JSON.stringify(state.config);
@@ -2498,27 +2913,46 @@ $('#embed-reset').addEventListener('click', () => {
   markDirty();
 });
 
-// Mini-markdown Discorda do podglądu.
+// Mini-markdown Discorda do podglądu (cytaty „> ”, małe „-# ”, wzmianki, emoji serwera, komendy, pogrubienie…).
+function roleMention(id) {
+  const role = roleById(id);
+  const color = role?.color && role.color !== '#000000' ? role.color : '';
+  return `<span class="mention${color ? ' role' : ''}"${color ? ` style="--role:${esc(color)}"` : ''}>@${esc(role?.name ?? 'rola')}</span>`;
+}
 function md(text) {
   const names = { [SAMPLE.targetId]: SAMPLE.target, [SAMPLE.modId]: SAMPLE.mod };
-  return String(text ?? '')
+  const lines = String(text ?? '')
     .split('\n')
     .map((raw) => {
       let line = raw;
+      const quote = line.startsWith('> ');
+      if (quote) line = line.slice(2);
       const small = line.startsWith('-# ');
       if (small) line = line.slice(3);
       const html = esc(line)
         .replace(/&lt;(a?):(\w+):(\d+)&gt;/g, (_, a, name, id) => `<img class="emoji" alt=":${name}:" src="https://cdn.discordapp.com/emojis/${id}.${a ? 'gif' : 'webp'}?size=48">`)
         .replace(/&lt;@!?(\d+)&gt;/g, (_, id) => `<span class="mention">@${esc(names[id] ?? 'użytkownik')}</span>`)
-        .replace(/&lt;@&amp;(\d+)&gt;/g, (_, id) => `<span class="mention">@${esc(roleById(id)?.name ?? 'rola')}</span>`)
+        .replace(/&lt;@&amp;(\d+)&gt;/g, (_, id) => roleMention(id))
         .replace(/&lt;\/([\w -]+):\d+&gt;/g, (_, name) => `<span class="mention">/${esc(name)}</span>`)
         .replace(/&lt;t:(\d+):([a-zA-Z])&gt;/g, (_, ts, style) => `<span class="ts">${style === 'R' ? relTime(ts * 1000) : fullDate(ts * 1000)}</span>`)
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>')
         .replace(/`([^`]+)`/g, '<code>$1</code>');
-      return small ? `<small>${html}</small>` : html;
-    })
-    .join('<br>');
+      return { quote, html: small ? `<small>${html}</small>` : html };
+    });
+  // Kolejne linie cytatu w jednym bloku; blok sam zaczyna i kończy linię, więc obok niego bez <br>.
+  let out = '';
+  lines.forEach((line, i) => {
+    const prev = lines[i - 1];
+    if (line.quote) {
+      out += prev?.quote ? `<br>${line.html}` : `<span class="md-quote">${line.html}`;
+      if (!lines[i + 1]?.quote) out += '</span>';
+    } else {
+      if (i > 0 && !prev.quote) out += '<br>';
+      out += line.html;
+    }
+  });
+  return out;
 }
 
 const ts = (ms, style) => `<t:${Math.floor(ms / 1000)}:${style}>`;
@@ -2892,7 +3326,7 @@ function buildSearchIndex() {
       items.push({ view, viewName, title, text: clean, el, kind, key: normText(`${viewName} ${title} ${clean}`) });
     };
     section.querySelectorAll('.section-title').forEach((el) => add(el, el.textContent, '', 'section'));
-    for (const card of section.querySelectorAll('.card')) {
+    for (const card of section.querySelectorAll('.card:not([data-no-search])')) {
       const title = card.querySelector('h3')?.textContent.replace(/\s+/g, ' ').trim() ?? '';
       add(card, title || viewName, '', 'card');
       card.querySelectorAll('label.field > span:first-child, label.toggle, .card-head h3 ~ h3, h4').forEach((el) => {

@@ -325,6 +325,24 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return { total: total.n, items: rows.map(mapCase) };
     },
 
+    // ---------- Obrazki z panelu (banery) ----------
+    async addAsset({ id, contentType, data, size }) {
+      await query('insert into bot.assets (id, content_type, data, size) values ($1::text, $2::text, $3::text, $4::int)', [id, contentType, data, size]);
+    },
+
+    async getAsset(id) {
+      const row = await one('select content_type, data from bot.assets where id = $1::text', [id]);
+      return row ? { contentType: row.content_type, data: row.data } : null;
+    },
+
+    // Usuwa obrazki spoza `keep`, starsze niż `hours` godzin.
+    async pruneAssets(keep, hours = 24) {
+      await query(
+        'delete from bot.assets where created_at < now() - make_interval(hours => $2::int) and id not in (select jsonb_array_elements_text($1::text::jsonb))',
+        [JSON.stringify(keep), hours],
+      );
+    },
+
     // ---------- Stan bota (pulpit panelu) ----------
     // Rozmiar bazy (Supabase Free: 500 MB) i największe schematy.
     async dbUsage() {

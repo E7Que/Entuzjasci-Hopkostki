@@ -17,6 +17,44 @@ export const RAID_ACTIONS = ['alert', 'kick'];
 export const ACTIVITY_TYPES = ['custom', 'playing', 'listening', 'watching', 'competing'];
 export const PRESENCE_STATUSES = ['online', 'idle', 'dnd'];
 export const NEW_ACCOUNT_MENTIONS = ['here', 'everyone', 'roles'];
+// Serwer info: sekcje i elementy listy (rodzaje jak w serverInfo.js).
+const SI_KINDS = ['roles', 'levels', 'commands', 'text'];
+const SI_ITEM_KINDS = ['heading', 'role', 'command', 'text'];
+const COMMAND_NAME = /^[\p{Ll}\p{N}_-]{1,32}(?: [\p{Ll}\p{N}_-]{1,32}){0,2}$/u;
+const siText = (value, max) => String(value ?? '').replace(/\r/g, '').trim().slice(0, max);
+function cleanServerInfoItem(item) {
+  const kind = SI_ITEM_KINDS.includes(item?.kind) ? item.kind : null;
+  if (kind === 'heading' || kind === 'text') {
+    const text = siText(item.text, kind === 'heading' ? 100 : 1000);
+    return text ? { kind, text } : null;
+  }
+  if (kind === 'role') return SNOWFLAKE.test(String(item.roleId ?? '')) ? { kind, roleId: String(item.roleId), text: siText(item.text, 600) } : null;
+  if (kind === 'command') {
+    const command = String(item.command ?? '').trim().toLowerCase().replace(/^\//, '').replace(/\s+/g, ' ');
+    if (!COMMAND_NAME.test(command)) return null;
+    return { kind, command, commandId: SNOWFLAKE.test(String(item.commandId ?? '')) ? String(item.commandId) : '', text: siText(item.text, 200) };
+  }
+  return null;
+}
+function cleanServerInfoSections(input, current) {
+  if (!Array.isArray(input)) return current;
+  const seen = new Set();
+  return input.slice(0, 6).map((s, i) => {
+    let id = /^[a-z0-9-]{1,24}$/i.test(String(s?.id ?? '')) ? String(s.id) : `sekcja-${i + 1}`;
+    while (seen.has(id)) id = `${id}-${i + 1}`;
+    seen.add(id);
+    const banner = siText(s?.banner, 500);
+    return {
+      id,
+      kind: SI_KINDS.includes(s?.kind) ? s.kind : 'text',
+      title: siText(s?.title, 256),
+      intro: siText(s?.intro, 1500),
+      banner: /^https:\/\/\S+$/i.test(banner) ? banner : '',
+      items: (Array.isArray(s?.items) ? s.items : []).slice(0, 40).map(cleanServerInfoItem).filter(Boolean),
+    };
+  });
+}
+
 export const XP_EVENT_THEMES = ['confetti', 'fire', 'snow', 'stars', 'neon'];
 export const XP_EVENT_KINDS = ['message', 'voice', 'reaction'];
 const XP_EVENT_MAX_MS = 31 * 24 * 60 * 60_000;
@@ -298,6 +336,9 @@ function cleanValue(path, input, current, def) {
     const cleaned = cleanAutomodValue(path, input, current);
     if (cleaned !== undefined) return cleaned;
   }
+  if (path === 'serverInfo.sections') return cleanServerInfoSections(input, current);
+  if (path === 'serverInfo.bullet') return input === '' ? '' : cleanEmoji(input) || current;
+  if (path === 'serverInfo.footer') return typeof input === 'string' ? input.trim().slice(0, 200) : current;
   if (path === 'appeals.days') {
     const n = Math.floor(Number(input));
     return Number.isFinite(n) ? Math.min(90, Math.max(1, n)) : current;

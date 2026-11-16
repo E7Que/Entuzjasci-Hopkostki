@@ -325,6 +325,57 @@ export const DEFAULT_CONFIG = {
     raid: { enabled: false, joins: 10, seconds: 30, minutes: 10, action: 'alert', accountAgeDays: 7 },
   },
 
+  // Serwer info (zakładka panelu): wiadomość z informacjami o rolach, rolach za poziomy i komendach dla społeczności.
+  // Sekcja = embed (tytuł, wstęp, lista) z opcjonalnym banerem nad nim. Elementy listy: heading (nagłówek),
+  // role (rola + opis w cytacie), command (komenda + opis; commandId dla komend innych botów), text.
+  // W tekstach {/komenda} zamienia się w klikalną komendę. Role uzupełnia przycisk „Uzupełnij role z serwera”.
+  serverInfo: {
+    channelId: '',
+    color: '#3CC3D6',
+    bullet: '🔹',
+    footer: 'Entuzjaści Hopkostki',
+    sections: [
+      { id: 'roles', kind: 'roles', title: 'Entuzjaści Hopkostki | Informacje o rolach 📋', intro: '', banner: '', items: [] },
+      {
+        id: 'levels',
+        kind: 'levels',
+        title: 'Role za poziomy 📈',
+        intro: 'Za aktywność na serwerze zdobywasz XP — za wiadomości, czas na kanałach głosowych i reakcje. Kolejne poziomy dają nowe role. Swój poziom sprawdzisz komendą {/rank}.',
+        banner: '',
+        items: [],
+      },
+      {
+        id: 'commands',
+        kind: 'commands',
+        title: 'Komendy dla wszystkich ⌨️',
+        intro: 'Wpisz / na czacie albo kliknij komendę poniżej.',
+        banner: '',
+        items: [
+          { kind: 'heading', text: 'Poziomy' },
+          { kind: 'command', command: 'rank', commandId: '', text: 'Twoja karta poziomu (albo innej osoby)' },
+          { kind: 'command', command: 'ranking', commandId: '', text: 'najaktywniejsi łącznie, w tym tygodniu i miesiącu' },
+          { kind: 'command', command: 'prywatnosc', commandId: '', text: 'ukryj się albo pokaż na stronie rankingu' },
+          { kind: 'heading', text: 'Ty i serwer' },
+          { kind: 'command', command: 'profil', commandId: '', text: 'profil: konto, dołączenie, role' },
+          { kind: 'command', command: 'avatar', commandId: '', text: 'awatar w dużym rozmiarze' },
+          { kind: 'command', command: 'serwer', commandId: '', text: 'informacje o serwerze' },
+          { kind: 'command', command: 'czlonkowie', commandId: '', text: 'ile osób jest na serwerze i online' },
+          { kind: 'command', command: 'rolainfo', commandId: '', text: 'informacje o wybranej roli' },
+          { kind: 'command', command: 'zaproszenia', commandId: '', text: 'kto kogo zaprosił' },
+          { kind: 'heading', text: 'Przydatne' },
+          { kind: 'command', command: 'afk', commandId: '', text: 'status AFK — bot odpowie, gdy ktoś Cię oznaczy' },
+          { kind: 'command', command: 'przypomnij dodaj', commandId: '', text: 'przypomnienie o wybranej porze' },
+          { kind: 'command', command: 'propozycja', commandId: '', text: 'zgłoś pomysł na serwer' },
+          { kind: 'command', command: 'pomoc', commandId: '', text: 'lista wszystkich komend bota' },
+          { kind: 'heading', text: 'Bump' },
+          { kind: 'command', command: 'bump', commandId: '947088344167366698', text: 'podbij serwer na DISBOARD (co 2 godziny)' },
+          { kind: 'command', command: 'bumpy status', commandId: '', text: 'kiedy można znowu podbić serwer' },
+          { kind: 'command', command: 'bumpy ranking', commandId: '', text: 'kto najczęściej bumpuje' },
+        ],
+      },
+    ],
+  },
+
   panelAccess: {
     enabled: false,
     channelId: '',
@@ -345,6 +396,7 @@ export const DEFAULT_CONFIG = {
       bany: [],
       poziomy: [],
       automod: [],
+      serwerinfo: [],
     },
   },
 

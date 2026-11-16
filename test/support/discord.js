@@ -101,6 +101,7 @@ export function fakeDiscord({ dmFails = false, banError = null, endpoint = null 
       state.commands = body;
       return body;
     }],
+    ['GET', /^\/applications\/app\/guilds\/g1\/commands$/, () => (state.commands ?? []).map((c, i) => ({ id: String(200000000000000000n + BigInt(i)), ...c }))],
     ['GET', /^\/guilds\/g1$/, () => ({ id: GUILD, name: 'Entuzjaści Hopkostki', icon: null, owner_id: 'owner', roles: ROLES, approximate_member_count: 1337, emojis: EMOJIS })],
     ['GET', /^\/guilds\/g1\/invites$/, () => state.invites],
     ['GET', /^\/guilds\/g1\/vanity-url$/, () => state.vanity ?? notFound(50020)],
