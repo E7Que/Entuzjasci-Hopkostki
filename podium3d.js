@@ -1,7 +1,7 @@
 // Podium 3D na stronie rankingu (three.js): trzy kolumny z metalowymi numerami, medaliony z avatarami,
-// reflektory z wolumetrycznym światłem, kurz w świetle, mgła i dym przy podłodze, bloom. Napisy (nick, XP,
-// poziom) to zwykły HTML nad sceną — ten moduł tylko ustawia je nad kolumnami. Gdy przeglądarka nie ma WebGL,
-// strona zostaje przy podium w CSS.
+// reflektory z cieniami i widocznym snopem światła, kurz w świetle, błyszcząca podłoga z odbiciem, bloom.
+// Napisy (nick, XP, poziom) to zwykły HTML nad sceną — ten moduł tylko ustawia je nad kolumnami. Gdy
+// przeglądarka nie ma WebGL, strona zostaje przy podium w CSS.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -11,6 +11,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { Reflector } from 'three/addons/objects/Reflector.js';
 
 const FONT_URL = 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json';
 const BG = 0x0b1114;
@@ -49,25 +50,35 @@ const glowTexture = () =>
     g.fillStyle = grad;
     g.fillRect(0, 0, s, s);
   }, false);
-// Dym: miękkie plamy rysowane z zawinięciem, żeby tekstura się powtarzała bez szwów.
-const smokeTexture = () => {
-  const tex = canvasTexture(256, (g, s) => {
-    for (let i = 0; i < 46; i++) {
-      const x = Math.random() * s, y = Math.random() * s, r = rnd(28, 92), a = rnd(0.05, 0.14);
-      for (const dx of [-s, 0, s]) {
-        for (const dy of [-s, 0, s]) {
-          const grad = g.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r);
-          grad.addColorStop(0, `rgba(255,255,255,${a})`);
-          grad.addColorStop(1, 'rgba(255,255,255,0)');
-          g.fillStyle = grad;
-          g.fillRect(0, 0, s, s);
-        }
-      }
-    }
+// Cień kontaktowy pod kolumną: rozmyty prostokąt (rysowany poza płótnem, widać tylko jego rozmyty cień).
+const CONTACT_INNER = 0.68; // jaką część tekstury zajmuje podstawa kolumny
+const contactTexture = () =>
+  canvasTexture(256, (g, s) => {
+    const m = (s * (1 - CONTACT_INNER)) / 2;
+    g.shadowColor = 'rgba(0,0,0,1)';
+    g.shadowBlur = m * 0.9;
+    g.shadowOffsetX = s * 2;
+    g.fillStyle = '#000';
+    g.beginPath();
+    g.roundRect(m - s * 2, m, s - 2 * m, s - 2 * m, s * 0.05);
+    g.fill();
   }, false);
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  return tex;
-};
+
+// Odbicie w podłodze: Reflector renderuje scenę z lustrzanej kamery, a materiał podłogi (zwykły, oświetlony —
+// z plamami światła i cieniami) dokłada do siebie rozmyte odbicie, mocniejsze pod ostrym kątem.
+const REFLECT_VERT_HEAD = 'uniform mat4 uReflectMatrix;\nvarying vec4 vReflectUv;\n';
+const REFLECT_FRAG_HEAD = 'uniform sampler2D tReflect;\nuniform float uReflect;\nuniform vec2 uBlur;\nvarying vec4 vReflectUv;\n';
+const REFLECT_FRAG = `#include <opaque_fragment>
+  {
+    vec2 ruv = vReflectUv.xy / vReflectUv.w;
+    vec3 refl = texture2D(tReflect, ruv).rgb * 0.2;
+    refl += (texture2D(tReflect, ruv + vec2(uBlur.x, 0.0)).rgb + texture2D(tReflect, ruv - vec2(uBlur.x, 0.0)).rgb
+      + texture2D(tReflect, ruv + vec2(0.0, uBlur.y)).rgb + texture2D(tReflect, ruv - vec2(0.0, uBlur.y)).rgb) * 0.12;
+    refl += (texture2D(tReflect, ruv + uBlur).rgb + texture2D(tReflect, ruv - uBlur).rgb
+      + texture2D(tReflect, ruv + vec2(uBlur.x, -uBlur.y)).rgb + texture2D(tReflect, ruv + vec2(-uBlur.x, uBlur.y)).rgb) * 0.08;
+    float ndv = clamp(dot(normalize(vViewPosition), normal), 0.0, 1.0);
+    gl_FragColor.rgb += refl * uReflect * mix(0.45, 1.0, pow(1.0 - ndv, 3.0));
+  }`;
 // Avatar zastępczy: pierwsza litera na kolorowym tle (gdy obrazka nie da się wczytać) i kłódka dla ukrytych osób.
 function letterTexture(text, color) {
   return canvasTexture(256, (g, s) => {
@@ -177,11 +188,11 @@ export function createPodium3D(container, { overlays = [], reduced = false, wait
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.VSMShadowMap; // miękkie, rozmyte cienie
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(BG);
-  scene.fog = new THREE.FogExp2(BG, 0.052);
+  scene.fog = new THREE.FogExp2(BG, 0.03);
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   pmrem.dispose();
@@ -190,63 +201,70 @@ export function createPodium3D(container, { overlays = [], reduced = false, wait
   const lookAt = new THREE.Vector3(0, 2.35, 0);
   const camBase = new THREE.Vector3(0, 4, 14);
 
-  const composer = new EffectComposer(renderer);
+  // Wygładzanie krawędzi (MSAA) w buforze kompozytora — samo antialias renderera nie działa przy post-processingu.
+  const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: renderer.capabilities.isWebGL2 ? 4 : 0 }));
   composer.addPass(new RenderPass(scene, camera));
   const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.5, 0.5, 0.86);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
 
-  scene.add(new THREE.HemisphereLight(0x9cc7d1, 0x07090a, 0.32));
+  scene.add(new THREE.HemisphereLight(0x9cc7d1, 0x07090a, 0.2));
+  // Delikatne światło od przodu (bez cieni), żeby fronty kolumn i numery nie ginęły w ciemności.
+  const fill = new THREE.DirectionalLight(0xcfe3e8, 0.55);
+  fill.position.set(0, 5, 12);
+  scene.add(fill);
+  // Światło z tyłu, wysoko nad sceną: rzuca cienie kolumn, medalionów i korony do przodu — na podłogę przed
+  // podium, gdzie widać je z kamery — i obrysowuje krawędzie medalionów. Tylko ono ma cienie (jedna mapa cieni).
+  // Daleko i wysoko, więc promienie są prawie równoległe: cień każdego medalionu ląduje tuż przed jego kolumną.
+  const BACK_INTENSITY = 3.6;
+  const back = new THREE.SpotLight(0xdce9ef, 0, 0, THREE.MathUtils.degToRad(13), 0.55, 0);
+  back.target.position.set(0, 0, 1.2);
+  back.position.set(0, 1, -0.45).normalize().multiplyScalar(30).add(back.target.position);
+  back.castShadow = true;
+  back.shadow.mapSize.setScalar(mobile() ? 512 : 1024);
+  back.shadow.camera.near = 20;
+  back.shadow.camera.far = 42;
+  back.shadow.radius = 7;
+  back.shadow.blurSamples = mobile() ? 8 : 12;
+  back.shadow.bias = -0.0004;
+  scene.add(back, back.target);
   const glow = glowTexture();
-  const smoke = smokeTexture();
 
-  // Podłoga: ciemna, lekko połyskująca, z siatką jak w tle strony i poświatą sceny pod podium.
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(70, 70), new THREE.MeshStandardMaterial({ color: 0x0e1518, roughness: 0.52, metalness: 0.25, envMapIntensity: 0.25 }));
+  // Podłoga: ciemna i błyszcząca — plamy światła reflektorów, cienie i rozmyte odbicie podium.
+  const floor = new Reflector(new THREE.PlaneGeometry(70, 70), { textureWidth: 256, textureHeight: 256, clipBias: 0.003, multisample: 0 });
+  const reflectTarget = floor.getRenderTarget();
+  const reflectUniforms = {
+    tReflect: { value: reflectTarget.texture },
+    uReflectMatrix: { value: floor.material.uniforms.textureMatrix.value },
+    uReflect: { value: 0.55 },
+    uBlur: { value: new THREE.Vector2(0.005, 0.005) },
+  };
+  floor.material.dispose();
+  floor.material = new THREE.MeshStandardMaterial({ color: 0x283236, roughness: 0.6, metalness: 0, envMapIntensity: 0.12, dithering: true });
+  floor.material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, reflectUniforms);
+    shader.vertexShader = REFLECT_VERT_HEAD + shader.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n  vReflectUv = uReflectMatrix * vec4(transformed, 1.0);');
+    shader.fragmentShader = REFLECT_FRAG_HEAD + shader.fragmentShader.replace('#include <opaque_fragment>', REFLECT_FRAG);
+  };
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
   scene.add(floor);
-  const grid = new THREE.GridHelper(44, 44, 0x2e6a73, 0x1c3a40);
-  grid.material.transparent = true;
-  grid.material.opacity = 0.18;
-  grid.position.y = 0.003;
-  scene.add(grid);
+  // Poświata za podium w kolorze strony (w trybie wydarzenia — w kolorze wydarzenia).
   const stageGlow = new THREE.Mesh(
-    new THREE.PlaneGeometry(13, 7),
-    new THREE.MeshBasicMaterial({ map: glow, color: 0x3cc3d6, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false }),
+    new THREE.PlaneGeometry(17, 6),
+    new THREE.MeshBasicMaterial({ map: glow, color: 0x3cc3d6, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }),
   );
   stageGlow.rotation.x = -Math.PI / 2;
-  stageGlow.position.set(0, 0.006, 0.4);
+  stageGlow.position.set(0, 0.01, -1.9);
   scene.add(stageGlow);
-
-  // Mgła przy podłodze i dym za podium — warstwy z przesuwającą się teksturą dymu.
-  const hazeLayers = [];
-  const hazeColor = new THREE.Color(0x8fbac3);
-  for (const [y, z, opacity, w, speed] of [[0.1, 1.2, 0.26, 22, 0.012], [0.26, 0.4, 0.2, 20, -0.009], [0.48, -0.4, 0.14, 22, 0.007], [0.78, -1.2, 0.09, 24, -0.006]]) {
-    const map = smoke.clone();
-    map.needsUpdate = true;
-    map.repeat.set(2.2, 1.1);
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, 9), new THREE.MeshBasicMaterial({ map, color: hazeColor, transparent: true, opacity, depthWrite: false }));
-    mesh.rotation.x = -Math.PI / 2;
-    mesh.position.set(0, y, z);
-    mesh.renderOrder = 1;
-    scene.add(mesh);
-    hazeLayers.push({ mesh, map, speed, base: opacity });
-  }
-  for (const [z, y, opacity, speed] of [[-3.4, 2.6, 0.06, 0.005], [-6, 3.2, 0.05, -0.004]]) {
-    const map = smoke.clone();
-    map.needsUpdate = true;
-    map.repeat.set(2.4, 1);
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(26, 9), new THREE.MeshBasicMaterial({ map, color: hazeColor, transparent: true, opacity, depthWrite: false }));
-    mesh.position.set(0, y, z);
-    mesh.renderOrder = 1;
-    scene.add(mesh);
-    hazeLayers.push({ mesh, map, speed, base: opacity });
-  }
 
   // Wspólne materiały.
   const metal = MEDAL.map((c) => new THREE.MeshStandardMaterial({ color: c, metalness: 1, roughness: 0.26, envMapIntensity: 1.25 }));
-  const bodyMat = new THREE.MeshPhysicalMaterial({ color: 0x141c20, metalness: 0.35, roughness: 0.38, clearcoat: 0.7, clearcoatRoughness: 0.22, envMapIntensity: 0.55 });
+  // Blat: metal w kolorze miejsca.
+  const capMat = MEDAL.map((c) => new THREE.MeshStandardMaterial({ color: c, metalness: 0.85, roughness: 0.3, envMapIntensity: 1.1 }));
+  const bodyMat = new THREE.MeshPhysicalMaterial({ color: 0x161f23, metalness: 0.3, roughness: 0.4, clearcoat: 0.6, clearcoatRoughness: 0.25, envMapIntensity: 0.5 });
   const lockTex = lockTexture();
+  const contactTex = contactTexture();
 
   // Każde miejsce: grupa (wjeżdża z podłogi) z kolumną, medalionem i reflektorem.
   const slots = PODIUM.map((p, i) => {
@@ -257,25 +275,23 @@ export function createPodium3D(container, { overlays = [], reduced = false, wait
     body.position.y = p.h / 2;
     body.castShadow = body.receiveShadow = true;
     group.add(body);
-    const cap = new THREE.Mesh(new RoundedBoxGeometry(p.w + 0.07, 0.09, DEPTH + 0.07, 3, 0.035), metal[i]);
+    const cap = new THREE.Mesh(new RoundedBoxGeometry(p.w + 0.07, 0.09, DEPTH + 0.07, 3, 0.035), capMat[i]);
     cap.position.y = p.h + 0.035;
     cap.castShadow = cap.receiveShadow = true;
     group.add(cap);
-    // Świecący pasek u dołu i na krawędzi blatu (łapie bloom).
-    const ledMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(MEDAL[i]).multiplyScalar(2.4) });
-    const led = new THREE.Mesh(new THREE.BoxGeometry(p.w * 0.86, 0.035, 0.02), ledMat);
-    led.position.set(0, 0.16, DEPTH / 2 + 0.012);
-    group.add(led);
-    const capLed = new THREE.Mesh(new THREE.BoxGeometry(p.w * 0.92, 0.02, 0.02), ledMat);
-    capLed.position.set(0, p.h - 0.035, DEPTH / 2 + 0.012);
-    group.add(capLed);
+    // Cień kontaktowy na podłodze (zostaje na podłodze, gdy kolumna wjeżdża — tylko się pojawia).
+    const contactMat = new THREE.MeshBasicMaterial({ map: contactTex, transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    const contact = new THREE.Mesh(new THREE.PlaneGeometry(p.w / CONTACT_INNER, DEPTH / CONTACT_INNER), contactMat);
+    contact.rotation.x = -Math.PI / 2;
+    contact.position.set(p.x, 0.004, 0);
+    scene.add(contact);
 
     // Medalion z avatarem nad kolumną: przód (avatar), tył i krawędź z metalu, obręcz w kolorze medalu.
     const medal = new THREE.Group();
     group.add(medal);
     const spin = new THREE.Group();
     medal.add(spin);
-    const avatarMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.78, metalness: 0, emissive: 0xffffff, emissiveIntensity: 0.13, envMapIntensity: 0.08 });
+    const avatarMat = new THREE.MeshBasicMaterial({ color: 0xcccccc });
     const t = 0.12;
     const front = new THREE.Mesh(new THREE.CircleGeometry(p.r, 64), avatarMat);
     front.position.z = t / 2 + 0.001;
@@ -296,16 +312,12 @@ export function createPodium3D(container, { overlays = [], reduced = false, wait
     halo.position.z = -0.25;
     medal.add(halo);
 
-    // Reflektor: oprawa nad sceną, światło z cieniem i widoczny stożek w mgle.
-    const apex = new THREE.Vector3(p.x * 0.42, 8.6, 3.3);
+    // Reflektor: oprawa wysoko nad kolumną (lekko z przodu) i widoczny snop światła (cienie daje światło z tyłu).
+    const apex = new THREE.Vector3(p.x * 0.7, 9.4, 2.4);
     const target = new THREE.Vector3(p.x, p.h + 0.9, 0);
     const spot = new THREE.SpotLight(LIGHT[i], 0, 24, 0, 0.55, 1.25);
     spot.position.copy(apex);
     spot.target.position.copy(target);
-    spot.castShadow = true;
-    spot.shadow.mapSize.set(1024, 1024);
-    spot.shadow.bias = -0.0004;
-    spot.shadow.radius = 5;
     scene.add(spot, spot.target);
     const len = apex.distanceTo(target) * 1.18;
     const radius = (i === 0 ? 1.85 : 1.5) * 1.18;
@@ -339,7 +351,7 @@ export function createPodium3D(container, { overlays = [], reduced = false, wait
     scene.add(housing);
 
     return {
-      i, p, group, medal, spin, front, rim, rimMat, avatarMat, halo, spot, cone, coneMat, lensMat, ledMat, apex, target, len, radius,
+      i, p, group, medal, spin, front, rim, rimMat, avatarMat, halo, spot, cone, coneMat, lensMat, contactMat, apex, target, len, radius,
       number: null, kind: 'vacant', key: '', tex: null, gain: 0, gainTarget: 0, lift: 0, hover: 0, selected: 0,
       medalY: p.h + 1.6, rise: 1, drop: 1, flip: null, pulse: 0,
     };
@@ -542,7 +554,7 @@ export function createPodium3D(container, { overlays = [], reduced = false, wait
     // na jednostki sceny wyznacza, jak wysoko unoszą się medaliony.
     const vFov = THREE.MathUtils.degToRad(camera.fov);
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
-    const pitch = 0.16;
+    const pitch = 0.2;
     let dist = 14;
     const place = () => {
       camBase.set(0, lookAt.y + Math.sin(pitch) * dist, Math.cos(pitch) * dist);
@@ -553,10 +565,11 @@ export function createPodium3D(container, { overlays = [], reduced = false, wait
     };
     // Kilka przybliżeń: kamera → gdzie na ekranie wypadają napisy → jak wysoko muszą wisieć medaliony → kamera.
     slots.forEach((s) => { s.medalY = s.p.h + 1.2 + s.p.r; });
+    const bottom = -0.7; // pas podłogi (z cieniami i odbiciem kolumn) pod podium
     for (let pass = 0; pass < 4; pass++) {
       const top = Math.max(...slots.map((s) => s.medalY + s.p.r + (s.i === 0 ? 0.85 : 0.25)));
-      lookAt.set(0, top / 2 + 0.05, 0);
-      dist = Math.max(4.15 / Math.tan(hFov / 2), (top / 2 + 0.35) / Math.tan(vFov / 2)) + 1.1;
+      lookAt.set(0, (top + bottom) / 2 + 0.05, 0);
+      dist = Math.max(4.15 / Math.tan(hFov / 2), ((top - bottom) / 2 + 0.35) / Math.tan(vFov / 2)) + 1.1;
       place();
       slots.forEach((s) => {
         // Górna krawędź napisów na ekranie → wysokość w scenie (w płaszczyźnie medalionu), nad nią dolny brzeg medalionu.
@@ -574,6 +587,11 @@ export function createPodium3D(container, { overlays = [], reduced = false, wait
       el.style.width = `${Math.round(((right - left) / 2) * width * 1.12)}px`;
     });
     dustMat.uniforms.uScale.value = 52 * (height / 400) * Math.min(window.devicePixelRatio || 1, 1.75);
+    // Odbicie w mniejszej rozdzielczości (i tak jest rozmyte).
+    const rs = mobile() ? 0.4 : 0.5;
+    const rw = Math.max(64, Math.round(width * dpr * rs)), rh = Math.max(64, Math.round(height * dpr * rs));
+    reflectTarget.setSize(rw, rh);
+    reflectUniforms.uBlur.value.set(1.7 / rw, 1.7 / rh);
     requestRender();
   }
   const probe = new THREE.Vector3();
@@ -634,7 +652,6 @@ export function createPodium3D(container, { overlays = [], reduced = false, wait
   }
   function applyTexture(s, tex) {
     s.avatarMat.map = tex;
-    s.avatarMat.emissiveMap = tex;
     s.avatarMat.needsUpdate = true;
     s.tex = tex;
     requestRender();
@@ -689,8 +706,7 @@ export function createPodium3D(container, { overlays = [], reduced = false, wait
       accent.set(0x3cc3d6);
     }
     stageGlow.material.color.copy(accent);
-    hazeColor.set(0x8fbac3).lerp(accent, 0.25);
-    hazeLayers.forEach((h) => h.mesh.material.color.copy(hazeColor));
+    back.color.set(0xdce9ef).lerp(accent, 0.3); // plama światła na podłodze lekko w kolorze strony / wydarzenia
     requestRender();
   }
 
@@ -733,6 +749,7 @@ export function createPodium3D(container, { overlays = [], reduced = false, wait
     slots.forEach((s) => {
       // Kolumna wjeżdża z podłogi, medalion spada z góry z odbiciem.
       s.group.position.y = -(s.p.h + 0.3) * (1 - easeOutBack(s.rise));
+      s.contactMat.opacity = 0.85 * easeOutCubic(s.rise);
       if (s.drop < 1 && entering === null) s.drop = Math.min(1, s.drop + dt / 0.7);
       const drop = easeOutBack(s.drop);
       s.medal.scale.setScalar(0.55 + 0.45 * drop);
@@ -754,11 +771,11 @@ export function createPodium3D(container, { overlays = [], reduced = false, wait
       s.pulse = Math.max(0, s.pulse - dt * 0.8);
       const blink = s.flip && s.flip.t > 0 && s.flip.t < 0.45 ? 0.35 + 0.65 * Math.abs(Math.cos(s.flip.t * 14)) : 1;
       const g = s.gain * blink * (1 + s.hover * 0.3 + s.pulse * 0.6);
-      s.spot.intensity = g * (s.i === 0 ? 75 : 52);
-      s.coneMat.uniforms.uGain.value = g * (s.i === 0 ? 0.32 : 0.26);
+      s.spot.intensity = g * (s.i === 0 ? 64 : 50);
+      s.coneMat.uniforms.uGain.value = g * (s.i === 0 ? 0.27 : 0.21);
+      s.avatarMat.color.setScalar(0.3 + 0.5 * Math.min(1, g));
       s.coneMat.uniforms.uTime.value = clock;
       s.lensMat.color.set(LIGHT[s.i]).multiplyScalar(0.4 + g * 3);
-      s.ledMat.color.set(MEDAL[s.i]).multiplyScalar(0.5 + Math.min(g, 1.2) * 2);
 
       // Medalion: unosi się i lekko kołysze; podmiana = obrót bokiem.
       const bob = reduced ? 0 : Math.sin(clock * 1.3 + s.i * 1.7) * 0.06;
@@ -802,10 +819,7 @@ export function createPodium3D(container, { overlays = [], reduced = false, wait
     });
     dustMat.uniforms.uTime.value = clock;
     dustMat.uniforms.uGain.value.set(slots[0].gain, slots[1].gain, slots[2].gain);
-    hazeLayers.forEach((h, k) => {
-      h.map.offset.x = clock * h.speed;
-      h.map.offset.y = clock * h.speed * 0.4 * (k % 2 ? -1 : 1);
-    });
+    back.intensity = BACK_INTENSITY * Math.min(1, Math.max(slots[0].gain, slots[1].gain, slots[2].gain));
     stepConfetti(dt);
 
     // Kamera: lekkie kołysanie i paralaksa za kursorem.
@@ -870,6 +884,8 @@ export function createPodium3D(container, { overlays = [], reduced = false, wait
     document.removeEventListener('visibilitychange', onVisibility);
     container.removeEventListener('pointermove', onPointer);
     container.removeEventListener('pointerleave', onLeave);
+    reflectTarget.dispose();
+    composer.dispose();
     renderer.dispose();
     canvas.remove();
     overlays.forEach((el) => { if (el) { el.style.translate = ''; el.style.width = ''; } });
