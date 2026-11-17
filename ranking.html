@@ -33,6 +33,7 @@
       --silver: #a9b5bd;
       --bronze: #c8834f;
       --radius: 10px;
+      color-scheme: dark;
     }
     * { box-sizing: border-box; }
     body {
@@ -47,6 +48,8 @@
     [hidden] { display: none !important; }
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    ::selection { background: color-mix(in srgb, var(--accent) 38%, transparent); color: #fff; }
+    html { scrollbar-color: #2b363b var(--bg); }
 
     main { position: relative; z-index: 1; max-width: 1120px; margin: 0 auto; padding: 20px 16px 56px; }
 
@@ -109,15 +112,23 @@
     .title small { display: block; color: var(--muted); font-size: 0.85rem; }
     h1 { margin: 0; font-size: 1.75rem; font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; }
     .totals { display: flex; flex-wrap: wrap; gap: 4px 22px; margin: 0; padding-bottom: 6px; }
-    .totals div { display: flex; flex-direction: column-reverse; }
+    .totals div { display: flex; flex-direction: column-reverse; justify-content: flex-end; }
     .totals dt { color: var(--muted); font-size: 0.78rem; }
     .totals dd { margin: 0; font-weight: 600; font-size: 1.1rem; }
+    /* Na szerszych ekranach statystyki rozdzielone cienkimi liniami */
+    @media (min-width: 721px) {
+      .totals { gap: 4px 0; }
+      .totals div { padding: 0 18px; }
+      .totals div:first-child { padding-left: 0; }
+      .totals div + div { border-left: 1px solid var(--border); }
+    }
 
     /* ---------- Pasek ---------- */
     .toolbar {
       position: sticky; top: 8px; z-index: 5; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
       margin: 22px 0 18px; padding: 8px; border-radius: 12px; border: 1px solid var(--border);
       background: rgba(21, 27, 30, 0.88); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 12px 28px -20px rgba(0, 0, 0, 0.8);
     }
     .tabs { display: flex; gap: 4px; flex: 1 1 auto; }
     .tab { padding: 8px 12px; border: 0; border-radius: 8px; background: none; color: var(--muted); font-weight: 500; cursor: pointer; }
@@ -273,7 +284,7 @@
     @keyframes crown-drop { from { opacity: 0; transform: translateY(-26px) rotate(-24deg) scale(0.6); } }
 
     /* ---------- Lista ---------- */
-    .table { border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); overflow: hidden; }
+    .table { border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); overflow: hidden; box-shadow: 0 16px 36px -26px rgba(0, 0, 0, 0.9); }
     .cols, .row { display: grid; grid-template-columns: 44px minmax(0, 1fr) 96px 112px 92px 48px; align-items: center; gap: 12px; padding: 0 16px; }
     .cols { height: 38px; color: var(--faint); font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; border-bottom: 1px solid var(--border); }
     .cols span:first-child { text-align: center; }
@@ -391,8 +402,13 @@
     .side { display: grid; gap: 14px; }
     @media (min-width: 980px) { .side { position: sticky; top: 72px; } }
     .info { display: grid; gap: 14px; }
-    .card { padding: 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); }
-    .card h2 { margin: 0 0 10px; font-size: 0.95rem; font-weight: 600; }
+    .card {
+      padding: 16px; border-radius: var(--radius); border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 120px), var(--surface);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 14px 32px -24px rgba(0, 0, 0, 0.9);
+    }
+    .card h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 0.95rem; font-weight: 600; }
+    .card h2 svg { flex: none; width: 16px; height: 16px; color: var(--accent); }
     .card p { margin: 0; color: var(--muted); font-size: 0.86rem; }
     .kv { display: grid; gap: 8px; margin: 0 0 12px; font-size: 0.88rem; }
     .kv div { display: flex; justify-content: space-between; gap: 12px; }
@@ -402,6 +418,7 @@
     .ways { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: 0.88rem; }
     .ways b { display: block; font-weight: 500; }
     .ways span { color: var(--muted); }
+    .ways b.bonus { color: color-mix(in srgb, var(--accent) 72%, #fff); }
     .rewards { list-style: none; margin: 0; padding: 0; display: grid; font-size: 0.88rem; }
     .rewards li { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border); }
     .rewards li:last-child { border-bottom: 0; }
@@ -409,8 +426,10 @@
     .role { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
     .role i { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--rc, var(--faint)); }
     .role span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .cmds { display: grid; gap: 6px; font-size: 0.86rem; color: var(--muted); }
-    code { padding: 1px 6px; border-radius: 5px; background: var(--surface-2); color: var(--text); font: 500 0.84rem ui-monospace, 'SFMono-Regular', Menlo, monospace; margin-right: 6px; }
+    .cmds { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: baseline; gap: 7px 10px; font-size: 0.86rem; color: var(--muted); }
+    .cmds div { display: contents; }
+    .cmds code { justify-self: start; }
+    code { padding: 1px 5px; border-radius: 5px; background: var(--surface-2); color: var(--text); font: 500 0.84rem ui-monospace, 'SFMono-Regular', Menlo, monospace; }
 
     /* ---------- Profil (jak okienko profilu na Discordzie) ---------- */
     .profile { position: relative; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--border); }
@@ -443,7 +462,7 @@
     .pf-next { margin-top: 10px; font-size: 0.86rem; color: var(--muted); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
     .pf-next .role span { color: var(--text); }
     .pf-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; margin: 0; }
-    .pf-stats div { display: flex; flex-direction: column-reverse; min-width: 0; }
+    .pf-stats div { display: flex; flex-direction: column-reverse; justify-content: flex-end; min-width: 0; }
     .pf-stats dt { color: var(--muted); font-size: 0.78rem; }
     .pf-stats dd { margin: 0; font-weight: 600; }
     .pf-stats dd small { color: var(--muted); font-weight: 400; margin-left: 4px; }
@@ -531,6 +550,7 @@
     .pf-name .gtag { margin-left: 6px; vertical-align: 3px; }
 
     footer { margin-top: 40px; color: var(--faint); font-size: 0.82rem; text-align: center; }
+    footer::before { content: ''; display: block; max-width: 320px; height: 1px; margin: 0 auto 16px; background: linear-gradient(90deg, transparent, var(--border), transparent); }
 
     /* ---------- Wydarzenie XP ---------- */
     body { --evc: #ff4fa3; --evc2: #ffb3e6; }
@@ -765,12 +785,12 @@
         <section class="profile" id="profile" hidden aria-label="Profil"></section>
         <div class="info">
           <section class="card" id="card-highlights" hidden>
-            <h2>Rankingi tygodnia i miesiąca</h2>
+            <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M8 2.5v4M16 2.5v4M3 10h18"/></svg>Rankingi tygodnia i miesiąca</h2>
             <dl class="kv" id="countdowns"></dl>
             <p id="highlights-text"></p>
           </section>
           <section class="card" id="card-archive" hidden>
-            <h2>Poprzedni zwycięzcy</h2>
+            <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 16v5M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 6h2.5a2.5 2.5 0 0 1 0 5H17M7 6H4.5a2.5 2.5 0 0 0 0 5H7"/></svg>Poprzedni zwycięzcy</h2>
             <div class="seg" role="tablist" aria-label="Archiwum">
               <button type="button" role="tab" data-archive="weeks" aria-selected="true">Tygodnie</button>
               <button type="button" role="tab" data-archive="months" aria-selected="false">Miesiące</button>
@@ -779,15 +799,15 @@
             <ol class="archive" id="archive-list"></ol>
           </section>
           <section class="card" id="card-xp" hidden>
-            <h2>Jak zdobywać XP</h2>
+            <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H13z"/></svg>Jak zdobywać XP</h2>
             <ul class="ways" id="ways"></ul>
           </section>
           <section class="card" id="card-rewards" hidden>
-            <h2>Nagrody za poziomy</h2>
+            <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4.5" rx="1"/><path d="M5 12.5V21h14v-8.5M12 8v13"/><path d="M12 8c-1.5-3-5.5-4.5-6-2s3 2 6 2zM12 8c1.5-3 5.5-4.5 6-2s-3 2-6 2z"/></svg>Nagrody za poziomy</h2>
             <ul class="rewards" id="rewards"></ul>
           </section>
           <section class="card">
-            <h2>Na Discordzie</h2>
+            <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3.5" width="18" height="17" rx="4"/><path d="m10 16 4-8"/></svg>Na Discordzie</h2>
             <div class="cmds">
               <div><code>/rank</code>Twoja karta poziomu</div>
               <div><code>/ranking</code>ranking na serwerze</div>
@@ -795,7 +815,7 @@
             </div>
           </section>
           <section class="card">
-            <h2>Prywatność</h2>
+            <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.1 7.5 9.5 4.4-1.4 7.5-4.9 7.5-9.5V6z"/><path d="m9 12 2.2 2.2L15.5 10"/></svg>Prywatność</h2>
             <p>Strona pokazuje pseudonim, avatar i statystyki aktywności osób, które zdobyły XP na serwerze. Nie chcesz tu być? Wpisz na serwerze <code>/prywatnosc</code> i wybierz <b>Ukryj mnie</b> — Twoje miejsce zostanie jako „Ukryta osoba”, bez pseudonimu, avatara i profilu.</p>
           </section>
         </div>
@@ -1230,8 +1250,8 @@
       if (r.message) ways.push(`<li><b>Wiadomości</b><span>${range(r.message)} ${every(r.message.cooldown)}${r.message.mode === 'perWord' ? ', więcej za dłuższe' : ''}</span></li>`);
       if (r.voice) ways.push(`<li><b>Kanały głosowe</b><span>${range(r.voice)} ${every(r.voice.cooldown)}${r.voice.minMembers > 1 ? `, gdy na kanale jest min. ${r.voice.minMembers} osoby` : ''}</span></li>`);
       if (r.reaction) ways.push(`<li><b>Reakcje</b><span>${range(r.reaction)} ${every(r.reaction.cooldown)}</span></li>`);
-      for (const b of r.boosters ?? []) ways.push(`<li><b>+${b.percent}% XP</b><span>dla roli ${roleHtml(b)}</span></li>`);
-      if (r.effort) ways.push(`<li><b>+${r.effort.percent}% za dłuższe wiadomości</b><span>od ${r.effort.words} słów albo ${r.effort.images} obrazków</span></li>`);
+      for (const b of r.boosters ?? []) ways.push(`<li><b class="bonus">+${b.percent}% XP</b><span>dla roli ${roleHtml(b)}</span></li>`);
+      if (r.effort) ways.push(`<li><b class="bonus">+${r.effort.percent}% za dłuższe wiadomości</b><span>od ${r.effort.words} słów albo ${r.effort.images} obrazków</span></li>`);
       if (ways.length) { $('#ways').innerHTML = ways.join(''); $('#card-xp').hidden = false; }
 
       if (data.rewards?.length) {
