@@ -274,8 +274,8 @@
 
     /* ---------- Lista ---------- */
     .table { border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); overflow: hidden; }
-    .cols, .row { display: grid; grid-template-columns: 44px minmax(0, 1fr) 96px 104px 92px 48px; align-items: center; gap: 12px; padding: 0 16px; }
-    .cols { height: 38px; color: var(--faint); font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--border); }
+    .cols, .row { display: grid; grid-template-columns: 44px minmax(0, 1fr) 96px 112px 92px 48px; align-items: center; gap: 12px; padding: 0 16px; }
+    .cols { height: 38px; color: var(--faint); font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; border-bottom: 1px solid var(--border); }
     .cols span:first-child { text-align: center; }
     .cols span:nth-child(n + 3) { text-align: right; }
     .cols span:last-child { text-align: center; }
@@ -347,6 +347,7 @@
     .seg button:hover { color: var(--text); }
     .seg button[aria-selected="true"] { background: var(--hover); color: var(--text); }
     .archive { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; max-height: 440px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+    .archive.more-below { -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(180deg, #000 calc(100% - 40px), transparent); }
     .arch-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px; font-size: 0.82rem; color: var(--muted); }
     .arch-head b { color: var(--text); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     /* Małe podium: 1. miejsce na środku, wyższe i z koroną; 2. po lewej, 3. po prawej */
@@ -523,6 +524,10 @@
       -webkit-mask-image: linear-gradient(90deg, transparent 20%, #000 75%); mask-image: linear-gradient(90deg, transparent 20%, #000 75%);
     }
     .board.grid .plate { display: none; }
+    .row.plated .num, .row.plated .rank, .row.plated .lvl b { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85), 0 0 10px rgba(0, 0, 0, 0.6); }
+    .row.plated .num { color: color-mix(in srgb, var(--muted) 50%, #fff); }
+    .row.plated .num.xp { color: var(--text); }
+    .row.plated .lvl { border-radius: 50%; background: rgba(13, 17, 19, 0.55); }
     .pf-name .gtag { margin-left: 6px; vertical-align: 3px; }
 
     footer { margin-top: 40px; color: var(--faint); font-size: 0.82rem; text-align: center; }
@@ -623,7 +628,7 @@
       .head { padding: 0 8px; gap: 12px; }
       .server-icon { width: 72px; height: 72px; margin-top: -32px; border-radius: 18px; border-width: 4px; }
       h1 { font-size: 1.4rem; }
-      .totals { width: 100%; gap: 4px 18px; }
+      .totals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; gap: 8px 18px; }
       .toolbar { gap: 8px; }
       .tabs { flex: 1 1 100%; }
       .tab { flex: 1; padding: 8px 6px; }
@@ -1152,7 +1157,15 @@
             })
             .join('')
         : '<li class="arch-empty">Brak zakończonych okresów.</li>';
+      $('#archive-list').scrollTop = 0;
+      archiveFade();
     }
+    function archiveFade() {
+      const el = $('#archive-list');
+      el.classList.toggle('more-below', el.scrollTop + el.clientHeight < el.scrollHeight - 4);
+    }
+    $('#archive-list').addEventListener('scroll', archiveFade, { passive: true });
+    window.addEventListener('resize', archiveFade, { passive: true });
     async function loadArchive() {
       try {
         const res = await fetch(`${BASE}/archive`);
@@ -1164,6 +1177,7 @@
         archive.tab = first;
         renderArchive();
         $('#card-archive').hidden = false;
+        archiveFade();
       } catch {
         // Archiwum to dodatek — bez niego strona działa normalnie.
       }
@@ -1684,13 +1698,15 @@
 
     function burst() {
       if (!ev.pick || ev.pick.status !== 'active' || reduceMotion.matches) return;
-      ev.top?.destroy();
-      const canvas = document.createElement('canvas');
-      canvas.className = 'fx-top';
-      canvas.setAttribute('aria-hidden', 'true');
-      document.body.append(canvas);
-      const theme = document.body.dataset.ev;
-      ev.top = particles(canvas, theme, { onDone: () => { canvas.remove(); ev.top = null; } });
+      // Jedna warstwa na wybuchy: kolejne kliknięcia dokładają cząsteczki do trwającego wybuchu (z limitem). Warstwa
+      // znika sama, gdy wszystko zgaśnie — wcześniej każde kliknięcie zostawiało zatrzymane płótno z „zamrożonymi” iskrami.
+      if (!ev.top) {
+        const canvas = document.createElement('canvas');
+        canvas.className = 'fx-top';
+        canvas.setAttribute('aria-hidden', 'true');
+        document.body.append(canvas);
+        ev.top = particles(canvas, document.body.dataset.ev, { onDone: () => { canvas.remove(); ev.top = null; } });
+      }
       ev.top.burst();
     }
 
@@ -1912,7 +1928,11 @@
       return {
         burst() {
           const n = Math.round({ confetti: 150, fire: 140, snow: 170, stars: 110, neon: 100 }[theme] ?? 120);
-          for (let i = 0; i < n; i++) add(make(true, i % 2), false);
+          // Najwyżej dwa wybuchy naraz — szybkie klikanie dokłada cząsteczki tylko do tego limitu.
+          let live = 0;
+          for (const p of list) if (!p.amb) live += 1;
+          const count = Math.min(n, Math.max(0, n * 2 - live));
+          for (let i = 0; i < count; i++) add(make(true, i % 2), false);
           run();
         },
         destroy,
