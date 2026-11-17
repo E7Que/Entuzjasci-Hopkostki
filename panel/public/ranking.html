@@ -18,7 +18,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
   <style>
     :root {
       --bg: #0d1113;
@@ -154,40 +153,35 @@
     .note { margin: 0 0 14px; color: var(--muted); font-size: 0.88rem; }
     .note b { color: var(--text); font-weight: 500; }
 
-    /* ---------- Podium (top 3): 1. miejsce na środku, reflektory świecą na kolumny ---------- */
+    /* ---------- Podium (top 3): wtopione w stronę — bez ramki i własnego tła; kolumny wyrastają z karty listy
+       (ten sam materiał, wklęsłe narożniki u podstawy), reflektory delikatnie świecą z góry na osoby ---------- */
     .top3 {
-      --pad: 34px; --apex: 120px;
-      position: relative; isolation: isolate; overflow: hidden;
-      display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.14fr) minmax(0, 1fr); gap: 0 8px;
-      margin-bottom: 14px; padding: var(--pad) 14px 0; border-radius: var(--radius); border: 1px solid var(--border);
-      background: radial-gradient(80% 62% at 50% 0%, rgba(60, 195, 214, 0.09), transparent 72%), linear-gradient(180deg, #131b1f, #0f1518 62%, #0b1012);
+      --pad: 40px; --apex: 130px; --fil: 8px;
+      position: relative; z-index: 1; isolation: isolate; overflow: hidden;
+      display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.14fr) minmax(0, 1fr); gap: 0 calc(2 * var(--fil) + 6px);
+      margin-bottom: -1px; padding: var(--pad) 24px 0;
     }
+    /* Bez listy pod spodem (widok kafelków albo same 3 osoby): kolumny stoją na linii */
+    .top3.alone, .board.grid .top3 { margin-bottom: 14px; border-bottom: 1px solid var(--border); }
+    .top3.alone .pod-col::before, .top3.alone .pod-col::after, .board.grid .top3 .pod-col::before, .board.grid .top3 .pod-col::after { display: none; }
     /* Kolumna podium z osobą: --m kolor medalu, --ph wysokość kolumny, --sp rozwarcie reflektora, --d opóźnienie wejścia */
     .top {
-      --m: var(--silver); --avs: 72px; --ph: 84px; --num: 2.6rem; --sp: 9.5deg; --lamp: 40px; --glow: 24%; --core: 12%; --halo: 24%; --d: 0.24s; --sway: 8.5s; --sway-d: -3s;
+      --m: var(--silver); --avs: 72px; --ph: 84px; --num: 2.4rem; --sp: 9.5deg; --glow: 17%; --core: 9%; --halo: 22%; --d: 0.24s; --sway: 8.5s; --sway-d: -3s;
       position: relative; grid-row: 1; grid-column: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
       min-width: 0; text-align: center; cursor: pointer; border-radius: 10px 10px 0 0; -webkit-tap-highlight-color: transparent;
     }
-    .top.t1 { --m: var(--gold); --avs: 96px; --ph: 118px; --num: 3.5rem; --sp: 14.5deg; --lamp: 60px; --glow: 36%; --core: 20%; --halo: 36%; --d: 0.5s; --sway: 7s; --sway-d: 0s; grid-column: 2; }
-    .top.t3 { --m: var(--bronze); --ph: 62px; --num: 2.1rem; --sp: 8.6deg; --lamp: 36px; --d: 0.04s; --sway: 9.5s; --sway-d: -6s; grid-column: 3; }
+    .top.t1 { --m: var(--gold); --avs: 96px; --ph: 118px; --num: 3.2rem; --sp: 14.5deg; --glow: 26%; --core: 14%; --halo: 34%; --d: 0.5s; --sway: 7s; --sway-d: 0s; grid-column: 2; }
+    .top.t3 { --m: var(--bronze); --ph: 62px; --num: 2rem; --sp: 8.6deg; --d: 0.04s; --sway: 9.5s; --sway-d: -6s; grid-column: 3; }
     .top:focus-visible { outline-offset: -3px; }
 
-    /* Reflektor: oprawa u góry sceny i stożek światła na osobę (wierzchołek stożka jest ponad sceną) */
-    .lamp {
-      position: absolute; z-index: 1; left: 50%; top: calc(-1 * var(--pad)); width: var(--lamp); height: 8px; margin-left: calc(var(--lamp) / -2);
-      border: 1px solid #2b363b; border-top: 0; border-radius: 0 0 8px 8px; background: #06090a;
-    }
-    .lamp::after {
-      content: ''; position: absolute; left: 3px; right: 3px; bottom: -1px; height: 3px; border-radius: 3px;
-      background: color-mix(in srgb, var(--m) 65%, #fff); box-shadow: 0 2px 14px 2px color-mix(in srgb, var(--m) 60%, transparent);
-    }
+    /* Reflektor: stożek światła z góry (źródło ponad stroną) — łagodnie się wyłania i gaśnie przy kolumnie */
     .beam {
       --bc: color-mix(in srgb, var(--m) var(--glow), transparent); --bc2: color-mix(in srgb, var(--m) var(--core), transparent);
       position: absolute; z-index: -1; left: -30%; right: -30%; top: calc(-1 * var(--pad)); bottom: calc(var(--ph) - 4px); pointer-events: none;
       background:
         conic-gradient(from calc(180deg - var(--sp) * 0.5) at 50% calc(-1 * var(--apex)), transparent 0deg, var(--bc2) calc(var(--sp) * 0.3), var(--bc2) calc(var(--sp) * 0.7), transparent var(--sp), transparent 360deg),
         conic-gradient(from calc(180deg - var(--sp)) at 50% calc(-1 * var(--apex)), transparent 0deg, var(--bc) calc(var(--sp) * 0.5), var(--bc) calc(var(--sp) * 1.5), transparent calc(var(--sp) * 2), transparent 360deg);
-      -webkit-mask-image: linear-gradient(180deg, #000 0, #000 38%, transparent 97%); mask-image: linear-gradient(180deg, #000 0, #000 38%, transparent 97%);
+      -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 28%, #000 48%, transparent 96%); mask-image: linear-gradient(180deg, transparent 0, #000 28%, #000 48%, transparent 96%);
       transform-origin: 50% calc(-1 * var(--apex)); animation: beam-sway var(--sway) ease-in-out var(--sway-d) infinite alternate;
     }
     @keyframes beam-sway { from { transform: rotate(-1.6deg); } to { transform: rotate(1.6deg); } }
@@ -201,10 +195,10 @@
     }
     .pod-av::after { content: ''; position: absolute; z-index: -1; inset: -28%; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--m) var(--halo), transparent), transparent); }
     .top.t1 .pod-av::before { animation: spin 7s linear infinite; }
-    .top .avatar { position: relative; width: var(--avs); height: var(--avs); border: 3px solid #0f1518; }
+    .top3 .top .pod-av .avatar { position: relative; width: var(--avs); height: var(--avs); border: 3px solid var(--bg); } /* mocniej niż reguły widoku kafelków */
     .pod-lvl {
       position: absolute; z-index: 2; left: 50%; bottom: -10px; transform: translateX(-50%); padding: 0 8px; border-radius: 999px;
-      border: 1px solid color-mix(in srgb, var(--m) 55%, var(--border)); background: #0f1518; color: var(--text); font-size: 0.68rem; font-weight: 600; line-height: 17px; white-space: nowrap;
+      border: 1px solid color-mix(in srgb, var(--m) 55%, var(--border)); background: var(--surface); color: var(--text); font-size: 0.68rem; font-weight: 600; line-height: 17px; white-space: nowrap;
     }
     .pod-av .me-tag { position: absolute; z-index: 3; right: -6px; top: 4px; background: var(--accent); color: #062126; }
     .top .nick { display: flex; align-items: center; justify-content: center; gap: 6px; max-width: 100%; min-width: 0; font-weight: 600; white-space: nowrap; }
@@ -229,66 +223,54 @@
     .spark.s4 { left: -8px; bottom: 9%; width: 7px; height: 7px; animation-delay: 2.1s; }
     @keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(0.3) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
 
-    /* Kolumna z numerem miejsca */
+    /* Kolumna z numerem miejsca — z tego samego materiału co lista, w którą przechodzi; u góry pasek w kolorze medalu */
     .pod-col {
-      position: relative; flex: none; width: 100%; height: var(--ph); margin-top: 12px; overflow: hidden; display: grid; place-items: center;
-      border: 1px solid color-mix(in srgb, var(--m) 42%, var(--border)); border-bottom: 0; border-radius: 10px 10px 0 0;
-      background: linear-gradient(180deg, color-mix(in srgb, var(--m) 25%, #141b1f), color-mix(in srgb, var(--m) 7%, #10161a) 80%);
-      box-shadow: inset 0 2px 0 color-mix(in srgb, var(--m) 60%, transparent), 0 -12px 30px -16px var(--m); transition: filter 0.18s ease;
+      position: relative; flex: none; width: 100%; height: var(--ph); margin-top: 12px; display: grid; place-items: center;
+      border: 1px solid var(--border); border-top: 2px solid var(--m); border-bottom: 0; border-radius: 10px 10px 0 0;
+      background: linear-gradient(180deg, color-mix(in srgb, var(--m) 13%, var(--surface)), var(--surface) 82%);
+      box-shadow: 0 -16px 30px -24px var(--m); transition: border-color 0.18s ease;
     }
-    .pod-col::before { content: ''; position: absolute; inset: 7px 7px 0; border: 1px solid color-mix(in srgb, var(--m) 20%, transparent); border-bottom: 0; border-radius: 5px 5px 0 0; }
-    .pod-col::after { content: ''; position: absolute; inset: 0 -70%; background: linear-gradient(105deg, transparent 43%, rgba(255, 255, 255, 0.17) 50%, transparent 57%); transform: translateX(-75%); }
-    .top.t1 .pod-col::after { animation: pod-shine 6s ease-in-out 2.4s infinite; }
-    @keyframes pod-shine { 0% { transform: translateX(-75%); } 22%, 100% { transform: translateX(75%); } }
+    /* Wklęsłe narożniki u podstawy: kolumna łagodnie przechodzi w górną krawędź karty listy */
+    .pod-col::before, .pod-col::after { content: ''; position: absolute; bottom: 0; width: calc(var(--fil) + 1px); height: var(--fil); pointer-events: none; }
+    .pod-col::before {
+      right: 100%;
+      background: radial-gradient(circle at 0 0, transparent var(--fil), var(--border) var(--fil), var(--border) calc(var(--fil) + 1px), var(--surface) calc(var(--fil) + 1px));
+    }
+    .pod-col::after {
+      left: 100%;
+      background: radial-gradient(circle at 100% 0, transparent var(--fil), var(--border) var(--fil), var(--border) calc(var(--fil) + 1px), var(--surface) calc(var(--fil) + 1px));
+    }
     .pod-col b {
-      position: relative; top: -2px; font-size: var(--num); font-weight: 800; line-height: 1; letter-spacing: -0.02em; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.45));
-      background: linear-gradient(180deg, color-mix(in srgb, var(--m) 25%, #fff), var(--m) 55%, color-mix(in srgb, var(--m) 60%, #000));
+      position: relative; top: -2px; font-size: var(--num); font-weight: 800; line-height: 1; letter-spacing: -0.02em;
+      background: linear-gradient(180deg, color-mix(in srgb, var(--m) 30%, #fff), var(--m) 58%, color-mix(in srgb, var(--m) 72%, #000));
       -webkit-background-clip: text; background-clip: text; color: transparent;
     }
 
     /* Stany: najechanie, otwarty profil, „Moje miejsce”, ukryta osoba, wolne miejsce */
     @media (hover: hover) {
       .top:not(.anon):not(.vacant):hover .pod-av { transform: translateY(-3px) scale(1.035); }
-      .top:not(.anon):not(.vacant):hover .pod-col { filter: brightness(1.2); }
+      .top:not(.anon):not(.vacant):hover .pod-col { border-top-color: color-mix(in srgb, var(--m) 55%, #fff); }
     }
-    .top.sel .pod-col { border-color: var(--accent); box-shadow: inset 0 2px 0 var(--accent), 0 -12px 30px -16px var(--m); }
+    .top.sel .pod-col { border-top-color: var(--accent); box-shadow: 0 -16px 30px -22px var(--accent); }
     .top.sel .pod-lvl { border-color: var(--accent); }
     .top.flash .pod-col { animation: pod-flash 1.8s ease-out; }
-    @keyframes pod-flash { 0%, 35% { box-shadow: inset 0 0 0 150px color-mix(in srgb, var(--accent) 36%, transparent); } }
+    @keyframes pod-flash { 0%, 35% { box-shadow: inset 0 0 0 150px color-mix(in srgb, var(--accent) 22%, transparent); } }
     .top.vacant { --m: #47545a; cursor: default; }
-    .top.vacant .beam, .top.vacant .lamp::after, .top.vacant .pod-av::before, .top.vacant .pod-av::after { display: none; }
+    .top.vacant .beam, .top.vacant .pod-av::before, .top.vacant .pod-av::after { display: none; }
     .top.vacant .nick { color: var(--faint); font-size: 0.82rem; font-weight: 500; }
     .top .pod-free { display: block; border: 2px dashed #37444a; background: none; }
 
-    /* Wejście podium: kolumny wyjeżdżają od 3. do 1. miejsca, osoby wskakują, reflektory się zapalają */
+    /* Wejście podium: kolumny wysuwają się z listy od 3. do 1. miejsca, osoby wskakują, reflektory się zapalają */
     .top3.pre .pod-col { transform: translateY(105%); }
-    .top3.pre .pod-person, .top3.pre .beam, .top3.pre .lamp::after { opacity: 0; }
-    .top3.enter .pod-col { animation: pod-rise 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.12) var(--d) both; }
+    .top3.pre .pod-person, .top3.pre .beam { opacity: 0; }
+    .top3.enter .pod-col { animation: pod-rise 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) var(--d) both; }
     .top3.enter .pod-person { animation: pod-drop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3) calc(var(--d) + 0.36s) both; }
     .top3.enter .beam { animation: beam-sway var(--sway) ease-in-out var(--sway-d) infinite alternate, beam-on 0.8s linear calc(var(--d) + 0.6s) both; }
-    .top3.enter .lamp::after { animation: beam-on 0.8s linear calc(var(--d) + 0.6s) both; }
     .top3.enter .crown { animation: crown-drop 0.55s cubic-bezier(0.3, 1.5, 0.5, 1) calc(var(--d) + 0.8s) backwards; }
     @keyframes pod-rise { from { transform: translateY(105%); } }
     @keyframes pod-drop { from { opacity: 0; transform: translateY(-22px) scale(0.86); } }
     @keyframes beam-on { 0% { opacity: 0; } 10% { opacity: 0.85; } 18% { opacity: 0.1; } 30% { opacity: 1; } 40% { opacity: 0.35; } 55%, 100% { opacity: 1; } }
     @keyframes crown-drop { from { opacity: 0; transform: translateY(-26px) rotate(-24deg) scale(0.6); } }
-
-    /* ---------- Podium 3D (three.js): scena w canvasie, napisy z HTML nad kolumnami ---------- */
-    .top3.is3d { height: 410px; padding: 0; gap: 0; background: #0b1114; }
-    .top3.is3d .pod3d { position: absolute; inset: 0; z-index: 0; display: block; width: 100%; height: 100%; }
-    .top3.is3d .top { position: static; z-index: 1; height: 100%; border-radius: 0; }
-    .top3.is3d .lamp, .top3.is3d .beam, .top3.is3d .pod-col, .top3.is3d .crown, .top3.is3d .spark,
-    .top3.is3d .pod-av .av, .top3.is3d .pod-av::before, .top3.is3d .pod-av::after { display: none; }
-    .top3.is3d .pod-person { position: absolute; z-index: 2; left: 0; top: 0; width: 29%; padding: 2px 4px; pointer-events: none; text-shadow: 0 1px 2px #000, 0 0 14px rgba(0, 0, 0, 0.85); }
-    .top3.is3d .top.t1 .pod-person { width: 33%; }
-    .top3.is3d .pod-av { display: flex; justify-content: center; align-items: center; gap: 5px; padding: 0; margin: 0 0 3px; transition: none; }
-    .top3.is3d .pod-lvl { position: static; transform: none; text-shadow: none; }
-    .top3.is3d .pod-av .me-tag { position: static; text-shadow: none; }
-    .top3.is3d .top:hover .pod-av { transform: none; }
-    .top3.is3d .top.vacant .pod-av { display: none; }
-    .top3.is3d .top.sel .nick { color: var(--accent); }
-    .top3.is3d.enter .pod-person { animation: pod-drop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3) calc(var(--d) + 1.05s) both; }
-    .top3.is3d .top:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
 
     /* ---------- Lista ---------- */
     .table { border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); overflow: hidden; }
@@ -629,11 +611,8 @@
     .tab[data-period="event"]::before { content: ''; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--evc); box-shadow: 0 0 8px var(--evc); }
     body[data-ev-live] .tab[data-period="event"]::before { animation: ev-blink 1.4s ease-in-out infinite; }
     @keyframes ev-blink { 50% { opacity: 0.35; } }
-    /* Podium wydarzenia: scena w kolorze wydarzenia, medale jak zawsze — złoty, srebrny i brązowy */
-    .board.ev-mode .top3 {
-      border-color: color-mix(in srgb, var(--evc) 36%, var(--border));
-      background: radial-gradient(80% 62% at 50% 0%, color-mix(in srgb, var(--evc) 16%, transparent), transparent 72%), linear-gradient(180deg, #131b1f, #0f1518 62%, #0b1012);
-    }
+    /* Podium wydarzenia: poświata w kolorze wydarzenia za podium, medale jak zawsze — złoty, srebrny i brązowy */
+    .board.ev-mode .top3 { background: radial-gradient(64% 78% at 50% 100%, color-mix(in srgb, var(--evc) 15%, transparent), transparent 72%); }
     .board.ev-mode .num .plus { color: var(--evc2); }
     .board.ev-mode .row.sel { box-shadow: inset 3px 0 0 var(--evc); }
 
@@ -649,21 +628,16 @@
       .tabs { flex: 1 1 100%; }
       .tab { flex: 1; padding: 8px 6px; }
       .search { flex: 1 1 auto; }
-      .top3 { --pad: 27px; --apex: 90px; gap: 0 5px; padding: var(--pad) 8px 0; }
-      .top3.is3d { height: 350px; padding: 0; gap: 0; }
-      .top3.is3d .top .tag { display: none; }
-      /* Tag serwera w podium na wąskim ekranie: sama ikonka (bez napisu), żeby nie ucinać nicku. */
-      .top3.is3d .top .gtag { font-size: 0; gap: 0; padding: 0 3px; }
-      .top3.is3d .top .gtag:not(:has(img)) { display: none; }
-      .top3.is3d .pod-person { width: 32%; padding: 2px 1px; }
-      .top3.is3d .top.t1 .pod-person { width: 35%; }
-      .top { --avs: 52px; --ph: 62px; --num: 2rem; --lamp: 30px; }
-      .top.t1 { --avs: 68px; --ph: 86px; --num: 2.6rem; --lamp: 44px; }
-      .top.t3 { --ph: 46px; --num: 1.6rem; --lamp: 28px; }
-      .lamp { height: 7px; }
+      .top3 { --pad: 32px; --apex: 96px; --fil: 5px; padding: var(--pad) 16px 0; }
+      .top { --avs: 52px; --ph: 62px; --num: 1.9rem; }
+      .top.t1 { --avs: 68px; --ph: 86px; --num: 2.4rem; }
+      .top.t3 { --ph: 46px; --num: 1.5rem; }
+      /* Tag serwera w podium: sama ikonka (bez napisu), żeby nie ucinać nicku */
+      .top .gtag { font-size: 0; gap: 0; padding: 0 3px; }
+      .top .gtag:not(:has(img)) { display: none; }
       .pod-person { padding: 0 2px; }
       .pod-av { padding: 3px; margin-bottom: 13px; }
-      .top .avatar { border-width: 2px; }
+      .top3 .top .pod-av .avatar { border-width: 2px; }
       .pod-lvl { bottom: -9px; padding: 0 6px; font-size: 0.62rem; line-height: 15px; }
       .top .nick { font-size: 0.86rem; }
       .top.t1 .nick { font-size: 0.95rem; }
@@ -673,7 +647,6 @@
       .top.vacant .nick { font-size: 0.74rem; }
       .crown { top: -17px; width: 28px; margin-left: -14px; }
       .pod-col { margin-top: 9px; }
-      .pod-col::before { inset: 5px 5px 0; }
       .cols { display: none; }
       .row { grid-template-columns: 26px minmax(0, 1fr) auto 40px; gap: 10px; padding: 0 12px; }
       .num.msgs, .num.voice { display: none; }
@@ -702,7 +675,7 @@
     @media (prefers-reduced-motion: reduce) {
       .skeleton, .pf-skel, .profile, .blob, .bg-grid, .saw svg, .cog svg, .pillar::after, .chev span, .dn.fx7 { animation: none; }
       .event, .event::after, .ev-mult, .ev-mult::before, .ev-dot, .ev-clock b.tick, body[data-ev-live] .tab[data-period="event"]::before { animation: none; }
-      .beam, .top.t1 .pod-av::before, .crown svg, .spark, .top.t1 .pod-col::after, .top.flash .pod-col { animation: none; }
+      .beam, .top.t1 .pod-av::before, .crown svg, .spark, .top.flash .pod-col { animation: none; }
       .pod-av, .pod-col { transition: none; }
     }
   </style>
@@ -1034,7 +1007,7 @@
     const CROWN_SVG = '<svg viewBox="0 0 32 24" aria-hidden="true"><path d="M4 17.4 2.3 7.2l7.2 4.9L16 3.6l6.5 8.5 7.2-4.9L28 17.4z"/><rect x="4" y="18.8" width="24" height="3.6" rx="1.3"/><circle cx="2.3" cy="5.8" r="1.7"/><circle cx="16" cy="2.3" r="1.9"/><circle cx="29.7" cy="5.8" r="1.7"/></svg>';
     const POD_AVATAR = [96, 72, 72];
     const POD_ATTRS = ['data-id', 'tabindex', 'role', 'aria-label', 'aria-hidden', 'title'];
-    const pod = { built: false, shown: [null, null, null], flips: [[], [], []], timer: 0, articles: [], data3d: [] };
+    const pod = { built: false, shown: [null, null, null], flips: [[], [], []], timer: 0 };
     function podStat(e) {
       if (e.periodXp != null) return `+${fmt(e.periodXp)} XP`;
       if (state.period === 'all' && state.sort === 'messages') return `${fmt(e.messages)} wiad.`;
@@ -1082,85 +1055,19 @@
       article.querySelector('.pod-person').innerHTML = slot.html;
       article.classList.toggle('sel', Boolean(state.selected) && article.dataset.id === state.selected);
       pod.shown[i] = slot;
-      pod3dSelection();
     }
-    // Pierwsze pokazanie: animacja wejścia, gdy podium jest widoczne na ekranie (z podium 3D — gdy scena jest gotowa).
+    // Pierwsze pokazanie: animacja wejścia, gdy podium jest widoczne na ekranie.
     function podEntrance(box) {
       if (reduceMotion.matches || !('IntersectionObserver' in window)) return;
       box.classList.add('pre');
       const io = new IntersectionObserver((seen) => {
         if (!seen.some((x) => x.isIntersecting)) return;
         io.disconnect();
-        Promise.race([pod3d.ready ?? Promise.resolve(null), new Promise((r) => setTimeout(r, 2500))]).then(() => {
-          box.classList.remove('pre');
-          box.classList.add('enter');
-          pod3d.api?.enter();
-          pod.timer = setTimeout(() => box.classList.remove('enter'), 3200);
-        });
+        box.classList.remove('pre');
+        box.classList.add('enter');
+        pod.timer = setTimeout(() => box.classList.remove('enter'), 2700);
       }, { threshold: 0.2 });
       io.observe(box);
-    }
-
-    // ---------- Podium 3D (three.js, ładowane z CDN) ----------
-    // Bez WebGL, przy błędzie ładowania albo z ?no3d zostaje podium w CSS.
-    const pod3d = { api: null, ready: null, started: false };
-    const WEBGL = (() => {
-      try {
-        const c = document.createElement('canvas');
-        return Boolean(c.getContext('webgl2') || c.getContext('webgl'));
-      } catch {
-        return false;
-      }
-    })();
-    const pod3dModule = !WEBGL || new URLSearchParams(location.search).has('no3d')
-      ? Promise.resolve(null)
-      : import('./podium3d.js?v=dev').catch((error) => {
-          console.warn('[podium 3D]', error);
-          return null;
-        });
-    const podIndex = (el) => pod.articles.indexOf(el?.closest?.('.top'));
-    function pod3dData(top) {
-      return [0, 1, 2].map((i) => {
-        const e = top[i];
-        if (!e) return { kind: 'vacant', key: '' };
-        if (e.hidden) return { kind: 'hidden', key: 'hidden', name: '?' };
-        return { kind: 'person', key: `${e.userId}|${e.avatar}`, avatar: e.avatar, name: display(e) };
-      });
-    }
-    const pod3dAccent = () => (state.period === 'event' ? getComputedStyle(document.body).getPropertyValue('--evc').trim() || '#ff4fa3' : '#3cc3d6');
-    function pod3dSelection() {
-      pod3d.api?.setSelected(pod.articles.findIndex((a) => a.classList.contains('sel')));
-    }
-    function start3d(box) {
-      if (pod3d.started) return;
-      pod3d.started = true;
-      pod3d.ready = pod3dModule.then((mod) => {
-        if (!mod) return null;
-        try {
-          const waiting = box.classList.contains('pre');
-          box.classList.add('is3d');
-          const api = mod.createPodium3D(box, { overlays: pod.articles.map((a) => a.querySelector('.pod-person')), reduced: reduceMotion.matches, waitForEnter: waiting });
-          pod3d.api = api;
-          api.setAccent(pod3dAccent());
-          api.setSlots(pod.data3d, { animate: false });
-          pod3dSelection();
-          box.addEventListener('pod3d-lost', () => {
-            box.classList.remove('is3d');
-            pod3d.api = null;
-          }, { once: true });
-          box.addEventListener('pointerover', (event) => api.setHover(podIndex(event.target)));
-          box.addEventListener('pointerleave', () => api.setHover(-1));
-          box.addEventListener('focusin', (event) => api.setHover(podIndex(event.target)));
-          box.addEventListener('focusout', () => api.setHover(-1));
-          return api;
-        } catch (error) {
-          console.warn('[podium 3D]', error);
-          box.classList.remove('is3d');
-          box.querySelector('.pod3d')?.remove();
-          pod3d.api = null;
-          return null;
-        }
-      });
     }
     function renderPodium(top) {
       const box = $('#top3');
@@ -1171,15 +1078,12 @@
       const slots = [0, 1, 2].map((i) => podSlot(top[i], i));
       if (!pod.built) {
         box.innerHTML = [1, 2, 3]
-          .map((n) => `<article class="top t${n}"><i class="lamp" aria-hidden="true"></i><i class="beam" aria-hidden="true"></i><div class="pod-person"></div><div class="pod-col" aria-hidden="true"><b>${n}</b></div></article>`)
+          .map((n) => `<article class="top t${n}"><i class="beam" aria-hidden="true"></i><div class="pod-person"></div><div class="pod-col" aria-hidden="true"><b>${n}</b></div></article>`)
           .join('');
         pod.built = true;
-        pod.articles = [...box.querySelectorAll('.top')];
-        pod.data3d = pod3dData(top);
-        slots.forEach((slot, i) => podApply(pod.articles[i], slot, i));
+        slots.forEach((slot, i) => podApply(box.children[i], slot, i));
         box.hidden = false;
         podEntrance(box);
-        start3d(box);
         return;
       }
       const animate = !box.hidden && !box.classList.contains('pre') && !reduceMotion.matches && typeof box.animate === 'function';
@@ -1189,11 +1093,8 @@
         clearTimeout(pod.timer);
         box.classList.remove('enter');
       }
-      pod.data3d = pod3dData(top);
-      pod3d.api?.setAccent(pod3dAccent());
-      pod3d.api?.setSlots(pod.data3d, { animate });
       slots.forEach((slot, i) => {
-        const article = pod.articles[i];
+        const article = box.children[i];
         const person = article.querySelector('.pod-person');
         const shown = pod.shown[i];
         // Przerwana podmiana (szybkie przełączanie zakładek): wracamy do tego, co faktycznie stoi na kolumnie.
@@ -1387,6 +1288,7 @@
       renderPodium(top);
       list.innerHTML = state.entries.slice(top.length).map(rowHtml).join('');
       table.hidden = !list.children.length;
+      top3.classList.toggle('alone', table.hidden);
       applySamples(list);
     }
 
@@ -1442,7 +1344,6 @@
     }
     function markSelected() {
       document.querySelectorAll('[data-id]').forEach((el) => el.classList.toggle('sel', el.dataset.id === state.selected));
-      pod3dSelection();
     }
     const lockScroll = (lock) => { document.body.style.overflow = lock && !desktop.matches ? 'hidden' : ''; };
 
@@ -2065,7 +1966,6 @@
         el.classList.remove('flash');
         void el.offsetWidth;
         el.classList.add('flash');
-        if (podIndex(el) >= 0) pod3d.api?.flash(podIndex(el));
       } else {
         const note = $('#note');
         note.innerHTML = '<b>Nie ma Cię w tym rankingu</b> — zdobądź trochę XP na serwerze.';
