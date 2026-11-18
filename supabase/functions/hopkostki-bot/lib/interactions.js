@@ -3,7 +3,7 @@
 
 import { COMMAND_MAP } from './commands.js';
 import { VIEWS, parseCustomId, renderView } from './views.js';
-import { hasModAccess, describeError, ActionError, announceElsewhere } from './moderation.js';
+import { canUseCommand, describeError, ActionError, announceElsewhere } from './moderation.js';
 import { errorEmbed } from './embeds.js';
 import { isVoiceCustomId, handleVoiceInteraction } from './voice.js';
 import { isRoleCustomId, handleRoleInteraction } from './messages.js';
@@ -118,17 +118,19 @@ export async function handleInteraction(body, bot) {
 
   const ix = wrapInteraction(body, bot);
   const config = await bot.store.getConfig();
+  // Ta sama bramka dla komendy i jej podpowiedzi: lista ról z panelu (także dla Administratora), właściciel zawsze.
+  const allowed = () => canUseCommand(bot, ix.member, command.permission, config, command.data.name);
 
   if (body.type === TYPE.AUTOCOMPLETE) {
     let choices = [];
-    if (command.autocomplete && hasModAccess(ix.member, command.permission, config, command.data.name)) {
+    if (command.autocomplete && (await allowed())) {
       choices = await command.autocomplete(ix, bot).catch(() => []);
     }
     return { response: { type: RESPONSE.AUTOCOMPLETE, data: { choices } } };
   }
   if (body.type !== TYPE.COMMAND) return { response: ephemeralMessage('Nieobsługiwany typ interakcji.') };
 
-  if (!hasModAccess(ix.member, command.permission, config, command.data.name)) {
+  if (!(await allowed())) {
     return { response: ephemeralMessage('Nie masz uprawnień do tej komendy.') };
   }
 
@@ -155,7 +157,8 @@ async function handleComponent(body, bot) {
   const ix = wrapInteraction(body, bot);
   const config = await bot.store.getConfig();
   const view = VIEWS[parsed.kind];
-  if (!hasModAccess(ix.member, view.permission, config, view.command)) {
+  // Widok sprawdza listę ról komendy, która go otwiera (view.command) — tak samo jak sama komenda.
+  if (!(await canUseCommand(bot, ix.member, view.permission, config, view.command))) {
     return { response: ephemeralMessage('Nie masz uprawnień do tej listy.') };
   }
 

@@ -892,17 +892,21 @@ document.addEventListener('click', (event) => {
 
 // ---------- Uprawnienia komend ----------
 // Ta sama logika co po stronie bota (moderation.js/roleHasAccess) — liczona tu dla podglądu na żywo.
+// Lista komendy obowiązuje każdą rolę, także z Administratorem. Właściciela serwera (osoba, nie rola)
+// w tabeli nie ma — on ma dostęp zawsze.
 const ADMINISTRATOR_BIT = 8n;
 function hasBit(bitsStr, bit) {
   const bits = BigInt(bitsStr || 0);
   return (bits & bit) === bit;
 }
 function roleCanUse(role, cmd, config) {
-  if (hasBit(role.permissions, ADMINISTRATOR_BIT)) return true;
   const list = config.commandPermissions?.[cmd.name];
   if (Array.isArray(list)) return list.includes(EVERYONE) || list.includes(role.id);
+  // Komenda bez listy (stara konfiguracja): uprawnienie Discorda albo rola moderatora, jak has() w bocie —
+  // Administrator ma każde uprawnienie.
   if (!cmd.permission) return true;
-  return hasBit(role.permissions, BigInt(cmd.permission)) || config.modRoleIds.includes(role.id);
+  const bit = BigInt(cmd.permission);
+  return hasBit(role.permissions, ADMINISTRATOR_BIT) || hasBit(role.permissions, bit) || config.modRoleIds.includes(role.id);
 }
 
 function renderPermissions() {

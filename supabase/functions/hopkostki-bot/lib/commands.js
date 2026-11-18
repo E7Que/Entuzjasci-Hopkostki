@@ -457,8 +457,8 @@ const serwer = {
     ]);
     const count = (types) => channels.filter((c) => types.includes(c.type)).length;
     const icon = guildIconUrl(guild, 256);
-    // Statystyki moderacji widzi tylko moderacja.
-    const isMod = hasModAccess(ix.member, P.MODERATE_MEMBERS, await bot.store.getConfig());
+    // Statystyki moderacji widzi tylko ten, kto może użyć /sprawy (ta sama lista ról z panelu), i właściciel serwera.
+    const isMod = hasModAccess(ix.member, P.MODERATE_MEMBERS, await bot.store.getConfig(), 'sprawy', guild.owner_id);
     const stats = isMod ? await bot.store.stats() : null;
     const embed = {
       color: embeds.COLORS.info,
@@ -968,11 +968,13 @@ export const COMMAND_META = COMMANDS.map((c) => ({
   permissionLabel: permissionLabel(c.permission),
 }));
 
-// Domyślne listy ról dla każdej komendy = kto może jej użyć teraz (uprawnienie Discorda albo rola moderatora).
-// Administratorzy mają dostęp zawsze, więc nie ma ich na listach; komendy bez wymagań dostają „wszystkich”.
+// Domyślne listy ról dla każdej komendy = kto ma do niej uprawnienie Discorda albo jest rolą moderatora.
+// Role z Administratorem też trafiają na listy (has() daje im każde uprawnienie): listy obowiązują także je,
+// więc ustawienie list od nowa nie może odciąć administracji. Pomijamy @everyone (do tego jest „wszyscy”)
+// i role zarządzane przez integracje (np. rolę bota). Komendy bez wymagań dostają „wszystkich”.
 export function commandPermissionDefaults(rawRoles, guildId, config) {
   const roles = rawRoles
-    .filter((r) => r.id !== guildId && !r.managed && !has(r.permissions, P.ADMINISTRATOR))
+    .filter((r) => r.id !== guildId && !r.managed)
     .sort((a, b) => b.position - a.position);
   const out = {};
   for (const c of COMMANDS) {

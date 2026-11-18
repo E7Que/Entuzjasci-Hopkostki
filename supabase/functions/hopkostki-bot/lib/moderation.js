@@ -88,28 +88,52 @@ export async function getGuildContext(bot, { force = false } = {}) {
 
 // ---------- Uprawnienia ----------
 
-// commandName pozwala na nadpisanie dostępu dla pojedynczej komendy z panelu (zakładka "Uprawnienia") —
-// gdy jest ustawione, liczy się TYLKO lista wybranych ról (plus administratorzy), niezależnie od
-// uprawnień Discorda i ogólnej listy ról moderatorów.
-export function hasModAccess(member, permission, config, commandName) {
+// Kto może użyć komendy. O dostępie decyduje lista ról komendy z panelu (zakładka "Uprawnienia",
+// config.commandPermissions[commandName]) — także dla ról z uprawnieniem Administratora:
+// 1. Właściciel serwera (ownerId) ma dostęp zawsze. To bezpiecznik: serwer nigdy nie zablokuje sam siebie,
+//    nawet gdy ktoś zapisze puste listy. ownerId podaje bramka (canUseCommand niżej: guild.ownerId
+//    z getGuildContext); bez ownerId liczą się same listy.
+// 2. Komenda ma listę: wpuszcza „wszystkich” (EVERYONE) albo osoby z którąś z ról z listy. Nic więcej —
+//    Administrator, uprawnienia Discorda i modRoleIds nie omijają listy.
+// 3. Komenda bez listy (stara konfiguracja): uprawnienie Discorda (has() — Administrator ma każde) albo rola
+//    moderatora z modRoleIds; komenda bez wymaganego uprawnienia jest otwarta dla wszystkich.
+export function hasModAccess(member, permission, config, commandName, ownerId = null) {
   if (!member) return false;
-  if (has(member.permissions, P.ADMINISTRATOR)) return true;
-  const override = commandName ? config.commandPermissions?.[commandName] : undefined;
-  if (Array.isArray(override)) return override.includes(EVERYONE) || override.some((id) => member.roles?.includes(id));
-  if (!permission) return true; // komenda otwarta dla wszystkich (chyba że nadpisano wyżej)
+  if (ownerId && member.id === ownerId) return true;
+  const list = commandName ? config.commandPermissions?.[commandName] : undefined;
+  if (Array.isArray(list)) return list.includes(EVERYONE) || list.some((id) => member.roles?.includes(id));
+  if (!permission) return true;
   if (has(member.permissions, permission)) return true;
   return config.modRoleIds.some((id) => member.roles?.includes(id));
 }
 
-// Ta sama logika, ale dla pojedynczej roli (bez konkretnego członka) — używana w panelu do policzenia,
-// kto może użyć jakiej komendy. bits = surowe uprawnienia roli (string), roleId = jej ID.
+// Ta sama logika, ale dla pojedynczej roli (bez konkretnego członka) — podgląd w panelu, kto może użyć jakiej
+// komendy (panel liczy to samo w app.js/roleCanUse). Właściciela tu nie ma: to osoba, nie rola.
 export function roleHasAccess(role, permission, config, commandName) {
-  if (has(role.permissions, P.ADMINISTRATOR)) return true;
-  const override = commandName ? config.commandPermissions?.[commandName] : undefined;
-  if (Array.isArray(override)) return override.includes(EVERYONE) || override.includes(role.id);
+  const list = commandName ? config.commandPermissions?.[commandName] : undefined;
+  if (Array.isArray(list)) return list.includes(EVERYONE) || list.includes(role.id);
   if (!permission) return true;
   if (has(role.permissions, permission)) return true;
   return config.modRoleIds.includes(role.id);
+}
+
+// ID właściciela serwera z kontekstu serwera (pamięć podręczna, odświeżana co minutę). Gdy Discord
+// nie odpowiada, zwraca null — wtedy liczą się same listy ról.
+export async function guildOwnerId(bot) {
+  try {
+    return (await getGuildContext(bot)).guild.ownerId ?? null;
+  } catch (error) {
+    console.warn(`[uprawnienia] Nie udało się sprawdzić właściciela serwera: ${error.message}`);
+    return null;
+  }
+}
+
+// Bramka komend, autouzupełniania i list ze stronami. Najpierw sama lista ról — bez pytania Discorda, więc
+// zwykłe użycie komendy na nic nie czeka. Właściciela serwera sprawdzamy dopiero, gdy lista odmówi.
+export async function canUseCommand(bot, member, permission, config, commandName) {
+  if (hasModAccess(member, permission, config, commandName)) return true;
+  if (!member) return false;
+  return hasModAccess(member, permission, config, commandName, await guildOwnerId(bot));
 }
 
 const REQUIRED = { ban: P.BAN_MEMBERS, kick: P.KICK_MEMBERS, timeout: P.MODERATE_MEMBERS, untimeout: P.MODERATE_MEMBERS, nick: P.MANAGE_NICKNAMES };

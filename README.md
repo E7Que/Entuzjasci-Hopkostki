@@ -195,8 +195,10 @@ się nie uda, panel pokaże, gdzie włączyć je ręcznie (Developer Portal → 
 Każda komenda ma **własną listę ról** (zakładka **Uprawnienia**): role dodajesz przez „+ Dodaj rolę”, usuwasz
 krzyżykiem, a „Szybkie zmiany” dodają lub usuwają jedną rolę naraz ze wszystkich komend. Listy zostały
 ustawione według tego, kto miał dostęp wcześniej (uprawnienia Discorda + role moderatorów); nowe komendy
-dostają listę automatycznie. Administratorzy mogą zawsze wszystko, pusta lista = tylko administratorzy,
-„Wszyscy (@everyone)” = każdy. Tabela na dole pokazuje na żywo, która rola może użyć której komendy.
+dostają listę automatycznie, tak samo jak przy ustawianiu list od nowa — role z Administratorem też na nią
+trafiają. Lista obowiązuje każdą rolę — także z uprawnieniem Administrator. Jedyny wyjątek to **właściciel serwera**: może zawsze użyć każdej komendy
+(bezpiecznik, żeby serwer nigdy nie zablokował sam siebie), więc pusta lista = tylko właściciel, a „Wszyscy
+(@everyone)” = każdy. Tabela na dole pokazuje na żywo, która rola może użyć której komendy.
 
 Komendy nie mają własnego wymogu uprawnień Discorda (`default_member_permissions`) — gdyby go ustawić,
 Discord ukrywałby komendę przed rolami dodanymi tylko przez panel (np. Helperem bez prawdziwego

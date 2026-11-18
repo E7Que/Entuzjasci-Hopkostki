@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createTestStore } from './support/db.js';
 import { fakeDiscord, makeBot, GUILD, ROLES, commandPayload } from './support/discord.js';
 import { onMemberJoin, onMemberLeave, onMemberUpdate, autoRoleSweep, ensureIntentFlags } from '../supabase/functions/hopkostki-bot/lib/members.js';
-import { fillCommandPermissions, COMMANDS } from '../supabase/functions/hopkostki-bot/lib/commands.js';
+import { fillCommandPermissions, commandPermissionDefaults, COMMANDS } from '../supabase/functions/hopkostki-bot/lib/commands.js';
 import { handleInteraction } from '../supabase/functions/hopkostki-bot/lib/interactions.js';
 
 const ROLE = '100000000000000090';
@@ -93,20 +93,42 @@ test('cron: autorole dla osób z ostatniej doby, które jej nie mają (co 5 minu
   assert.equal(await autoRoleSweep(s.bot), 0, 'drugi raz dopiero po 5 minutach');
 });
 
-test('uprawnienia: każda komenda dostaje własną listę ról według obecnego dostępu, „wszyscy” działa', async () => {
+test('uprawnienia: każda komenda dostaje własną listę ról według obecnego dostępu (z rolami administratorów), „wszyscy” działa', async () => {
   const { store } = await createTestStore();
   const discord = fakeDiscord();
   const bot = makeBot({ store, discord });
   const { changed, config } = await fillCommandPermissions(bot);
   assert.equal(changed, COMMANDS.length);
-  assert.deepEqual(config.commandPermissions.ban, [GUARD], 'rola z „Banowaniem członków”; administrator nie trafia na listę (ma dostęp zawsze)');
-  assert.deepEqual(config.commandPermissions.kick, [], 'nikt poza administratorami nie ma „Wyrzucania”');
+  assert.deepEqual(config.commandPermissions.ban, [BOSS, GUARD], 'rola z „Banowaniem członków” i rola z Administratorem (wyżej, więc pierwsza)');
+  assert.deepEqual(config.commandPermissions.kick, [BOSS], '„Wyrzucanie” ma tylko administrator — i trafia na listę, żeby nie stracić dostępu');
   assert.deepEqual(config.commandPermissions.pomoc, ['everyone']);
   assert.equal((await fillCommandPermissions(bot)).changed, 0, 'drugi raz nic nie zmienia');
 
   await store.updateConfig({ commandPermissions: { ...config.commandPermissions, kick: ['everyone'], ban: [] } });
-  const kick = await handleInteraction(commandPayload('kick', [{ name: 'uzytkownik', type: 6, value: 'target' }, { name: 'powod', type: 3, value: 'x' }], { invoker: 'target', roles: [], permissions: '0' }), bot);
+  const options = [{ name: 'uzytkownik', type: 6, value: 'target' }, { name: 'powod', type: 3, value: 'x' }];
+  const kick = await handleInteraction(commandPayload('kick', options, { invoker: 'target', roles: [], permissions: '0' }), bot);
   assert.equal(kick.response.type, 5, '„wszyscy” wpuszcza każdego');
-  const ban = await handleInteraction(commandPayload('ban', [{ name: 'uzytkownik', type: 6, value: 'target' }, { name: 'powod', type: 3, value: 'x' }]), bot);
-  assert.match(ban.response.data.embeds[0].description, /Nie masz uprawnień/, 'pusta lista = tylko administratorzy');
+  const ban = await handleInteraction(commandPayload('ban', options), bot);
+  assert.match(ban.response.data.embeds[0].description, /Nie masz uprawnień/, 'pusta lista: moderator nie ma dostępu');
+  const admin = await handleInteraction(commandPayload('ban', options, { roles: [BOSS], permissions: String(1n << 3n) }), bot);
+  assert.match(admin.response.data.embeds[0].description, /Nie masz uprawnień/, 'pusta lista: administrator też nie');
+  const owner = await handleInteraction(commandPayload('ban', options, { invoker: 'owner', roles: [], permissions: String(1n << 3n) }), bot);
+  assert.equal(owner.response.type, 5, 'pusta lista = tylko właściciel serwera');
+});
+
+test('domyślne listy ról: role z Administratorem są na listach, @everyone i role integracji — nie', () => {
+  const MOD_ROLE = '100000000000000096';
+  const INTEGRATION = '100000000000000097';
+  const rawRoles = [
+    { id: GUILD, position: 0, permissions: String(1n << 3n) },
+    { id: GUARD, position: 5, permissions: String(1n << 2n) },
+    { id: BOSS, position: 7, permissions: String(1n << 3n) },
+    { id: INTEGRATION, position: 8, permissions: String(1n << 3n), managed: true },
+    { id: MOD_ROLE, position: 3, permissions: '0' },
+  ];
+  const defaults = commandPermissionDefaults(rawRoles, GUILD, { modRoleIds: [MOD_ROLE] });
+  assert.deepEqual(defaults.ban, [BOSS, GUARD, MOD_ROLE]);
+  assert.deepEqual(defaults.lock, [BOSS, MOD_ROLE], 'Administrator ma każde uprawnienie Discorda');
+  assert.deepEqual(defaults.pomoc, ['everyone']);
+  assert.ok(Object.values(defaults).every((list) => !list.includes(GUILD) && !list.includes(INTEGRATION)));
 });
