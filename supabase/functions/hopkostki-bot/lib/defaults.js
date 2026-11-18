@@ -14,8 +14,9 @@ export const DEFAULT_CONFIG = {
   // Role, które mogą używać komend moderacyjnych (oprócz osób z odpowiednimi uprawnieniami Discorda).
   modRoleIds: [],
   // Nadpisania dostępu dla POJEDYNCZYCH komend (panel → Uprawnienia): { nazwaKomendy: ['idRoli', ...] }.
-  // Gdy komenda ma tu wpis, liczy się TYLKO ta lista ról (plus administratorzy) — niezależnie od
-  // uprawnień Discorda i modRoleIds powyżej. Brak wpisu = zasady domyślne. null = obiekt dynamiczny,
+  // Gdy komenda ma tu wpis, liczy się TYLKO ta lista ról — także dla ról z Administratorem, niezależnie od
+  // uprawnień Discorda i modRoleIds powyżej. Jedyny wyjątek: właściciel serwera ma dostęp zawsze (bezpiecznik,
+  // patrz moderation.js/hasModAccess). Brak wpisu = zasady domyślne. null = obiekt dynamiczny,
   // scalany/sanitizowany specjalnie (patrz configSchema.js), nie strukturą jak zwykłe pola.
   commandPermissions: null,
 

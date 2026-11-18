@@ -137,7 +137,7 @@ const sub = (name, options = []) => ({ name, type: 1, options });
 const ALL_MOD = String((1n << 2n) | (1n << 1n) | (1n << 40n) | (1n << 13n) | (1n << 27n) | (1n << 28n));
 
 // Kliknięcie przycisku lub wybór z listy — tak jak wysyła to Discord.
-function componentPayload(customId, { values, permissions = String((1n << 2n) | (1n << 1n) | (1n << 40n)), roles = ['r-mod'] } = {}) {
+function componentPayload(customId, { values, permissions = String((1n << 2n) | (1n << 1n) | (1n << 40n)), roles = ['r-mod'], user = { id: 'mod', username: 'dfgbh65' } } = {}) {
   return {
     type: 3,
     id: 'c1',
@@ -145,7 +145,7 @@ function componentPayload(customId, { values, permissions = String((1n << 2n) | 
     token: 'tok-component',
     guild_id: 'g1',
     channel_id: 'chan',
-    member: { user: { id: 'mod', username: 'dfgbh65' }, roles, permissions },
+    member: { user, roles, permissions },
     message: { id: '1', flags: 64 },
     data: values ? { custom_id: customId, component_type: 3, values } : { custom_id: customId, component_type: 2 },
   };
@@ -344,4 +344,51 @@ test('nadpisanie uprawnień z panelu ogranicza komendę do wybranych ról (i wid
   assert.match(viewBody.data.embeds[0].description, /Nie masz uprawnień/);
   const viewAllowed = await s.send(componentPayload('pg|n|target|1|i', { roles: [VIP], permissions: '0' }));
   assert.deepEqual(await viewAllowed.json(), { type: 6 });
+});
+
+test('lista ról obowiązuje też administratora, a właściciel serwera ma dostęp zawsze (komenda, podpowiedzi, widoki)', async () => {
+  const s = await setup();
+  const VIP = '100000000000000020';
+  const ADMIN = String(1n << 3n);
+  // /unban (i jego lista banów) tylko dla VIP-a, /historia z pustą listą — czyli tylko dla właściciela.
+  await s.store.updateConfig({ commandPermissions: { unban: [VIP], historia: [] } });
+  s.discord.state.bans.set('target', { user: { id: '123456789012345678', username: 'hurownik_og' } });
+  const suggestions = async (who) => {
+    const focused = { name: 'unban', options: [{ name: 'uzytkownik', type: 3, value: 'hur', focused: true }] };
+    return (await (await s.send({ ...commandPayload('unban', [], who), type: 4, data: focused })).json()).data.choices.length;
+  };
+  const historia = async (who) => (await s.send(commandPayload('historia', [opt('uzytkownik', 'target', 6)], who))).json();
+  const bansView = async (member) => (await s.send(componentPayload('pg|b|-|1', member))).json();
+
+  // Rola z uprawnieniem Administrator spoza listy: bez komendy, podpowiedzi i listy ze stronami.
+  const admin = { roles: ['r-admin'], permissions: ADMIN };
+  assert.match((await historia(admin)).data.embeds[0].description, /Nie masz uprawnień/);
+  assert.equal(await suggestions(admin), 0);
+  assert.match((await bansView(admin)).data.embeds[0].description, /Nie masz uprawnień/);
+
+  // Rola z listy — dostęp bez żadnych uprawnień Discorda.
+  const vip = { roles: [VIP], permissions: '0' };
+  assert.equal(await suggestions(vip), 1);
+  assert.deepEqual(await bansView(vip), { type: 6 });
+
+  // Właściciel serwera nie ma żadnej roli z list, a mimo to może wszystko — także przy pustej liście.
+  const owner = { invoker: 'owner', roles: [], permissions: ADMIN };
+  assert.deepEqual(await historia(owner), { type: 5, data: { flags: 64 } });
+  assert.equal(lastEdit(s).embeds[0].author.name, 'hurownik_og • Historia kar');
+  assert.equal(await suggestions(owner), 1);
+  assert.deepEqual(await bansView({ ...owner, user: { id: 'owner', username: 'wlasciciel' } }), { type: 6 });
+});
+
+test('/serwer: statystyki moderacji widzą role z listy /sprawy i właściciel serwera', async () => {
+  const s = await setup();
+  const VIP = '100000000000000020';
+  await s.store.updateConfig({ commandPermissions: { sprawy: [VIP] } });
+  const seesStats = async (who) => {
+    await s.send(commandPayload('serwer', [], who));
+    return lastEdit(s).embeds[0].fields.some((f) => f.name === '⚠️ Aktywne ostrzeżenia');
+  };
+  assert.equal(await seesStats({}), false, 'moderator z uprawnieniem Discorda, ale spoza listy /sprawy');
+  assert.equal(await seesStats({ roles: ['r-admin'], permissions: String(1n << 3n) }), false, 'administrator spoza listy');
+  assert.equal(await seesStats({ roles: [VIP], permissions: '0' }), true);
+  assert.equal(await seesStats({ invoker: 'owner', roles: [], permissions: String(1n << 3n) }), true);
 });

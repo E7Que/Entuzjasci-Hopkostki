@@ -243,8 +243,9 @@
       <section id="view-uprawnienia" class="view">
         <header class="view-head">
           <h2>Uprawnienia</h2>
-          <p class="muted">Każda komenda ma własną listę ról, które mogą jej używać. Dodajesz rolę przez „+ Dodaj rolę”, usuwasz krzyżykiem. Administratorzy serwera mogą zawsze wszystko, a pusta lista oznacza „tylko administratorzy”.</p>
+          <p class="muted">Każda komenda ma własną listę ról, które mogą jej używać. Dodajesz rolę przez „+ Dodaj rolę”, usuwasz krzyżykiem. Pusta lista oznacza „tylko właściciel serwera”.</p>
         </header>
+        <div class="banner warn"><strong>Właściciel serwera</strong> zawsze może użyć każdej komendy — dzięki temu serwer nigdy się nie zablokuje. <strong>Role z uprawnieniem Administrator</strong> też podlegają tym listom: bez roli z listy komendy nie użyje nawet administrator.</div>
         <div class="card" id="discord-perms-card">
           <div class="card-head">
             <h3>Ustawienia w Discordzie (Integracje)</h3>
@@ -273,7 +274,7 @@
         </div>
         <div class="card">
           <h3>Kto może użyć jakiej komendy — podgląd na żywo</h3>
-          <p class="muted small">Liczone z list powyżej (także niezapisanych). Administratorzy mają dostęp zawsze.</p>
+          <p class="muted small">Liczone z list powyżej (również niezapisanych), tak samo dla ról z uprawnieniem Administrator. Właściciela serwera tu nie ma — ma dostęp do każdej komendy zawsze.</p>
           <p class="muted small mobile-only">Przesuń tabelę w bok, żeby zobaczyć wszystkie komendy — kolumna z rolami zostaje na miejscu.</p>
           <div class="table-wrap"><table class="table compact" id="permission-matrix"></table></div>
         </div>
