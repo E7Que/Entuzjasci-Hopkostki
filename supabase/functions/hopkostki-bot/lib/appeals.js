@@ -4,7 +4,7 @@
 // Jedno odwołanie na sprawę, najwyżej `appeals.days` dni po karze.
 
 import { P } from './permissions.js';
-import { ActionError, describeError, hasModAccess, isOurGuild, sendDm, sendModLog, unbanUser, untimeoutUser } from './moderation.js';
+import { ActionError, describeError, getGuildContext, hasModAccess, isOurGuild, sendDm, sendModLog, unbanUser, untimeoutUser } from './moderation.js';
 import { COLORS, errorEmbed, successEmbed } from './embeds.js';
 import { formatDuration } from './duration.js';
 
@@ -12,7 +12,10 @@ const EPHEMERAL = 64;
 const DAY = 24 * 60 * 60_000;
 export const APPEAL_ACTIONS = ['ban', 'kick', 'timeout', 'warn'];
 const ACTION_NAMES = { ban: 'Ban', kick: 'Wyrzucenie', timeout: 'Wyciszenie (timeout)', warn: 'Ostrzeżenie' };
-// Kto rozpatruje: te same uprawnienia co do cofnięcia kary (albo role moderatorów / nadpisania z panelu).
+// Kto rozpatruje: lista ról komendy, która tę karę cofa (zakładka Uprawnienia) — przyjęcie odwołania od bana to
+// /unban, od timeoutu /untimeout, od ostrzeżenia jego usunięcie (/warn usun). Wyrzucenia nie da się cofnąć, więc
+// o odwołaniu od niego decydują ci, którzy mogą wyrzucać (/kick). Uprawnienie Discorda (pierwszy element)
+// liczy się tylko wtedy, gdy komenda nie ma własnej listy ról.
 const DECIDE = { ban: [P.BAN_MEMBERS, 'unban'], kick: [P.KICK_MEMBERS, 'kick'], timeout: [P.MODERATE_MEMBERS, 'untimeout'], warn: [P.MODERATE_MEMBERS, 'warn'] };
 
 export const isAppealCustomId = (customId) => /^apl[md]?\|/.test(String(customId ?? ''));
@@ -187,9 +190,13 @@ export async function decideAppeal(bot, config, { appeal, entry, moderator, acce
   return accept ? `Odwołanie przyjęte — ${decided.undoResult}. Osoba dostała odpowiedź (${dmStatus}).` : `Odwołanie odrzucone. Osoba dostała odpowiedź (${dmStatus}).`;
 }
 
-function canDecide(member, entry, config) {
+// Właściciel serwera rozpatruje zawsze (jak przy komendach). Sprawdzamy go po ID, bo ten handler sam składa dane
+// członka z interakcji (trafia tu przed wrapInteraction), a uprawnienia właściciela wyglądają jak administratora.
+async function canDecide(bot, member, entry, config) {
   const [permission, command] = DECIDE[entry.type] ?? [P.MODERATE_MEMBERS, 'warn'];
-  return hasModAccess(member, permission, config, command);
+  if (await hasModAccess(member, permission, config, command)) return true;
+  const ownerId = await getGuildContext(bot).then((gctx) => gctx.guild.ownerId, () => null);
+  return Boolean(ownerId) && member.id === ownerId;
 }
 
 /**
@@ -266,7 +273,7 @@ export async function handleAppealInteraction(body, bot) {
     if (!entry) return fail('Sprawa tego odwołania została usunięta.');
     const member = { id: user.id, roles: body.member?.roles ?? [], permissions: body.member?.permissions ?? '0' };
     if (entry.userId === user.id) return fail('Nie możesz rozpatrzyć własnego odwołania.');
-    if (!canDecide(member, entry, config)) return fail('Nie masz uprawnień do rozpatrzenia tego odwołania.');
+    if (!(await canDecide(bot, member, entry, config))) return fail('Nie masz uprawnień do rozpatrzenia tego odwołania.');
     const accept = action === 'ok';
     if (kind === 'apl') {
       return {

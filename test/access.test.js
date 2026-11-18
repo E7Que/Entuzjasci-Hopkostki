@@ -18,6 +18,9 @@ const DAY = 24 * 60 * 60_000;
 // Role z prawdziwymi (liczbowymi) ID: jedna pod rolą bota (pozycja 8), druga nad nią.
 ROLES.push({ id: HELPER_ROLE, name: 'Test Helper', position: 2, permissions: String(P.KICK_MEMBERS | P.MANAGE_MESSAGES), color: 0 });
 ROLES.push({ id: HIGH_ROLE, name: 'Wysoka', position: 10, permissions: String(P.KICK_MEMBERS), color: 0 });
+// Rola z uprawnieniem Administrator (jak „| Admin” na serwerze) — z ID, które da się dopisać do list w panelu.
+const ADMIN_ROLE = '100000000000000094';
+ROLES.push({ id: ADMIN_ROLE, name: 'Admin', position: 7, permissions: ADMIN, color: 0 });
 
 async function setup(panelAccess = {}) {
   const { store } = await createTestStore();
@@ -172,16 +175,38 @@ test('role sprawdzane na bieżąco: zmiana ról w panelu działa od razu, odebra
   assert.match((await left.json()).error, /Nie ma Cię już na serwerze/);
 });
 
-test('administrator: pełny dostęp, lista loginów, wymuszenie nowego loginu i uprawnienia ról w Discordzie', async () => {
+test('pełny dostęp: właściciel i hasło panelu (nie samo uprawnienie Administrator), lista loginów, wymuszenie nowego loginu i uprawnienia ról w Discordzie', async () => {
   const s = await setup();
-  // Właściciel serwera i osoba z rolą z uprawnieniem Administrator mają wszystko.
+  // Właściciel serwera ma wszystko, także bez żadnej roli.
   const ownerCreds = credentials(await slash(s, { user: 'owner', roles: [] }));
   const owner = await signIn(s, ownerCreds.login, ownerCreds.password);
   assert.equal(owner.me.full, true);
-  s.discord.state.members.set('target', { user: s.discord.state.users.get('target'), roles: ['r-admin'] });
-  const adminCreds = credentials(await slash(s, { user: 'target', roles: ['r-admin'], permissions: ADMIN }));
+
+  // Administrator niczego nie dostaje z automatu — tylko części panelu przypisane jego rolom.
+  s.discord.state.members.set('target', { user: s.discord.state.users.get('target'), roles: [ADMIN_ROLE] });
+  const asAdmin = { user: 'target', roles: [ADMIN_ROLE], permissions: ADMIN };
+  assert.match((await slash(s, asAdmin)).reply.embeds[0].description, /Żadna z Twoich ról nie odblokowuje panelu/);
+  await s.store.updateConfig({ panelAccess: { roles: { sprawy: [MOD_ROLE, ADMIN_ROLE] } } });
+  const adminReply = await slash(s, asAdmin);
+  assert.match(adminReply.reply.embeds[0].description, /✅ \*\*Możesz zmieniać:\*\* Sprawy\n🔒/);
+  const adminCreds = credentials(adminReply);
   const admin = await signIn(s, adminCreds.login, adminCreds.password);
-  assert.equal(admin.me.full, true);
+  assert.deepEqual([admin.me.full, admin.me.sections], [false, ['sprawy']]);
+  assert.equal((await s.call('/cases', { session: admin.token })).status, 200);
+  for (const path of ['/tickets', '/access/logins', '/config/history']) assert.equal((await s.call(path, { session: admin.token })).status, 403, path);
+  const put = await s.call('/config', { method: 'PUT', session: admin.token, body: { commandPermissions: { ban: [ADMIN_ROLE] }, panelAccess: { roles: { uprawnienia: [ADMIN_ROLE] } } } });
+  assert.equal(put.status, 200);
+  const saved = await s.store.getConfig();
+  assert.equal(saved.commandPermissions?.ban, undefined, 'bez „Uprawnień komend” nie dopisze się do list komend');
+  assert.deepEqual(saved.panelAccess.roles.uprawnienia, [], 'ani do dostępu do panelu');
+
+  // Sesja zapisana jeszcze jako „administrator” traci pełny dostęp przy najbliższym sprawdzeniu ról.
+  await s.store.query("update bot.panel_sessions set admin = true where user_id = 'target' and kind = 'session'");
+  assert.equal((await s.call('/access/logins', { session: admin.token })).status, 200, 'do sprawdzenia ról zostaje zapisany stan');
+  await s.store.query("update bot.panel_sessions set checked_at = now() - interval '6 minutes' where user_id = 'target'");
+  assert.equal((await s.call('/access/logins', { session: admin.token })).status, 403);
+  assert.deepEqual((await (await s.call('/me', { session: admin.token })).json()).me.sections, ['sprawy']);
+
   const modCreds = credentials(await slash(s));
   const mod = await signIn(s, modCreds.login, modCreds.password);
   await signIn(s, modCreds.login, modCreds.password);
@@ -189,7 +214,7 @@ test('administrator: pełny dostęp, lista loginów, wymuszenie nowego loginu i 
   const list = await (await s.call('/access/logins', { session: owner.token })).json();
   assert.deepEqual(
     list.logins.map((x) => [x.login, x.full, x.sections.length, x.sessions]).sort(),
-    [['dfgbh65', false, 1, 2], ['hurownik_og', true, 16, 1], ['wlasciciel', true, 16, 1]],
+    [['dfgbh65', false, 1, 2], ['hurownik_og', false, 1, 1], ['wlasciciel', true, 16, 1]],
   );
   assert.ok(list.logins.every((x) => !('tokenHash' in x) && !('token_hash' in x)));
 

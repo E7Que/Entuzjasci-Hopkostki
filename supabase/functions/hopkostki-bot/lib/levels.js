@@ -3,9 +3,9 @@
 // slash), rola za 1. miejsce, tygodniowe i miesięczne rankingi najaktywniejszych z pingiem roli, karta poziomu
 // i import XP z rankingu Arcane.
 
-import { P, has } from './permissions.js';
+import { P } from './permissions.js';
 import { avatarUrl, guildIconUrl } from './rest.js';
-import { cached, getGuildContext, isOurGuild } from './moderation.js';
+import { cached, getGuildContext, hasModAccess, isOurGuild } from './moderation.js';
 import { BRAND, colorInt, escapeMarkdown } from './embeds.js';
 import { PANEL_SITE } from './access.js';
 
@@ -1104,13 +1104,16 @@ export async function changeXp(bot, userId, { mode, amount = 0, user = null }) {
   return { xp: row.xp, level, previous: before.level };
 }
 
-// Czy ktoś może używać /xp (blokada „tylko właściciel”) i resetować XP.
+// Czy ktoś może używać /xp (blokada „tylko właściciel”) i resetować XP. Kto w ogóle może używać /xp, decyduje
+// lista ról tej komendy z panelu (zakładka Uprawnienia) — ta sama, którą sprawdza bramka komend; samo
+// „Zarządzanie serwerem” (albo Administrator) jej nie zastępuje. Tu dochodzą tylko blokady z zakładki Poziomy.
 export async function canManageXp(bot, member, { reset = false } = {}) {
-  const config = (await bot.store.getConfig()).levels;
+  const config = await bot.store.getConfig();
+  const { management } = config.levels;
   const { guild } = await getGuildContext(bot);
-  const owner = member?.id === guild.ownerId;
-  if (config.management.lockXpCommand && !owner) return false;
-  if (reset && config.management.lockReset && !owner) return false;
-  return owner || has(member?.permissions ?? '0', P.MANAGE_GUILD);
+  if (member?.id === guild.ownerId) return true;
+  if (management.lockXpCommand) return false;
+  if (reset && management.lockReset) return false;
+  return hasModAccess(member, P.MANAGE_GUILD, config, 'xp');
 }
 

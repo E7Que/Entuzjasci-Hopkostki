@@ -310,6 +310,9 @@ export async function handleVoiceInteraction(ix, bot) {
   const [kind, action, channelId] = String(ix.customId).split('|');
   const temp = await bot.store.getTempVoice(channelId);
   if (!temp) return failure('Ten kanał już nie istnieje.');
+  // Panelem zarządza właściciel kanału (to jego kanał — bez listy ról) oraz ci, którzy ten kanał i tak mogą zmienić
+  // w samym Discordzie: „Zarządzanie kanałami” liczone przez Discorda dla tego kanału (więc także Administrator).
+  // To odpowiednik uprawnienia Discorda, a nie dostęp do komendy bota, dlatego nie ma tu listy z zakładki Uprawnienia.
   const isOwner = ix.user.id === temp.ownerId;
   if (!isOwner && !has(ix.member?.permissions, P.MANAGE_CHANNELS)) return failure('Tylko właściciel kanału może nim zarządzać.');
 

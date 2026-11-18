@@ -142,8 +142,8 @@ Zakładka **Poziomy** ma wszystkie funkcje Arcane, także premium:
   czasie zdobyły najwięcej XP, i pinguje wybraną rolę.
 - **Ograniczenia**: kanały bez XP (albo XP tylko na wybranych), role bez XP, wątki, fora, czat kanałów
   głosowych i komendy slash dowolnego bota.
-- **Zarządzanie**: `/xp dodaj|odejmij|ustaw|poziom|reset|reset-wszystkich` (Zarządzanie serwerem; można
-  zostawić tylko właścicielowi `/xp` albo samo resetowanie), **auto reset** po wyjściu z serwera,
+- **Zarządzanie**: `/xp dodaj|odejmij|ustaw|poziom|reset|reset-wszystkich` (role z listy `/xp` w zakładce
+  Uprawnienia; można zostawić tylko właścicielowi `/xp` albo samo resetowanie), **auto reset** po wyjściu z serwera,
   ranking w panelu ze zmianą XP i **publiczna strona rankingu** (`ranking.html` obok panelu).
 - **Import z Arcane**: wklejasz ranking (`nazwa poziom xp [wiadomości] [reakcje]`, np. `@nick 31 49.7K 4.3K`),
   a bot dopasowuje nazwy do członków serwera i ustawia XP tak, żeby poziom był taki sam jak w Arcane.
@@ -173,7 +173,10 @@ Każdy rodzaj ticketu można też skonfigurować osobno (zakładka Tickety → r
 Wysłanie formularza tworzy prywatny kanał widoczny tylko dla tej osoby i obsługi (oznaczona w powitaniu
 jest tylko ta osoba — obsługa i tak ma dostęp do kanału, więc pingowanie całej roli przy każdym nowym
 tickecie byłoby tylko spamem powiadomień), z przyciskami **Zamknij** (trzeba podać powód zamknięcia — trafia do logów, DM i zapisu rozmowy; także przy zamykaniu w panelu), **Przejmij** i
-**Dodaj osobę**.
+**Dodaj osobę**. Za obsługę (przejęcie, zamknięcie i dodawanie osób w cudzym tickecie, usuwanie z archiwum)
+uznawane są tylko role z listy obsługi (rodzaju ticketu albo ogólnej) i właściciel serwera — samo uprawnienie
+Administrator czy „Zarządzanie kanałami” nie wystarcza, więc administrację, która ma obsługiwać tickety,
+dopisz do listy.
 
 Zamknięty ticket **nie jest usuwany** — zostaje jako archiwum:
 - kanał przenosi się do **kategorii dla zamkniętych ticketów** (osobne pole w ustawieniach, puste = zostaje
@@ -235,9 +238,11 @@ co może zmieniać, a co nie, zależnie od swojego stopnia:
    odblokowanych części.
 
 Bot sprawdza role zalogowanych co kilka minut: odebrana rola albo wyjście z serwera kończy sesję samo, a
-zmiany ról w zakładce działają od razu. Administratorzy serwera (i logowanie hasłem panelu) mają zawsze
-dostęp do wszystkiego; w zakładce widać aktywne loginy (kto, do kiedy, ile przeglądarek) i można wymusić nowy
-login jednej osobie albo wszystkim.
+zmiany ról w zakładce działają od razu. Pełny dostęp do wszystkiego (także do tej zakładki) mają tylko
+właściciel serwera i logowanie hasłem panelu. Samo uprawnienie Administrator w Discordzie niczego w panelu nie
+odblokowuje — administracja widzi te części, które przypiszesz jej rolom, tak jak przy listach ról komend.
+W zakładce widać aktywne loginy (kto, do kiedy, ile przeglądarek) i można wymusić nowy login jednej osobie
+albo wszystkim.
 
 ### Uruchomienie panelu lokalnie (opcjonalnie)
 

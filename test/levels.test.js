@@ -29,7 +29,9 @@ import {
   multiplierText,
   winnersArchiveTick,
   periodLabel,
+  canManageXp,
 } from '../supabase/functions/hopkostki-bot/lib/levels.js';
+import { P } from '../supabase/functions/hopkostki-bot/lib/permissions.js';
 
 const LVL5 = '100000000000000060';
 const LVL10 = '100000000000000061';
@@ -488,6 +490,33 @@ test('/rank, /ranking, /xp (tylko Zarządzanie serwerem; blokada dla właścicie
   assert.deepEqual([pub.enabled, pub.entries[0].level, pub.entries[0].name], [true, 3, 'hurownik_og']);
   const role = await (await call('/roles', { method: 'POST', body: JSON.stringify({ name: '| Level Highlights', color: '#F1C40F' }) })).json();
   assert.equal(role.role.name, '| Level Highlights');
+});
+
+test('/xp: o dostępie decyduje lista ról komendy z panelu (nie samo „Zarządzanie serwerem”); blokady z Poziomów zostają', async () => {
+  const s = await setup();
+  const XP_ROLE = '100000000000000075';
+  await s.store.updateConfig({ commandPermissions: { xp: [XP_ROLE] } });
+  const run = async (options, extra) => {
+    const result = await handleInteraction(commandPayload('xp', options, extra), s.bot);
+    await result.task?.();
+    return s.discord.state.webhook.at(-1).body;
+  };
+  const add = [{ name: 'dodaj', type: 1, options: [{ name: 'uzytkownik', type: 6, value: 'target' }, { name: 'ilosc', type: 4, value: 200 }] }];
+
+  // Rola z listy /xp bez „Zarządzania serwerem” — wcześniej dostawała „tylko właściciel serwera”.
+  let reply = await run(add, { roles: [XP_ROLE], permissions: '0' });
+  assert.match(reply.embeds[0].description, /200 XP\*\*, poziom \*\*1\*\*/);
+  assert.equal(await canManageXp(s.bot, { id: 'mod', roles: [XP_ROLE], permissions: '0' }), true);
+  assert.equal(await canManageXp(s.bot, { id: 'mod', roles: [], permissions: String(P.MANAGE_GUILD) }), false, 'uprawnienie Discorda bez roli z listy nie wystarcza');
+
+  // Blokady z zakładki Poziomy dalej zostawiają /xp i reset tylko właścicielowi serwera.
+  await s.store.updateConfig({ levels: { management: { lockReset: true } } });
+  assert.equal(await canManageXp(s.bot, { id: 'mod', roles: [XP_ROLE], permissions: '0' }), true);
+  assert.equal(await canManageXp(s.bot, { id: 'mod', roles: [XP_ROLE], permissions: '0' }, { reset: true }), false);
+  await s.store.updateConfig({ levels: { management: { lockXpCommand: true } } });
+  reply = await run(add, { roles: [XP_ROLE], permissions: '0' });
+  assert.match(reply.embeds[0].description, /tylko właściciel serwera/);
+  assert.equal(await canManageXp(s.bot, { id: 'owner', roles: [], permissions: '0' }, { reset: true }), true, 'właściciel zawsze');
 });
 
 test('publiczny ranking: pseudonim + nazwa, tydzień/miesiąc, liczba osób, synchronizacja nazw i profil po kliknięciu', async () => {
