@@ -142,8 +142,8 @@ Zakładka **Poziomy** ma wszystkie funkcje Arcane, także premium:
   czasie zdobyły najwięcej XP, i pinguje wybraną rolę.
 - **Ograniczenia**: kanały bez XP (albo XP tylko na wybranych), role bez XP, wątki, fora, czat kanałów
   głosowych i komendy slash dowolnego bota.
-- **Zarządzanie**: `/xp dodaj|odejmij|ustaw|poziom|reset|reset-wszystkich` (Zarządzanie serwerem; można
-  zostawić tylko właścicielowi `/xp` albo samo resetowanie), **auto reset** po wyjściu z serwera,
+- **Zarządzanie**: `/xp dodaj|odejmij|ustaw|poziom|reset|reset-wszystkich` (role z listy `/xp` w zakładce
+  Uprawnienia; można zostawić tylko właścicielowi `/xp` albo samo resetowanie), **auto reset** po wyjściu z serwera,
   ranking w panelu ze zmianą XP i **publiczna strona rankingu** (`ranking.html` obok panelu).
 - **Import z Arcane**: wklejasz ranking (`nazwa poziom xp [wiadomości] [reakcje]`, np. `@nick 31 49.7K 4.3K`),
   a bot dopasowuje nazwy do członków serwera i ustawia XP tak, żeby poziom był taki sam jak w Arcane.
