@@ -3,7 +3,7 @@
 // Partnerstwo: link do serwera, liczba członków, powód).
 // W tickecie: Zamknij (z wymaganym powodem w okienku, zapis rozmowy i powód do logów i w DM), Przejmij, Dodaj osobę.
 
-import { P, has } from './permissions.js';
+import { P } from './permissions.js';
 import { DiscordError } from './rest.js';
 import { ActionError, describeError, getGuildContext } from './moderation.js';
 import { BRAND, COLORS, colorInt, errorEmbed, escapeMarkdown, fillTemplate, successEmbed } from './embeds.js';
@@ -428,10 +428,16 @@ async function archiveTicketChannel(bot, ticket, eff) {
 
 export const isTicketCustomId = (customId) => /^tk[ms]?\|/.test(String(customId ?? ''));
 
-function isSupport(member, eff) {
+// Obsługa ticketu (Przejmij, Zamknij i Dodaj osobę za autora, usuwanie z archiwum) = role z listy „Obsługa”
+// w panelu (z rodzaju ticketu albo ogólna z zakładki Tickety) plus właściciel serwera. Tickety nie należą do
+// żadnej komendy, więc ich listą ról jest właśnie „Obsługa” — tak jak przy komendach (zakładka Uprawnienia)
+// decyduje lista z panelu, a samo uprawnienie Administrator czy „Zarządzanie kanałami” obsługi nie daje.
+async function isSupport(bot, member, eff) {
   if (!member) return false;
-  if (has(member.permissions, P.ADMINISTRATOR) || has(member.permissions, P.MANAGE_CHANNELS)) return true;
-  return eff.supportRoleIds.some((id) => member.roles?.includes(id));
+  if (eff.supportRoleIds.some((id) => member.roles?.includes(id))) return true;
+  // Właściciela rozpoznajemy po ID serwera (jego uprawnienia z Discorda wyglądają jak administratora).
+  const ownerId = await getGuildContext(bot).then((gctx) => gctx.guild.ownerId, () => null);
+  return Boolean(ownerId) && member.id === ownerId;
 }
 
 function modalReason(ix) {
@@ -522,7 +528,7 @@ export async function handleTicketInteraction(ix, bot) {
   // jest przed ogólnym „musi być otwarty” niżej.
   if (kind === 'tk' && (action === 'delete' || action === 'deleteconfirm')) {
     if (ticket.status !== 'closed') return fail('Ten ticket nie jest jeszcze zamknięty.');
-    if (!isSupport(ix.member, eff)) return fail('Usunąć kanał z archiwum może tylko obsługa.');
+    if (!(await isSupport(bot, ix.member, eff))) return fail('Usunąć kanał z archiwum może tylko obsługa.');
     if (action === 'delete') {
       return {
         response: {
@@ -544,11 +550,12 @@ export async function handleTicketInteraction(ix, bot) {
   }
 
   if (ticket.status !== 'open') return fail('Ten ticket jest już zamknięty.');
-  const support = isSupport(ix.member, eff);
   const owner = ix.user.id === ticket.userId;
+  // Autor, któremu rodzaj ticketu na to pozwala, albo obsługa (sprawdzana dopiero wtedy, gdy trzeba).
+  const allowed = async (authorMay) => (owner && authorMay) || isSupport(bot, ix.member, eff);
 
   if (kind === 'tks' && action === 'add') {
-    if (!support && !(owner && eff.authorCanAdd)) return fail('W tym rodzaju ticketu osoby dodaje tylko obsługa.');
+    if (!(await allowed(eff.authorCanAdd))) return fail('W tym rodzaju ticketu osoby dodaje tylko obsługa.');
     return work(6, async () => {
       const added = ix.values.filter((id) => id !== ticket.userId);
       for (const id of added) {
@@ -566,7 +573,7 @@ export async function handleTicketInteraction(ix, bot) {
 
   switch (action) {
     case 'close':
-      if (!support && !(owner && eff.authorCanClose)) return fail(owner ? 'Ten rodzaj ticketu zamyka tylko obsługa.' : 'Ticket może zamknąć jego autor albo obsługa.');
+      if (!(await allowed(eff.authorCanClose))) return fail(owner ? 'Ten rodzaj ticketu zamyka tylko obsługa.' : 'Ticket może zamknąć jego autor albo obsługa.');
       if (kind === 'tkm') {
         // Wysłane okienko z powodem — dopiero teraz ticket się zamyka (kanał trafia do archiwum, a zapis rozmowy do logów, DM i na kanał).
         const reason = modalReason(ix);
@@ -587,7 +594,7 @@ export async function handleTicketInteraction(ix, bot) {
         },
       };
     case 'claim':
-      if (!support) return fail('Przejąć ticket może tylko obsługa.');
+      if (!(await isSupport(bot, ix.member, eff))) return fail('Przejąć ticket może tylko obsługa.');
       return work(5, async () => {
         const claimed = await bot.store.updateTicket(ticket.id, { claimedBy: ix.user.id });
         if (ix.raw.message?.id) {
@@ -600,7 +607,7 @@ export async function handleTicketInteraction(ix, bot) {
         return 'Przejęto ticket.';
       });
     case 'add':
-      if (!support && !(owner && eff.authorCanAdd)) return fail(owner ? 'W tym rodzaju ticketu osoby dodaje tylko obsługa.' : 'Osoby do ticketu może dodać jego autor albo obsługa.');
+      if (!(await allowed(eff.authorCanAdd))) return fail(owner ? 'W tym rodzaju ticketu osoby dodaje tylko obsługa.' : 'Osoby do ticketu może dodać jego autor albo obsługa.');
       return {
         response: {
           type: 4,

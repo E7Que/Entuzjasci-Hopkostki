@@ -173,7 +173,10 @@ Każdy rodzaj ticketu można też skonfigurować osobno (zakładka Tickety → r
 Wysłanie formularza tworzy prywatny kanał widoczny tylko dla tej osoby i obsługi (oznaczona w powitaniu
 jest tylko ta osoba — obsługa i tak ma dostęp do kanału, więc pingowanie całej roli przy każdym nowym
 tickecie byłoby tylko spamem powiadomień), z przyciskami **Zamknij** (trzeba podać powód zamknięcia — trafia do logów, DM i zapisu rozmowy; także przy zamykaniu w panelu), **Przejmij** i
-**Dodaj osobę**.
+**Dodaj osobę**. Za obsługę (przejęcie, zamknięcie i dodawanie osób w cudzym tickecie, usuwanie z archiwum)
+uznawane są tylko role z listy obsługi (rodzaju ticketu albo ogólnej) i właściciel serwera — samo uprawnienie
+Administrator czy „Zarządzanie kanałami” nie wystarcza, więc administrację, która ma obsługiwać tickety,
+dopisz do listy.
 
 Zamknięty ticket **nie jest usuwany** — zostaje jako archiwum:
 - kanał przenosi się do **kategorii dla zamkniętych ticketów** (osobne pole w ustawieniach, puste = zostaje

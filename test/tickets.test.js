@@ -319,24 +319,59 @@ test('osobne ustawienia rodzajów ticketów: własna kategoria, role obsługi, l
       { label: 'Partnerstwo', style: 'zielony', fields: [], categoryId: PARTNER_CAT, logChannelId: PARTNER_LOG, supportRoleIds: [PARTNER_ROLE], authorCanClose: false, authorCanAdd: false, authorCanAttach: false },
     ],
   });
+  // Autor partnerstwa to zwykła osoba (nie właściciel serwera — ten zawsze należy do obsługi).
   await run(s.bot, click('tk|open|0', { user: 'target' }));
-  await run(s.bot, click('tk|open|1', { user: 'owner' }));
+  await run(s.bot, click('tk|open|1', { user: 'partner' }));
   const [report, partner] = s.discord.state.createdChannels;
   assert.equal(report.parent_id, CATEGORY);
   assert.equal(partner.parent_id, PARTNER_CAT, 'partnerstwa w osobnej kategorii');
   const roles = (ch) => ch.permission_overwrites.filter((o) => o.type === 0 && o.id !== GUILD).map((o) => o.id);
   assert.deepEqual(roles(report), [SUPPORT]);
   assert.deepEqual(roles(partner), [PARTNER_ROLE], 'partnerstwa widzi tylko własna obsługa');
-  const authorAllow = BigInt(partner.permission_overwrites.find((o) => o.id === 'owner').allow);
+  const authorAllow = BigInt(partner.permission_overwrites.find((o) => o.id === 'partner').allow);
   assert.equal(authorAllow & P.ATTACH_FILES, 0n, 'autor partnerstwa bez załączników');
   assert.equal(s.discord.state.channels.get(PARTNER_LOG).length, 1, 'log otwarcia w osobnym kanale');
   assert.equal(s.discord.state.channels.get(LOGS).length, 1);
 
   const [t1, t2] = await s.store.listTickets();
   const tPartner = t1.type === 'Partnerstwo' ? t1 : t2;
-  assert.match((await run(s.bot, click(`tk|close|${tPartner.id}`, { user: 'owner' }))).response.data.embeds[0].description, /tylko obsługa/);
-  assert.match((await run(s.bot, click(`tk|add|${tPartner.id}`, { user: 'owner' }))).response.data.embeds[0].description, /tylko obsługa/);
+  assert.match((await run(s.bot, click(`tk|close|${tPartner.id}`, { user: 'partner' }))).response.data.embeds[0].description, /tylko obsługa/);
+  assert.match((await run(s.bot, click(`tk|add|${tPartner.id}`, { user: 'partner' }))).response.data.embeds[0].description, /tylko obsługa/);
   assert.match((await run(s.bot, click(`tk|claim|${tPartner.id}`, { user: 'mod', roles: [SUPPORT] }))).response.data.embeds[0].description, /tylko obsługa/, 'obsługa zgłoszeń nie rusza partnerstw');
   const ok = await run(s.bot, click(`tk|close|${tPartner.id}`, { user: 'mod', roles: [PARTNER_ROLE] }));
   assert.equal(ok.response.type, 9);
+});
+
+test('obsługa ticketów = lista „Obsługa” z panelu i właściciel serwera; Administrator ani „Zarządzanie kanałami” jej nie dają', async () => {
+  const s = await setup({ types: [{ label: 'Pomoc', style: 'niebieski', question: '' }] });
+  await run(s.bot, click('tk|open|0'));
+  const ticket = (await s.store.listTickets())[0];
+  const ADMIN_ROLE = '100000000000000086';
+  const admin = { user: 'mod', roles: [ADMIN_ROLE], permissions: String(P.ADMINISTRATOR) };
+  const channels = { user: 'mod', roles: [], permissions: String(P.MANAGE_CHANNELS) };
+  const error = (result) => result.response.data.embeds[0].description;
+
+  // Administrator spoza listy „Obsługa” nie przejmuje, nie zamyka cudzego ticketu i nie dodaje do niego osób.
+  assert.match(error(await run(s.bot, click(`tk|claim|${ticket.id}`, admin))), /tylko obsługa/);
+  assert.match(error(await run(s.bot, click(`tk|close|${ticket.id}`, admin))), /autor albo obsługa/);
+  assert.match(error(await run(s.bot, click(`tk|add|${ticket.id}`, admin))), /autor albo obsługa/);
+  assert.match(error(await run(s.bot, click(`tks|add|${ticket.id}`, { ...admin, values: ['owner'] }))), /tylko obsługa/);
+  assert.match(error(await run(s.bot, click(`tk|claim|${ticket.id}`, channels))), /tylko obsługa/, '„Zarządzanie kanałami” też nie wystarcza');
+  assert.equal((await s.store.getTicket(ticket.id)).claimedBy, null);
+
+  // Właściciel serwera — zawsze, także bez żadnej roli (rozpoznawany po ID, nie po uprawnieniach).
+  await run(s.bot, click(`tk|claim|${ticket.id}`, { user: 'owner' }));
+  assert.equal((await s.store.getTicket(ticket.id)).claimedBy, 'owner');
+  // Administrator dopisany do listy „Obsługa” obsługuje tickety jak każda inna rola z listy.
+  await s.store.updateConfig({ tickets: { supportRoleIds: [SUPPORT, ADMIN_ROLE] } });
+  assert.equal((await run(s.bot, click(`tk|close|${ticket.id}`, admin))).response.type, 9, 'z listy — okienko z powodem zamknięcia');
+  await s.store.updateConfig({ tickets: { supportRoleIds: [SUPPORT] } });
+
+  // Archiwum: „Usuń kanał z archiwum” też tylko dla obsługi i właściciela.
+  await run(s.bot, click(`tkm|close|${ticket.id}`, { type: 5, components: [{ type: 1, components: [{ type: 4, custom_id: 'reason', value: 'Załatwione' }] }] }));
+  assert.equal((await s.store.getTicket(ticket.id)).status, 'closed');
+  assert.match(error(await run(s.bot, click(`tk|delete|${ticket.id}`, admin))), /tylko obsługa/);
+  assert.match((await run(s.bot, click(`tk|delete|${ticket.id}`, { user: 'owner' }))).response.data.content, /Na pewno usunąć/);
+  assert.match((await run(s.bot, click(`tk|delete|${ticket.id}`, { user: 'mod', roles: [SUPPORT] }))).response.data.content, /Na pewno usunąć/);
+  assert.deepEqual(s.discord.state.deletedChannels, []);
 });
