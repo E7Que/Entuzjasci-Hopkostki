@@ -3,9 +3,10 @@
 // nowy; /login nowy:True wymusza nowe hasło wcześniej (stare i wszystkie zalogowania nim przestają działać).
 // Części panelu odblokowują role (zakładka „Dostęp do panelu”): bot czyta aktualne role przy /login, przy
 // logowaniu i potem co kilka minut — odebrana rola zamyka dostęp bez wylogowywania ręcznie.
-// Administratorzy serwera (i logowanie hasłem panelu) mają zawsze dostęp do wszystkiego.
+// Pełny dostęp do wszystkiego mają tylko właściciel serwera i logowanie hasłem panelu. Uprawnienie
+// Administrator w Discordzie niczego tu samo nie odblokowuje — tak jak przy komendach (zakładka Uprawnienia)
+// decydują listy ról, więc administracja widzi te części, które przypisano jej rolom.
 
-import { P, has, memberPermissions } from './permissions.js';
 import { getGuildContext } from './moderation.js';
 import { DiscordError, avatarUrl } from './rest.js';
 import { safeEqual } from './verify.js';
@@ -87,7 +88,8 @@ const tokenHash = (token) => sha256(`sesja:${token}`);
 // Login = nazwa użytkownika na Discordzie (bez znaków spoza [a-z0-9._]).
 const loginName = (user) => normalizeLogin(user.username).replace(/[^a-z0-9._]/g, '').slice(0, 32) || `mod${String(user.id).slice(-4)}`;
 
-// Które części panelu odblokowują te role (admin = właściciel serwera albo uprawnienie Administrator).
+// Które części panelu odblokowują te role. admin = właściciel serwera (nazwa pola w bazie zostaje z czasów,
+// gdy pełny dostęp dawało też uprawnienie Administrator).
 export function sectionAccess({ roles = [], admin = false }, config) {
   if (admin) return { full: true, sections: [...ALL_SECTIONS] };
   const byRole = config.panelAccess?.roles ?? {};
@@ -106,17 +108,16 @@ async function memberSnapshot(bot, userId) {
     throw error;
   }
   const roles = member.roles ?? [];
-  const admin = userId === gctx.guild.ownerId || has(memberPermissions(roles, gctx.roles, gctx.guild.id), P.ADMINISTRATOR);
-  return { roles, admin, user: member.user ?? null };
+  return { roles, admin: userId === gctx.guild.ownerId, user: member.user ?? null };
 }
 
 // /login: aktywny login tej osoby albo nowy (renew = wymuszone nowe hasło). Hasło jest tylko w odpowiedzi —
 // w bazie zostaje jego skrót, więc istniejącego hasła nie da się pokazać drugi raz.
-// Role i uprawnienia bierzemy z samej interakcji — to stan z chwili użycia komendy.
+// Role bierzemy z samej interakcji — to stan z chwili użycia komendy.
 export async function issueLogin(bot, ix, config, { renew = false } = {}) {
   const { guild } = await getGuildContext(bot);
   const roles = ix.member?.roles ?? [];
-  const admin = ix.user.id === guild.ownerId || has(ix.member?.permissions ?? '0', P.ADMINISTRATOR);
+  const admin = ix.user.id === guild.ownerId;
   const access = sectionAccess({ roles, admin }, config);
   if (!hasAccess(access)) return { access, login: null, password: null };
   const current = await bot.store.getPanelLoginForUser(ix.user.id);

@@ -236,9 +236,11 @@ co może zmieniać, a co nie, zależnie od swojego stopnia:
    odblokowanych części.
 
 Bot sprawdza role zalogowanych co kilka minut: odebrana rola albo wyjście z serwera kończy sesję samo, a
-zmiany ról w zakładce działają od razu. Administratorzy serwera (i logowanie hasłem panelu) mają zawsze
-dostęp do wszystkiego; w zakładce widać aktywne loginy (kto, do kiedy, ile przeglądarek) i można wymusić nowy
-login jednej osobie albo wszystkim.
+zmiany ról w zakładce działają od razu. Pełny dostęp do wszystkiego (także do tej zakładki) mają tylko
+właściciel serwera i logowanie hasłem panelu. Samo uprawnienie Administrator w Discordzie niczego w panelu nie
+odblokowuje — administracja widzi te części, które przypiszesz jej rolom, tak jak przy listach ról komend.
+W zakładce widać aktywne loginy (kto, do kiedy, ile przeglądarek) i można wymusić nowy login jednej osobie
+albo wszystkim.
 
 ### Uruchomienie panelu lokalnie (opcjonalnie)
 
