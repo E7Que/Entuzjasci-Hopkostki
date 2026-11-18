@@ -85,11 +85,13 @@ test('odwołanie od ostrzeżenia: przycisk w DM → formularz → kanał moderac
   res = await run(s.bot, fromDm(`apl|open|${entry.id}`));
   assert.match(errorText(res), /już czeka na decyzję/);
 
-  // Decyzja: osoba ukarana i ktoś bez uprawnień — nie; moderator — okienko, potem przyjęcie.
+  // Decyzja: osoba ukarana i ktoś bez uprawnień — nie; właściciel serwera zawsze; moderator — okienko, potem przyjęcie.
   res = await run(s.bot, fromGuild('apl|ok|1', { user: 'target', roles: [], permissions: '0' }));
   assert.match(errorText(res), /własnego odwołania/);
-  res = await run(s.bot, fromGuild('apl|ok|1', { user: 'owner', roles: [], permissions: '0' }));
+  res = await run(s.bot, fromGuild('apl|ok|1', { user: 'czlonek', roles: [], permissions: '0' }));
   assert.match(errorText(res), /Nie masz uprawnień/);
+  res = await run(s.bot, fromGuild('apl|ok|1', { user: 'owner', roles: [], permissions: '0' }));
+  assert.equal(res.type, 9, 'właściciel serwera (po ID, nie po uprawnieniach) może rozpatrzyć odwołanie');
   res = await run(s.bot, fromGuild('apl|ok|1'));
   assert.equal(res.type, 9);
   assert.equal(res.data.custom_id, 'apld|ok|1');
@@ -142,7 +144,7 @@ test('odwołanie od bana: odrzucenie zostawia bana, przyjęcie zdejmuje bana; te
   const third = await moderation.banUser(s.bot, { target, moderator: mod, reason: 'Znowu' });
   await run(s.bot, fromDm(`aplm|send|${third.entry.id}`, { fields: text }));
   const pending = (await s.store.listAppeals({ status: 'pending' })).items[0];
-  const res = await run(s.bot, fromGuild(`apl|ok|${pending.id}`, { user: 'owner', roles: [], permissions: String(1n << 40n) }));
+  const res = await run(s.bot, fromGuild(`apl|ok|${pending.id}`, { user: 'czlonek', roles: [], permissions: String(1n << 40n) }));
   assert.match(errorText(res), /Nie masz uprawnień/);
 
   // Po terminie: odwołanie niemożliwe.
