@@ -862,7 +862,7 @@ function rolePicker(key, { everyone = false, assignable = false } = {}) {
   const add = options.length
     ? `<select class="chip-add" data-chip-add aria-label="Dodaj rolę"><option value="">+ Dodaj rolę</option>${options.join('')}</select>`
     : '';
-  const empty = list.length ? '' : `<span class="muted small">${key.startsWith('perm:') ? 'tylko administratorzy' : 'brak'}</span>`;
+  const empty = list.length ? '' : `<span class="muted small">${key.startsWith('perm:') ? 'tylko właściciel serwera' : 'brak'}</span>`;
   return `<div class="role-picker" data-picker="${esc(key)}" data-everyone="${everyone}" data-assignable="${assignable}">${chips}${empty}${add}</div>`;
 }
 
@@ -940,8 +940,9 @@ function renderDiscordCommandPerms() {
   }
   const time = new Date(data.checkedAt).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
   const checked = `<p class="muted small">Sprawdzono o ${esc(time)}, porównując z zapisanymi listami (niezapisane zmiany nie są brane pod uwagę).</p>`;
+  const blocks = channelBlocksHtml(data.channelBlocks ?? []);
   if (!data.overrides.length) {
-    box.innerHTML = `<div class="health-ok"><span class="dot ok"></span>Brak nadpisań w Discordzie — decydują listy poniżej.</div>${checked}`;
+    box.innerHTML = `<div class="health-ok"><span class="dot ok"></span>Brak nadpisań w Integracjach Discorda.</div>${blocks}${checked}`;
     return;
   }
   const conflicts = data.conflicts.length
@@ -960,7 +961,23 @@ function renderDiscordCommandPerms() {
       </div>`,
     )
     .join('');
-  box.innerHTML = `${conflicts}<h4>Nadpisania ustawione w Discordzie</h4>${overrides}${discordPermsHelp(data.botName)}${checked}`;
+  box.innerHTML = `${conflicts}<h4>Nadpisania ustawione w Discordzie</h4>${overrides}${discordPermsHelp(data.botName)}${blocks}${checked}`;
+}
+
+// Uprawnienie kanału „Używanie komend aplikacji”: bez niego Discord nie pozwoli użyć żadnej komendy na kanale,
+// niezależnie od list bota. Administrator je omija. Pokazujemy role z list komend, które widzą kanał, a nie mogą
+// tam używać komend (liczone dla samej roli — osoba z kilkoma rolami może mieć więcej).
+function channelBlocksHtml(blocks) {
+  const limited = blocks.filter((b) => !b.admin && b.blocked.length);
+  if (!blocks.length) return '';
+  if (!limited.length) return '<div class="health-ok"><span class="dot ok"></span>Wszystkie role z list mogą używać komend na każdym kanale, który widzą.</div>';
+  const names = (list) => list.slice(0, 12).map((c) => `#${esc(c.name)}`).join(', ') + (list.length > 12 ? ` i ${list.length - 12} innych` : '');
+  return `<div class="health-alert"><strong>Kanały, na których role nie mogą używać komend</strong>
+    <p class="small">Discord wymaga uprawnienia kanału <b>„Używanie komend aplikacji”</b>. Gdy nie ma go rola (albo @everyone na kanale ma je zablokowane, a rola nie ma zgody), komendy bota działają tylko tam, gdzie je dodano — tak jak /powiedz tylko na kanale moderacji. Administrator i właściciel serwera to omijają, dlatego im działa wszędzie.</p>
+    <ul>${limited
+      .map((b) => `<li><b>${esc(b.name)}</b> — bez komend na ${b.blocked.length} z ${b.visible} widocznych kanałów: ${names(b.blocked)}</li>`)
+      .join('')}</ul>
+    <small class="note">Jak naprawić: w Discordzie otwórz ustawienia kategorii albo kanału → Uprawnienia → wybierz rolę (np. | Moderator) → „Używanie komend aplikacji” ustaw na ✓. Najprościej zrobić to raz na całej kategorii.</small></div>`;
 }
 
 // ---------- Uprawnienia komend ----------

@@ -419,14 +419,88 @@ export function analyzeCommandPermissions(snapshot, config) {
   return { overrides: describeOverrides(snapshot), conflicts: findConflicts(snapshot, config) };
 }
 
-// Odpowiedź API panelu: { readable, error, botName, checkedAt, overrides, conflicts }.
+// ---------- Uprawnienie kanału „Używanie komend aplikacji” ----------
+// Niezależnie od Integracji Discord pozwala użyć komendy tylko na kanale, na którym osoba ma uprawnienie
+// „Używanie komend aplikacji” (zwykłe uprawnienia roli i kanału). Serwery często odbierają je @everyone na
+// większości kanałów — wtedy np. moderator może używać komend bota tylko tam, gdzie jego rola ma je dodane.
+// Administrator omija uprawnienia kanałów, dlatego jemu działa wszędzie.
+const USE_APPLICATION_COMMANDS = 1n << 31n;
+const VIEW_CHANNEL = 1n << 10n;
+
+// Uprawnienia na kanale dla osoby z rolami roleIds (bez wpisów dla pojedynczych osób) — algorytm Discorda:
+// rola @everyone + role → nadpisanie @everyone na kanale → nadpisania ról (zgody wygrywają z blokadami).
+export function channelPermissionsFor({ guildId, everyonePerms, rolePerms = [], roleIds = [] }, channel) {
+  let perms = BigInt(everyonePerms ?? 0);
+  for (const p of rolePerms) perms |= BigInt(p ?? 0);
+  if (has(perms, P.ADMINISTRATOR)) return { admin: true, perms };
+  const overwrites = channel.permission_overwrites ?? [];
+  const everyone = overwrites.find((o) => String(o.id) === String(guildId));
+  if (everyone) perms = (perms & ~BigInt(everyone.deny ?? 0)) | BigInt(everyone.allow ?? 0);
+  let deny = 0n;
+  let allow = 0n;
+  for (const o of overwrites) {
+    if (Number(o.type) === 0 && roleIds.includes(String(o.id))) {
+      deny |= BigInt(o.deny ?? 0);
+      allow |= BigInt(o.allow ?? 0);
+    }
+  }
+  perms = (perms & ~deny) | allow;
+  return { admin: false, perms };
+}
+
+// Dla każdej roli z list komend bota (i zwykłych członków): na których widocznych dla niej kanałach nie może
+// używać komend. Liczone dla samej tej roli (+ @everyone) — osoba z kilkoma rolami może mieć więcej.
+export function findChannelBlocks({ guildId, roles, channels, config }) {
+  const byId = new Map(roles.map((r) => [String(r.id), r]));
+  const everyonePerms = byId.get(String(guildId))?.permissions ?? '0';
+  const listed = new Set(config.modRoleIds ?? []);
+  for (const list of Object.values(config.commandPermissions ?? {})) for (const id of Array.isArray(list) ? list : []) if (id !== EVERYONE) listed.add(id);
+  const targets = [{ id: String(guildId), name: '@everyone (zwykli członkowie)', perms: [] }];
+  for (const id of listed) {
+    const role = byId.get(String(id));
+    if (role && !role.managed) targets.push({ id: String(role.id), name: role.name, perms: [role.permissions], position: role.position ?? 0 });
+  }
+  const usable = channels.filter((c) => COMMAND_CHANNEL_TYPES.has(c.type)).sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  return targets
+    .sort((a, b) => (b.position ?? -1) - (a.position ?? -1))
+    .map((t) => {
+      const roleIds = t.id === String(guildId) ? [] : [t.id];
+      let visible = 0;
+      let admin = false;
+      const blocked = [];
+      for (const channel of usable) {
+        const result = channelPermissionsFor({ guildId, everyonePerms, rolePerms: t.perms, roleIds }, channel);
+        if (result.admin) {
+          admin = true;
+          break;
+        }
+        if ((result.perms & VIEW_CHANNEL) !== VIEW_CHANNEL) continue;
+        visible += 1;
+        if ((result.perms & USE_APPLICATION_COMMANDS) !== USE_APPLICATION_COMMANDS) blocked.push({ id: String(channel.id), name: channel.name });
+      }
+      return { roleId: t.id, name: t.name, admin, visible: admin ? usable.length : visible, blocked };
+    });
+}
+
+// Odpowiedź API panelu: { readable, error, botName, checkedAt, overrides, conflicts, channelBlocks }.
+// channelBlocks: [{ roleId, name, admin, visible, blocked: [{ id, name }] }] — kanały, które rola widzi, ale nie
+// może na nich używać komend (uprawnienie kanału „Używanie komend aplikacji”); admin = omija (Administrator).
 export async function discordCommandPermissions(bot, config, { fresh = false } = {}) {
   const snapshot = await loadDiscordCommandPermissions(bot, { fresh });
+  let channelBlocks = [];
+  try {
+    const gctx = await getGuildContext(bot);
+    const channels = await cached(bot, 'guildChannelsRaw', CACHE_MS, () => bot.discord.get(`/guilds/${gctx.guild.id}/channels`));
+    channelBlocks = findChannelBlocks({ guildId: gctx.guild.id, roles: gctx.rawRoles, channels: channels ?? [], config });
+  } catch (error) {
+    console.error('[uprawnienia kanałów]', error);
+  }
   return {
     readable: snapshot.readable,
     error: snapshot.error,
     botName: snapshot.botName,
     checkedAt: snapshot.checkedAt,
     ...analyzeCommandPermissions(snapshot, config),
+    channelBlocks,
   };
 }

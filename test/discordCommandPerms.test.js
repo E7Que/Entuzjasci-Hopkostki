@@ -216,11 +216,14 @@ test('API panelu: brak nadpisań, 404 i 403 z Discorda nie psują zakładki; dan
   const s = await setup();
   const clean = await s.call('/commands/discord');
   assert.deepEqual([clean.status, clean.body.readable, clean.body.overrides, clean.body.conflicts], [200, true, [], []]);
-  assert.equal(s.discord.state.calls.filter((c) => c.path === '/guilds/g1/channels').length, 0, 'bez nadpisań nie trzeba pobierać kanałów');
+  // Kanały są potrzebne zawsze — do sprawdzenia uprawnienia „Używanie komend aplikacji” (channelBlocks).
+  assert.ok(Array.isArray(clean.body.channelBlocks));
+  assert.equal(s.discord.state.calls.filter((c) => c.path === '/guilds/g1/channels').length, 1);
 
-  // Druga prośba korzysta z pamięci, ?fresh=1 pyta Discorda ponownie.
+  // Druga prośba korzysta z pamięci (nadpisania i kanały), ?fresh=1 pyta Discorda ponownie o nadpisania.
   await s.call('/commands/discord');
   assert.equal(s.permissionCalls(), 1);
+  assert.equal(s.discord.state.calls.filter((c) => c.path === '/guilds/g1/channels').length, 1, 'lista kanałów z pamięci (30 s)');
   s.discord.state.commandPermissionsError = new DiscordError(404, { code: 10066, message: 'Unknown application command permissions' });
   const missing = await s.call('/commands/discord?fresh=1');
   assert.equal(s.permissionCalls(), 2);
@@ -244,4 +247,32 @@ test('API panelu: /commands/discord jak /commands — widzi każdy zalogowany, t
 
   const offline = await handlePanel({ ...s.bot, discord: null }, { method: 'GET', path: '/commands/discord' });
   assert.equal(offline.status, 503);
+});
+
+test('findChannelBlocks: kanały bez „Używania komend aplikacji” dla ról z list (administrator omija)', async () => {
+  const { findChannelBlocks } = await import('../supabase/functions/hopkostki-bot/lib/discordCommandPerms.js');
+  const G = '100';
+  const USE = 1n << 31n;
+  const VIEW = 1n << 10n;
+  const roles = [
+    { id: G, permissions: String(VIEW | (1n << 11n)) },
+    { id: 'mod', name: '| Moderator', permissions: String(USE | (1n << 13n)), position: 5 },
+    { id: 'adm', name: '| Admin', permissions: '8', position: 9 },
+    { id: 'bot', name: 'Bot', permissions: '8', position: 10, managed: true },
+  ];
+  const channels = [
+    { id: 'c1', name: 'ogolny', type: 0, position: 1, permission_overwrites: [{ id: G, type: 0, allow: '0', deny: String(USE) }] },
+    { id: 'c2', name: 'moderator-only', type: 0, position: 2, permission_overwrites: [{ id: G, type: 0, allow: '0', deny: String(VIEW | USE) }, { id: 'mod', type: 0, allow: String(VIEW | USE), deny: '0' }] },
+    { id: 'c3', name: 'kategoria', type: 4, position: 0 },
+  ];
+  const config = { modRoleIds: ['mod'], commandPermissions: { powiedz: ['mod', 'adm', 'everyone'], ban: ['bot'] } };
+  const result = findChannelBlocks({ guildId: G, roles, channels, config });
+  const byId = Object.fromEntries(result.map((r) => [r.roleId, r]));
+  assert.equal(byId.bot, undefined, 'role zarządzane (boty) pomijamy');
+  assert.equal(byId.adm.admin, true);
+  assert.deepEqual(byId.adm.blocked, []);
+  assert.deepEqual(byId.mod.blocked.map((c) => c.name), ['ogolny'], 'moderator widzi oba kanały, komendy ma tylko na moderator-only');
+  assert.equal(byId.mod.visible, 2);
+  assert.deepEqual(byId[G].blocked.map((c) => c.name), ['ogolny']);
+  assert.equal(byId[G].visible, 1, 'kanału moderacji @everyone nie widzi — nie liczy się');
 });
