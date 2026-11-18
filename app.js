@@ -83,6 +83,7 @@ const state = {
   reloadPending: false,
   commandMeta: null,
   lastActivityInput: null,
+  discordPerms: null,
 };
 
 // ---------- Narzędzia ----------
@@ -454,6 +455,7 @@ function route() {
   if (state.view === 'uprawnienia') {
     renderPermissions();
     renderRolePermissions();
+    loadDiscordCommandPerms();
   }
   if (state.view === 'glosowe' && open) loadVoice();
   if (state.view === 'tickety' && open) loadTickets();
@@ -860,7 +862,7 @@ function rolePicker(key, { everyone = false, assignable = false } = {}) {
   const add = options.length
     ? `<select class="chip-add" data-chip-add aria-label="Dodaj rolę"><option value="">+ Dodaj rolę</option>${options.join('')}</select>`
     : '';
-  const empty = list.length ? '' : `<span class="muted small">${key.startsWith('perm:') ? 'tylko administratorzy' : 'brak'}</span>`;
+  const empty = list.length ? '' : `<span class="muted small">${key.startsWith('perm:') ? 'tylko właściciel serwera' : 'brak'}</span>`;
   return `<div class="role-picker" data-picker="${esc(key)}" data-everyone="${everyone}" data-assignable="${assignable}">${chips}${empty}${add}</div>`;
 }
 
@@ -890,19 +892,111 @@ document.addEventListener('click', (event) => {
   refreshPicker(box);
 });
 
+// ---------- Uprawnienia komend w samym Discordzie (Integracje) ----------
+// Discord ma własne nadpisania komend bota (Ustawienia serwera → Integracje → bot): dla całej aplikacji i dla
+// pojedynczych komend, dla ról, osób i kanałów. Bot może je tylko odczytać — pokazujemy je razem z tym, co
+// blokują wbrew zapisanym listom ról (zakładka Uprawnienia), i z instrukcją, jak je usunąć w Discordzie.
+async function loadDiscordCommandPerms({ fresh = false } = {}) {
+  const button = $('#discord-perms-refresh');
+  button.disabled = true;
+  try {
+    state.discordPerms = await api(`/commands/discord${fresh ? '?fresh=1' : ''}`);
+  } catch (error) {
+    state.discordPerms = { failed: true, error: error.message };
+  } finally {
+    button.disabled = false;
+  }
+  renderDiscordCommandPerms();
+}
+$('#discord-perms-refresh').addEventListener('click', () => loadDiscordCommandPerms({ fresh: true }));
+
+function discordPermChip(entry) {
+  return `<span class="role-chip static" title="${entry.allow ? 'Discord zezwala' : 'Discord blokuje'}"><span class="role-dot" style="background:${entry.allow ? 'var(--green)' : 'var(--red)'}"></span>${entry.allow ? '✓' : '✕'} ${esc(entry.name)}</span>`;
+}
+
+function discordPermsHelp(botName) {
+  return `<details class="role-perm dperm-help">
+    <summary>Jak usunąć nadpisanie w Discordzie</summary>
+    <ol class="small">
+      <li>Otwórz <b>Ustawienia serwera → Integracje</b> i przy ${botName ? `<b>${esc(botName)}</b>` : 'bocie'} kliknij <b>Zarządzaj</b>.</li>
+      <li>Na górze są ustawienia <b>całej aplikacji</b> (dla wszystkich komend): „Role i członkowie” oraz „Kanały”. Żeby niczego nie blokować, przy <b>@everyone</b> i <b>Wszystkie kanały</b> ma być ✓ (zielony), bez blokad pojedynczych ról i kanałów.</li>
+      <li>Niżej jest lista komend. Komenda z własnymi nadpisaniami jest oznaczona jako niezsynchronizowana („Not Synced”) — kliknij ją (np. /powiedz) i usuń wpisy ról i kanałów albo przy <b>Wszystkie kanały</b> zaznacz ✓. Możesz też przywrócić jej ustawienia domyślne (takie jak dla całej aplikacji).</li>
+      <li>Zapisz zmiany w Discordzie i kliknij tutaj <b>Sprawdź ponownie</b>.</li>
+    </ol>
+    <p class="muted small">Blokady ról i osób nie dotyczą właściciela serwera ani ról z uprawnieniem Administrator — ograniczenia kanałów dotyczą wszystkich. Bot nie zmieni tych ustawień sam: Discord pozwala na to tylko osobie z uprawnieniami Zarządzanie serwerem i Zarządzanie rolami. Kto blokuje? Gdy komendy nie ma na liście po wpisaniu „/”, blokuje ją Discord; gdy jest, a bot odpowiada „Nie masz uprawnień do tej komendy.”, decyduje lista bota poniżej.</p>
+  </details>`;
+}
+
+function renderDiscordCommandPerms() {
+  const box = $('#discord-perms');
+  const data = state.discordPerms;
+  if (!data) {
+    box.innerHTML = '<span class="muted small">Sprawdzam ustawienia w Discordzie…</span>';
+    return;
+  }
+  if (data.failed || !data.readable) {
+    box.innerHTML = `<div class="banner warn">Nie udało się sprawdzić ustawień w Discordzie${data.error ? `: ${esc(data.error)}` : '.'}</div>`;
+    return;
+  }
+  const time = new Date(data.checkedAt).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+  const checked = `<p class="muted small">Sprawdzono o ${esc(time)}, porównując z zapisanymi listami (niezapisane zmiany nie są brane pod uwagę).</p>`;
+  const blocks = channelBlocksHtml(data.channelBlocks ?? []);
+  if (!data.overrides.length) {
+    box.innerHTML = `<div class="health-ok"><span class="dot ok"></span>Brak nadpisań w Integracjach Discorda.</div>${blocks}${checked}`;
+    return;
+  }
+  const conflicts = data.conflicts.length
+    ? `<div class="health-alert"><strong>Discord blokuje to, na co pozwalają listy bota</strong><ul>${data.conflicts
+        .map((c) => `<li>${c.level === 'error' ? '⛔' : '⚠️'} ${esc(c.text)}<small class="note">Jak naprawić: ${esc(c.fix)}</small></li>`)
+        .join('')}</ul></div>`
+    : '<div class="health-ok"><span class="dot ok"></span>Nadpisania w Discordzie nie kłócą się z listami bota — decydują listy poniżej.</div>';
+  const scopeNote = { app: 'dotyczy wszystkich komend bez własnych nadpisań', command: 'nadpisania tylko tej komendy', unknown: 'komenda spoza listy bota' };
+  const row = (label, entries) => (entries.length ? `<div class="dperm-row"><span class="muted small">${label}:</span>${entries.map(discordPermChip).join('')}</div>` : '');
+  const overrides = data.overrides
+    .map(
+      (o) => `<div class="perm-command">
+        <div class="perm-command-head">${o.scope === 'command' ? `<code>${esc(o.label)}</code>` : `<strong>${esc(o.label)}</strong>`}<span class="muted small">${scopeNote[o.scope] ?? ''}</span></div>
+        ${row('Role i osoby', o.entries.filter((e) => e.type !== 'channel'))}
+        ${row('Kanały', o.entries.filter((e) => e.type === 'channel'))}
+      </div>`,
+    )
+    .join('');
+  box.innerHTML = `${conflicts}<h4>Nadpisania ustawione w Discordzie</h4>${overrides}${discordPermsHelp(data.botName)}${blocks}${checked}`;
+}
+
+// Uprawnienie kanału „Używanie komend aplikacji”: bez niego Discord nie pozwoli użyć żadnej komendy na kanale,
+// niezależnie od list bota. Administrator je omija. Pokazujemy role z list komend, które widzą kanał, a nie mogą
+// tam używać komend (liczone dla samej roli — osoba z kilkoma rolami może mieć więcej).
+function channelBlocksHtml(blocks) {
+  const limited = blocks.filter((b) => !b.admin && b.blocked.length);
+  if (!blocks.length) return '';
+  if (!limited.length) return '<div class="health-ok"><span class="dot ok"></span>Wszystkie role z list mogą używać komend na każdym kanale, który widzą.</div>';
+  const names = (list) => list.slice(0, 12).map((c) => `#${esc(c.name)}`).join(', ') + (list.length > 12 ? ` i ${list.length - 12} innych` : '');
+  return `<div class="health-alert"><strong>Kanały, na których role nie mogą używać komend</strong>
+    <p class="small">Discord wymaga uprawnienia kanału <b>„Używanie komend aplikacji”</b>. Gdy nie ma go rola (albo @everyone na kanale ma je zablokowane, a rola nie ma zgody), komendy bota działają tylko tam, gdzie je dodano — tak jak /powiedz tylko na kanale moderacji. Administrator i właściciel serwera to omijają, dlatego im działa wszędzie.</p>
+    <ul>${limited
+      .map((b) => `<li><b>${esc(b.name)}</b> — bez komend na ${b.blocked.length} z ${b.visible} widocznych kanałów: ${names(b.blocked)}</li>`)
+      .join('')}</ul>
+    <small class="note">Jak naprawić: w Discordzie otwórz ustawienia kategorii albo kanału → Uprawnienia → wybierz rolę (np. | Moderator) → „Używanie komend aplikacji” ustaw na ✓. Najprościej zrobić to raz na całej kategorii.</small></div>`;
+}
+
 // ---------- Uprawnienia komend ----------
 // Ta sama logika co po stronie bota (moderation.js/roleHasAccess) — liczona tu dla podglądu na żywo.
+// Lista komendy obowiązuje każdą rolę, także z Administratorem. Właściciela serwera (osoba, nie rola)
+// w tabeli nie ma — on ma dostęp zawsze.
 const ADMINISTRATOR_BIT = 8n;
 function hasBit(bitsStr, bit) {
   const bits = BigInt(bitsStr || 0);
   return (bits & bit) === bit;
 }
 function roleCanUse(role, cmd, config) {
-  if (hasBit(role.permissions, ADMINISTRATOR_BIT)) return true;
   const list = config.commandPermissions?.[cmd.name];
   if (Array.isArray(list)) return list.includes(EVERYONE) || list.includes(role.id);
+  // Komenda bez listy (stara konfiguracja): uprawnienie Discorda albo rola moderatora, jak has() w bocie —
+  // Administrator ma każde uprawnienie.
   if (!cmd.permission) return true;
-  return hasBit(role.permissions, BigInt(cmd.permission)) || config.modRoleIds.includes(role.id);
+  const bit = BigInt(cmd.permission);
+  return hasBit(role.permissions, ADMINISTRATOR_BIT) || hasBit(role.permissions, bit) || config.modRoleIds.includes(role.id);
 }
 
 function renderPermissions() {
@@ -2869,6 +2963,8 @@ $('#save').addEventListener('click', async () => {
     renderPreview();
     toast('Zapisano ustawienia');
     if (state.view === 'ustawienia') loadHistory();
+    // Konflikty z Discordem liczone są z zapisanych list — po zapisie sprawdzamy je od nowa.
+    if (state.view === 'uprawnienia') loadDiscordCommandPerms();
   } catch (error) {
     toast(error.message, 'error');
   } finally {
