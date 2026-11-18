@@ -18,6 +18,7 @@ import { activeXpEvent, changeXp, dayKey, importLevels, levelProgress, levelUpMe
 import { alertChannel, sendAlertTest } from './health.js';
 import { commandIdMap, fillServerInfoSections, saveBannerAsset, sendServerInfo, serverInfoContext, suggestServerInfoRoles } from './serverInfo.js';
 import { sanitizeConfig } from './configSchema.js';
+import { discordCommandPermissions } from './discordCommandPerms.js';
 
 // Wersja kodu: funkcja na Supabase importuje bota z GitHuba pod adresem z pełnym SHA commita.
 const SOURCE_SHA = (import.meta.url.match(/\/([0-9a-f]{40})\//) ?? [])[1] ?? null;
@@ -54,7 +55,7 @@ export function configChanges(before, after) {
 // Która część panelu odblokowuje które zapytanie: null = każdy zalogowany, 'full' = tylko pełny dostęp
 // (hasło panelu albo administrator serwera). Nieznane ścieżki też wymagają pełnego dostępu.
 const ROUTE_SECTIONS = [
-  [/^\/(status|guild|config|commands|me|logout)$/, null],
+  [/^\/(status|guild|config|commands|commands\/discord|me|logout)$/, null],
   [/^\/permissions\//, 'uprawnienia'],
   [/^\/tickets(\/|$)/, 'tickety'],
   [/^\/bump$/, 'bump'],
@@ -311,6 +312,23 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
     });
   }
   if (method === 'GET' && path === '/commands') return ok({ commands: COMMAND_META });
+  // Nadpisania uprawnień komend ustawione w samym Discordzie (Ustawienia serwera → Integracje → bot) porównane
+  // z zapisanymi listami ról bota (szczegóły w discordCommandPerms.js). Odpowiedź:
+  // { readable,   // false = Discord nie pozwolił ich odczytać (403) — wtedy listy są puste, a error mówi dlaczego
+  //   error, botName, checkedAt,
+  //   overrides: [{ id, scope: 'app' | 'command' | 'unknown', command, label,
+  //                 entries: [{ id, type: 'role' | 'user' | 'channel', target: 'everyone' | 'role' | 'user' | 'allChannels' | 'channel', name, allow }] }],
+  //   conflicts: [{ level: 'error' | 'warn', kind: 'channels' | 'app-everyone' | 'everyone' | 'role' | 'user', text, fix, commands }] }
+  // Brak nadpisań = puste listy. Dane z Discorda są pamiętane 30 s; ?fresh=1 pobiera je od nowa.
+  if (method === 'GET' && path === '/commands/discord') {
+    if (!bot.discord) return fail(503, 'Bot nie jest skonfigurowany (brak DISCORD_TOKEN).');
+    return attempt(async () => {
+      const result = await discordCommandPermissions(bot, await store.getConfig(), { fresh: query.fresh === '1' });
+      // Właściciel serwera omija w Discordzie (i w bocie) ograniczenia ról — panel pokazuje, kto nim jest.
+      const { guild } = await getGuildContext(bot);
+      return { ...result, ownerId: guild.ownerId ?? null };
+    });
+  }
 
   // Bump: ostatni bump, kiedy następny i ranking.
   if (method === 'GET' && path === '/bump') {

@@ -245,6 +245,14 @@
           <h2>Uprawnienia</h2>
           <p class="muted">Każda komenda ma własną listę ról, które mogą jej używać. Dodajesz rolę przez „+ Dodaj rolę”, usuwasz krzyżykiem. Administratorzy serwera mogą zawsze wszystko, a pusta lista oznacza „tylko administratorzy”.</p>
         </header>
+        <div class="card" id="discord-perms-card">
+          <div class="card-head">
+            <h3>Ustawienia w Discordzie (Integracje)</h3>
+            <button type="button" class="btn ghost small" id="discord-perms-refresh">Sprawdź ponownie</button>
+          </div>
+          <p class="muted small">Discord ma własne uprawnienia komend bota (<em>Ustawienia serwera → Integracje → bot</em>) — dla całego bota albo pojedynczych komend, dla ról, osób i kanałów. Działają niezależnie od list poniżej i mogą je przebić: komenda zablokowana tam roli albo kanałowi znika z listy komend, choć lista bota na nią pozwala. Bot może je tylko odczytać, zmienia się je w Discordzie.</p>
+          <div id="discord-perms"><span class="muted small">Sprawdzam ustawienia w Discordzie…</span></div>
+        </div>
         <div class="card">
           <h3>Szybkie zmiany</h3>
           <div class="bulk-row">
@@ -256,7 +264,7 @@
             <button type="button" class="btn ghost" id="perm-bulk-add">Dodaj</button>
             <button type="button" class="btn ghost" id="perm-bulk-remove">Usuń ze wszystkich</button>
           </div>
-          <p class="muted small">Rola bez uprawnienia Discorda do danej komendy nie zobaczy jej na liście komend w Discordzie, dopóki nie zezwolisz jej w <em>Ustawienia serwera → Integracje → bot</em>.
+          <p class="muted small">Komendy bota widzi w Discordzie każdy, a o tym, kto może ich użyć, decydują listy poniżej — chyba że ktoś ograniczył je w <em>Ustawienia serwera → Integracje → bot</em> (zobacz ramkę „Ustawienia w Discordzie” wyżej).
             <button type="button" class="link-btn" id="perm-reset">Ustaw wszystkie listy od nowa według uprawnień Discorda</button></p>
         </div>
         <div class="card">

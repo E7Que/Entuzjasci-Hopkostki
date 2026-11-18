@@ -64,6 +64,9 @@ export function fakeDiscord({ dmFails = false, banError = null, endpoint = null 
     // Rodzaj i kanał nadrzędny wybranych kanałów (np. wątek na forum) — dla GET /channels/:id.
     channelInfo: {},
     createdRoles: [],
+    // Nadpisania uprawnień komend z Integracji (GET …/commands/permissions); błąd (np. 403) zamiast listy.
+    commandPermissions: [],
+    commandPermissionsError: null,
   };
 
   const channelMessages = (id) => {
@@ -102,6 +105,10 @@ export function fakeDiscord({ dmFails = false, banError = null, endpoint = null 
       return body;
     }],
     ['GET', /^\/applications\/app\/guilds\/g1\/commands$/, () => (state.commands ?? []).map((c, i) => ({ id: String(200000000000000000n + BigInt(i)), ...c }))],
+    ['GET', /^\/applications\/app\/guilds\/g1\/commands\/permissions$/, () => {
+      if (state.commandPermissionsError) throw state.commandPermissionsError;
+      return state.commandPermissions;
+    }],
     ['GET', /^\/guilds\/g1$/, () => ({ id: GUILD, name: 'Entuzjaści Hopkostki', icon: null, owner_id: 'owner', roles: ROLES, approximate_member_count: 1337, emojis: EMOJIS })],
     ['GET', /^\/guilds\/g1\/invites$/, () => state.invites],
     ['GET', /^\/guilds\/g1\/vanity-url$/, () => state.vanity ?? notFound(50020)],
