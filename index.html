@@ -6,7 +6,7 @@
   <title>Panel — Entuzjaści Hopkostki</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%235865f2'/><text x='50' y='66' font-size='46' font-weight='700' font-family='sans-serif' text-anchor='middle' fill='white'>EH</text></svg>">
   <!-- ?v= zmienia się przy każdej publikacji, żeby telefony nie trzymały starej wersji z pamięci -->
-  <link rel="stylesheet" href="style.css?v=27751f0">
+  <link rel="stylesheet" href="style.css?v=396c84d">
 </head>
 <body>
   <div id="login-gate" class="login-gate">
@@ -601,19 +601,30 @@
 
         <h3 class="section-title">Wydarzenia XP</h3>
         <div class="grid two">
-          <div class="card">
-            <h3>Nowe wydarzenie</h3>
+          <div class="card" id="ev-form">
+            <h3 id="ev-form-title">Nowe wydarzenie</h3>
             <p class="muted small">W tym czasie XP jest mnożone — np. podwójne XP na weekend. Bot ogłasza początek i koniec (z najlepszymi osobami wydarzenia), a strona rankingu pokazuje odliczanie, animację i osobny ranking wydarzenia.</p>
             <div class="grid two tight">
               <label class="field"><span>Nazwa</span><input type="text" id="ev-name" maxlength="80" placeholder="Podwójne XP na weekend"></label>
-              <label class="field"><span>Mnożnik</span>
-                <select id="ev-mult"><option value="1.5">×1,5</option><option value="2" selected>×2</option><option value="2.5">×2,5</option><option value="3">×3</option><option value="5">×5</option></select>
-              </label>
+              <div class="field"><span>Mnożnik XP (od ×1,1 do ×10)</span>
+                <div class="ev-mult-row"><b class="ev-x">×</b><input type="number" id="ev-mult" min="1.1" max="10" step="0.05" value="2" inputmode="decimal" aria-label="Mnożnik XP"></div>
+                <div class="ev-presets" id="ev-presets"><button type="button" data-m="1.5">×1,5</button><button type="button" data-m="2" class="on">×2</button><button type="button" data-m="2.5">×2,5</button><button type="button" data-m="3">×3</button><button type="button" data-m="4">×4</button><button type="button" data-m="5">×5</button><button type="button" data-m="10">×10</button></div>
+              </div>
               <label class="field"><span>Początek</span><input type="datetime-local" id="ev-start"></label>
               <label class="field"><span>Koniec</span><input type="datetime-local" id="ev-end"></label>
-              <label class="field"><span>Animacja na stronie rankingu</span>
-                <select id="ev-theme"><option value="confetti">🎉 Konfetti</option><option value="fire">🔥 Ogień</option><option value="snow">❄️ Śnieg</option><option value="stars">✨ Gwiazdy</option><option value="neon">⚡ Neon</option></select>
+              <label class="field"><span>Efekt na stronie rankingu</span>
+                <select id="ev-theme">
+                  <option value="confetti">🎉 Konfetti</option><option value="fire">🔥 Ogień</option><option value="snow">❄️ Śnieg</option><option value="stars">✨ Gwiazdy</option><option value="neon">⚡ Neon</option>
+                  <option value="hearts">💖 Serduszka</option><option value="halloween">🎃 Halloween</option><option value="leaves">🍂 Jesienne liście</option><option value="sakura">🌸 Sakura</option>
+                  <option value="coins">🪙 Złote monety</option><option value="storm">⛈️ Burza</option><option value="bubbles">🫧 Bąbelki</option><option value="matrix">💚 Matrix</option>
+                </select>
               </label>
+              <label class="field"><span>Intensywność efektów</span>
+                <select id="ev-intensity"><option value="none">Wyłączone (sam baner)</option><option value="low">Subtelne</option><option value="medium" selected>Normalne</option><option value="high">Mocne</option></select>
+              </label>
+              <div class="field"><span>Własny kolor (opcjonalnie)</span>
+                <div class="ev-color-row"><input type="color" id="ev-accent" value="#ff4fa3" aria-label="Kolor wydarzenia"><label class="toggle small"><input type="checkbox" id="ev-accent-on"><span></span>Użyj własnego koloru zamiast koloru efektu</label></div>
+              </div>
             </div>
             <div class="ev-kinds">
               <label class="toggle small"><input type="checkbox" id="ev-k-message" checked><span></span>Wiadomości</label>
@@ -622,7 +633,8 @@
             </div>
             <div class="bulk-row">
               <button type="button" class="btn ghost" id="ev-add">Dodaj wydarzenie</button>
-              <a class="btn ghost" id="ev-preview" href="ranking.html?preview=confetti" target="_blank" rel="noopener">Podgląd animacji</a>
+              <button type="button" class="btn ghost" id="ev-cancel" hidden>Anuluj edycję</button>
+              <a class="btn ghost" id="ev-preview" href="ranking.html?preview=confetti" target="_blank" rel="noopener">Podgląd na stronie</a>
             </div>
           </div>
           <div class="card">
@@ -1183,6 +1195,6 @@
   </div>
   <div id="toast" class="toast"></div>
 
-  <script src="app.js?v=27751f0"></script>
+  <script src="app.js?v=396c84d"></script>
 </body>
 </html>

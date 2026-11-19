@@ -558,8 +558,20 @@
     body[data-ev="snow"] { --evc: #7cc8ff; --evc2: #d6f1ff; }
     body[data-ev="stars"] { --evc: #f5c04a; --evc2: #ffe39a; }
     body[data-ev="neon"] { --evc: #22e5c8; --evc2: #ff6fe4; }
+    body[data-ev="hearts"] { --evc: #ff5c8a; --evc2: #ffc2d4; }
+    body[data-ev="halloween"] { --evc: #ff7a18; --evc2: #b388ff; }
+    body[data-ev="leaves"] { --evc: #e07b2a; --evc2: #f2c14e; }
+    body[data-ev="sakura"] { --evc: #ff8fb8; --evc2: #ffe0ee; }
+    body[data-ev="coins"] { --evc: #f2c14e; --evc2: #fff1b8; }
+    body[data-ev="storm"] { --evc: #7a8cff; --evc2: #c9d6ff; }
+    body[data-ev="bubbles"] { --evc: #5fd3ff; --evc2: #b8f3ff; }
+    body[data-ev="matrix"] { --evc: #31e981; --evc2: #b6ffd0; }
     body[data-ev-live] .blob.b1 { background: var(--evc); opacity: 0.16; }
     body[data-ev-live] .blob.b2 { background: var(--evc2); opacity: 0.1; }
+    body[data-ev-live][data-ev-fx="low"] .blob.b1 { opacity: 0.1; }
+    body[data-ev-live][data-ev-fx="low"] .blob.b2 { opacity: 0.06; }
+    body[data-ev-live][data-ev-fx="high"] .blob.b1 { opacity: 0.26; }
+    body[data-ev-live][data-ev-fx="high"] .blob.b2 { opacity: 0.17; }
     .fx { position: absolute; inset: 0; width: 100%; height: 100%; }
     .fx-top { position: fixed; inset: 0; z-index: 40; width: 100%; height: 100%; pointer-events: none; }
 
@@ -599,6 +611,7 @@
     }
     .ev-mult b { display: block; font-size: 2.15rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35), 0 0 20px var(--eg); }
     .ev-mult small { display: block; margin-top: 2px; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.18em; opacity: 0.92; }
+    .ev-mult b[data-len="5"], .ev-mult b[data-len="6"] { font-size: 1.6rem; letter-spacing: -0.035em; }
     @keyframes ev-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
     .ev-body { min-width: 0; }
     .ev-kicker { display: inline-flex; align-items: center; gap: 8px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; opacity: 0.95; }
@@ -623,6 +636,50 @@
     .event.t-neon { --e1: #021c21; --e2: #057a70; --e3: #b9179f; --eg: #6ffff0; }
     .event.t-neon .ev-name, .event.t-neon .ev-mult b { text-shadow: 0 0 6px #6ffff0, 0 0 20px #ff3fd6; }
     .event.t-neon .ev-clock b { box-shadow: inset 0 0 0 1px rgba(111, 255, 240, 0.45), 0 0 10px -2px rgba(111, 255, 240, 0.6); }
+    .event.t-hearts { --e1: #5a0a2c; --e2: #d8336b; --e3: #ff8fb1; --eg: #ffc2d4; }
+    .event.t-halloween { --e1: #1a0b2e; --e2: #6a2c91; --e3: #ff7a18; --eg: #ffb347; }
+    .event.t-leaves { --e1: #3d1a06; --e2: #a3480f; --e3: #e8b04a; --eg: #ffd58a; }
+    .event.t-sakura { --e1: #4a1d3d; --e2: #c25e8f; --e3: #ffb3d1; --eg: #ffe0ee; }
+    .event.t-coins { --e1: #2b1c02; --e2: #9a6a0a; --e3: #f2c14e; --eg: #fff1b8; }
+    .event.t-storm { --e1: #070b1f; --e2: #26306b; --e3: #6f7fd6; --eg: #c9d6ff; }
+    .event.t-bubbles { --e1: #04263a; --e2: #0f6f9a; --e3: #3fbfae; --eg: #c9f6ff; }
+    .event.t-matrix { --e1: #010d06; --e2: #063d1f; --e3: #15924a; --eg: #5dff9e; }
+    .event.t-matrix .ev-name, .event.t-matrix .ev-mult b { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; text-shadow: 0 0 8px var(--eg), 0 0 22px color-mix(in srgb, var(--eg) 50%, transparent); }
+    .event.t-halloween .ev-name { text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35), 0 0 18px rgba(255, 122, 24, 0.45); }
+    .event.t-coins .ev-mult b { color: #fff6d6; }
+
+    /* Intensywność efektów: bez efektów (sam baner), subtelne, normalne, mocne */
+    .event.fx-none::after, .event.fx-none .ev-mult::before { display: none; }
+    .event.fx-none .ev-mult { animation: none; cursor: default; }
+    .event.fx-low::after { animation-duration: 8s; opacity: 0.6; }
+    .event.fx-low .ev-mult { animation-duration: 3.8s; }
+    .event.fx-low .ev-mult::before { animation-duration: 5s; }
+    .event.active.fx-high { animation: ev-in 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.15) both, ev-glow 2.6s ease-in-out 0.7s infinite; }
+    .event.fx-high::after { animation-duration: 3.2s; }
+    .event.fx-high .ev-mult { animation-duration: 1.7s; }
+    .event.fx-high .ev-mult::before { animation-duration: 1.8s; }
+    @keyframes ev-glow {
+      0%, 100% { box-shadow: 0 14px 44px -22px var(--e2), 0 0 0 1px color-mix(in srgb, var(--eg) 22%, transparent); }
+      50% { box-shadow: 0 18px 64px -16px var(--e2), 0 0 0 1px color-mix(in srgb, var(--eg) 60%, transparent), 0 0 36px -8px var(--eg); }
+    }
+
+    /* Pasek podglądu (ranking.html?preview=… z panelu) */
+    .pv-bar {
+      position: fixed; left: 50%; bottom: 14px; z-index: 60; transform: translateX(-50%);
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px;
+      width: max-content; max-width: calc(100vw - 24px); padding: 8px 10px; border-radius: 12px;
+      border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 90%, transparent);
+      box-shadow: 0 16px 40px -14px rgba(0, 0, 0, 0.75); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+      color: var(--text); font-size: 0.85rem;
+    }
+    .pv-bar > b { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+    .pv-bar select, .pv-bar button { height: 32px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); color: var(--text); font: inherit; }
+    .pv-bar button { font-weight: 600; cursor: pointer; }
+    .pv-bar button:hover, .pv-bar select:hover { background: var(--hover); }
+    .pv-color { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+    .pv-color input[type="checkbox"] { width: 16px; height: 16px; margin: 0; accent-color: var(--evc); }
+    .pv-color input[type="color"] { width: 32px; height: 32px; padding: 2px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); cursor: pointer; }
+    body:has(.pv-bar) footer { padding-bottom: 64px; }
 
     .event.upcoming, .event.ended { box-shadow: none; }
     .event.upcoming { background: linear-gradient(115deg, color-mix(in srgb, var(--e1) 60%, #151b1e), color-mix(in srgb, var(--e2) 50%, #151b1e) 60%, color-mix(in srgb, var(--e3) 35%, #151b1e)); }
@@ -685,6 +742,7 @@
       .event { grid-template-columns: auto minmax(0, 1fr); padding: 14px 14px 16px; gap: 10px 14px; }
       .ev-mult { width: 70px; height: 70px; }
       .ev-mult b { font-size: 1.6rem; }
+      .ev-mult b[data-len="5"], .ev-mult b[data-len="6"] { font-size: 1.16rem; }
       .ev-mult small { font-size: 0.66rem; }
       .ev-name { font-size: 1.15rem; }
       .ev-sub { font-size: 0.84rem; }
@@ -699,7 +757,7 @@
     }
     @media (prefers-reduced-motion: reduce) {
       .skeleton, .pf-skel, .profile, .blob, .bg-grid, .saw svg, .cog svg, .pillar::after, .chev span, .dn.fx7 { animation: none; }
-      .event, .event::after, .ev-mult, .ev-mult::before, .ev-dot, .ev-clock b.tick, body[data-ev-live] .tab[data-period="event"]::before { animation: none; }
+      .event, .event.active.fx-high, .event::after, .ev-mult, .ev-mult::before, .ev-dot, .ev-clock b.tick, body[data-ev-live] .tab[data-period="event"]::before { animation: none; }
       .beam, .top.t1 .pod-av::before, .crown svg, .spark, .top.flash .pod-col { animation: none; }
       .pod-av, .pod-col { transition: none; }
     }
@@ -1607,13 +1665,16 @@
 
     // ---------- Wydarzenia XP: baner, odliczanie i animacje ----------
     const EV_KINDS = { message: 'wiadomości', voice: 'kanały głosowe', reaction: 'reakcje' };
+    // Te same nazwy co w bocie (configSchema.js): efekt i intensywność wydarzenia.
+    const EV_THEMES = ['confetti', 'fire', 'snow', 'stars', 'neon', 'hearts', 'halloween', 'leaves', 'sakura', 'coins', 'storm', 'bubbles', 'matrix'];
+    const FX_LEVEL = { none: 0, low: 0.5, medium: 1, high: 1.7 };
+    const HEX = /^#[0-9a-f]{6}$/i;
     const multText = (m) => `×${String(m).replace('.', ',')}`;
     const listPl = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} i ${items.at(-1)}` : items[0] ?? '');
     const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
-    const PREVIEW = ['confetti', 'fire', 'snow', 'stars', 'neon'].includes(new URLSearchParams(location.search).get('preview'))
-      ? new URLSearchParams(location.search).get('preview')
-      : null;
-    const ev = { events: null, pick: null, key: '', back: null, banner: null, top: null };
+    const QS = new URLSearchParams(location.search);
+    const PREVIEW = EV_THEMES.includes(QS.get('preview')) ? QS.get('preview') : null;
+    const ev = { events: null, pick: null, key: '', back: null, banner: null, top: null, fx: null };
 
     function evStatus(e, now = Date.now()) {
       return now < Date.parse(e.startsAt) ? 'upcoming' : now < Date.parse(e.endsAt) ? 'active' : 'ended';
@@ -1631,6 +1692,18 @@
       return null;
     }
     const whenText = (iso) => new Date(iso).toLocaleString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+    const evTheme = (e) => (EV_THEMES.includes(e?.theme) ? e.theme : 'confetti');
+    const evIntensity = (e) => (Object.hasOwn(FX_LEVEL, e?.intensity ?? '') ? e.intensity : 'medium');
+    const evAccent = (e) => (HEX.test(e?.accent ?? '') ? e.accent.toLowerCase() : null);
+
+    // Mieszanie kolorów #rrggbb (t = 0 → a, 1 → b).
+    function hexMix(a, b, t) {
+      const pa = parseInt(a.slice(1), 16);
+      const pb = parseInt(b.slice(1), 16);
+      const ch = (s) => Math.round(((pa >> s) & 255) * (1 - t) + ((pb >> s) & 255) * t);
+      return `#${((ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).padStart(6, '0')}`;
+    }
+    const accentColors = (hex) => [hex, hexMix(hex, '#ffffff', 0.35), hexMix(hex, '#ffffff', 0.65), hexMix(hex, '#000000', 0.22)];
 
     function eventHtml(p) {
       const { e, status } = p;
@@ -1643,8 +1716,10 @@
         ? `<button type="button" class="ev-cta" data-ev-go>${status === 'active' ? 'Ranking wydarzenia' : status === 'ended' ? 'Wyniki wydarzenia' : 'Wyniki poprzedniego'} →</button>`
         : '';
       const next = p.next ? `<div class="ev-next">Następne: <b>${esc(p.next.name)}</b> (${multText(p.next.multiplier)} XP) — ${esc(whenText(p.next.startsAt))}</div>` : '';
+      const mult = multText(e.multiplier);
+      const playful = status === 'active' && FX_LEVEL[evIntensity(e)] > 0;
       return `<canvas class="ev-canvas" aria-hidden="true"></canvas>
-        <button type="button" class="ev-mult" aria-label="Mnożnik XP ${multText(e.multiplier)}"${status === 'active' ? ' title="Jeszcze raz!"' : ''}><b>${multText(e.multiplier)}</b><small>XP</small></button>
+        <button type="button" class="ev-mult" aria-label="Mnożnik XP ${mult}"${playful ? ' title="Jeszcze raz!"' : ''}><b data-len="${Math.min(mult.length, 6)}">${mult}</b><small>XP</small></button>
         <div class="ev-body"><div class="ev-kicker"><i class="ev-dot"></i>${kicker}</div><h2 class="ev-name">${esc(e.name)}</h2><div class="ev-sub">${sub}</div></div>
         <div class="ev-side">${timer}${cta}</div>${next}`;
     }
@@ -1674,42 +1749,68 @@
       renderEvent();
     }
 
+    // Kolory wydarzenia: z motywu albo — gdy ustawiony — z własnego koloru (baner, kropka zakładki, poświata strony).
+    function applyAccent(box, accent) {
+      const vars = accent
+        ? { '--e1': hexMix(accent, '#07060f', 0.62), '--e2': hexMix(accent, '#07060f', 0.22), '--e3': hexMix(accent, '#ffffff', 0.28), '--eg': hexMix(accent, '#ffffff', 0.55) }
+        : { '--e1': null, '--e2': null, '--e3': null, '--eg': null };
+      for (const [k, v] of Object.entries(vars)) v ? box.style.setProperty(k, v) : box.style.removeProperty(k);
+      if (accent) {
+        document.body.style.setProperty('--evc', accent);
+        document.body.style.setProperty('--evc2', hexMix(accent, '#ffffff', 0.55));
+      } else {
+        document.body.style.removeProperty('--evc');
+        document.body.style.removeProperty('--evc2');
+      }
+    }
+
     function renderEvent() {
       const box = $('#event');
       const pick = pickEvent(ev.events);
       ev.pick = pick;
-      const key = pick ? `${pick.e.id}:${pick.status}:${pick.ranked?.id ?? ''}:${pick.next?.id ?? ''}:${pick.e.endsAt}:${pick.e.name}:${pick.e.multiplier}:${pick.e.theme}` : '';
+      const e = pick?.e;
+      const key = pick ? [e.id, pick.status, pick.ranked?.id ?? '', pick.next?.id ?? '', e.endsAt, e.name, e.multiplier, e.theme, e.intensity, e.accent].join(':') : '';
       const tab = $('.tab[data-period="event"]');
       tab.hidden = !pick?.ranked || Boolean(PREVIEW);
       if (tab.hidden && state.period === 'event') selectPeriod('all');
       if (key === ev.key) return;
-      const wasActive = ev.key.includes(':active:');
+      const wasActive = ev.key.split(':')[1] === 'active';
       ev.key = key;
       stopFx();
       if (!pick) {
         box.hidden = true;
         box.innerHTML = '';
+        applyAccent(box, null);
         delete document.body.dataset.ev;
         delete document.body.dataset.evLive;
+        delete document.body.dataset.evFx;
         return;
       }
-      const theme = ['confetti', 'fire', 'snow', 'stars', 'neon'].includes(pick.e.theme) ? pick.e.theme : 'confetti';
-      box.className = `event t-${theme} ${pick.status}`;
+      const theme = evTheme(e);
+      const intensity = evIntensity(e);
+      const accent = evAccent(e);
+      const level = FX_LEVEL[intensity];
+      box.className = `event t-${theme} ${pick.status} fx-${intensity}`;
       box.innerHTML = eventHtml(pick);
       box.hidden = false;
+      applyAccent(box, accent);
       document.body.dataset.ev = theme;
+      document.body.dataset.evFx = intensity;
       if (pick.status === 'active') document.body.dataset.evLive = '';
       else delete document.body.dataset.evLive;
       clockTick();
-      if (pick.status !== 'active' || reduceMotion.matches) return;
+      ev.fx = { theme, level, colors: accent ? accentColors(accent) : null };
+      if (pick.status !== 'active' || reduceMotion.matches || !level) return;
       // Animacje: cząsteczki w banerze i w tle strony, a przy pierwszej wizycie (albo starcie na żywo) — wybuch.
-      ev.banner = particles(box.querySelector('.ev-canvas'), theme, { ambient: { confetti: 14, fire: 26, snow: 34, stars: 30, neon: 10 }[theme] });
+      // Intensywność mnoży liczbę cząsteczek; „mocne” wybucha przy każdym wejściu na stronę.
+      const [inBanner, inBack] = FX_AMBIENT[theme];
+      ev.banner = particles(box.querySelector('.ev-canvas'), theme, { ambient: Math.max(1, Math.round(inBanner * level)), colors: ev.fx.colors });
       const back = document.createElement('canvas');
       back.className = 'fx';
       $('.bg').append(back);
-      ev.back = particles(back, theme, { ambient: { confetti: 26, fire: 42, snow: 70, stars: 64, neon: 18 }[theme] });
-      const seenKey = `ev-burst-${pick.e.id}`;
-      if (PREVIEW || saved.get(seenKey) !== '1' || (ev.started && !wasActive)) {
+      ev.back = particles(back, theme, { ambient: Math.max(1, Math.round(inBack * level)), colors: ev.fx.colors });
+      const seenKey = `ev-burst-${e.id}`;
+      if (PREVIEW || intensity === 'high' || saved.get(seenKey) !== '1' || (ev.started && !wasActive)) {
         saved.set(seenKey, '1');
         setTimeout(burst, 350);
       }
@@ -1717,7 +1818,7 @@
     }
 
     function burst() {
-      if (!ev.pick || ev.pick.status !== 'active' || reduceMotion.matches) return;
+      if (!ev.pick || ev.pick.status !== 'active' || reduceMotion.matches || !ev.fx?.level) return;
       // Jedna warstwa na wybuchy: kolejne kliknięcia dokładają cząsteczki do trwającego wybuchu (z limitem). Warstwa
       // znika sama, gdy wszystko zgaśnie — wcześniej każde kliknięcie zostawiało zatrzymane płótno z „zamrożonymi” iskrami.
       if (!ev.top) {
@@ -1725,7 +1826,7 @@
         canvas.className = 'fx-top';
         canvas.setAttribute('aria-hidden', 'true');
         document.body.append(canvas);
-        ev.top = particles(canvas, document.body.dataset.ev, { onDone: () => { canvas.remove(); ev.top = null; } });
+        ev.top = particles(canvas, ev.fx.theme, { colors: ev.fx.colors, burstScale: Math.max(0.4, Math.min(ev.fx.level, 1.5)), onDone: () => { canvas.remove(); ev.top = null; } });
       }
       ev.top.burst();
     }
@@ -1745,7 +1846,22 @@
       snow: ['#ffffff', '#eaf7ff', '#d3ecff'],
       stars: ['#fff7d6', '#ffe39a', '#ffffff', '#d9ccff'],
       neon: ['#22e5c8', '#ff3fd6', '#6ffff0', '#b45cff'],
+      hearts: ['#ff5c8a', '#ff8fb1', '#ff3d6e', '#ffc2d4', '#ff6fe4'],
+      halloween: ['#ff7a18', '#ffb347', '#b388ff', '#7cff4f'],
+      leaves: ['#d9822b', '#c2410c', '#e8b04a', '#a3361b', '#f2c14e', '#b5651d'],
+      sakura: ['#ffc0d9', '#ffa6c9', '#ffd6e7', '#ff8fb8', '#fff0f6'],
+      coins: ['#f2c14e', '#ffd56b', '#e0a82e', '#ffe08a'],
+      storm: ['#9fb4ff', '#c9d6ff', '#7a8cff', '#e8eeff'],
+      bubbles: ['#5fd3ff', '#9be7ff', '#b8a6ff', '#7cf5e0', '#e6fbff'],
+      matrix: ['#31e981', '#5dff9e', '#1fbf66', '#8dffbd'],
     };
+    // Cząsteczki w tle: [w banerze, w tle strony] przy intensywności „normalne”.
+    const FX_AMBIENT = {
+      confetti: [14, 26], fire: [26, 42], snow: [34, 70], stars: [30, 64], neon: [10, 18], hearts: [14, 30], halloween: [16, 30],
+      leaves: [14, 32], sakura: [22, 48], coins: [18, 36], storm: [44, 110], bubbles: [16, 32], matrix: [14, 30],
+    };
+    const FX_BURST = { confetti: 150, fire: 140, snow: 170, stars: 110, neon: 100, hearts: 90, halloween: 80, leaves: 120, sakura: 140, coins: 90, storm: 90, bubbles: 110, matrix: 120 };
+    const GLYPHS = '0123456789ABCDEFXP+=*<>#$%&';
     const rnd = (a, b) => a + Math.random() * (b - a);
     const pickOne = (list) => list[Math.floor(Math.random() * list.length)];
     const TAU = Math.PI * 2;
@@ -1769,11 +1885,170 @@
       }
       return glowCache.get(color);
     }
+    // Kształty (serce, liść, płatek, kwiat, moneta, dynia, bańka) — rysowane raz na kolor na płótnie 64×64.
+    const spriteCache = new Map();
+    function sprite(kind, color) {
+      const id = `${kind}:${color}`;
+      if (spriteCache.has(id)) return spriteCache.get(id);
+      const c = document.createElement('canvas');
+      c.width = c.height = 64;
+      const g = c.getContext('2d');
+      const light = hexMix(color, '#ffffff', 0.55);
+      const dark = hexMix(color, '#000000', 0.35);
+      const petal = (s) => {
+        g.beginPath();
+        g.moveTo(32, 32 + 28 * s);
+        g.bezierCurveTo(32 - 22 * s, 32 + 12 * s, 32 - 24 * s, 32 - 16 * s, 32 - 8 * s, 32 - 24 * s);
+        g.lineTo(32, 32 - 16 * s);
+        g.lineTo(32 + 8 * s, 32 - 24 * s);
+        g.bezierCurveTo(32 + 24 * s, 32 - 16 * s, 32 + 22 * s, 32 + 12 * s, 32, 32 + 28 * s);
+        g.closePath();
+      };
+      if (kind === 'heart') {
+        g.beginPath();
+        g.moveTo(32, 57);
+        g.bezierCurveTo(10, 42, 2, 27, 8, 16);
+        g.bezierCurveTo(14, 5, 28, 6, 32, 18);
+        g.bezierCurveTo(36, 6, 50, 5, 56, 16);
+        g.bezierCurveTo(62, 27, 54, 42, 32, 57);
+        const grad = g.createRadialGradient(22, 20, 2, 32, 32, 34);
+        grad.addColorStop(0, light);
+        grad.addColorStop(0.45, color);
+        grad.addColorStop(1, dark);
+        g.fillStyle = grad;
+        g.fill();
+        g.fillStyle = 'rgba(255, 255, 255, 0.55)';
+        g.beginPath(); g.ellipse(19, 19, 5, 3, -0.6, 0, TAU); g.fill();
+      } else if (kind === 'leaf') {
+        g.beginPath();
+        g.moveTo(32, 3);
+        g.bezierCurveTo(56, 17, 54, 44, 32, 56);
+        g.bezierCurveTo(10, 44, 8, 17, 32, 3);
+        const grad = g.createLinearGradient(8, 0, 56, 0);
+        grad.addColorStop(0, dark);
+        grad.addColorStop(0.5, color);
+        grad.addColorStop(1, hexMix(color, '#ffffff', 0.25));
+        g.fillStyle = grad;
+        g.fill();
+        g.strokeStyle = hexMix(color, '#000000', 0.5);
+        g.lineWidth = 1.6;
+        g.beginPath();
+        g.moveTo(32, 7); g.lineTo(32, 62);
+        for (const y of [18, 28, 38]) { g.moveTo(32, y + 7); g.lineTo(22, y); g.moveTo(32, y + 7); g.lineTo(42, y); }
+        g.stroke();
+      } else if (kind === 'petal') {
+        petal(1);
+        const grad = g.createLinearGradient(32, 60, 32, 6);
+        grad.addColorStop(0, dark);
+        grad.addColorStop(0.35, color);
+        grad.addColorStop(1, light);
+        g.fillStyle = grad;
+        g.fill();
+      } else if (kind === 'blossom') {
+        for (let i = 0; i < 5; i++) {
+          g.save();
+          g.translate(32, 32);
+          g.rotate((i * TAU) / 5);
+          g.translate(0, -13);
+          g.translate(-32, -32);
+          petal(0.5);
+          g.fillStyle = i % 2 ? color : hexMix(color, '#ffffff', 0.2);
+          g.fill();
+          g.restore();
+        }
+        g.fillStyle = '#ffe08a';
+        for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(32 + Math.cos((i * TAU) / 6) * 4, 32 + Math.sin((i * TAU) / 6) * 4, 1.6, 0, TAU); g.fill(); }
+        g.fillStyle = '#ff8fb8';
+        g.beginPath(); g.arc(32, 32, 2.4, 0, TAU); g.fill();
+      } else if (kind === 'coin') {
+        g.fillStyle = dark;
+        g.beginPath(); g.arc(32, 32, 29, 0, TAU); g.fill();
+        const face = g.createRadialGradient(24, 22, 2, 32, 32, 26);
+        face.addColorStop(0, light);
+        face.addColorStop(0.55, color);
+        face.addColorStop(1, hexMix(color, '#000000', 0.15));
+        g.fillStyle = face;
+        g.beginPath(); g.arc(32, 32, 24, 0, TAU); g.fill();
+        g.strokeStyle = hexMix(color, '#000000', 0.3);
+        g.lineWidth = 2;
+        g.beginPath(); g.arc(32, 32, 18, 0, TAU); g.stroke();
+        g.fillStyle = hexMix(color, '#000000', 0.28);
+        g.beginPath();
+        for (let i = 0; i < 10; i++) {
+          const r = i % 2 ? 4.5 : 10;
+          const a = -Math.PI / 2 + (i * TAU) / 10;
+          g.lineTo(32 + Math.cos(a) * r, 32 + Math.sin(a) * r);
+        }
+        g.closePath();
+        g.fill();
+        g.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+        g.lineWidth = 2.5;
+        g.beginPath(); g.arc(32, 32, 26.5, Math.PI * 1.1, Math.PI * 1.45); g.stroke();
+      } else if (kind === 'pumpkin') {
+        g.fillStyle = '#3f7f2a';
+        g.fillRect(29, 6, 6, 12);
+        const body = g.createRadialGradient(26, 28, 4, 32, 36, 28);
+        body.addColorStop(0, light);
+        body.addColorStop(0.5, color);
+        body.addColorStop(1, dark);
+        g.fillStyle = body;
+        g.strokeStyle = dark;
+        g.lineWidth = 1.5;
+        for (const [x, rx] of [[18, 13], [46, 13], [32, 15]]) { g.beginPath(); g.ellipse(x, 37, rx, 20, 0, 0, TAU); g.fill(); g.stroke(); }
+        g.fillStyle = '#ffe27a';
+        g.beginPath(); g.moveTo(21, 34); g.lineTo(27, 27); g.lineTo(30, 35); g.closePath(); g.fill();
+        g.beginPath(); g.moveTo(43, 34); g.lineTo(37, 27); g.lineTo(34, 35); g.closePath(); g.fill();
+        g.beginPath();
+        g.moveTo(18, 42); g.lineTo(24, 47); g.lineTo(28, 43); g.lineTo(32, 48); g.lineTo(36, 43); g.lineTo(40, 47); g.lineTo(46, 42);
+        g.quadraticCurveTo(32, 56, 18, 42);
+        g.fill();
+      } else if (kind === 'bubble') {
+        const n = parseInt(color.slice(1), 16);
+        const rgba = (a) => `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+        const fill = g.createRadialGradient(32, 32, 10, 32, 32, 29);
+        fill.addColorStop(0, rgba(0.02));
+        fill.addColorStop(0.8, rgba(0.12));
+        fill.addColorStop(1, rgba(0.4));
+        g.fillStyle = fill;
+        g.beginPath(); g.arc(32, 32, 29, 0, TAU); g.fill();
+        g.strokeStyle = rgba(0.85);
+        g.lineWidth = 1.6;
+        g.stroke();
+        g.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+        g.lineWidth = 3;
+        g.lineCap = 'round';
+        g.beginPath(); g.arc(32, 32, 21, Math.PI * 1.08, Math.PI * 1.42); g.stroke();
+        g.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        g.beginPath(); g.arc(43, 19, 2.2, 0, TAU); g.fill();
+      }
+      spriteCache.set(id, c);
+      return c;
+    }
+    // Błyskawica: łamana od góry płótna w dół plus jedno–dwa odgałęzienia.
+    function boltPaths(w, h) {
+      const zigzag = (x, y, yEnd, spread) => {
+        const pts = [x, y];
+        while (y < yEnd) {
+          y += rnd(10, 24);
+          x += rnd(-spread, spread);
+          pts.push(x, y);
+        }
+        return pts;
+      };
+      const main = zigzag(rnd(w * 0.15, w * 0.85), -10, rnd(h * 0.45, h * 0.95), 16);
+      const paths = [main];
+      for (let b = 0; b < 2 && main.length > 8; b++) {
+        const i = 2 * Math.floor(rnd(2, main.length / 2 - 2));
+        paths.push(zigzag(main[i], main[i + 1], main[i + 1] + rnd(40, 110), 22));
+      }
+      return paths;
+    }
 
-    function particles(canvas, theme, { ambient = 0, onDone = null } = {}) {
+    function particles(canvas, theme, { ambient = 0, onDone = null, colors: own = null, burstScale = 1 } = {}) {
       const ctx = canvas.getContext('2d');
-      const colors = FX_COLORS[theme] ?? FX_COLORS.confetti;
+      const colors = own ?? FX_COLORS[theme] ?? FX_COLORS.confetti;
       let w = 0, h = 0, raf = 0, last = 0, list = [], dead = false, filled = false;
+      let strike = null; // miejsce uderzenia pioruna (iskry z wybuchu „burzy”)
       const fit = () => {
         const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
         w = canvas.clientWidth;
@@ -1783,8 +2058,9 @@
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       };
       const radial = (x, y, speed, extra) => { const a = rnd(0, TAU), v = rnd(...speed); return { x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, ...extra }; };
-      // Nowa cząsteczka: burst = wybuch, inaczej spokojne tło. side — strona „armatki” konfetti.
-      const make = (burst, side = 0) => {
+      const font = (px) => `700 ${px}px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace`;
+      // Nowa cząsteczka: burst = wybuch, inaczej spokojne tło. side — strona „armatki”, i — numer w wybuchu.
+      const make = (burst, side = 0, i = 0) => {
         switch (theme) {
           case 'fire':
             return burst
@@ -1804,6 +2080,71 @@
             return Math.random() < 0.07
               ? { t: 'ring', x: w / 2, y: h * 0.4, vx: 0, vy: 0, r: rnd(4, 24), grow: rnd(5, 9), life: rnd(60, 95) }
               : radial(w / 2, h * 0.4, [3, 12], { t: 'shape', g: 0.05, drag: 0.97, s: rnd(4, 9), k: Math.floor(rnd(0, 3)), life: rnd(70, 140), vr: rnd(-0.15, 0.15) });
+          case 'hearts':
+            // Serduszka unoszą się jak baloniki; wybuch — rozlatują się z środka i opadają.
+            return burst
+              ? radial(w / 2, h * 0.42, [3, 13], { t: 'heart', g: 0.12, drag: 0.976, s: rnd(5, 11), rot: rnd(-0.4, 0.4), vr: rnd(-0.06, 0.06), sway: rnd(0, TAU), life: rnd(100, 180) })
+              : { t: 'heart', x: rnd(0, w), y: h + rnd(0, 40), vx: 0, vy: rnd(-1.1, -0.35), s: rnd(3.5, 8), rot: rnd(-0.3, 0.3), sway: rnd(0, TAU), amp: rnd(0.3, 0.8), life: rnd(320, 700) };
+          case 'halloween': {
+            // Nietoperze przelatują przez ekran, w górę unoszą się duszkowe ogniki; wybuch — dynie i nietoperze.
+            if (burst) {
+              const k = Math.random();
+              return k < 0.25
+                ? radial(w / 2, h * 0.42, [3, 11], { t: 'pumpkin', g: 0.14, drag: 0.978, s: rnd(7, 13), rot: rnd(-0.5, 0.5), vr: rnd(-0.08, 0.08), life: rnd(110, 190), ...(own ? {} : { c: pickOne(['#ff7a18', '#ff8a2a', '#f26b0f']) }) })
+                : k < 0.5
+                  ? radial(w / 2, h * 0.42, [4, 12], { t: 'bat', drag: 0.985, s: rnd(5, 10), flap: rnd(0.25, 0.4), sway: rnd(0, TAU), life: rnd(90, 160) })
+                  : radial(w / 2, h * 0.42, [2, 10], { t: 'spark', g: 0.05, drag: 0.975, r: rnd(1.4, 3.4), life: rnd(70, 140) });
+            }
+            if (Math.random() < 0.3) {
+              const dir = Math.random() < 0.5 ? 1 : -1;
+              return { t: 'bat', x: dir > 0 ? -30 : w + 30, y: rnd(h * 0.05, h * 0.75), vx: dir * rnd(0.8, 2), vy: rnd(-0.2, 0.2), s: rnd(4, 8), flap: rnd(0.18, 0.32), sway: rnd(0, TAU), bob: rnd(0.3, 0.8) };
+            }
+            return { t: 'ember', x: rnd(0, w), y: h + rnd(0, 40), vx: rnd(-0.3, 0.3), vy: rnd(-1.2, -0.35), g: -0.003, r: rnd(1, 2.8), life: rnd(240, 520), sway: rnd(0, TAU), amp: rnd(0.3, 0.9) };
+          }
+          case 'leaves':
+            // Liście spadają, kręcąc się; wybuch — podmuch wiatru z boku ekranu.
+            return burst
+              ? { t: 'leaf', x: side ? w + rnd(10, w * 0.3) : -rnd(10, w * 0.3), y: rnd(-h * 0.1, h * 0.85), vx: (side ? -1 : 1) * rnd(5, 14), vy: rnd(-3, 2), g: 0.05, drag: 0.99, s: rnd(6, 12), vr: rnd(-0.2, 0.2), sway: rnd(0, TAU), life: rnd(150, 260) }
+              : { t: 'leaf', x: rnd(0, w), y: rnd(-50, -10), vx: rnd(-0.5, 0.3), vy: rnd(0.5, 1.3), s: rnd(5, 10), vr: rnd(-0.04, 0.04), sway: rnd(0, TAU), amp: rnd(0.6, 1.4) };
+          case 'sakura':
+            // Płatki wiśni niesione wiatrem w prawo; wybuch — wir płatków i kwiatków.
+            return burst
+              ? radial(w / 2, h * 0.4, [2, 10], { t: Math.random() < 0.18 ? 'blossom' : 'petal', g: 0.04, drag: 0.985, s: rnd(5, 10), vr: rnd(-0.15, 0.15), sway: rnd(0, TAU), amp: rnd(0.3, 0.8), life: rnd(150, 250) })
+              : { t: Math.random() < 0.1 ? 'blossom' : 'petal', x: rnd(-100, w), y: rnd(-40, -8), vx: rnd(0.3, 0.9), vy: rnd(0.4, 1), s: rnd(3.5, 7), vr: rnd(-0.05, 0.05), sway: rnd(0, TAU), amp: rnd(0.4, 1) };
+          case 'coins':
+            // Monety spadają, obracając się, a obok migoczą złote iskierki; wybuch — fontanna monet z dołu ekranu.
+            if (burst) {
+              return Math.random() < 0.72
+                ? { t: 'coin', x: w / 2 + rnd(-w * 0.18, w * 0.18), y: h + 10, vx: rnd(-7, 7), vy: rnd(-21, -10), g: 0.42, drag: 0.99, s: rnd(6, 11), spin: rnd(0.08, 0.25), sway: rnd(0, TAU), rot: 0, life: rnd(150, 240) }
+                : radial(w / 2, h * 0.75, [3, 11], { t: 'spark', g: 0.08, drag: 0.975, r: rnd(1.4, 3.2), life: rnd(60, 120) });
+            }
+            return Math.random() < 0.45
+              ? { t: 'coin', x: rnd(0, w), y: rnd(-40, -8), vx: rnd(-0.2, 0.2), vy: rnd(0.6, 1.5), s: rnd(3.5, 7), spin: rnd(0.04, 0.12), sway: rnd(0, TAU), rot: 0 }
+              : { t: 'twinkle', x: rnd(0, w), y: rnd(0, h), vx: 0, vy: 0, r: rnd(0.6, 2), ph: rnd(0, TAU), sp: rnd(0.03, 0.08), life: rnd(300, 700) };
+          case 'storm':
+            // Ukośny deszcz i co jakiś czas błyskawica; wybuch — uderzenie pioruna z iskrami.
+            if (burst) {
+              if (i < 3) {
+                const paths = boltPaths(w, h);
+                if (i === 0) strike = paths[0].slice(-2);
+                return { t: 'bolt', x: w / 2, y: 0, vx: 0, vy: 0, paths, flash: i === 0 ? 0.12 : 0, instant: true, life: rnd(26, 40) + i * 6, age: -i * 7 };
+              }
+              const [sx, sy] = strike ?? [w / 2, h / 2];
+              return radial(sx, sy, [2, 10], { t: 'spark', g: 0.08, drag: 0.97, r: rnd(1.2, 3), life: rnd(50, 110) });
+            }
+            return { t: 'rain', x: rnd(-w * 0.05, w * 1.15), y: rnd(-60, -8), vx: rnd(-2.6, -1.4), vy: rnd(9, 15), len: rnd(8, 18), a: rnd(0.25, 0.6) };
+          case 'bubbles':
+            // Bańki unoszą się, kołysząc, i pękają na końcu; wybuch — chmura baniek z dołu ekranu.
+            return burst
+              ? { t: 'bubble', x: rnd(0, w), y: h + rnd(0, 60), vx: rnd(-1, 1), vy: rnd(-9, -3), g: -0.02, drag: 0.985, r: rnd(4, 16), sway: rnd(0, TAU), amp: rnd(0.3, 0.9), life: rnd(80, 200) }
+              : { t: 'bubble', x: rnd(0, w), y: h + rnd(0, 40), vx: 0, vy: rnd(-1.2, -0.4), r: rnd(3, 12), sway: rnd(0, TAU), amp: rnd(0.3, 0.9), life: rnd(300, 800) };
+          case 'matrix': {
+            // Spadające kolumny znaków; wybuch — rozpryśnięte znaki.
+            if (burst) return radial(w / 2, h * 0.42, [3, 12], { t: 'glyph', ch: pickOne(GLYPHS), font: font(Math.round(rnd(12, 22))), g: 0.05, drag: 0.975, life: rnd(60, 130) });
+            const size = pickOne([11, 13, 15]);
+            const len = Math.floor(rnd(5, 13));
+            return { t: 'code', x: Math.round(rnd(0, w) / 14) * 14, y: rnd(-h * 0.25, -10), vx: 0, vy: rnd(1.6, 4.2), size, font: font(size), glyphs: Array.from({ length: len }, () => pickOne(GLYPHS)), tail: len * size };
+          }
           default:
             return burst
               ? { t: 'paper', x: side ? w + 10 : -10, y: h * rnd(0.55, 0.9), vx: (side ? -1 : 1) * rnd(4, 14), vy: rnd(-18, -7), g: 0.32, drag: 0.982, life: rnd(160, 260), vr: rnd(-0.3, 0.3), s: rnd(6, 10) }
@@ -1813,16 +2154,30 @@
       const add = (p, amb) => list.push({ g: 0, drag: 1, life: Infinity, rot: rnd(0, TAU), vr: 0, c: pickOne(colors), age: 0, amb, ...p });
       // Tło strony: liczba cząsteczek zależna od wielkości ekranu; baner: stała.
       const target = () => Math.round(ambient * (canvas.classList.contains('ev-canvas') ? 1 : Math.min(1.3, Math.max(0.45, (w * h) / (1366 * 768)))));
-      function fillAmbient() {
+      function fillAmbient(dt = 1) {
         let have = 0;
         for (const p of list) if (p.amb) have += 1;
         const want = target();
         for (let i = have; i < want; i++) {
           const p = make(false);
-          if (!filled && p.t !== 'twinkle') p.y = rnd(0, h);
+          if (!filled && p.t !== 'twinkle') {
+            p.y = rnd(0, h);
+            if (p.t === 'bat') p.x = rnd(0, w);
+          }
           add(p, true);
         }
         filled = true;
+        // Burza: co kilka sekund błyskawica w tle (słaby błysk, bez migotania).
+        if (theme === 'storm' && Math.random() < dt / 480) add({ t: 'bolt', x: w / 2, y: 0, vx: 0, vy: 0, paths: boltPaths(w, h), flash: 0.06, instant: true, life: rnd(26, 38) }, false);
+      }
+      // Kształt z pamięci podręcznej, obrócony i ściśnięty (fx, fy — „obrót w 3D”).
+      function drawSprite(p, kind, size, fx = 1, fy = 1) {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.scale(fx, fy);
+        ctx.drawImage(sprite(kind, p.c), -size / 2, -size / 2, size, size);
+        ctx.restore();
       }
       function draw(p, alpha) {
         ctx.globalAlpha = alpha;
@@ -1895,11 +2250,113 @@
           case 'ring': {
             ctx.save();
             ctx.strokeStyle = p.c;
-            ctx.lineWidth = 2.2;
-            ctx.shadowBlur = 16;
+            ctx.lineWidth = p.lw ?? 2.2;
+            ctx.shadowBlur = p.lw ? 0 : 16;
             ctx.shadowColor = p.c;
             ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.stroke();
             ctx.restore();
+            break;
+          }
+          case 'heart':
+            drawSprite(p, 'heart', p.s * 2.6 * (1 + 0.08 * Math.sin(p.age * 0.12 + p.sway)));
+            break;
+          case 'leaf':
+            drawSprite(p, 'leaf', p.s * 2.6, Math.cos(p.age * 0.06 + p.sway));
+            break;
+          case 'petal':
+          case 'blossom':
+            drawSprite(p, p.t, p.s * (p.t === 'blossom' ? 3.2 : 2.4), 1, Math.cos(p.age * 0.08 + p.sway));
+            break;
+          case 'coin':
+            drawSprite(p, 'coin', p.s * 2.4, Math.cos(p.age * p.spin + p.sway));
+            break;
+          case 'pumpkin':
+            drawSprite(p, 'pumpkin', p.s * 2.6);
+            break;
+          case 'bubble': {
+            const size = p.r * 2;
+            ctx.drawImage(sprite('bubble', p.c), p.x - size / 2, p.y - size / 2, size, size);
+            break;
+          }
+          case 'bat': {
+            // Sylwetka z poświatą w kolorze cząsteczki; skrzydła machają (skalowanie w pionie).
+            const flap = Math.sin(p.age * p.flap + p.sway);
+            const s = p.s;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            if (p.vx < 0) ctx.scale(-1, 1);
+            ctx.fillStyle = '#140a1f';
+            ctx.shadowBlur = 9;
+            ctx.shadowColor = p.c;
+            ctx.beginPath();
+            for (const dir of [-1, 1]) {
+              ctx.moveTo(0, 0);
+              ctx.quadraticCurveTo(dir * s * 0.9, -s * 1.3 * flap, dir * s * 2, -s * 0.7 * flap);
+              ctx.quadraticCurveTo(dir * s * 1.5, s * 0.1, dir * s * 1.2, s * 0.35);
+              ctx.quadraticCurveTo(dir * s * 0.8, s * 0.05, dir * s * 0.55, s * 0.4);
+              ctx.quadraticCurveTo(dir * s * 0.3, s * 0.1, 0, s * 0.45);
+            }
+            ctx.fill();
+            ctx.beginPath(); ctx.ellipse(0, s * 0.1, s * 0.32, s * 0.5, 0, 0, TAU); ctx.fill();
+            ctx.restore();
+            break;
+          }
+          case 'rain': {
+            const k = p.len / Math.hypot(p.vx, p.vy);
+            ctx.strokeStyle = p.c;
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * k, p.y - p.vy * k); ctx.stroke();
+            break;
+          }
+          case 'bolt': {
+            // Migotanie: jest — znika na chwilę — wraca i gaśnie.
+            if (p.age < 0 || (p.age > 4 && p.age < 7)) break;
+            const k = alpha * (p.age > 10 ? Math.max(0, 1 - (p.age - 10) / (p.life - 10)) : 1);
+            if (p.flash && p.age < 10) {
+              ctx.globalAlpha = k * p.flash;
+              ctx.fillStyle = '#dfe6ff';
+              ctx.fillRect(0, 0, w, h);
+            }
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.lineJoin = 'round';
+            for (const [lw, a, color] of [[8, 0.16, p.c], [3.2, 0.45, p.c], [1.3, 1, '#ffffff']]) {
+              ctx.globalAlpha = k * a;
+              ctx.strokeStyle = color;
+              ctx.lineWidth = lw;
+              ctx.beginPath();
+              for (const seg of p.paths) {
+                ctx.moveTo(seg[0], seg[1]);
+                for (let j = 2; j < seg.length; j += 2) ctx.lineTo(seg[j], seg[j + 1]);
+              }
+              ctx.stroke();
+            }
+            ctx.globalCompositeOperation = 'source-over';
+            break;
+          }
+          case 'code': {
+            ctx.font = p.font;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const n = p.glyphs.length;
+            for (let j = 0; j < n; j++) {
+              const gy = p.y - j * p.size;
+              if (gy < -p.size || gy > h + p.size) continue;
+              ctx.globalAlpha = alpha * (j === 0 ? 1 : (1 - j / n) * 0.7);
+              ctx.fillStyle = j === 0 ? '#eafff2' : p.c;
+              ctx.fillText(p.glyphs[j], p.x, gy);
+            }
+            if (Math.random() < 0.08) p.glyphs[Math.floor(Math.random() * n)] = pickOne(GLYPHS);
+            break;
+          }
+          case 'glyph': {
+            ctx.font = p.font;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.fillStyle = p.c;
+            ctx.fillText(p.ch, p.x, p.y);
+            ctx.globalCompositeOperation = 'source-over';
+            if (Math.random() < 0.1) p.ch = pickOne(GLYPHS);
             break;
           }
         }
@@ -1910,24 +2367,32 @@
         const dt = last ? Math.min((now - last) / 16.67, 3) : 1;
         last = now;
         ctx.clearRect(0, 0, w, h);
+        const born = [];
         list = list.filter((p) => {
           p.age += dt;
+          if (p.age < 0) return true;
           const drag = p.drag === 1 ? 1 : p.drag ** dt;
           p.vx *= drag;
           p.vy = p.vy * drag + p.g * dt;
           p.x += (p.vx + (p.amp ? Math.sin(p.age * 0.03 + p.sway) * p.amp : 0)) * dt;
-          p.y += p.vy * dt;
+          p.y += (p.vy + (p.bob ? Math.sin(p.age * 0.05 + p.sway) * p.bob : 0)) * dt;
           p.rot += p.vr * dt;
           if (p.grow) p.r += p.grow * dt * 0.6;
-          const gone = p.age > p.life || p.y > h + 60 || p.x < -120 || p.x > w + 120 || (p.g <= 0 && p.vy < 0 && p.y < -60);
-          if (gone) return false;
-          const fadeIn = Math.min(1, p.age / (p.amb ? 30 : 6));
-          const fadeOut = Number.isFinite(p.life) ? Math.min(1, (p.life - p.age) / 40) : 1;
+          const gone = p.age > p.life || p.y - (p.tail ?? 0) > h + 60 || p.x < -120 || p.x > w + 120 || (p.g <= 0 && p.vy < 0 && p.y < -60);
+          if (gone) {
+            // Bańka, której skończył się czas, pęka (krótki pierścień).
+            if (p.t === 'bubble' && p.age > p.life && p.y > 0) born.push({ t: 'ring', x: p.x, y: p.y, vx: 0, vy: 0, r: p.r, grow: 1.4, lw: 1.2, c: p.c, a: 0.8, life: 14 });
+            return false;
+          }
+          // Błyskawica sama decyduje o jasności (migotanie), pęknięcie bańki gaśnie szybko.
+          const fadeIn = p.instant ? 1 : Math.min(1, p.age / (p.amb ? 30 : 6));
+          const fadeOut = p.instant || !Number.isFinite(p.life) ? 1 : Math.min(1, (p.life - p.age) / (p.lw ? 14 : 40));
           draw(p, Math.max(0, Math.min(fadeIn, fadeOut)) * (p.a ?? 1));
           return true;
         });
+        for (const p of born) add(p, false);
         ctx.globalAlpha = 1;
-        if (ambient) fillAmbient();
+        if (ambient) fillAmbient(dt);
         if (list.length) raf = requestAnimationFrame(frame);
         else if (!ambient) { destroy(); onDone?.(); }
       }
@@ -1947,12 +2412,12 @@
       if (ambient) { fillAmbient(); run(); }
       return {
         burst() {
-          const n = Math.round({ confetti: 150, fire: 140, snow: 170, stars: 110, neon: 100 }[theme] ?? 120);
+          const n = Math.round((FX_BURST[theme] ?? 120) * burstScale);
           // Najwyżej dwa wybuchy naraz — szybkie klikanie dokłada cząsteczki tylko do tego limitu.
           let live = 0;
           for (const p of list) if (!p.amb) live += 1;
           const count = Math.min(n, Math.max(0, n * 2 - live));
-          for (let i = 0; i < count; i++) add(make(true, i % 2), false);
+          for (let i = 0; i < count; i++) add(make(true, i % 2, i), false);
           run();
         },
         destroy,
@@ -1965,6 +2430,51 @@
         $('.toolbar').scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start' });
       } else if (event.target.closest('.ev-mult')) burst();
     });
+
+    // Podgląd z panelu (ranking.html?preview=…): wydarzenie na niby i pasek do przełączania wyglądu na żywo.
+    function previewEvent() {
+      const m = Math.round(Number(QS.get('mult')) * 100) / 100;
+      const accent = /^[0-9a-f]{6}$/i.test(QS.get('accent') ?? '') ? `#${QS.get('accent').toLowerCase()}` : null;
+      return {
+        id: 'preview',
+        name: (QS.get('name') ?? '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'Podgląd wydarzenia XP',
+        multiplier: m >= 1.1 && m <= 10 ? m : 2,
+        startsAt: new Date(Date.now() - 3600e3).toISOString(),
+        endsAt: new Date(Date.now() + 2 * 86400e3 + 5 * 3600e3 + 42e3).toISOString(),
+        kinds: ['message', 'voice', 'reaction'],
+        theme: QS.get('preview'),
+        intensity: Object.hasOwn(FX_LEVEL, QS.get('intensity') ?? '') ? QS.get('intensity') : 'medium',
+        accent,
+      };
+    }
+    function previewBar() {
+      const bar = document.createElement('div');
+      bar.className = 'pv-bar';
+      const names = { confetti: '🎉 Konfetti', fire: '🔥 Ogień', snow: '❄️ Śnieg', stars: '✨ Gwiazdy', neon: '⚡ Neon', hearts: '💖 Serduszka', halloween: '🎃 Halloween', leaves: '🍂 Liście', sakura: '🌸 Sakura', coins: '🪙 Monety', storm: '⛈️ Burza', bubbles: '🫧 Bąbelki', matrix: '💚 Matrix' };
+      const levels = { none: 'Bez efektów', low: 'Subtelne', medium: 'Normalne', high: 'Mocne' };
+      const opts = (map, cur) => Object.entries(map).map(([k, v]) => `<option value="${k}"${k === cur ? ' selected' : ''}>${v}</option>`).join('');
+      const e = previewEvent();
+      bar.innerHTML = `<b>Podgląd</b>
+        <select data-pv="preview" aria-label="Efekt">${opts(names, e.theme)}</select>
+        <select data-pv="intensity" aria-label="Intensywność">${opts(levels, e.intensity)}</select>
+        <label class="pv-color" title="Własny kolor"><input type="checkbox" data-pv="accent-on"${e.accent ? ' checked' : ''}><input type="color" data-pv="accent" value="${e.accent ?? '#ff4fa3'}" aria-label="Własny kolor"></label>
+        <button type="button" data-pv="burst">Wybuch</button>`;
+      const sync = () => {
+        QS.set('preview', bar.querySelector('[data-pv="preview"]').value);
+        QS.set('intensity', bar.querySelector('[data-pv="intensity"]').value);
+        if (bar.querySelector('[data-pv="accent-on"]').checked) QS.set('accent', bar.querySelector('[data-pv="accent"]').value.slice(1));
+        else QS.delete('accent');
+        history.replaceState(null, '', `${location.pathname}?${QS}${location.hash}`);
+        setEvents({ current: previewEvent() });
+      };
+      bar.addEventListener('change', sync);
+      bar.querySelector('[data-pv="accent"]').addEventListener('input', () => {
+        bar.querySelector('[data-pv="accent-on"]').checked = true;
+        sync();
+      });
+      bar.querySelector('[data-pv="burst"]').addEventListener('click', burst);
+      document.body.append(bar);
+    }
 
     // ---------- Zdarzenia ----------
     function setView(view) {
@@ -2097,7 +2607,10 @@
     }, true);
 
     const initial = location.hash.slice(1);
-    if (PREVIEW) setEvents({ current: { id: `preview-${PREVIEW}`, name: 'Podgląd animacji wydarzenia', multiplier: 2, startsAt: new Date(Date.now() - 3600e3).toISOString(), endsAt: new Date(Date.now() + 2 * 86400e3 + 5 * 3600e3 + 42e3).toISOString(), kinds: ['message', 'voice', 'reaction'], theme: PREVIEW } });
+    if (PREVIEW) {
+      setEvents({ current: previewEvent() });
+      previewBar();
+    }
     if (PERIODS.includes(initial) && initial !== 'all') selectPeriod(initial);
     else load();
     const linked = new URLSearchParams(location.search).get('u');

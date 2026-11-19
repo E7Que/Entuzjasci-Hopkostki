@@ -1798,8 +1798,14 @@ function renderLevels() {
 }
 
 // ---------- Wydarzenia XP ----------
-const EV_THEMES = { confetti: '🎉 Konfetti', fire: '🔥 Ogień', snow: '❄️ Śnieg', stars: '✨ Gwiazdy', neon: '⚡ Neon' };
+const EV_THEMES = {
+  confetti: '🎉 Konfetti', fire: '🔥 Ogień', snow: '❄️ Śnieg', stars: '✨ Gwiazdy', neon: '⚡ Neon',
+  hearts: '💖 Serduszka', halloween: '🎃 Halloween', leaves: '🍂 Jesienne liście', sakura: '🌸 Sakura',
+  coins: '🪙 Złote monety', storm: '⛈️ Burza', bubbles: '🫧 Bąbelki', matrix: '💚 Matrix',
+};
+const EV_INTENSITY = { none: 'bez efektów', low: 'efekty subtelne', medium: 'efekty normalne', high: 'efekty mocne' };
 const EV_KINDS = { message: 'wiadomości', voice: 'głosowe', reaction: 'reakcje' };
+const EV_HEX = /^#[0-9a-f]{6}$/i;
 const evMult = (m) => `×${String(m).replace('.', ',')}`;
 const evDate = (ms) => new Date(ms).toLocaleString('pl-PL', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 function localInput(ms) {
@@ -1807,27 +1813,89 @@ function localInput(ms) {
   const p = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
-function renderXpEvents() {
-  const events = state.draft?.levels?.events ?? [];
-  const now = Date.now();
-  if (!$('#ev-start').value) {
-    const start = Math.ceil(now / 3600000) * 3600000;
-    $('#ev-start').value = localInput(start);
-    $('#ev-end').value = localInput(start + 48 * 3600000);
+// Id wydarzenia otwartego w formularzu do edycji (null = formularz dodaje nowe).
+let evEditId = null;
+const evEvents = () => state.draft?.levels?.events ?? [];
+function evStatus(e, now = Date.now()) {
+  const start = Date.parse(e.startsAt);
+  const end = Date.parse(e.endsAt);
+  return now < start ? ['Zaplanowane', 'planned'] : now < end ? ['Trwa', 'live'] : ['Zakończone', 'done'];
+}
+// Domyślny początek: najbliższa pełna godzina.
+const evDefaultStart = () => Math.ceil(Date.now() / 3600000) * 3600000;
+const evMultValue = () => Math.round(Number(String($('#ev-mult').value).replace(',', '.')) * 100) / 100;
+function evSyncForm() {
+  const m = evMultValue();
+  $$('#ev-presets [data-m]').forEach((b) => b.classList.toggle('on', Number(b.dataset.m) === m));
+  const editing = Boolean(evEditId);
+  $('#ev-form').classList.toggle('editing', editing);
+  $('#ev-form-title').textContent = editing ? 'Edytuj wydarzenie' : 'Nowe wydarzenie';
+  $('#ev-add').textContent = editing ? 'Zapisz wydarzenie' : 'Dodaj wydarzenie';
+  $('#ev-cancel').hidden = !editing;
+  // Podgląd na stronie rankingu z tym, co jest w formularzu (efekt, intensywność, kolor, mnożnik, nazwa).
+  const p = new URLSearchParams({ preview: $('#ev-theme').value, intensity: $('#ev-intensity').value });
+  if (m >= 1.1 && m <= 10) p.set('mult', String(m));
+  if ($('#ev-accent-on').checked && EV_HEX.test($('#ev-accent').value)) p.set('accent', $('#ev-accent').value.slice(1));
+  const name = $('#ev-name').value.trim();
+  if (name) p.set('name', name.slice(0, 80));
+  $('#ev-preview').href = `ranking.html?${p}`;
+}
+// Wypełnia formularz danymi wydarzenia; `copy` = jako nowe (od najbliższej pełnej godziny, ta sama długość).
+function evFill(e, { copy = false } = {}) {
+  let start = Date.parse(e.startsAt);
+  let end = Date.parse(e.endsAt);
+  if (copy) {
+    const length = Math.min(Math.max(end - start, 3600000), 31 * 86400000);
+    start = evDefaultStart();
+    end = start + length;
   }
+  $('#ev-name').value = e.name ?? '';
+  $('#ev-mult').value = String(e.multiplier);
+  $('#ev-start').value = localInput(start);
+  $('#ev-end').value = localInput(end);
+  $('#ev-theme').value = EV_THEMES[e.theme] ? e.theme : 'confetti';
+  $('#ev-intensity').value = EV_INTENSITY[e.intensity] ? e.intensity : 'medium';
+  $('#ev-accent-on').checked = EV_HEX.test(e.accent ?? '');
+  if (EV_HEX.test(e.accent ?? '')) $('#ev-accent').value = e.accent;
+  for (const k of Object.keys(EV_KINDS)) $(`#ev-k-${k}`).checked = (e.kinds ?? []).includes(k);
+  evSyncForm();
+}
+function evReset() {
+  evEditId = null;
+  const start = evDefaultStart();
+  evFill({
+    name: '',
+    multiplier: 2,
+    startsAt: new Date(start).toISOString(),
+    endsAt: new Date(start + 48 * 3600000).toISOString(),
+    theme: 'confetti',
+    intensity: 'medium',
+    accent: null,
+    kinds: Object.keys(EV_KINDS),
+  });
+}
+function renderXpEvents() {
+  const events = evEvents();
+  const now = Date.now();
+  if ((evEditId && !events.some((e) => e.id === evEditId)) || !$('#ev-start').value) evReset();
   $('#ev-list').innerHTML = events.length
     ? events
         .map((e, i) => {
           const start = Date.parse(e.startsAt);
           const end = Date.parse(e.endsAt);
-          const [label, cls] = now < start ? ['Zaplanowane', 'planned'] : now < end ? ['Trwa', 'live'] : ['Zakończone', 'done'];
-          return `<div class="ev-item ${cls}">
+          const [label, cls] = evStatus(e, now);
+          const accent = EV_HEX.test(e.accent ?? '') ? e.accent : null;
+          const id = esc(e.id);
+          return `<div class="ev-item ${cls}${e.id === evEditId ? ' editing' : ''}">
             <div class="ev-main">
-              <div><strong>${esc(e.name)}</strong> <span class="ev-badge">${evMult(e.multiplier)}</span> <span class="ev-status">${label}</span></div>
-              <div class="muted small">${esc(evDate(start))} – ${esc(evDate(end))} · ${e.kinds.map((k) => EV_KINDS[k]).join(', ')} · ${EV_THEMES[e.theme] ?? ''}</div>
+              <div><strong>${esc(e.name)}</strong> <span class="ev-badge"${accent ? ` style="background:${accent}"` : ''}>${evMult(e.multiplier)}</span> <span class="ev-status">${label}</span></div>
+              <div class="muted small">${esc(evDate(start))} – ${esc(evDate(end))} · ${(e.kinds ?? []).map((k) => EV_KINDS[k]).join(', ')}</div>
+              <div class="muted small">${EV_THEMES[e.theme] ?? EV_THEMES.confetti} · ${EV_INTENSITY[e.intensity] ?? EV_INTENSITY.medium}${accent ? ` · kolor <span class="ev-swatch" style="background:${accent}"></span>` : ''}</div>
             </div>
             <div class="ev-actions">
-              ${cls === 'live' ? `<button type="button" class="btn ghost small" data-ev-end="${i}">Zakończ teraz</button>` : ''}
+              ${cls !== 'done' ? `<button type="button" class="btn ghost small" data-ev-edit="${id}">Edytuj</button>` : ''}
+              <button type="button" class="btn ghost small" data-ev-dup="${id}" title="Nowe wydarzenie z tymi samymi ustawieniami">Duplikuj</button>
+              ${cls === 'live' ? `<button type="button" class="btn ghost small" data-ev-end="${id}">Zakończ teraz</button>` : ''}
               <button type="button" class="btn danger small" data-lv-del="events" data-i="${i}">Usuń</button>
             </div>
           </div>`;
@@ -1835,43 +1903,93 @@ function renderXpEvents() {
         .join('')
     : '<span class="muted small">Brak wydarzeń — dodaj pierwsze obok.</span>';
 }
-$('#ev-theme').addEventListener('change', () => {
-  $('#ev-preview').href = `ranking.html?preview=${encodeURIComponent($('#ev-theme').value)}`;
+for (const sel of ['#ev-theme', '#ev-intensity', '#ev-accent-on', '#ev-mult', '#ev-name']) {
+  $(sel).addEventListener('input', evSyncForm);
+  $(sel).addEventListener('change', evSyncForm);
+}
+// Wybór koloru od razu włącza własny kolor.
+$('#ev-accent').addEventListener('input', () => {
+  $('#ev-accent-on').checked = true;
+  evSyncForm();
+});
+$('#ev-presets').addEventListener('click', (event) => {
+  const btn = event.target.closest('[data-m]');
+  if (!btn) return;
+  $('#ev-mult').value = btn.dataset.m;
+  evSyncForm();
+});
+$('#ev-cancel').addEventListener('click', () => {
+  evReset();
+  renderXpEvents();
 });
 $('#ev-add').addEventListener('click', () => {
   const start = Date.parse($('#ev-start').value);
   const end = Date.parse($('#ev-end').value);
+  const multiplier = evMultValue();
   const kinds = Object.keys(EV_KINDS).filter((k) => $(`#ev-k-${k}`).checked);
+  if (!(multiplier >= 1.1 && multiplier <= 10)) return toast('Mnożnik musi być od ×1,1 do ×10 (np. 1,25 albo 3).', 'error');
   if (!Number.isFinite(start) || !Number.isFinite(end)) return toast('Podaj początek i koniec wydarzenia.', 'error');
   if (end <= start) return toast('Koniec musi być po początku.', 'error');
   if (end - start > 31 * 86400000) return toast('Wydarzenie może trwać najwyżej 31 dni.', 'error');
   if (end <= Date.now()) return toast('Ten termin już minął.', 'error');
   if (!kinds.length) return toast('Zaznacz, za co XP ma być mnożone.', 'error');
-  if ((state.draft.levels.events ?? []).length >= 50) return toast('Za dużo wydarzeń — usuń stare.', 'error');
-  const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-  addLevelsItem('events', {
-    id,
-    name: $('#ev-name').value.trim() || 'Wydarzenie XP',
-    multiplier: Number($('#ev-mult').value),
+  const events = [...evEvents()];
+  const data = {
+    name: $('#ev-name').value.replace(/\s+/g, ' ').trim().slice(0, 80) || 'Wydarzenie XP',
+    multiplier,
     startsAt: new Date(start).toISOString(),
     endsAt: new Date(end).toISOString(),
     kinds,
     theme: $('#ev-theme').value,
-  });
-  state.draft.levels.events.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
-  $('#ev-name').value = '';
-  renderLevels();
-  toast('Dodano wydarzenie — zapisz zmiany (przycisk na dole ekranu).');
-});
-$('#ev-list').addEventListener('click', (event) => {
-  const btn = event.target.closest('[data-ev-end]');
-  if (!btn) return;
-  const e = state.draft.levels.events[Number(btn.dataset.evEnd)];
-  if (!e) return;
-  e.endsAt = new Date(Math.max(Date.now(), Date.parse(e.startsAt) + 60000)).toISOString();
+    intensity: $('#ev-intensity').value,
+    accent: $('#ev-accent-on').checked && EV_HEX.test($('#ev-accent').value) ? $('#ev-accent').value.toLowerCase() : null,
+  };
+  let message;
+  if (evEditId) {
+    const i = events.findIndex((e) => e.id === evEditId);
+    if (i < 0) {
+      evReset();
+      renderXpEvents();
+      return toast('Tego wydarzenia już nie ma na liście.', 'error');
+    }
+    // To samo id: bot nie ogłosi drugi raz startu, a ranking wydarzenia zachowa zdobyte XP.
+    events[i] = { ...events[i], ...data };
+    message = 'Zmieniono wydarzenie — zapisz zmiany (przycisk na dole ekranu).';
+  } else {
+    if (events.length >= 50) return toast('Za dużo wydarzeń — usuń stare.', 'error');
+    events.push({ id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, ...data });
+    message = 'Dodano wydarzenie — zapisz zmiany (przycisk na dole ekranu).';
+  }
+  setPath(state.draft, 'levels.events', events.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)));
+  evReset();
   renderLevels();
   markDirty();
-  toast('Zapisz zmiany, żeby zakończyć wydarzenie.');
+  toast(message);
+});
+$('#ev-list').addEventListener('click', (event) => {
+  const btn = event.target.closest('[data-ev-end], [data-ev-edit], [data-ev-dup]');
+  if (!btn) return;
+  const e = evEvents().find((x) => x.id === (btn.dataset.evEnd ?? btn.dataset.evEdit ?? btn.dataset.evDup));
+  if (!e) return;
+  if (btn.dataset.evEnd) {
+    e.endsAt = new Date(Math.max(Date.now(), Date.parse(e.startsAt) + 60000)).toISOString();
+    if (evEditId === e.id) evReset();
+    renderLevels();
+    markDirty();
+    toast('Zapisz zmiany, żeby zakończyć wydarzenie.');
+    return;
+  }
+  if (btn.dataset.evEdit) {
+    evEditId = e.id;
+    evFill(e);
+  } else {
+    evEditId = null;
+    evFill(e, { copy: true });
+    toast('Skopiowano ustawienia — sprawdź termin i kliknij „Dodaj wydarzenie”.');
+  }
+  renderXpEvents();
+  $('#ev-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  $('#ev-name').focus({ preventScroll: true });
 });
 
 function addLevelsItem(path, item) {
@@ -3458,8 +3576,8 @@ function buildSearchIndex() {
     for (const card of section.querySelectorAll('.card:not([data-no-search])')) {
       const title = card.querySelector('h3')?.textContent.replace(/\s+/g, ' ').trim() ?? '';
       add(card, title || viewName, '', 'card');
-      card.querySelectorAll('label.field > span:first-child, label.toggle, .card-head h3 ~ h3, h4').forEach((el) => {
-        add(el.closest('label') ?? el, el.textContent, title, 'field');
+      card.querySelectorAll('.field > span:first-child, label.toggle, .card-head h3 ~ h3, h4').forEach((el) => {
+        add(el.closest('label, .field') ?? el, el.textContent, title, 'field');
       });
     }
   }
