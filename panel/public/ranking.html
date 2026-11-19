@@ -566,13 +566,7 @@
     body[data-ev="storm"] { --evc: #7a8cff; --evc2: #c9d6ff; }
     body[data-ev="bubbles"] { --evc: #5fd3ff; --evc2: #b8f3ff; }
     body[data-ev="matrix"] { --evc: #31e981; --evc2: #b6ffd0; }
-    body[data-ev-live] .blob.b1 { background: var(--evc); opacity: 0.16; }
-    body[data-ev-live] .blob.b2 { background: var(--evc2); opacity: 0.1; }
-    body[data-ev-live][data-ev-fx="low"] .blob.b1 { opacity: 0.1; }
-    body[data-ev-live][data-ev-fx="low"] .blob.b2 { opacity: 0.06; }
-    body[data-ev-live][data-ev-fx="high"] .blob.b1 { opacity: 0.26; }
-    body[data-ev-live][data-ev-fx="high"] .blob.b2 { opacity: 0.17; }
-    .fx { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .fx { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; }
     .fx-top { position: fixed; inset: 0; z-index: 40; width: 100%; height: 100%; pointer-events: none; }
 
     .event {
@@ -681,6 +675,210 @@
     .pv-color input[type="color"] { width: 32px; height: 32px; padding: 2px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); cursor: pointer; }
     body:has(.pv-bar) footer { padding-bottom: 64px; }
 
+    /* ---------- Siła efektu na całej stronie (gdy wydarzenie trwa, klasa ev-page) ----------
+       --evk: 0,32 subtelne · 0,65 normalne · 1 mocne. „Bez efektów” = sam baner, strona bez zmian. */
+    body.ev-page {
+      --accent: color-mix(in srgb, var(--evc) calc(var(--evk) * 100%), #3cc3d6);
+      --border: color-mix(in srgb, var(--evc) calc(var(--evk) * 24%), #242d32);
+      --hover: color-mix(in srgb, var(--evc) calc(var(--evk) * 10%), #1f282c);
+      --surface-2: color-mix(in srgb, var(--evc) calc(var(--evk) * 9%), #1b2226);
+      scrollbar-color: color-mix(in srgb, var(--evc) calc(25% + var(--evk) * 45%), #2a3338) var(--bg);
+    }
+    body.ev-page .bg::after {
+      content: ''; position: absolute; inset: 0;
+      background:
+        radial-gradient(90% 55% at 50% -8%, color-mix(in srgb, var(--evc) calc(var(--evk) * 20%), transparent), transparent 72%),
+        radial-gradient(55% 45% at 100% 100%, color-mix(in srgb, var(--evc2) calc(var(--evk) * 11%), transparent), transparent 70%),
+        radial-gradient(45% 40% at 0% 70%, color-mix(in srgb, var(--evc) calc(var(--evk) * 9%), transparent), transparent 70%);
+    }
+    body.ev-page .blob.b1 { background: var(--evc); opacity: calc(0.08 + var(--evk) * 0.17); }
+    body.ev-page .blob.b2 { background: var(--evc2); opacity: calc(0.05 + var(--evk) * 0.12); }
+    body.ev-page :is(.card, .table, .toolbar) {
+      box-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--evc) calc(var(--evk) * 35%), rgba(255, 255, 255, 0.03)),
+        0 14px 32px -24px rgba(0, 0, 0, 0.9),
+        0 0 calc(var(--evk) * 34px) calc(var(--evk) * -12px) color-mix(in srgb, var(--evc) calc(var(--evk) * 55%), transparent);
+    }
+    body.ev-page .top3 { background: radial-gradient(64% 78% at 50% 100%, color-mix(in srgb, var(--evc) calc(var(--evk) * 17%), transparent), transparent 72%); }
+    body.ev-page h1 { text-shadow: 0 0 calc(var(--evk) * 26px) color-mix(in srgb, var(--evc) calc(var(--evk) * 65%), transparent); }
+    body.ev-page[data-ev-fx="high"] h1 { background: linear-gradient(90deg, #fff, var(--evc2) 45%, var(--evc)); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; }
+    body.ev-page .num.xp { color: color-mix(in srgb, var(--evc2) calc(var(--evk) * 55%), var(--text)); }
+
+    /* ---------- Dekoracje, które ma tylko dany efekt ---------- */
+    .ev-deco { pointer-events: none; }
+    .ev-deco.back { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
+    .ev-deco.front { position: fixed; inset: 0; z-index: 15; overflow: hidden; }
+    .ev-deco.top { position: absolute; left: 16px; right: 16px; top: 20px; height: 0; z-index: 2; overflow: visible; }
+    @media (max-width: 720px) { .ev-deco.top { top: 12px; } }
+    html.embed .ev-deco.top { left: 14px; right: 14px; top: 16px; }
+
+    /* Konfetti: girlanda z chorągiewkami */
+    .dc-bunting { position: absolute; left: 0; top: 0; display: block; opacity: calc(0.55 + var(--evk) * 0.45); filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.35)); transform-origin: 50% 0; animation: dc-bob 4.5s ease-in-out infinite alternate; }
+    @keyframes dc-bob { from { transform: translateY(-2px); } to { transform: translateY(2px); } }
+
+    /* Ogień: płomienie przy dole ekranu */
+    .dc-flames { position: absolute; left: 0; right: 0; bottom: 0; height: min(calc(40px + var(--evk) * 100px), 20vh); mix-blend-mode: screen; opacity: calc(0.45 + var(--evk) * 0.5); }
+    .dc-flame { position: absolute; inset: 0; width: 100%; height: 100%; transform-origin: 50% 100%; }
+    .dc-flame.f1 { animation: dc-flick 2.3s ease-in-out infinite alternate; }
+    .dc-flame.f2 { animation: dc-flick 1.7s ease-in-out -0.6s infinite alternate-reverse; }
+    .dc-flame.f3 { animation: dc-flick 1.2s ease-in-out -0.3s infinite alternate; }
+    @keyframes dc-flick { 0% { transform: scaleY(0.84) skewX(-1.5deg); } 50% { transform: scaleY(1.05) skewX(1deg); } 100% { transform: scaleY(0.92) skewX(-0.5deg); } }
+
+    /* Śnieg: czapy śniegu, szron w rogach, zaspa */
+    body.ev-page[data-ev="snow"] :is(.card, .table) { position: relative; }
+    body.ev-page[data-ev="snow"] :is(.toolbar, .card)::before,
+    body.ev-page[data-ev="snow"] .table::before,
+    .event .ev-cap {
+      content: ''; position: absolute; left: 6px; right: 6px; top: -9px; height: 16px; z-index: 6; pointer-events: none;
+      background: var(--dc-cap) repeat-x left top / 120px 16px; filter: drop-shadow(0 1px 1px rgba(110, 160, 210, 0.45));
+      opacity: calc(0.5 + var(--evk) * 0.5);
+    }
+    body.ev-page[data-ev="snow"] .table::before, .event .ev-cap { left: 0; right: 0; top: -2px; }
+    .dc-frost {
+      position: absolute; inset: 0;
+      --fr: rgba(222, 240, 255, calc(var(--evk) * 0.15));
+      background:
+        radial-gradient(circle at 0 0, var(--fr), transparent calc(7% + var(--evk) * 10%)),
+        radial-gradient(circle at 100% 0, var(--fr), transparent calc(7% + var(--evk) * 10%)),
+        radial-gradient(circle at 0 100%, var(--fr), transparent calc(7% + var(--evk) * 10%)),
+        radial-gradient(circle at 100% 100%, var(--fr), transparent calc(7% + var(--evk) * 10%));
+    }
+    .dc-drift { position: absolute; left: 0; bottom: 0; width: 100%; height: min(calc(12px + var(--evk) * 34px), 7vh); filter: drop-shadow(0 -2px 6px rgba(160, 200, 240, 0.25)); }
+
+    /* Gwiazdy: księżyc, gwiazdozbiory, gwiezdny pył na kartach */
+    .dc-moon {
+      position: absolute; top: clamp(60px, 12vh, 120px); right: clamp(14px, 5vw, 80px); width: calc(40px + var(--evk) * 46px); aspect-ratio: 1; border-radius: 50%;
+      box-shadow: inset calc(-10px - var(--evk) * 12px) calc(-4px - var(--evk) * 5px) 0 0 #fff4cf, 0 0 calc(18px + var(--evk) * 30px) -8px rgba(255, 238, 180, 0.5);
+      transform: rotate(-24deg);
+    }
+    .dc-const { position: absolute; width: clamp(140px, 20vw, 260px); opacity: calc(0.25 + var(--evk) * 0.5); overflow: visible; }
+    .dc-const.l { left: 2vw; top: 36vh; }
+    .dc-const.r { right: 3vw; top: 64vh; width: clamp(100px, 14vw, 170px); }
+    .dc-const path { fill: none; stroke: rgba(255, 240, 200, 0.4); stroke-width: 1; stroke-dasharray: 3 4; }
+    .dc-const circle { fill: #fff6d6; animation: dc-tw 3.2s ease-in-out infinite; }
+    @keyframes dc-tw { 50% { opacity: 0.3; } }
+    body.ev-page[data-ev="stars"] :is(.table, .card, .toolbar) { background-image: var(--dc-stars); }
+
+    /* Neon: siatka synthwave, neonowe ramki, migoczący tytuł */
+    .dc-grid {
+      position: absolute; left: -40%; right: -40%; bottom: 0; height: 44vh; overflow: hidden;
+      transform: perspective(380px) rotateX(64deg); transform-origin: 50% 100%;
+      -webkit-mask-image: linear-gradient(transparent, #000 70%); mask-image: linear-gradient(transparent, #000 70%);
+      opacity: calc(0.2 + var(--evk) * 0.55);
+    }
+    .dc-grid i {
+      position: absolute; left: 0; right: 0; top: -64px; bottom: 0;
+      background-image: linear-gradient(color-mix(in srgb, var(--evc) 75%, transparent) 2px, transparent 2px), linear-gradient(90deg, color-mix(in srgb, var(--evc2) 70%, transparent) 2px, transparent 2px);
+      background-size: 64px 64px; animation: dc-grid 1.8s linear infinite;
+    }
+    @keyframes dc-grid { to { transform: translateY(64px); } }
+    body.ev-page[data-ev="neon"] :is(.toolbar, .table, .card) {
+      border-color: color-mix(in srgb, var(--evc) calc(30% + var(--evk) * 50%), transparent);
+      box-shadow: 0 0 calc(var(--evk) * 16px) color-mix(in srgb, var(--evc) calc(var(--evk) * 55%), transparent), inset 0 0 calc(var(--evk) * 12px) color-mix(in srgb, var(--evc) calc(var(--evk) * 22%), transparent);
+    }
+    body.ev-page[data-ev="neon"] h1 {
+      background: none; color: #fff;
+      text-shadow: 0 0 4px #fff, 0 0 calc(6px + var(--evk) * 10px) var(--evc), 0 0 calc(14px + var(--evk) * 22px) var(--evc2);
+      animation: dc-neon 5s linear infinite;
+    }
+    @keyframes dc-neon { 0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; } 20%, 24%, 55% { opacity: 0.45; } }
+
+    /* Serduszka: poświata ekranu i zwycięzca biją jak serce */
+    .dc-love {
+      position: absolute; inset: 0;
+      box-shadow: inset 0 0 min(calc(30px + var(--evk) * 90px), 14vh) calc(var(--evk) * 6px) color-mix(in srgb, var(--evc) calc(var(--evk) * 42%), transparent);
+      animation: dc-beat 1.5s ease-in-out infinite;
+    }
+    @keyframes dc-beat { 0%, 45%, 100% { opacity: 0.45; } 12% { opacity: 1; } 22% { opacity: 0.6; } 32% { opacity: 0.95; } }
+    body.ev-page[data-ev="hearts"] .event .ev-mult { animation: dc-heart 1.5s ease-in-out infinite; }
+    body.ev-page[data-ev="hearts"] .top.t1 .pod-av::after { animation: dc-heart 1.5s ease-in-out infinite; }
+    @keyframes dc-heart { 0%, 45%, 100% { transform: scale(1); } 12% { transform: scale(1.09); } 22% { transform: scale(1.01); } 32% { transform: scale(1.06); } }
+
+    /* Halloween: pajęczyny, pająk na nitce, mgła */
+    .dc-web { position: absolute; top: 0; width: clamp(60px, 12vw, 150px); opacity: calc(0.35 + var(--evk) * 0.45); }
+    .dc-web svg { display: block; width: 100%; height: auto; }
+    .dc-web.l { left: 0; }
+    .dc-web.r { right: 0; transform: scaleX(-1); }
+    .dc-spider { position: absolute; top: 0; right: 16%; width: 30px; height: 230px; overflow: hidden; }
+    .dc-drop { position: absolute; left: 0; bottom: 0; width: 30px; animation: dc-spider 11s ease-in-out infinite; }
+    .dc-drop i { position: absolute; left: 50%; bottom: 26px; width: 1px; height: 400px; background: rgba(230, 225, 255, 0.45); }
+    .dc-drop svg { display: block; width: 30px; height: 30px; filter: drop-shadow(0 0 3px rgba(255, 140, 60, 0.6)); }
+    @keyframes dc-spider { 0%, 100% { transform: translateY(-150px); } 45%, 60% { transform: translateY(-12px); } }
+    body.ev-page[data-ev="halloween"] .card { position: relative; }
+    body.ev-page[data-ev="halloween"] .card::after {
+      content: ''; position: absolute; top: 0; right: 0; width: calc(36px + var(--evk) * 34px); aspect-ratio: 1; pointer-events: none;
+      background: var(--dc-web) no-repeat left top / contain; transform: scaleX(-1); opacity: calc(0.3 + var(--evk) * 0.5);
+    }
+    .dc-fog { position: absolute; left: 0; right: 0; bottom: 0; height: min(calc(50px + var(--evk) * 110px), 22vh); opacity: calc(0.35 + var(--evk) * 0.55); }
+    .dc-fog i {
+      position: absolute; inset: 0 -30%;
+      background: radial-gradient(30% 60% at 20% 80%, rgba(170, 150, 210, 0.3), transparent 70%), radial-gradient(28% 55% at 55% 90%, rgba(150, 130, 190, 0.28), transparent 70%), radial-gradient(30% 60% at 85% 80%, rgba(190, 170, 230, 0.26), transparent 70%);
+      animation: dc-fog 16s ease-in-out infinite alternate;
+    }
+    .dc-fog i + i { animation-duration: 23s; animation-direction: alternate-reverse; opacity: 0.8; }
+    @keyframes dc-fog { from { transform: translateX(-8%); } to { transform: translateX(8%); } }
+
+    /* Jesień i sakura: gałąź w rogu strony; jesień — kupka liści, sakura — różowe światło */
+    .dc-branch { position: absolute; top: -4px; width: min(clamp(150px, 24vw, 300px), 38vw); opacity: calc(0.6 + var(--evk) * 0.4); filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35)); animation: dc-sway 7s ease-in-out infinite alternate; }
+    .dc-branch svg { display: block; width: 100%; height: auto; overflow: visible; }
+    .dc-branch.l { left: -6px; transform-origin: 0 0; }
+    .dc-branch.r { right: -6px; transform-origin: 100% 0; }
+    .dc-branch.r svg { transform: scaleX(-1); }
+    @keyframes dc-sway { from { transform: rotate(-1.2deg); } to { transform: rotate(1.6deg); } }
+    .dc-pile { position: absolute; left: 0; bottom: -6px; width: min(clamp(120px, 16vw, 220px), 40vw); opacity: calc(0.55 + var(--evk) * 0.45); }
+    .dc-glow { position: absolute; inset: 0; background: radial-gradient(60% 50% at 100% 0, color-mix(in srgb, var(--evc) calc(var(--evk) * 22%), transparent), transparent 72%); }
+
+    /* Złote monety: stosy monet, złoty połysk na podium i rankingu, złote XP */
+    .dc-coins { position: absolute; bottom: 0; width: min(clamp(80px, 10vw, 130px), 30vh); opacity: calc(0.55 + var(--evk) * 0.45); filter: drop-shadow(0 0 10px color-mix(in srgb, var(--evc) 35%, transparent)); }
+    .dc-coins.l { left: 4px; }
+    .dc-coins.r { right: 4px; }
+    body.ev-page[data-ev="coins"] .table { position: relative; }
+    body.ev-page[data-ev="coins"] :is(.table, .top3)::after {
+      content: ''; position: absolute; inset: -20% -60%; z-index: 3; pointer-events: none;
+      background: linear-gradient(105deg, transparent 44%, color-mix(in srgb, var(--evc2) calc(var(--evk) * 30%), transparent) 50%, transparent 56%);
+      animation: dc-sheen 6.5s ease-in-out infinite;
+    }
+    @keyframes dc-sheen { 0%, 55% { transform: translateX(-60%); } 100% { transform: translateX(60%); } }
+    body.ev-page[data-ev="coins"] .num.xp { color: color-mix(in srgb, var(--evc) 72%, #fff); }
+
+    /* Burza: chmury u góry, przyciemnienie, błysk pioruna rozświetla karty */
+    .dc-clouds { position: absolute; left: -5%; top: -14px; width: 110%; height: clamp(36px, 9vw, 110px); filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45)); opacity: calc(0.6 + var(--evk) * 0.4); transition: filter 0.15s; animation: dc-drift 40s ease-in-out infinite alternate; }
+    @keyframes dc-drift { from { transform: translateX(-2.5%); } to { transform: translateX(2.5%); } }
+    body.ev-page[data-ev="storm"] .bg::before { content: ''; position: absolute; inset: 0; z-index: 1; background: rgba(4, 6, 16, calc(var(--evk) * 0.35)); }
+    body.ev-page[data-ev="storm"] :is(.toolbar, .table, .card, .event) { transition: border-color 0.25s, box-shadow 0.25s; }
+    body.ev-page[data-ev="storm"].ev-flash :is(.toolbar, .table, .card, .event) { border-color: rgba(214, 224, 255, 0.85); box-shadow: 0 0 34px -6px rgba(200, 214, 255, 0.55); }
+    body.ev-page[data-ev="storm"].ev-flash .dc-clouds { filter: brightness(2.2) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45)); }
+
+    /* Bąbelki: tafla wody u góry, promienie światła */
+    .dc-water { position: absolute; left: 0; top: 0; width: 100%; height: clamp(22px, 3.5vw, 40px); border-radius: 12px 12px 0 0; opacity: calc(0.5 + var(--evk) * 0.5); animation: dc-drift 9s ease-in-out infinite alternate; }
+    .dc-water stop:first-child { stop-color: var(--evc2); stop-opacity: 0.38; }
+    .dc-water stop:last-child { stop-color: var(--evc2); stop-opacity: 0.06; }
+    .dc-water .line { fill: none; stroke: color-mix(in srgb, #ffffff 60%, var(--evc2)); stroke-width: 1.6; vector-effect: non-scaling-stroke; opacity: 0.85; }
+    .dc-rays { position: absolute; inset: 0; overflow: hidden; -webkit-mask-image: linear-gradient(#000, transparent 75%); mask-image: linear-gradient(#000, transparent 75%); opacity: calc(0.25 + var(--evk) * 0.6); }
+    .dc-rays i { position: absolute; top: -10%; width: 12vw; height: 120%; background: linear-gradient(color-mix(in srgb, var(--evc2) 30%, transparent), transparent); transform-origin: 50% 0; animation: dc-ray 9s ease-in-out infinite alternate; }
+    .dc-rays i:nth-child(1) { left: 8%; }
+    .dc-rays i:nth-child(2) { left: 30%; width: 7vw; animation-delay: -3s; }
+    .dc-rays i:nth-child(3) { left: 55%; width: 10vw; animation-delay: -5s; }
+    .dc-rays i:nth-child(4) { left: 78%; width: 8vw; animation-delay: -7s; }
+    @keyframes dc-ray { from { opacity: 0.35; transform: rotate(16deg); } to { opacity: 1; transform: rotate(21deg); } }
+
+    /* Matrix: linie CRT, pasek odświeżania, tytuł z glitchem, liczby jak w terminalu */
+    .dc-scan { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, calc(0.08 + var(--evk) * 0.16)) 0 1px, transparent 1px 3px); }
+    .dc-scan i { position: absolute; left: 0; right: 0; top: -30%; height: 30%; background: linear-gradient(transparent, color-mix(in srgb, var(--evc) calc(var(--evk) * 9%), transparent), transparent); animation: dc-refresh 7s linear infinite; }
+    @keyframes dc-refresh { to { transform: translateY(440%); } }
+    body.ev-page[data-ev="matrix"] h1 {
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; background: none; color: color-mix(in srgb, var(--evc) 40%, #fff);
+      text-shadow: 0 0 10px color-mix(in srgb, var(--evc) 70%, transparent); animation: dc-glitch 4.5s steps(1) infinite;
+    }
+    @keyframes dc-glitch {
+      0%, 88%, 94%, 100% { transform: none; }
+      89% { transform: translateX(-2px); text-shadow: 2px 0 #ff3fd6, -2px 0 #22e5c8; }
+      91% { transform: translateX(2px) skewX(-6deg); text-shadow: -2px 0 #ff3fd6, 2px 0 var(--evc); }
+      93% { transform: translateX(-1px); text-shadow: 1px 0 #22e5c8; }
+    }
+    body.ev-page[data-ev="matrix"] :is(.num, .rank) { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+    body.ev-page[data-ev="matrix"] .num.xp { color: color-mix(in srgb, var(--evc) 60%, #fff); text-shadow: 0 0 8px color-mix(in srgb, var(--evc) 50%, transparent); }
+
     /* Tryb osadzony (ranking.html?embed=1) — podgląd efektu w panelu: sam baner wydarzenia i efekty w tle */
     html.embed, html.embed body { overflow: hidden; }
     html.embed main { padding: 16px 14px; }
@@ -764,6 +962,8 @@
     @media (prefers-reduced-motion: reduce) {
       .skeleton, .pf-skel, .profile, .blob, .bg-grid, .saw svg, .cog svg, .pillar::after, .chev span, .dn.fx7 { animation: none; }
       .event, .event.active.fx-high, .event::after, .ev-mult, .ev-mult::before, .ev-dot, .ev-clock b.tick, body[data-ev-live] .tab[data-period="event"]::before { animation: none; }
+      .ev-deco *, body.ev-page h1, body.ev-page .event .ev-mult, body.ev-page .top.t1 .pod-av::after { animation: none !important; }
+      body.ev-page[data-ev="coins"] :is(.table, .top3)::after { display: none; }
       .beam, .top.t1 .pod-av::before, .crown svg, .spark, .top.flash .pod-col { animation: none; }
       .pod-av, .pod-col { transition: none; }
     }
@@ -1728,9 +1928,10 @@
       const next = p.next ? `<div class="ev-next">Następne: <b>${esc(p.next.name)}</b> (${multText(p.next.multiplier)} XP) — ${esc(whenText(p.next.startsAt))}</div>` : '';
       const mult = multText(e.multiplier);
       const playful = status === 'active' && FX_LEVEL[evIntensity(e)] > 0;
+      const cap = playful && evTheme(e) === 'snow' ? '<i class="ev-cap" aria-hidden="true"></i>' : '';
       return `<button type="button" class="ev-mult" aria-label="Mnożnik XP ${mult}"${playful ? ' title="Jeszcze raz!"' : ''}><b data-len="${Math.min(mult.length, 6)}">${mult}</b><small>XP</small></button>
         <div class="ev-body"><div class="ev-kicker"><i class="ev-dot"></i>${kicker}</div><h2 class="ev-name">${esc(e.name)}</h2><div class="ev-sub">${sub}</div></div>
-        <div class="ev-side">${timer}${cta}</div>${next}`;
+        <div class="ev-side">${timer}${cta}</div>${next}${cap}`;
     }
 
     function clockTick() {
@@ -1787,6 +1988,7 @@
       ev.key = key;
       if (!pick) {
         stopFx();
+        pageFx(null);
         box.hidden = true;
         box.innerHTML = '';
         applyAccent(box, null);
@@ -1816,7 +2018,10 @@
       clockTick();
       ev.fx = { theme, level, colors: accent ? accentColors(accent) : null };
       if (keepFx) return;
-      if (pick.status !== 'active' || reduceMotion.matches || !level || ev.paused) return;
+      // Cała strona i dekoracje efektu (przy ograniczonym ruchu — bez animacji, same kolory i ozdoby).
+      const live = pick.status === 'active' && level > 0;
+      pageFx(live ? { theme, intensity, colors: ev.fx.colors ?? FX_COLORS[theme] } : null);
+      if (!live || reduceMotion.matches || ev.paused) return;
       ev.fxKey = fxKey;
       // Animacje: cząsteczki w banerze i w tle strony, a przy pierwszej wizycie (albo starcie na żywo) — wybuch.
       // Intensywność mnoży liczbę cząsteczek; „mocne” wybucha przy każdym wejściu na stronę.
@@ -1825,7 +2030,7 @@
       const back = document.createElement('canvas');
       back.className = 'fx';
       $('.bg').append(back);
-      ev.back = particles(back, theme, { ambient: Math.max(1, Math.round(inBack * level)), colors: ev.fx.colors });
+      ev.back = particles(back, theme, { ambient: Math.max(1, Math.round(inBack * level)), colors: ev.fx.colors, onFlash: flashPage });
       const seenKey = `ev-burst-${e.id}`;
       const fresh = PREVIEW ? fxKey !== ev.burstFx : intensity === 'high' || saved.get(seenKey) !== '1' || (ev.started && !wasActive);
       if (fresh) {
@@ -1836,19 +2041,27 @@
       ev.started = true;
     }
 
-    function burst() {
-      if (!ev.pick || ev.pick.status !== 'active' || reduceMotion.matches || !ev.fx?.level) return;
-      // Jedna warstwa na wybuchy: kolejne kliknięcia dokładają cząsteczki do trwającego wybuchu (z limitem). Warstwa
-      // znika sama, gdy wszystko zgaśnie — wcześniej każde kliknięcie zostawiało zatrzymane płótno z „zamrożonymi” iskrami.
+    const fxReady = () => Boolean(ev.pick && ev.pick.status === 'active' && !reduceMotion.matches && ev.fx?.level && !ev.paused);
+    // Jedna warstwa nad stroną na wybuchy i kliknięcia: kolejne dokładają cząsteczki (z limitem). Warstwa znika sama,
+    // gdy wszystko zgaśnie — wcześniej każde kliknięcie zostawiało zatrzymane płótno z „zamrożonymi” iskrami.
+    function topLayer() {
       if (!ev.top) {
         const canvas = document.createElement('canvas');
         canvas.className = 'fx-top';
         canvas.setAttribute('aria-hidden', 'true');
         document.body.append(canvas);
-        ev.top = particles(canvas, ev.fx.theme, { colors: ev.fx.colors, burstScale: Math.max(0.4, Math.min(ev.fx.level, 1.5)), onDone: () => { canvas.remove(); ev.top = null; } });
+        ev.top = particles(canvas, ev.fx.theme, { colors: ev.fx.colors, burstScale: Math.max(0.4, Math.min(ev.fx.level, 1.5)), onFlash: flashPage, onDone: () => { canvas.remove(); ev.top = null; } });
       }
-      ev.top.burst();
+      return ev.top;
     }
+    function burst() {
+      if (fxReady()) topLayer().burst();
+    }
+    // Przy normalnej i mocnej intensywności kliknięcie w dowolnym miejscu strony wypuszcza kilka cząsteczek efektu.
+    document.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0 || !fxReady() || ev.fx.level < 1 || event.target.closest?.('.ev-mult, .pv-bar')) return;
+      topLayer().pop(event.clientX, event.clientY);
+    });
 
     function stopFx() {
       ev.fxKey = '';
@@ -1857,6 +2070,202 @@
         ev[k] = null;
       }
       document.querySelectorAll('.bg .fx, .fx-top').forEach((c) => c.remove());
+    }
+
+    // ---------- Cała strona: siła efektu i dekoracje, które ma tylko dany efekt ----------
+    // Gdy wydarzenie trwa (i efekty są włączone), kolor akcentu, ramki, tło, poświata kart, tytuł i podium biorą kolor
+    // wydarzenia — tym mocniej, im większa intensywność (--evk). Do tego każdy efekt ma własne dekoracje: warstwa
+    // za treścią (back), u góry strony (top, przewija się z nią) i przy krawędziach ekranu nad treścią (front).
+    const FX_PAGE = { none: 0, low: 0.32, medium: 0.65, high: 1 };
+    const lum = (hex) => {
+      const n = parseInt(hex.slice(1), 16);
+      return 0.2126 * (n >> 16) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255);
+    };
+    const svgUrl = (svg) => `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+    const f1 = (v) => v.toFixed(1);
+    // Łagodna fala (zaspy, mgła): wzgórza u góry, wypełnienie w dół.
+    function wavePath(w, h, n, minY, maxY) {
+      const pts = Array.from({ length: n + 1 }, (_, i) => [(i * w) / n, rnd(minY, maxY)]);
+      let d = `M0 ${h} L0 ${f1(pts[0][1])}`;
+      for (let i = 1; i <= n; i++) {
+        const [x0, y0] = pts[i - 1];
+        const [x1, y1] = pts[i];
+        const mx = f1((x0 + x1) / 2);
+        d += ` C${mx} ${f1(y0)} ${mx} ${f1(y1)} ${f1(x1)} ${f1(y1)}`;
+      }
+      return `${d} L${w} ${h} Z`;
+    }
+    // Tafla wody oglądana od spodu: jasne wypełnienie nad falą i sama linia fali.
+    function waveTop(w, n, minY, maxY) {
+      const pts = Array.from({ length: n + 1 }, (_, i) => [(i * w) / n, rnd(minY, maxY)]);
+      let line = `M0 ${f1(pts[0][1])}`;
+      for (let i = 1; i <= n; i++) {
+        const mx = f1((pts[i - 1][0] + pts[i][0]) / 2);
+        line += ` C${mx} ${f1(pts[i - 1][1])} ${mx} ${f1(pts[i][1])} ${f1(pts[i][0])} ${f1(pts[i][1])}`;
+      }
+      return { line, fill: `M0 0 L${line.slice(1)} L${w} 0 Z` };
+    }
+    // Języki ognia wzdłuż dołu ekranu.
+    function flamePath(w, h, n, minH, maxH) {
+      const step = w / n;
+      let d = `M0 ${h}`;
+      for (let i = 0; i < n; i++) {
+        const x0 = i * step;
+        const x1 = x0 + step;
+        const xm = x0 + step / 2 + rnd(-step * 0.18, step * 0.18);
+        const peak = h - rnd(minH, maxH);
+        d += ` C${f1(x0 + step * 0.2)} ${f1(h - (h - peak) * 0.3)} ${f1(xm - step * 0.25)} ${f1(peak + (h - peak) * 0.35)} ${f1(xm)} ${f1(peak)}`;
+        d += ` C${f1(xm + step * 0.22)} ${f1(peak + (h - peak) * 0.4)} ${f1(x1 - step * 0.2)} ${f1(h - (h - peak) * 0.3)} ${f1(x1)} ${f1(h - rnd(2, 10))}`;
+      }
+      return `${d} L${w} ${h} Z`;
+    }
+    // Pajęczyna w rogu (od punktu 0,0): nitki promieniste i obwisłe łuki.
+    function webSvg(size) {
+      const n = 7;
+      const ang = (i) => (i / (n - 1)) * (Math.PI / 2);
+      let d = '';
+      for (let i = 0; i < n; i++) d += `M0 0 L${f1(Math.cos(ang(i)) * size)} ${f1(Math.sin(ang(i)) * size)} `;
+      for (const r of [0.22, 0.4, 0.58, 0.76, 0.94]) {
+        const R = r * size;
+        for (let i = 0; i < n - 1; i++) {
+          const am = (ang(i) + ang(i + 1)) / 2;
+          d += `M${f1(Math.cos(ang(i)) * R)} ${f1(Math.sin(ang(i)) * R)} Q${f1(Math.cos(am) * R * 0.84)} ${f1(Math.sin(am) * R * 0.84)} ${f1(Math.cos(ang(i + 1)) * R)} ${f1(Math.sin(ang(i + 1)) * R)} `;
+        }
+      }
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}"><path d="${d}" fill="none" stroke="rgba(232,226,255,0.55)" stroke-width="1"/></svg>`;
+    }
+    const SPIDER = '<svg viewBox="0 0 40 40" aria-hidden="true"><g stroke="#1a0f24" stroke-width="2" fill="none" stroke-linecap="round"><path d="M20 20 L8 12 L4 4"/><path d="M20 20 L6 18 L1 14"/><path d="M20 22 L6 26 L2 32"/><path d="M20 24 L9 32 L7 39"/><path d="M20 20 L32 12 L36 4"/><path d="M20 20 L34 18 L39 14"/><path d="M20 22 L34 26 L38 32"/><path d="M20 24 L31 32 L33 39"/></g><ellipse cx="20" cy="25" rx="7" ry="8.5" fill="#1a0f24"/><circle cx="20" cy="15" r="4.6" fill="#1a0f24"/><circle cx="18.3" cy="14.4" r="1.1" fill="#ff7a18"/><circle cx="21.7" cy="14.4" r="1.1" fill="#ff7a18"/></svg>';
+    // Gałąź od lewej krawędzi (jesień: liście, sakura: kwiaty — w CSS lustrzane odbicie dla prawego rogu).
+    function branchSvg(kind, colors) {
+      const c = (i) => colors[i % colors.length];
+      const wood = kind === 'leaves' ? '#4a2e1f' : '#3d2622';
+      const twigs = '<path d="M-6 10 C40 18 90 26 150 52 C180 66 205 80 232 104" stroke-width="6"/><path d="M90 26 C104 44 112 58 116 78" stroke-width="3.5"/><path d="M150 52 C170 46 190 44 212 46" stroke-width="3"/><path d="M40 17 C50 30 54 40 56 52" stroke-width="2.5"/>';
+      const spots = [[24, 14, 40], [44, 30, 110], [56, 52, 70], [70, 22, 60], [96, 34, 130], [112, 58, 80], [116, 80, 100], [138, 46, 20], [158, 60, 140], [176, 48, -20], [198, 44, 30], [214, 48, 70], [208, 84, 120], [230, 104, 70], [128, 52, 160]];
+      const leaf = (x, y, r, i) => {
+        const col = c(i);
+        return `<path d="M0 0 C5 -6 15 -6 20 0 C15 6 5 6 0 0 Z M0 0 L20 0" transform="translate(${x} ${y}) rotate(${r}) scale(${(0.9 + (i % 4) * 0.14).toFixed(2)})" fill="${col}" stroke="${hexMix(col, '#000000', 0.45)}" stroke-width="0.8"/>`;
+      };
+      const flower = (x, y, r, i) => {
+        const col = c(i);
+        const s = 6 + (i % 3) * 1.6;
+        const petals = [0, 72, 144, 216, 288].map((a) => `<ellipse cx="0" cy="${f1(-s * 0.55)}" rx="${f1(s * 0.44)}" ry="${f1(s * 0.6)}" transform="rotate(${a + r})" fill="${col}"/>`).join('');
+        return `<g transform="translate(${x} ${y})">${petals}<circle r="${f1(s * 0.24)}" fill="#ffe08a"/></g>`;
+      };
+      const items = spots.map(([x, y, r], i) => (kind === 'leaves' ? leaf(x, y, r, i) : i % 4 === 3 ? `<circle cx="${x}" cy="${y}" r="3" fill="${hexMix(c(i), '#ffffff', 0.3)}"/>` : flower(x, y, r, i))).join('');
+      return `<svg viewBox="-6 0 252 130" aria-hidden="true"><g fill="none" stroke="${wood}" stroke-linecap="round">${twigs}</g>${items}</svg>`;
+    }
+    function decoHtml(theme, colors) {
+      const c = (i) => colors[i % colors.length];
+      const byLum = [...colors].sort((a, b) => lum(a) - lum(b));
+      switch (theme) {
+        case 'confetti': {
+          // Girlanda z chorągiewkami u góry strony (baloniki lecą w tle jako cząsteczki).
+          const flags = Array.from({ length: 6 }, (_, i) => {
+            const x = 20 + i * 40;
+            const t = x / 240;
+            const y = 3 + 80 * t * (1 - t);
+            return `<path d="M${x - 12} ${f1(y - 1)} L${x + 12} ${f1(y + 1)} L${x + 1} ${f1(y + 22)} Z" fill="${c(i)}"/>`;
+          }).join('');
+          return { top: `<svg class="dc-bunting" width="100%" height="50"><defs><pattern id="dcb" width="240" height="50" patternUnits="userSpaceOnUse"><path d="M0 3 Q120 43 240 3" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.4"/>${flags}</pattern></defs><rect width="100%" height="50" fill="url(#dcb)"/></svg>` };
+        }
+        case 'fire': {
+          // Płomienie wzdłuż dołu ekranu: trzy warstwy, każda migocze w innym tempie.
+          const layer = (id, col, n, minH, maxH, cls) => `<svg class="dc-flame ${cls}" viewBox="0 0 1200 160" preserveAspectRatio="none"><defs><linearGradient id="${id}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${col}" stop-opacity="0.95"/><stop offset="0.55" stop-color="${col}" stop-opacity="0.5"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs><path d="${flamePath(1200, 160, n, minH, maxH)}" fill="url(#${id})"/></svg>`;
+          return { front: `<div class="dc-flames">${layer('dcf1', byLum[0], 11, 80, 155, 'f1')}${layer('dcf2', byLum[Math.floor(byLum.length / 2)], 15, 50, 115, 'f2')}${layer('dcf3', byLum.at(-1), 19, 24, 70, 'f3')}</div>` };
+        }
+        case 'snow': {
+          // Czapy śniegu na kartach i banerze, szron w rogach ekranu, zaspa na dole.
+          const cap = '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="16" viewBox="0 0 120 16"><path d="M0 9 C8 3 18 2 26 6 C34 9 40 4 50 4 C62 4 66 9 76 7 C86 5 92 2 104 4 C112 6 116 8 120 9 L120 12 C112 12 108 12 104 12 C102 16 98 16 97 12 C80 12 60 12 46 12 C44 15 41 15 40 12 C24 12 10 12 0 12 Z" fill="#f4faff"/></svg>';
+          return {
+            vars: { '--dc-cap': svgUrl(cap) },
+            front: `<div class="dc-frost"></div><svg class="dc-drift" viewBox="0 0 1200 60" preserveAspectRatio="none"><path d="${wavePath(1200, 60, 9, 14, 34)}" fill="#dcecff" opacity="0.5"/><path d="${wavePath(1200, 60, 7, 26, 46)}" fill="#f6fbff" opacity="0.92"/></svg>`,
+          };
+        }
+        case 'stars': {
+          // Księżyc i gwiazdozbiory w tle, gwiezdny pył na kartach (spadające gwiazdy — cząsteczki).
+          const dipper = [[10, 40], [60, 30], [100, 42], [140, 58], [225, 62], [215, 112], [150, 105]];
+          const cas = [[0, 20], [30, 52], [62, 28], [94, 58], [130, 30]];
+          const dots = (pts) => pts.map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="${i % 3 ? 1.7 : 2.4}" style="animation-delay:${f1(-i * 0.7)}s"/>`).join('');
+          const dust = Array.from({ length: 24 }, () => `<circle cx="${f1(rnd(0, 180))}" cy="${f1(rnd(0, 180))}" r="${rnd(0.4, 1).toFixed(2)}" fill="#ffffff" opacity="${rnd(0.15, 0.5).toFixed(2)}"/>`).join('');
+          return {
+            vars: { '--dc-stars': svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180">${dust}</svg>`) },
+            back: `<div class="dc-moon"></div><svg class="dc-const l" viewBox="0 0 240 130"><path d="M10 40 L60 30 L100 42 L140 58 L225 62 L215 112 L150 105 L140 58"/>${dots(dipper)}</svg><svg class="dc-const r" viewBox="-5 0 145 70"><path d="M0 20 L30 52 L62 28 L94 58 L130 30"/>${dots(cas)}</svg>`,
+          };
+        }
+        case 'neon':
+          // Siatka w stylu synthwave na dole tła; neonowe ramki i migoczący tytuł — w CSS.
+          return { back: '<div class="dc-grid"><i></i></div>' };
+        case 'hearts':
+          // Ekran pulsuje jak bicie serca (poświata przy krawędziach); mnożnik i poświata zwycięzcy też.
+          return { front: '<div class="dc-love"></div>' };
+        case 'halloween': {
+          // Pajęczyny w rogach strony i kart, pająk na nitce, mgła przy dole ekranu.
+          const web = webSvg(120);
+          return {
+            vars: { '--dc-web': svgUrl(web) },
+            top: `<div class="dc-web l">${web}</div><div class="dc-web r">${web}</div><div class="dc-spider"><div class="dc-drop"><i></i>${SPIDER}</div></div>`,
+            front: '<div class="dc-fog"><i></i><i></i></div>',
+          };
+        }
+        case 'leaves': {
+          // Gałąź z jesiennymi liśćmi w lewym rogu strony i kupka liści przy dole ekranu.
+          const pile = Array.from({ length: 16 }, (_, i) => {
+            const col = c(i);
+            return `<path d="M0 0 C5 -6 15 -6 20 0 C15 6 5 6 0 0 Z" transform="translate(${f1(8 + rnd(0, 150))} ${f1(rnd(30, 46))}) rotate(${Math.round(rnd(-40, 40))}) scale(${rnd(0.8, 1.3).toFixed(2)})" fill="${col}" stroke="${hexMix(col, '#000000', 0.45)}" stroke-width="0.8"/>`;
+          }).join('');
+          return { top: `<div class="dc-branch l">${branchSvg('leaves', colors)}</div>`, front: `<svg class="dc-pile" viewBox="0 0 180 54">${pile}</svg>` };
+        }
+        case 'sakura':
+          // Kwitnąca gałąź wiśni w prawym rogu strony i różowe światło z góry.
+          return { top: `<div class="dc-branch r">${branchSvg('sakura', colors)}</div>`, back: '<div class="dc-glow"></div>' };
+        case 'coins': {
+          // Stosy monet w dolnych rogach ekranu; złoty połysk przesuwa się po podium i rankingu (CSS).
+          const gold = byLum.at(-1);
+          const edge = hexMix(byLum[0], '#000000', 0.25);
+          const coin = (x, y) => `<g transform="translate(${f1(x)} ${f1(y)})"><ellipse cy="3" rx="14" ry="4.6" fill="${edge}"/><rect x="-14" width="28" height="3" fill="${edge}"/><ellipse rx="14" ry="4.6" fill="${gold}"/><ellipse rx="9" ry="2.7" fill="none" stroke="${edge}" stroke-width="0.8"/></g>`;
+          const stack = (x, n) => Array.from({ length: n }, (_, i) => coin(x + rnd(-1.5, 1.5), 62 - i * 4.2)).join('');
+          return { front: `<svg class="dc-coins l" viewBox="0 0 120 70">${stack(24, 6)}${stack(58, 10)}${stack(92, 4)}</svg><svg class="dc-coins r" viewBox="0 0 120 70">${stack(28, 4)}${stack(62, 8)}${stack(96, 5)}</svg>` };
+        }
+        case 'storm': {
+          // Ciemne chmury u góry strony; błyskawica rozświetla karty i chmury (klasa ev-flash).
+          const cloud = (x, y, s) => `<g transform="translate(${f1(x)} ${f1(y)}) scale(${s.toFixed(2)})"><ellipse rx="62" ry="22"/><ellipse cx="-32" cy="-8" rx="32" ry="20"/><ellipse cx="22" cy="-15" rx="36" ry="25"/><ellipse cx="52" cy="-2" rx="27" ry="16"/></g>`;
+          const row = (dx, dy) => Array.from({ length: 10 }, (_, i) => cloud(i * 140 + dx + rnd(-25, 25), dy + rnd(0, 18), rnd(0.8, 1.25))).join('');
+          return { top: `<svg class="dc-clouds" viewBox="0 0 1400 90" preserveAspectRatio="xMidYMin slice"><g fill="#262d45" stroke="rgba(150, 170, 225, 0.28)" stroke-width="1.2" opacity="0.94">${row(70, 18)}</g><g fill="#141927" opacity="0.96">${row(0, 4)}</g></svg>` };
+        }
+        case 'bubbles': {
+          // Tafla wody u góry strony (widziana od spodu) i promienie światła w tle.
+          const wave = waveTop(1200, 14, 12, 30);
+          return {
+            top: `<svg class="dc-water" viewBox="0 0 1200 36" preserveAspectRatio="none"><defs><linearGradient id="dcw" x1="0" y1="0" x2="0" y2="1"><stop offset="0"/><stop offset="1"/></linearGradient></defs><path class="fill" d="${wave.fill}" fill="url(#dcw)"/><path class="line" d="${wave.line}"/></svg>`,
+            back: '<div class="dc-rays"><i></i><i></i><i></i><i></i></div>',
+          };
+        }
+        case 'matrix':
+          // Linie monitora CRT na całym ekranie i przesuwający się pasek odświeżania; tytuł z „glitchem” (CSS).
+          return { front: '<div class="dc-scan"><i></i></div>' };
+        default:
+          return {};
+      }
+    }
+    function pageFx(fx) {
+      document.querySelectorAll('.ev-deco').forEach((node) => node.remove());
+      for (const v of ['--evk', '--dc-cap', '--dc-web', '--dc-stars']) document.body.style.removeProperty(v);
+      document.body.classList.toggle('ev-page', Boolean(fx));
+      if (!fx) return;
+      document.body.style.setProperty('--evk', String(FX_PAGE[fx.intensity] ?? 0.65));
+      const parts = decoHtml(fx.theme, fx.colors);
+      for (const [k, v] of Object.entries(parts.vars ?? {})) document.body.style.setProperty(k, v);
+      const layer = (where, html) => `<div class="ev-deco ${where} d-${fx.theme}" aria-hidden="true">${html}</div>`;
+      if (parts.back) $('.bg').insertAdjacentHTML('afterend', layer('back', parts.back));
+      if (parts.top) $('main').insertAdjacentHTML('afterbegin', layer('top', parts.top));
+      if (parts.front) document.body.insertAdjacentHTML('beforeend', layer('front', parts.front));
+    }
+    // Burza: błysk pioruna w tle na chwilę rozświetla karty i chmury.
+    let flashTimer = 0;
+    function flashPage() {
+      document.body.classList.add('ev-flash');
+      clearTimeout(flashTimer);
+      flashTimer = setTimeout(() => document.body.classList.remove('ev-flash'), 170);
     }
 
     // ---------- Silnik cząsteczek (canvas) ----------
@@ -2064,7 +2473,7 @@
       return paths;
     }
 
-    function particles(canvas, theme, { ambient = 0, onDone = null, colors: own = null, burstScale = 1 } = {}) {
+    function particles(canvas, theme, { ambient = 0, onDone = null, onFlash = null, colors: own = null, burstScale = 1 } = {}) {
       const ctx = canvas.getContext('2d');
       const colors = own ?? FX_COLORS[theme] ?? FX_COLORS.confetti;
       let w = 0, h = 0, raf = 0, last = 0, list = [], dead = false, filled = false;
@@ -2168,7 +2577,28 @@
           default:
             return burst
               ? { t: 'paper', x: side ? w + 10 : -10, y: h * rnd(0.55, 0.9), vx: (side ? -1 : 1) * rnd(4, 14), vy: rnd(-18, -7), g: 0.32, drag: 0.982, life: rnd(160, 260), vr: rnd(-0.3, 0.3), s: rnd(6, 10) }
-              : { t: 'paper', x: rnd(0, w), y: rnd(-60, -10), vx: rnd(-0.4, 0.4), vy: rnd(0.7, 1.6), sway: rnd(0, TAU), amp: rnd(0.3, 0.9), vr: rnd(-0.05, 0.05), s: rnd(5, 9) };
+              : Math.random() < 0.07
+                ? { t: 'balloon', x: rnd(0, w), y: h + rnd(20, 50), vx: 0, vy: rnd(-1.2, -0.55), s: rnd(8, 14), sway: rnd(0, TAU), amp: rnd(0.3, 0.6) }
+                : { t: 'paper', x: rnd(0, w), y: rnd(-60, -10), vx: rnd(-0.4, 0.4), vy: rnd(0.7, 1.6), sway: rnd(0, TAU), amp: rnd(0.3, 0.9), vr: rnd(-0.05, 0.05), s: rnd(5, 9) };
+        }
+      };
+      // Kliknięcie: kilka małych cząsteczek efektu z miejsca kliknięcia.
+      const makePop = (x, y) => {
+        const base = (t, extra) => radial(x, y, [1.5, 5.5], { t, g: 0.12, drag: 0.95, life: rnd(35, 70), ...extra });
+        switch (theme) {
+          case 'fire': return base('ember', { r: rnd(1, 2.6), g: -0.05 });
+          case 'snow': return base('flake', { r: rnd(1, 2.6), g: 0.04 });
+          case 'stars': return base('spark', { r: rnd(1, 2.4), g: 0.03 });
+          case 'neon': return base('shape', { s: rnd(2, 4.5), k: Math.floor(rnd(0, 3)), vr: rnd(-0.2, 0.2), g: 0.05 });
+          case 'hearts': return base('heart', { s: rnd(3, 6), sway: rnd(0, TAU), g: -0.04, rot: rnd(-0.4, 0.4) });
+          case 'halloween': return Math.random() < 0.3 ? base('bat', { s: rnd(3, 5), flap: rnd(0.3, 0.45), sway: rnd(0, TAU), g: -0.03 }) : base('spark', { r: rnd(1, 2.4) });
+          case 'leaves': return base('leaf', { s: rnd(3, 6), sway: rnd(0, TAU), vr: rnd(-0.2, 0.2), g: 0.06 });
+          case 'sakura': return base(Math.random() < 0.2 ? 'blossom' : 'petal', { s: rnd(3, 5.5), sway: rnd(0, TAU), vr: rnd(-0.2, 0.2), g: 0.05 });
+          case 'coins': return base('coin', { s: rnd(3, 5.5), spin: rnd(0.1, 0.3), sway: rnd(0, TAU), rot: 0, g: 0.22, drag: 0.97, vy: rnd(-7, -3) });
+          case 'storm': return base('spark', { r: rnd(1, 2.4), g: 0.08 });
+          case 'bubbles': return base('bubble', { r: rnd(2, 6), g: -0.05, sway: rnd(0, TAU), amp: 0.4, life: rnd(40, 80) });
+          case 'matrix': return base('glyph', { ch: pickOne(GLYPHS), font: font(Math.round(rnd(10, 16))), g: 0.04 });
+          default: return base('paper', { s: rnd(3, 6), vr: rnd(-0.3, 0.3), g: 0.15 });
         }
       };
       const add = (p, amb) => list.push({ g: 0, drag: 1, life: Infinity, rot: rnd(0, TAU), vr: 0, c: pickOne(colors), age: 0, amb, ...p });
@@ -2189,6 +2619,8 @@
         filled = true;
         // Burza: co kilka sekund błyskawica w tle (słaby błysk, bez migotania).
         if (theme === 'storm' && Math.random() < dt / 480) add({ t: 'bolt', x: w / 2, y: 0, vx: 0, vy: 0, paths: boltPaths(w, h), flash: 0.06, instant: true, life: rnd(26, 38) }, false);
+        // Gwiazdy: co kilka sekund spadająca gwiazda.
+        if (theme === 'stars' && Math.random() < dt / 560) add({ t: 'comet', x: rnd(w * 0.3, w * 1.1), y: rnd(-40, h * 0.4), vx: rnd(-14, -8), vy: rnd(4, 8), life: rnd(50, 90) }, false);
       }
       // Kształt z pamięci podręcznej, obrócony i ściśnięty (fx, fy — „obrót w 3D”).
       function drawSprite(p, kind, size, fx = 1, fy = 1) {
@@ -2321,6 +2753,23 @@
             ctx.restore();
             break;
           }
+          case 'balloon': {
+            // Balonik na sznurku, lekko się kołysze.
+            const s = p.s;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(Math.sin(p.age * 0.03 + p.sway) * 0.12);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+            ctx.lineWidth = 0.8;
+            ctx.beginPath(); ctx.moveTo(0, s * 1.15); ctx.quadraticCurveTo(s * 0.4, s * 2, 0, s * 2.8); ctx.stroke();
+            ctx.fillStyle = p.c;
+            ctx.beginPath(); ctx.ellipse(0, 0, s * 0.82, s, 0, 0, TAU); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(-s * 0.16, s * 1.12); ctx.lineTo(s * 0.16, s * 1.12); ctx.lineTo(0, s * 0.95); ctx.fill();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+            ctx.beginPath(); ctx.ellipse(-s * 0.3, -s * 0.35, s * 0.18, s * 0.3, -0.5, 0, TAU); ctx.fill();
+            ctx.restore();
+            break;
+          }
           case 'rain': {
             const k = p.len / Math.hypot(p.vx, p.vy);
             ctx.strokeStyle = p.c;
@@ -2331,6 +2780,10 @@
           case 'bolt': {
             // Migotanie: jest — znika na chwilę — wraca i gaśnie.
             if (p.age < 0 || (p.age > 4 && p.age < 7)) break;
+            if (p.flash && !p.lit) {
+              p.lit = true;
+              onFlash?.();
+            }
             const k = alpha * (p.age > 10 ? Math.max(0, 1 - (p.age - 10) / (p.life - 10)) : 1);
             if (p.flash && p.age < 10) {
               ctx.globalAlpha = k * p.flash;
@@ -2438,6 +2891,14 @@
           for (const p of list) if (!p.amb) live += 1;
           const count = Math.min(n, Math.max(0, n * 2 - live));
           for (let i = 0; i < count; i++) add(make(true, i % 2, i), false);
+          run();
+        },
+        pop(x, y) {
+          let live = 0;
+          for (const p of list) if (!p.amb) live += 1;
+          if (live > 420) return;
+          const n = Math.round(14 * Math.min(Math.max(burstScale, 0.6), 1.3));
+          for (let i = 0; i < n; i++) add(makePop(x, y), false);
           run();
         },
         destroy,
