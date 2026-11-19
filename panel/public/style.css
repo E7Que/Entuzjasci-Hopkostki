@@ -194,6 +194,12 @@ main { padding: 2rem clamp(1rem, 3vw, 2.5rem) 6rem; min-width: 0; }
 .ev-color-row input[type="color"] { width: 42px; height: 32px; padding: 2px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg-3); cursor: pointer; }
 #ev-form.editing { border-color: color-mix(in srgb, #ff4fa3 55%, var(--line)); box-shadow: 0 0 0 1px color-mix(in srgb, #ff4fa3 35%, transparent); }
 .ev-item.editing { outline: 2px solid color-mix(in srgb, #ff4fa3 60%, transparent); outline-offset: 1px; }
+/* Podgląd efektu na żywo: strona rankingu w trybie osadzonym (ranking.html?embed=1) */
+.ev-live { margin: .25rem 0 .6rem; }
+.ev-live-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .35rem; }
+.ev-live-head span { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
+#ev-live { display: block; width: 100%; height: 200px; border: 1px solid var(--line); border-radius: 10px; background: #0d1113; color-scheme: dark; }
+.ev-live p { margin: .35rem 0 0; }
 .ev-swatch { display: inline-block; width: .7rem; height: .7rem; margin-left: .25rem; border-radius: 50%; vertical-align: -1px; box-shadow: 0 0 0 1px rgba(255,255,255,.25); }
 #levels-table td.xp-bar { min-width: 140px; }
 .xp-progress { height: 6px; border-radius: 3px; background: var(--bg); overflow: hidden; margin-top: .25rem; }

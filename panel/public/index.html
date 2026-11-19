@@ -626,6 +626,11 @@
                 <div class="ev-color-row"><input type="color" id="ev-accent" value="#ff4fa3" aria-label="Kolor wydarzenia"><label class="toggle small"><input type="checkbox" id="ev-accent-on"><span></span>Użyj własnego koloru zamiast koloru efektu</label></div>
               </div>
             </div>
+            <div class="ev-live">
+              <div class="ev-live-head"><span>Podgląd na żywo</span><button type="button" class="btn ghost small" id="ev-live-burst" title="Pokaż wybuch efektu (jak po kliknięciu mnożnika na stronie)">Wybuch</button></div>
+              <iframe id="ev-live" title="Podgląd efektu wydarzenia na stronie rankingu" tabindex="-1"></iframe>
+              <p class="muted small">Tak baner i efekty wyglądają na stronie rankingu, gdy wydarzenie trwa. Kliknięcie mnożnika w podglądzie też odpala wybuch.</p>
+            </div>
             <div class="ev-kinds">
               <label class="toggle small"><input type="checkbox" id="ev-k-message" checked><span></span>Wiadomości</label>
               <label class="toggle small"><input type="checkbox" id="ev-k-voice" checked><span></span>Głosowe</label>
