@@ -567,7 +567,11 @@
     body[data-ev="bubbles"] { --evc: #5fd3ff; --evc2: #b8f3ff; }
     body[data-ev="matrix"] { --evc: #31e981; --evc2: #b6ffd0; }
     .fx { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; }
-    .fx-top { position: fixed; inset: 0; z-index: 40; width: 100%; height: 100%; pointer-events: none; }
+    /* Świat nad stroną: cząsteczki w powietrzu, czapy (śnieg, liście, monety) na krawędziach elementów, dół ekranu */
+    .fx-world { position: fixed; inset: 0; z-index: 40; width: 100%; height: 100%; pointer-events: none; }
+    .fx-caps { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 3; overflow: visible; pointer-events: none; }
+    .fx-cap { position: absolute; left: 0; top: 0; pointer-events: none; }
+    .fx-ground { position: fixed; bottom: 0; z-index: 39; pointer-events: none; }
 
     .event {
       --e1: #ff4fa3; --e2: #8a5cff; --e3: #2ec5ff; --eg: #ffb3e6;
@@ -716,24 +720,8 @@
     .dc-bunting { position: absolute; left: 0; top: 0; display: block; opacity: calc(0.55 + var(--evk) * 0.45); filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.35)); transform-origin: 50% 0; animation: dc-bob 4.5s ease-in-out infinite alternate; }
     @keyframes dc-bob { from { transform: translateY(-2px); } to { transform: translateY(2px); } }
 
-    /* Ogień: płomienie przy dole ekranu */
-    .dc-flames { position: absolute; left: 0; right: 0; bottom: 0; height: min(calc(40px + var(--evk) * 100px), 20vh); mix-blend-mode: screen; opacity: calc(0.45 + var(--evk) * 0.5); }
-    .dc-flame { position: absolute; inset: 0; width: 100%; height: 100%; transform-origin: 50% 100%; }
-    .dc-flame.f1 { animation: dc-flick 2.3s ease-in-out infinite alternate; }
-    .dc-flame.f2 { animation: dc-flick 1.7s ease-in-out -0.6s infinite alternate-reverse; }
-    .dc-flame.f3 { animation: dc-flick 1.2s ease-in-out -0.3s infinite alternate; }
-    @keyframes dc-flick { 0% { transform: scaleY(0.84) skewX(-1.5deg); } 50% { transform: scaleY(1.05) skewX(1deg); } 100% { transform: scaleY(0.92) skewX(-0.5deg); } }
 
-    /* Śnieg: czapy śniegu, szron w rogach, zaspa */
-    body.ev-page[data-ev="snow"] :is(.card, .table) { position: relative; }
-    body.ev-page[data-ev="snow"] :is(.toolbar, .card)::before,
-    body.ev-page[data-ev="snow"] .table::before,
-    .event .ev-cap {
-      content: ''; position: absolute; left: 6px; right: 6px; top: -9px; height: 16px; z-index: 6; pointer-events: none;
-      background: var(--dc-cap) repeat-x left top / 120px 16px; filter: drop-shadow(0 1px 1px rgba(110, 160, 210, 0.45));
-      opacity: calc(0.5 + var(--evk) * 0.5);
-    }
-    body.ev-page[data-ev="snow"] .table::before, .event .ev-cap { left: 0; right: 0; top: -2px; }
+    /* Śnieg: szron w rogach (śnieg na kartach i zaspa — w świecie nad stroną) */
     .dc-frost {
       position: absolute; inset: 0;
       --fr: rgba(222, 240, 255, calc(var(--evk) * 0.15));
@@ -743,7 +731,6 @@
         radial-gradient(circle at 0 100%, var(--fr), transparent calc(7% + var(--evk) * 10%)),
         radial-gradient(circle at 100% 100%, var(--fr), transparent calc(7% + var(--evk) * 10%));
     }
-    .dc-drift { position: absolute; left: 0; bottom: 0; width: 100%; height: min(calc(12px + var(--evk) * 34px), 7vh); filter: drop-shadow(0 -2px 6px rgba(160, 200, 240, 0.25)); }
 
     /* Gwiazdy: księżyc, gwiazdozbiory, gwiezdny pył na kartach */
     .dc-moon {
@@ -818,20 +805,16 @@
     .dc-fog i + i { animation-duration: 23s; animation-direction: alternate-reverse; opacity: 0.8; }
     @keyframes dc-fog { from { transform: translateX(-8%); } to { transform: translateX(8%); } }
 
-    /* Jesień i sakura: gałąź w rogu strony; jesień — kupka liści, sakura — różowe światło */
+    /* Jesień i sakura: gałąź w rogu strony; sakura — różowe światło */
     .dc-branch { position: absolute; top: -4px; width: min(clamp(150px, 24vw, 300px), 38vw); opacity: calc(0.6 + var(--evk) * 0.4); filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35)); animation: dc-sway 7s ease-in-out infinite alternate; }
     .dc-branch svg { display: block; width: 100%; height: auto; overflow: visible; }
     .dc-branch.l { left: -6px; transform-origin: 0 0; }
     .dc-branch.r { right: -6px; transform-origin: 100% 0; }
     .dc-branch.r svg { transform: scaleX(-1); }
     @keyframes dc-sway { from { transform: rotate(-1.2deg); } to { transform: rotate(1.6deg); } }
-    .dc-pile { position: absolute; left: 0; bottom: -6px; width: min(clamp(120px, 16vw, 220px), 40vw); opacity: calc(0.55 + var(--evk) * 0.45); }
     .dc-glow { position: absolute; inset: 0; background: radial-gradient(60% 50% at 100% 0, color-mix(in srgb, var(--evc) calc(var(--evk) * 22%), transparent), transparent 72%); }
 
-    /* Złote monety: stosy monet, złoty połysk na podium i rankingu, złote XP */
-    .dc-coins { position: absolute; bottom: 0; width: min(clamp(80px, 10vw, 130px), 30vh); opacity: calc(0.55 + var(--evk) * 0.45); filter: drop-shadow(0 0 10px color-mix(in srgb, var(--evc) 35%, transparent)); }
-    .dc-coins.l { left: 4px; }
-    .dc-coins.r { right: 4px; }
+    /* Złote monety: złoty połysk na podium i rankingu, złote XP (monety układają się w kupki w świecie nad stroną) */
     body.ev-page[data-ev="coins"] .table { position: relative; }
     body.ev-page[data-ev="coins"] :is(.table, .top3)::after {
       content: ''; position: absolute; inset: -20% -60%; z-index: 3; pointer-events: none;
@@ -1884,7 +1867,7 @@
     const PREVIEW = EV_THEMES.includes(QS.get('preview')) ? QS.get('preview') : EMBED ? 'confetti' : null;
     // fxKey — efekt, który teraz działa (zmiana samej nazwy czy mnożnika nie restartuje cząsteczek); burstFx — efekt
     // ostatniego wybuchu w podglądzie; paused — podgląd w panelu jest poza ekranem.
-    const ev = { events: null, pick: null, key: '', fxKey: '', burstFx: '', paused: false, back: null, banner: null, top: null, fx: null };
+    const ev = { events: null, pick: null, key: '', fxKey: '', burstFx: '', paused: false, back: null, banner: null, world: null, fx: null };
 
     function evStatus(e, now = Date.now()) {
       return now < Date.parse(e.startsAt) ? 'upcoming' : now < Date.parse(e.endsAt) ? 'active' : 'ended';
@@ -1928,10 +1911,9 @@
       const next = p.next ? `<div class="ev-next">Następne: <b>${esc(p.next.name)}</b> (${multText(p.next.multiplier)} XP) — ${esc(whenText(p.next.startsAt))}</div>` : '';
       const mult = multText(e.multiplier);
       const playful = status === 'active' && FX_LEVEL[evIntensity(e)] > 0;
-      const cap = playful && evTheme(e) === 'snow' ? '<i class="ev-cap" aria-hidden="true"></i>' : '';
       return `<button type="button" class="ev-mult" aria-label="Mnożnik XP ${mult}"${playful ? ' title="Jeszcze raz!"' : ''}><b data-len="${Math.min(mult.length, 6)}">${mult}</b><small>XP</small></button>
         <div class="ev-body"><div class="ev-kicker"><i class="ev-dot"></i>${kicker}</div><h2 class="ev-name">${esc(e.name)}</h2><div class="ev-sub">${sub}</div></div>
-        <div class="ev-side">${timer}${cta}</div>${next}${cap}`;
+        <div class="ev-side">${timer}${cta}</div>${next}`;
     }
 
     function clockTick() {
@@ -2031,6 +2013,8 @@
       back.className = 'fx';
       $('.bg').append(back);
       ev.back = particles(back, theme, { ambient: Math.max(1, Math.round(inBack * level)), colors: ev.fx.colors, onFlash: flashPage });
+      // Nad stroną: cząsteczki, które spadają na karty, zbierają się i reagują na kursor (ogień, śnieg, liście…).
+      ev.world = world(theme, { level, kk: FX_PAGE[intensity], colors: ev.fx.colors });
       const seenKey = `ev-burst-${e.id}`;
       const fresh = PREVIEW ? fxKey !== ev.burstFx : intensity === 'high' || saved.get(seenKey) !== '1' || (ev.started && !wasActive);
       if (fresh) {
@@ -2041,35 +2025,24 @@
       ev.started = true;
     }
 
-    const fxReady = () => Boolean(ev.pick && ev.pick.status === 'active' && !reduceMotion.matches && ev.fx?.level && !ev.paused);
-    // Jedna warstwa nad stroną na wybuchy i kliknięcia: kolejne dokładają cząsteczki (z limitem). Warstwa znika sama,
-    // gdy wszystko zgaśnie — wcześniej każde kliknięcie zostawiało zatrzymane płótno z „zamrożonymi” iskrami.
-    function topLayer() {
-      if (!ev.top) {
-        const canvas = document.createElement('canvas');
-        canvas.className = 'fx-top';
-        canvas.setAttribute('aria-hidden', 'true');
-        document.body.append(canvas);
-        ev.top = particles(canvas, ev.fx.theme, { colors: ev.fx.colors, burstScale: Math.max(0.4, Math.min(ev.fx.level, 1.5)), onFlash: flashPage, onDone: () => { canvas.remove(); ev.top = null; } });
-      }
-      return ev.top;
-    }
+    const fxReady = () => Boolean(ev.pick && ev.pick.status === 'active' && !reduceMotion.matches && ev.fx?.level && !ev.paused && ev.world);
     function burst() {
-      if (fxReady()) topLayer().burst();
+      if (fxReady()) ev.world.burst();
     }
-    // Przy normalnej i mocnej intensywności kliknięcie w dowolnym miejscu strony wypuszcza kilka cząsteczek efektu.
+    // Przy normalnej i mocnej intensywności kliknięcie w dowolnym miejscu strony robi coś z efektem: rozdmuchuje śnieg,
+    // podpala, ściąga piorun, przebija bańki i baloniki, sypie liśćmi, monetami…
     document.addEventListener('pointerdown', (event) => {
       if (event.button !== 0 || !fxReady() || ev.fx.level < 1 || event.target.closest?.('.ev-mult, .pv-bar')) return;
-      topLayer().pop(event.clientX, event.clientY);
+      ev.world.click(event.clientX, event.clientY);
     });
 
     function stopFx() {
       ev.fxKey = '';
-      for (const k of ['banner', 'back', 'top']) {
+      for (const k of ['banner', 'back', 'world']) {
         ev[k]?.destroy();
         ev[k] = null;
       }
-      document.querySelectorAll('.bg .fx, .fx-top').forEach((c) => c.remove());
+      document.querySelectorAll('.bg .fx, .fx-world, .fx-ground, .fx-caps').forEach((c) => c.remove());
     }
 
     // ---------- Cała strona: siła efektu i dekoracje, które ma tylko dany efekt ----------
@@ -2083,18 +2056,6 @@
     };
     const svgUrl = (svg) => `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
     const f1 = (v) => v.toFixed(1);
-    // Łagodna fala (zaspy, mgła): wzgórza u góry, wypełnienie w dół.
-    function wavePath(w, h, n, minY, maxY) {
-      const pts = Array.from({ length: n + 1 }, (_, i) => [(i * w) / n, rnd(minY, maxY)]);
-      let d = `M0 ${h} L0 ${f1(pts[0][1])}`;
-      for (let i = 1; i <= n; i++) {
-        const [x0, y0] = pts[i - 1];
-        const [x1, y1] = pts[i];
-        const mx = f1((x0 + x1) / 2);
-        d += ` C${mx} ${f1(y0)} ${mx} ${f1(y1)} ${f1(x1)} ${f1(y1)}`;
-      }
-      return `${d} L${w} ${h} Z`;
-    }
     // Tafla wody oglądana od spodu: jasne wypełnienie nad falą i sama linia fali.
     function waveTop(w, n, minY, maxY) {
       const pts = Array.from({ length: n + 1 }, (_, i) => [(i * w) / n, rnd(minY, maxY)]);
@@ -2104,20 +2065,6 @@
         line += ` C${mx} ${f1(pts[i - 1][1])} ${mx} ${f1(pts[i][1])} ${f1(pts[i][0])} ${f1(pts[i][1])}`;
       }
       return { line, fill: `M0 0 L${line.slice(1)} L${w} 0 Z` };
-    }
-    // Języki ognia wzdłuż dołu ekranu.
-    function flamePath(w, h, n, minH, maxH) {
-      const step = w / n;
-      let d = `M0 ${h}`;
-      for (let i = 0; i < n; i++) {
-        const x0 = i * step;
-        const x1 = x0 + step;
-        const xm = x0 + step / 2 + rnd(-step * 0.18, step * 0.18);
-        const peak = h - rnd(minH, maxH);
-        d += ` C${f1(x0 + step * 0.2)} ${f1(h - (h - peak) * 0.3)} ${f1(xm - step * 0.25)} ${f1(peak + (h - peak) * 0.35)} ${f1(xm)} ${f1(peak)}`;
-        d += ` C${f1(xm + step * 0.22)} ${f1(peak + (h - peak) * 0.4)} ${f1(x1 - step * 0.2)} ${f1(h - (h - peak) * 0.3)} ${f1(x1)} ${f1(h - rnd(2, 10))}`;
-      }
-      return `${d} L${w} ${h} Z`;
     }
     // Pajęczyna w rogu (od punktu 0,0): nitki promieniste i obwisłe łuki.
     function webSvg(size) {
@@ -2168,19 +2115,9 @@
           }).join('');
           return { top: `<svg class="dc-bunting" width="100%" height="50"><defs><pattern id="dcb" width="240" height="50" patternUnits="userSpaceOnUse"><path d="M0 3 Q120 43 240 3" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.4"/>${flags}</pattern></defs><rect width="100%" height="50" fill="url(#dcb)"/></svg>` };
         }
-        case 'fire': {
-          // Płomienie wzdłuż dołu ekranu: trzy warstwy, każda migocze w innym tempie.
-          const layer = (id, col, n, minH, maxH, cls) => `<svg class="dc-flame ${cls}" viewBox="0 0 1200 160" preserveAspectRatio="none"><defs><linearGradient id="${id}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${col}" stop-opacity="0.95"/><stop offset="0.55" stop-color="${col}" stop-opacity="0.5"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs><path d="${flamePath(1200, 160, n, minH, maxH)}" fill="url(#${id})"/></svg>`;
-          return { front: `<div class="dc-flames">${layer('dcf1', byLum[0], 11, 80, 155, 'f1')}${layer('dcf2', byLum[Math.floor(byLum.length / 2)], 15, 50, 115, 'f2')}${layer('dcf3', byLum.at(-1), 19, 24, 70, 'f3')}</div>` };
-        }
-        case 'snow': {
-          // Czapy śniegu na kartach i banerze, szron w rogach ekranu, zaspa na dole.
-          const cap = '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="16" viewBox="0 0 120 16"><path d="M0 9 C8 3 18 2 26 6 C34 9 40 4 50 4 C62 4 66 9 76 7 C86 5 92 2 104 4 C112 6 116 8 120 9 L120 12 C112 12 108 12 104 12 C102 16 98 16 97 12 C80 12 60 12 46 12 C44 15 41 15 40 12 C24 12 10 12 0 12 Z" fill="#f4faff"/></svg>';
-          return {
-            vars: { '--dc-cap': svgUrl(cap) },
-            front: `<div class="dc-frost"></div><svg class="dc-drift" viewBox="0 0 1200 60" preserveAspectRatio="none"><path d="${wavePath(1200, 60, 9, 14, 34)}" fill="#dcecff" opacity="0.5"/><path d="${wavePath(1200, 60, 7, 26, 46)}" fill="#f6fbff" opacity="0.92"/></svg>`,
-          };
-        }
+        case 'snow':
+          // Szron w rogach ekranu (śnieg na kartach i zaspa na dole zbierają się w świecie nad stroną).
+          return { front: '<div class="dc-frost"></div>' };
         case 'stars': {
           // Księżyc i gwiazdozbiory w tle, gwiezdny pył na kartach (spadające gwiazdy — cząsteczki).
           const dipper = [[10, 40], [60, 30], [100, 42], [140, 58], [225, 62], [215, 112], [150, 105]];
@@ -2208,24 +2145,12 @@
           };
         }
         case 'leaves': {
-          // Gałąź z jesiennymi liśćmi w lewym rogu strony i kupka liści przy dole ekranu.
-          const pile = Array.from({ length: 16 }, (_, i) => {
-            const col = c(i);
-            return `<path d="M0 0 C5 -6 15 -6 20 0 C15 6 5 6 0 0 Z" transform="translate(${f1(8 + rnd(0, 150))} ${f1(rnd(30, 46))}) rotate(${Math.round(rnd(-40, 40))}) scale(${rnd(0.8, 1.3).toFixed(2)})" fill="${col}" stroke="${hexMix(col, '#000000', 0.45)}" stroke-width="0.8"/>`;
-          }).join('');
-          return { top: `<div class="dc-branch l">${branchSvg('leaves', colors)}</div>`, front: `<svg class="dc-pile" viewBox="0 0 180 54">${pile}</svg>` };
+          // Gałąź z jesiennymi liśćmi w lewym rogu strony (liście zbierają się na kartach w świecie nad stroną).
+          return { top: `<div class="dc-branch l">${branchSvg('leaves', colors)}</div>` };
         }
         case 'sakura':
           // Kwitnąca gałąź wiśni w prawym rogu strony i różowe światło z góry.
           return { top: `<div class="dc-branch r">${branchSvg('sakura', colors)}</div>`, back: '<div class="dc-glow"></div>' };
-        case 'coins': {
-          // Stosy monet w dolnych rogach ekranu; złoty połysk przesuwa się po podium i rankingu (CSS).
-          const gold = byLum.at(-1);
-          const edge = hexMix(byLum[0], '#000000', 0.25);
-          const coin = (x, y) => `<g transform="translate(${f1(x)} ${f1(y)})"><ellipse cy="3" rx="14" ry="4.6" fill="${edge}"/><rect x="-14" width="28" height="3" fill="${edge}"/><ellipse rx="14" ry="4.6" fill="${gold}"/><ellipse rx="9" ry="2.7" fill="none" stroke="${edge}" stroke-width="0.8"/></g>`;
-          const stack = (x, n) => Array.from({ length: n }, (_, i) => coin(x + rnd(-1.5, 1.5), 62 - i * 4.2)).join('');
-          return { front: `<svg class="dc-coins l" viewBox="0 0 120 70">${stack(24, 6)}${stack(58, 10)}${stack(92, 4)}</svg><svg class="dc-coins r" viewBox="0 0 120 70">${stack(28, 4)}${stack(62, 8)}${stack(96, 5)}</svg>` };
-        }
         case 'storm': {
           // Ciemne chmury u góry strony; błyskawica rozświetla karty i chmury (klasa ev-flash).
           const cloud = (x, y, s) => `<g transform="translate(${f1(x)} ${f1(y)}) scale(${s.toFixed(2)})"><ellipse rx="62" ry="22"/><ellipse cx="-32" cy="-8" rx="32" ry="20"/><ellipse cx="22" cy="-15" rx="36" ry="25"/><ellipse cx="52" cy="-2" rx="27" ry="16"/></g>`;
@@ -2268,7 +2193,7 @@
       flashTimer = setTimeout(() => document.body.classList.remove('ev-flash'), 170);
     }
 
-    // ---------- Silnik cząsteczek (canvas) ----------
+    // ---------- Silnik cząsteczek ----------
     const FX_COLORS = {
       confetti: ['#ff4fa3', '#8a5cff', '#2ec5ff', '#ffd23f', '#5dffb0', '#ff8a3d'],
       fire: ['#ffe066', '#ffb020', '#ff7a1a', '#ff4d12'],
@@ -2286,14 +2211,21 @@
     };
     // Cząsteczki w tle: [w banerze, w tle strony] przy intensywności „normalne”.
     const FX_AMBIENT = {
-      confetti: [14, 26], fire: [26, 42], snow: [34, 70], stars: [30, 64], neon: [10, 18], hearts: [14, 30], halloween: [16, 30],
-      leaves: [14, 32], sakura: [22, 48], coins: [18, 36], storm: [44, 110], bubbles: [16, 32], matrix: [14, 30],
+      confetti: [14, 22], fire: [22, 30], snow: [30, 56], stars: [30, 64], neon: [10, 18], hearts: [12, 22], halloween: [14, 24],
+      leaves: [12, 20], sakura: [20, 34], coins: [14, 26], storm: [40, 80], bubbles: [14, 24], matrix: [12, 22],
     };
     const FX_BURST = { confetti: 150, fire: 140, snow: 170, stars: 110, neon: 100, hearts: 90, halloween: 80, leaves: 120, sakura: 140, coins: 90, storm: 90, bubbles: 110, matrix: 120 };
     const GLYPHS = '0123456789ABCDEFXP+=*<>#$%&';
     const rnd = (a, b) => a + Math.random() * (b - a);
     const pickOne = (list) => list[Math.floor(Math.random() * list.length)];
+    const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
     const TAU = Math.PI * 2;
+    const fxFont = (px) => `700 ${px}px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace`;
+    const radial = (x, y, speed, extra) => {
+      const a = rnd(0, TAU);
+      const v = rnd(...speed);
+      return { x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, ...extra };
+    };
     // Miękka, świecąca kropka (iskry, gwiazdy, płatki śniegu) — rysowana raz na kolor i potem tylko skalowana.
     const glowCache = new Map();
     function glowSprite(color) {
@@ -2450,6 +2382,37 @@
         g.fillStyle = 'rgba(255, 255, 255, 0.9)';
         g.beginPath(); g.arc(43, 19, 2.2, 0, TAU); g.fill();
       }
+      if (kind === 'crystal') {
+        // Płatek śniegu: sześć ramion z odgałęzieniami, lekka poświata.
+        g.strokeStyle = color;
+        g.fillStyle = color;
+        g.lineCap = 'round';
+        g.shadowColor = color;
+        g.shadowBlur = 4;
+        g.translate(32, 32);
+        for (let k = 0; k < 6; k++) {
+          g.save();
+          g.rotate((k * TAU) / 6);
+          g.lineWidth = 3.2;
+          g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -27); g.stroke();
+          g.lineWidth = 2.4;
+          g.beginPath();
+          g.moveTo(0, -11); g.lineTo(-7, -17); g.moveTo(0, -11); g.lineTo(7, -17);
+          g.moveTo(0, -19); g.lineTo(-5, -24); g.moveTo(0, -19); g.lineTo(5, -24);
+          g.stroke();
+          g.restore();
+        }
+        g.beginPath(); g.arc(0, 0, 3.5, 0, TAU); g.fill();
+      } else if (kind === 'smoke') {
+        const n = parseInt(color.slice(1), 16);
+        const rgba = (a) => `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+        const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+        grad.addColorStop(0, rgba(0.55));
+        grad.addColorStop(0.5, rgba(0.25));
+        grad.addColorStop(1, rgba(0));
+        g.fillStyle = grad;
+        g.fillRect(0, 0, 64, 64);
+      }
       spriteCache.set(id, c);
       return c;
     }
@@ -2473,143 +2436,450 @@
       return paths;
     }
 
-    function particles(canvas, theme, { ambient = 0, onDone = null, onFlash = null, colors: own = null, burstScale = 1 } = {}) {
+    // Piorun do wskazanego punktu (kliknięcie, kursor): łamana z góry ekranu, coraz dokładniej trafiająca w cel.
+    function boltTo(x1, y1) {
+      const x0 = x1 + rnd(-120, 120);
+      const steps = Math.max(6, Math.round((y1 + 10) / 22));
+      const main = [x0, -10];
+      for (let k = 1; k < steps; k++) {
+        const t = k / steps;
+        const jitter = 26 * (1 - t * 0.75);
+        main.push(x0 + (x1 - x0) * t + rnd(-jitter, jitter), -10 + (y1 + 10) * t);
+      }
+      main.push(x1, y1);
+      const paths = [main];
+      if (main.length > 10) {
+        const i = 2 * Math.floor(rnd(2, main.length / 2 - 2));
+        const branch = [main[i], main[i + 1]];
+        let bx = main[i];
+        let by = main[i + 1];
+        const dir = Math.random() < 0.5 ? -1 : 1;
+        for (let k = 0; k < 5; k++) {
+          bx += dir * rnd(8, 22);
+          by += rnd(10, 22);
+          branch.push(bx, by);
+        }
+        paths.push(branch);
+      }
+      return paths;
+    }
+
+    // Nowa cząsteczka: kind 'ambient' — spokojne tło banera i strony, 'burst' — wybuch po kliknięciu mnożnika.
+    // env: w, h — wymiary płótna; side — strona „armatki”; i — numer w wybuchu; own — własny kolor; state — wspólne
+    // dla jednego wybuchu (np. miejsce uderzenia pioruna).
+    function fxSpawn(theme, kind, { w, h, side = 0, i = 0, own = null, state = {} }) {
+      const burst = kind === 'burst';
+      switch (theme) {
+        case 'fire':
+          return burst
+            ? { t: 'ember', x: rnd(0, w), y: h + rnd(0, 30), vx: rnd(-1.6, 1.6), vy: rnd(-14, -5), g: 0.1, drag: 0.985, r: rnd(1.4, 3.8), life: rnd(70, 150), streak: true, sway: rnd(0, TAU) }
+            : { t: 'ember', x: rnd(0, w), y: h + rnd(0, 40), vx: rnd(-0.3, 0.3), vy: rnd(-1.8, -0.5), g: -0.004, r: rnd(0.8, 2.6), life: rnd(220, 460), sway: rnd(0, TAU), amp: rnd(0.2, 0.7) };
+        case 'snow':
+          return burst
+            ? { t: 'flake', x: rnd(-w * 0.4, w), y: rnd(-h * 0.5, -10), vx: rnd(2, 6.5), vy: rnd(2, 5.5), drag: 0.998, r: rnd(1.5, 3.6), a: rnd(0.6, 1), life: rnd(170, 280), sway: rnd(0, TAU), amp: rnd(0.1, 0.4), wk: 0.4 }
+            : { t: 'flake', x: rnd(0, w), y: rnd(-40, -8), vx: rnd(-0.25, 0.25), vy: rnd(0.35, 1.2), r: rnd(0.8, 2.6), a: rnd(0.3, 0.75), sway: rnd(0, TAU), amp: rnd(0.2, 0.7) };
+        case 'stars':
+          if (!burst) return { t: 'twinkle', x: rnd(0, w), y: rnd(0, h), vx: 0, vy: 0, r: rnd(0.6, 2.3), ph: rnd(0, TAU), sp: rnd(0.02, 0.07), life: rnd(400, 900) };
+          return Math.random() < 0.22
+            ? { t: 'comet', x: rnd(w * 0.3, w * 1.15), y: rnd(-60, h * 0.35), vx: rnd(-15, -9), vy: rnd(5, 9), life: rnd(45, 80) }
+            : radial(w / 2, h * 0.3, [2, 10], { t: 'spark', g: 0.06, drag: 0.975, r: rnd(1.5, 3.6), life: rnd(80, 160) });
+        case 'neon':
+          if (!burst) return { t: 'shape', x: rnd(0, w), y: h + rnd(0, 50), vx: rnd(-0.2, 0.2), vy: rnd(-0.9, -0.3), s: rnd(3, 8), k: Math.floor(rnd(0, 3)), life: rnd(300, 700), sway: rnd(0, TAU), amp: rnd(0.2, 0.5), vr: rnd(-0.03, 0.03) };
+          return Math.random() < 0.07
+            ? { t: 'ring', x: w / 2, y: h * 0.4, vx: 0, vy: 0, r: rnd(4, 24), grow: rnd(5, 9), life: rnd(60, 95) }
+            : radial(w / 2, h * 0.4, [3, 12], { t: 'shape', g: 0.05, drag: 0.97, s: rnd(4, 9), k: Math.floor(rnd(0, 3)), life: rnd(70, 140), vr: rnd(-0.15, 0.15) });
+        case 'hearts':
+          return burst
+            ? radial(w / 2, h * 0.42, [3, 13], { t: 'heart', g: 0.12, drag: 0.976, s: rnd(5, 11), rot: rnd(-0.4, 0.4), vr: rnd(-0.06, 0.06), sway: rnd(0, TAU), life: rnd(100, 180), mini: true })
+            : { t: 'heart', x: rnd(0, w), y: h + rnd(0, 40), vx: 0, vy: rnd(-1.1, -0.35), s: rnd(3.5, 8), rot: rnd(-0.3, 0.3), sway: rnd(0, TAU), amp: rnd(0.3, 0.8), life: rnd(320, 700) };
+        case 'halloween': {
+          if (burst) {
+            const k = Math.random();
+            return k < 0.25
+              ? radial(w / 2, h * 0.42, [3, 11], { t: 'pumpkin', g: 0.14, drag: 0.985, s: rnd(7, 12), rot: rnd(-0.5, 0.5), vr: rnd(-0.08, 0.08), life: rnd(110, 190), ...(own ? {} : { c: pickOne(['#ff7a18', '#ff8a2a', '#f26b0f']) }) })
+              : k < 0.5
+                ? radial(w / 2, h * 0.42, [4, 12], { t: 'bat', drag: 0.985, s: rnd(5, 10), flap: rnd(0.25, 0.4), sway: rnd(0, TAU), life: rnd(90, 160) })
+                : radial(w / 2, h * 0.42, [2, 10], { t: 'spark', g: 0.05, drag: 0.975, r: rnd(1.4, 3.4), life: rnd(70, 140) });
+          }
+          if (Math.random() < 0.3) {
+            const dir = Math.random() < 0.5 ? 1 : -1;
+            return { t: 'bat', x: dir > 0 ? -30 : w + 30, y: rnd(h * 0.05, h * 0.75), vx: dir * rnd(0.8, 2), vy: rnd(-0.2, 0.2), s: rnd(4, 8), flap: rnd(0.18, 0.32), sway: rnd(0, TAU), bob: rnd(0.3, 0.8) };
+          }
+          return { t: 'ember', x: rnd(0, w), y: h + rnd(0, 40), vx: rnd(-0.3, 0.3), vy: rnd(-1.2, -0.35), g: -0.003, r: rnd(1, 2.8), life: rnd(240, 520), sway: rnd(0, TAU), amp: rnd(0.3, 0.9) };
+        }
+        case 'leaves':
+          return burst
+            ? { t: 'leaf', x: side ? w + rnd(10, w * 0.3) : -rnd(10, w * 0.3), y: rnd(-h * 0.1, h * 0.85), vx: (side ? -1 : 1) * rnd(5, 14), vy: rnd(-3, 2), g: 0.05, drag: 0.99, s: rnd(6, 11), vr: rnd(-0.2, 0.2), sway: rnd(0, TAU), amp: rnd(0.3, 0.9), life: rnd(150, 260), wk: 1 }
+            : { t: 'leaf', x: rnd(0, w), y: rnd(-50, -10), vx: rnd(-0.5, 0.3), vy: rnd(0.5, 1.3), s: rnd(5, 10), vr: rnd(-0.04, 0.04), sway: rnd(0, TAU), amp: rnd(0.6, 1.4) };
+        case 'sakura':
+          return burst
+            ? radial(w / 2, h * 0.4, [2, 10], { t: Math.random() < 0.18 ? 'blossom' : 'petal', g: 0.04, drag: 0.985, s: rnd(5, 9), vr: rnd(-0.15, 0.15), sway: rnd(0, TAU), amp: rnd(0.3, 0.8), life: rnd(150, 250), wk: 1.1 })
+            : { t: Math.random() < 0.1 ? 'blossom' : 'petal', x: rnd(-100, w), y: rnd(-40, -8), vx: rnd(0.3, 0.9), vy: rnd(0.4, 1), s: rnd(3.5, 7), vr: rnd(-0.05, 0.05), sway: rnd(0, TAU), amp: rnd(0.4, 1) };
+        case 'coins':
+          if (burst) {
+            return Math.random() < 0.72
+              ? { t: 'coin', x: w / 2 + rnd(-w * 0.18, w * 0.18), y: h + 10, vx: rnd(-7, 7), vy: rnd(-21, -10), g: 0.42, drag: 0.99, s: rnd(5.5, 9), spin: rnd(0.08, 0.25), sway: rnd(0, TAU), rot: 0, life: rnd(150, 240) }
+              : radial(w / 2, h * 0.75, [3, 11], { t: 'spark', g: 0.08, drag: 0.975, r: rnd(1.4, 3.2), life: rnd(60, 120) });
+          }
+          return Math.random() < 0.45
+            ? { t: 'coin', x: rnd(0, w), y: rnd(-40, -8), vx: rnd(-0.2, 0.2), vy: rnd(0.6, 1.5), s: rnd(3.5, 7), spin: rnd(0.04, 0.12), sway: rnd(0, TAU), rot: 0, noLand: true }
+            : { t: 'twinkle', x: rnd(0, w), y: rnd(0, h), vx: 0, vy: 0, r: rnd(0.6, 2), ph: rnd(0, TAU), sp: rnd(0.03, 0.08), life: rnd(300, 700) };
+        case 'storm':
+          if (burst) {
+            if (i < 3) {
+              const paths = boltPaths(w, h);
+              if (i === 0) state.strike = paths[0].slice(-2);
+              return { t: 'bolt', x: w / 2, y: 0, vx: 0, vy: 0, paths, flash: i === 0 ? 0.12 : 0, instant: true, life: rnd(26, 40) + i * 6, age: -i * 7 };
+            }
+            const [sx, sy] = state.strike ?? [w / 2, h / 2];
+            return radial(sx, sy, [2, 10], { t: 'spark', g: 0.08, drag: 0.97, r: rnd(1.2, 3), life: rnd(50, 110) });
+          }
+          return { t: 'rain', x: rnd(-w * 0.05, w * 1.15), y: rnd(-60, -8), vx: rnd(-2.6, -1.4), vy: rnd(9, 15), len: rnd(8, 18), a: rnd(0.2, 0.45), noLand: true };
+        case 'bubbles':
+          return burst
+            ? { t: 'bubble', x: rnd(0, w), y: h + rnd(0, 60), vx: rnd(-1, 1), vy: rnd(-9, -3), g: -0.02, drag: 0.985, r: rnd(4, 16), sway: rnd(0, TAU), amp: rnd(0.3, 0.9), life: rnd(80, 200) }
+            : { t: 'bubble', x: rnd(0, w), y: h + rnd(0, 40), vx: 0, vy: rnd(-1.2, -0.4), r: rnd(3, 12), sway: rnd(0, TAU), amp: rnd(0.3, 0.9), life: rnd(300, 800) };
+        case 'matrix': {
+          if (burst) return radial(w / 2, h * 0.42, [3, 12], { t: 'glyph', ch: pickOne(GLYPHS), font: fxFont(Math.round(rnd(12, 22))), g: 0.05, drag: 0.975, life: rnd(60, 130) });
+          const size = pickOne([11, 13, 15]);
+          const len = Math.floor(rnd(5, 13));
+          return { t: 'code', x: Math.round(rnd(0, w) / 14) * 14, y: rnd(-h * 0.25, -10), vx: 0, vy: rnd(1.6, 4.2), size, font: fxFont(size), glyphs: Array.from({ length: len }, () => pickOne(GLYPHS)), tail: len * size };
+        }
+        default:
+          return burst
+            ? { t: 'paper', x: side ? w + 10 : -10, y: h * rnd(0.55, 0.9), vx: (side ? -1 : 1) * rnd(4, 14), vy: rnd(-18, -7), g: 0.32, drag: 0.982, life: rnd(160, 260), vr: rnd(-0.3, 0.3), s: rnd(5, 8.5), sway: rnd(0, TAU), amp: rnd(0.2, 0.6), wk: 0.8 }
+            : Math.random() < 0.07
+              ? { t: 'balloon', x: rnd(0, w), y: h + rnd(20, 50), vx: 0, vy: rnd(-1.2, -0.55), s: rnd(8, 14), sway: rnd(0, TAU), amp: rnd(0.3, 0.6) }
+              : { t: 'paper', x: rnd(0, w), y: rnd(-60, -10), vx: rnd(-0.4, 0.4), vy: rnd(0.7, 1.6), sway: rnd(0, TAU), amp: rnd(0.3, 0.9), vr: rnd(-0.05, 0.05), s: rnd(5, 9) };
+      }
+    }
+    // Kliknięcie: kilka małych cząsteczek efektu z miejsca kliknięcia.
+    function fxPop(theme, x, y) {
+      const base = (t, extra) => radial(x, y, [1.5, 5.5], { t, g: 0.12, drag: 0.95, life: rnd(35, 70), ...extra });
+      switch (theme) {
+        case 'fire': return base('ember', { r: rnd(1, 2.6), g: -0.05, streak: true, sway: rnd(0, TAU) });
+        case 'snow': return base('flake', { r: rnd(1, 2.6), g: 0.04, a: 0.95, sway: rnd(0, TAU), amp: 0.2 });
+        case 'stars': return base('spark', { r: rnd(1, 2.4), g: 0.03 });
+        case 'neon': return base('shape', { s: rnd(2, 4.5), k: Math.floor(rnd(0, 3)), vr: rnd(-0.2, 0.2), g: 0.05 });
+        case 'hearts': return base('heart', { s: rnd(3, 6), sway: rnd(0, TAU), g: -0.04, rot: rnd(-0.4, 0.4), mini: true });
+        case 'halloween': return Math.random() < 0.3 ? base('bat', { s: rnd(3, 5), flap: rnd(0.3, 0.45), sway: rnd(0, TAU), g: -0.03 }) : base('spark', { r: rnd(1, 2.4) });
+        case 'leaves': return base('leaf', { s: rnd(4, 7), sway: rnd(0, TAU), vr: rnd(-0.2, 0.2), g: 0.06, amp: 0.6, wk: 1 });
+        case 'sakura': return base(Math.random() < 0.2 ? 'blossom' : 'petal', { s: rnd(3, 5.5), sway: rnd(0, TAU), vr: rnd(-0.2, 0.2), g: 0.05, amp: 0.6, wk: 1.1 });
+        case 'coins': return base('coin', { s: rnd(4, 6.5), spin: rnd(0.1, 0.3), sway: rnd(0, TAU), rot: 0, g: 0.3, drag: 0.99, vy: rnd(-7, -3) });
+        case 'storm': return base('spark', { r: rnd(1, 2.4), g: 0.08 });
+        case 'bubbles': return base('bubble', { r: rnd(2, 6), g: -0.05, sway: rnd(0, TAU), amp: 0.4, life: rnd(40, 80) });
+        case 'matrix': return base('glyph', { ch: pickOne(GLYPHS), font: fxFont(Math.round(rnd(10, 16))), g: 0.04 });
+        default: return base('paper', { s: rnd(4, 6.5), vr: rnd(-0.3, 0.3), g: 0.15, sway: rnd(0, TAU), amp: 0.4, wk: 0.8 });
+      }
+    }
+
+    // Kształt z pamięci podręcznej, obrócony i ściśnięty (fx, fy — „obrót w 3D”).
+    function drawSpriteAt(ctx, p, kind, size, fx = 1, fy = 1) {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.scale(fx, fy);
+      ctx.drawImage(sprite(kind, p.c), -size / 2, -size / 2, size, size);
+      ctx.restore();
+    }
+    // Rysuje jedną cząsteczkę. env: w, h — płótno; onFlash — błysk pioruna; lens — kursor (Matrix: znaki się rozsuwają).
+    function fxDraw(ctx, p, alpha, env) {
+      ctx.globalAlpha = alpha;
+      switch (p.t) {
+        case 'paper': {
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.scale(1, Math.cos(p.age * 0.11 + (p.sway ?? 0)));
+          ctx.fillStyle = p.c;
+          ctx.fillRect(-p.s / 2, -p.s * 0.7, p.s, p.s * 1.4);
+          ctx.restore();
+          break;
+        }
+        case 'ember':
+        case 'spark': {
+          // Iskry migoczą; „lighter” — nakładające się świecą mocniej. Iskry z ognia ciągną za sobą smugę.
+          if (p.t === 'ember') ctx.globalAlpha = alpha * (0.7 + 0.3 * Math.sin(p.age * 0.35 + (p.sway ?? p.rot)));
+          ctx.globalCompositeOperation = 'lighter';
+          if (p.streak) {
+            ctx.strokeStyle = p.c;
+            ctx.lineWidth = Math.max(0.8, p.r * 0.7);
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.x - p.vx * 3.2, p.y - p.vy * 3.2);
+            ctx.stroke();
+          }
+          const size = p.r * 7;
+          ctx.drawImage(glowSprite(p.c), p.x - size / 2, p.y - size / 2, size, size);
+          ctx.globalCompositeOperation = 'source-over';
+          break;
+        }
+        case 'flake': {
+          if (p.crystal) {
+            const size = p.r * 5.2;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot);
+            ctx.drawImage(sprite('crystal', p.c), -size / 2, -size / 2, size, size);
+            ctx.restore();
+          } else {
+            const size = p.r * 3.6;
+            ctx.drawImage(glowSprite(p.c), p.x - size / 2, p.y - size / 2, size, size);
+          }
+          break;
+        }
+        case 'twinkle': {
+          ctx.globalAlpha = Math.min(1, alpha * (0.3 + 0.7 * Math.abs(Math.sin(p.age * p.sp + p.ph))) + (p.boost ?? 0));
+          ctx.fillStyle = p.c;
+          const r = p.r * (1 + (p.boost ?? 0) * 0.8);
+          ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, TAU); ctx.fill();
+          if (r > 1.5) {
+            ctx.strokeStyle = p.c;
+            ctx.lineWidth = 0.7;
+            ctx.beginPath();
+            ctx.moveTo(p.x - r * 3.5, p.y); ctx.lineTo(p.x + r * 3.5, p.y);
+            ctx.moveTo(p.x, p.y - r * 3.5); ctx.lineTo(p.x, p.y + r * 3.5);
+            ctx.stroke();
+          }
+          break;
+        }
+        case 'comet': {
+          const tail = ctx.createLinearGradient(p.x, p.y, p.x - p.vx * 7, p.y - p.vy * 7);
+          tail.addColorStop(0, '#ffffff');
+          tail.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          ctx.strokeStyle = tail;
+          ctx.lineWidth = 2;
+          ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 7, p.y - p.vy * 7); ctx.stroke();
+          break;
+        }
+        case 'shape': {
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.strokeStyle = p.c;
+          ctx.lineWidth = 1.6;
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = p.c;
+          ctx.beginPath();
+          if (p.k === 0) ctx.arc(0, 0, p.s, 0, TAU);
+          else if (p.k === 1) ctx.rect(-p.s, -p.s, p.s * 2, p.s * 2);
+          else { ctx.moveTo(0, -p.s * 1.15); ctx.lineTo(p.s, p.s * 0.75); ctx.lineTo(-p.s, p.s * 0.75); ctx.closePath(); }
+          ctx.stroke();
+          ctx.restore();
+          break;
+        }
+        case 'ring': {
+          ctx.save();
+          ctx.strokeStyle = p.c;
+          ctx.lineWidth = p.lw ?? 2.2;
+          ctx.shadowBlur = p.lw ? 0 : 16;
+          ctx.shadowColor = p.c;
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.stroke();
+          ctx.restore();
+          break;
+        }
+        case 'heart':
+          drawSpriteAt(ctx, p, 'heart', p.s * 2.6 * (1 + 0.08 * Math.sin(p.age * 0.12 + (p.sway ?? 0))));
+          break;
+        case 'leaf':
+          drawSpriteAt(ctx, p, 'leaf', p.s * 2.6, Math.cos(p.age * 0.06 + (p.sway ?? 0)));
+          break;
+        case 'petal':
+        case 'blossom':
+          drawSpriteAt(ctx, p, p.t, p.s * (p.t === 'blossom' ? 3.2 : 2.4), 1, Math.cos(p.age * 0.08 + (p.sway ?? 0)));
+          break;
+        case 'coin':
+          drawSpriteAt(ctx, p, 'coin', p.s * 2.4, Math.cos(p.age * (p.spin ?? 0.1) + (p.sway ?? 0)));
+          break;
+        case 'pumpkin':
+          drawSpriteAt(ctx, p, 'pumpkin', p.s * 2.6);
+          break;
+        case 'bubble': {
+          const size = p.r * 2;
+          ctx.drawImage(sprite('bubble', p.c), p.x - size / 2, p.y - size / 2, size, size);
+          break;
+        }
+        case 'bat': {
+          // Sylwetka z poświatą w kolorze cząsteczki; skrzydła machają (szybciej, gdy ucieka przed kursorem).
+          const flap = Math.sin(p.age * p.flap * (p.panic > 0 ? 2.4 : 1) + (p.sway ?? 0));
+          const s = p.s;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          if (p.vx < 0) ctx.scale(-1, 1);
+          ctx.fillStyle = '#140a1f';
+          ctx.shadowBlur = 9;
+          ctx.shadowColor = p.c;
+          ctx.beginPath();
+          for (const dir of [-1, 1]) {
+            ctx.moveTo(0, 0);
+            ctx.quadraticCurveTo(dir * s * 0.9, -s * 1.3 * flap, dir * s * 2, -s * 0.7 * flap);
+            ctx.quadraticCurveTo(dir * s * 1.5, s * 0.1, dir * s * 1.2, s * 0.35);
+            ctx.quadraticCurveTo(dir * s * 0.8, s * 0.05, dir * s * 0.55, s * 0.4);
+            ctx.quadraticCurveTo(dir * s * 0.3, s * 0.1, 0, s * 0.45);
+          }
+          ctx.fill();
+          ctx.beginPath(); ctx.ellipse(0, s * 0.1, s * 0.32, s * 0.5, 0, 0, TAU); ctx.fill();
+          ctx.restore();
+          break;
+        }
+        case 'wisp': {
+          // Błędny ognik: miękka poświata z jasnym, migoczącym środkiem.
+          const flick = 0.75 + 0.25 * Math.sin(p.age * 0.21 + (p.sway ?? 0));
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.globalAlpha = alpha * flick;
+          const size = p.r * 10;
+          ctx.drawImage(glowSprite(p.c), p.x - size / 2, p.y - size / 2, size, size);
+          ctx.globalAlpha = alpha;
+          ctx.drawImage(glowSprite('#ffffff'), p.x - p.r * 1.4, p.y - p.r * 1.4, p.r * 2.8, p.r * 2.8);
+          ctx.globalCompositeOperation = 'source-over';
+          break;
+        }
+        case 'balloon': {
+          const s = p.s;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(Math.sin(p.age * 0.03 + (p.sway ?? 0)) * 0.12);
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+          ctx.lineWidth = 0.8;
+          ctx.beginPath(); ctx.moveTo(0, s * 1.15); ctx.quadraticCurveTo(s * 0.4, s * 2, 0, s * 2.8); ctx.stroke();
+          ctx.fillStyle = p.c;
+          ctx.beginPath(); ctx.ellipse(0, 0, s * 0.82, s, 0, 0, TAU); ctx.fill();
+          ctx.beginPath(); ctx.moveTo(-s * 0.16, s * 1.12); ctx.lineTo(s * 0.16, s * 1.12); ctx.lineTo(0, s * 0.95); ctx.fill();
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+          ctx.beginPath(); ctx.ellipse(-s * 0.3, -s * 0.35, s * 0.18, s * 0.3, -0.5, 0, TAU); ctx.fill();
+          ctx.restore();
+          break;
+        }
+        case 'rain': {
+          const k = p.len / Math.hypot(p.vx, p.vy);
+          ctx.strokeStyle = p.c;
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * k, p.y - p.vy * k); ctx.stroke();
+          break;
+        }
+        case 'drop': {
+          // Kropla z rozprysku: krótka kreska wzdłuż ruchu.
+          ctx.strokeStyle = p.c;
+          ctx.lineWidth = 1.2;
+          ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 1.6, p.y - p.vy * 1.6); ctx.stroke();
+          break;
+        }
+        case 'glint': {
+          // Błysk: czteroramienna gwiazdka, rośnie i gaśnie.
+          const k = Math.sin(Math.PI * Math.min(1, p.age / p.life));
+          const s = p.s * k;
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(p.x - s, p.y); ctx.lineTo(p.x + s, p.y);
+          ctx.moveTo(p.x, p.y - s); ctx.lineTo(p.x, p.y + s);
+          ctx.stroke();
+          ctx.drawImage(glowSprite(p.c), p.x - s * 0.8, p.y - s * 0.8, s * 1.6, s * 1.6);
+          ctx.globalCompositeOperation = 'source-over';
+          break;
+        }
+        case 'smoke': {
+          const size = p.r * 2;
+          ctx.drawImage(sprite('smoke', p.c), p.x - size / 2, p.y - size / 2, size, size);
+          break;
+        }
+        case 'bolt': {
+          // Migotanie: jest — znika na chwilę — wraca i gaśnie.
+          if (p.age < 0 || (p.age > 4 && p.age < 7)) break;
+          if (p.flash && !p.lit) {
+            p.lit = true;
+            env.onFlash?.();
+          }
+          const k = alpha * (p.age > 10 ? Math.max(0, 1 - (p.age - 10) / (p.life - 10)) : 1);
+          if (p.flash && p.age < 10) {
+            ctx.globalAlpha = k * p.flash;
+            ctx.fillStyle = '#dfe6ff';
+            ctx.fillRect(0, 0, env.w, env.h);
+          }
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.lineJoin = 'round';
+          for (const [lw, a, color] of [[8, 0.16, p.c], [3.2, 0.45, p.c], [1.3, 1, '#ffffff']]) {
+            ctx.globalAlpha = k * a;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lw;
+            ctx.beginPath();
+            for (const seg of p.paths) {
+              ctx.moveTo(seg[0], seg[1]);
+              for (let j = 2; j < seg.length; j += 2) ctx.lineTo(seg[j], seg[j + 1]);
+            }
+            ctx.stroke();
+          }
+          ctx.globalCompositeOperation = 'source-over';
+          break;
+        }
+        case 'code': {
+          ctx.font = p.font;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          const n = p.glyphs.length;
+          const lens = env.lens;
+          for (let j = 0; j < n; j++) {
+            const gy = p.y - j * p.size;
+            if (gy < -p.size || gy > env.h + p.size) continue;
+            let gx = p.x;
+            let hot = 0;
+            if (lens) {
+              // Soczewka kursora: znaki rozsuwają się na boki i rozjaśniają.
+              const dx = gx - lens.x;
+              const dy = gy - lens.y;
+              const d = Math.hypot(dx, dy);
+              if (d < 110) {
+                hot = 1 - d / 110;
+                gx += (dx / (d || 1)) * hot * 30;
+              }
+            }
+            ctx.globalAlpha = Math.min(1, alpha * ((j === 0 ? 1 : (1 - j / n) * 0.7) + hot));
+            ctx.fillStyle = j === 0 || hot > 0.35 ? '#eafff2' : p.c;
+            ctx.fillText(hot > 0.45 && Math.random() < 0.25 ? pickOne(GLYPHS) : p.glyphs[j], gx, gy);
+          }
+          if (Math.random() < 0.08) p.glyphs[Math.floor(Math.random() * n)] = pickOne(GLYPHS);
+          break;
+        }
+        case 'glyph': {
+          ctx.font = p.font;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.fillStyle = p.c;
+          ctx.fillText(p.ch, p.x, p.y);
+          ctx.globalCompositeOperation = 'source-over';
+          if (Math.random() < 0.1) p.ch = pickOne(GLYPHS);
+          break;
+        }
+      }
+    }
+
+    // Spokojne tło (w banerze i za treścią strony): cząsteczki krążą, nie lądują i nie reagują na kursor.
+    function particles(canvas, theme, { ambient = 0, colors: own = null, onFlash = null } = {}) {
       const ctx = canvas.getContext('2d');
       const colors = own ?? FX_COLORS[theme] ?? FX_COLORS.confetti;
+      const env = { w: 0, h: 0, onFlash, lens: null };
       let w = 0, h = 0, raf = 0, last = 0, list = [], dead = false, filled = false;
-      let strike = null; // miejsce uderzenia pioruna (iskry z wybuchu „burzy”)
       const fit = () => {
         const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-        w = canvas.clientWidth;
-        h = canvas.clientHeight;
+        w = env.w = canvas.clientWidth;
+        h = env.h = canvas.clientHeight;
         canvas.width = Math.max(1, Math.round(w * dpr));
         canvas.height = Math.max(1, Math.round(h * dpr));
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       };
-      const radial = (x, y, speed, extra) => { const a = rnd(0, TAU), v = rnd(...speed); return { x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, ...extra }; };
-      const font = (px) => `700 ${px}px ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace`;
-      // Nowa cząsteczka: burst = wybuch, inaczej spokojne tło. side — strona „armatki”, i — numer w wybuchu.
-      const make = (burst, side = 0, i = 0) => {
-        switch (theme) {
-          case 'fire':
-            return burst
-              ? { t: 'ember', x: rnd(0, w), y: h + rnd(0, 30), vx: rnd(-1.6, 1.6), vy: rnd(-14, -5), g: 0.1, drag: 0.985, r: rnd(1.4, 3.8), life: rnd(70, 150) }
-              : { t: 'ember', x: rnd(0, w), y: h + rnd(0, 40), vx: rnd(-0.3, 0.3), vy: rnd(-1.8, -0.5), g: -0.004, r: rnd(0.8, 2.6), life: rnd(220, 460), sway: rnd(0, TAU), amp: rnd(0.2, 0.7) };
-          case 'snow':
-            return burst
-              ? { t: 'flake', x: rnd(-w * 0.4, w), y: rnd(-h * 0.5, -10), vx: rnd(2, 6.5), vy: rnd(2, 5.5), drag: 0.998, r: rnd(1.5, 4.2), a: rnd(0.6, 1), life: rnd(170, 280) }
-              : { t: 'flake', x: rnd(0, w), y: rnd(-40, -8), vx: rnd(-0.25, 0.25), vy: rnd(0.35, 1.2), r: rnd(0.8, 3.2), a: rnd(0.35, 0.9), sway: rnd(0, TAU), amp: rnd(0.2, 0.7) };
-          case 'stars':
-            if (!burst) return { t: 'twinkle', x: rnd(0, w), y: rnd(0, h), vx: 0, vy: 0, r: rnd(0.6, 2.3), ph: rnd(0, TAU), sp: rnd(0.02, 0.07), life: rnd(400, 900) };
-            return Math.random() < 0.22
-              ? { t: 'comet', x: rnd(w * 0.3, w * 1.15), y: rnd(-60, h * 0.35), vx: rnd(-15, -9), vy: rnd(5, 9), life: rnd(45, 80) }
-              : radial(w / 2, h * 0.3, [2, 10], { t: 'spark', g: 0.06, drag: 0.975, r: rnd(1.5, 3.6), life: rnd(80, 160) });
-          case 'neon':
-            if (!burst) return { t: 'shape', x: rnd(0, w), y: h + rnd(0, 50), vx: rnd(-0.2, 0.2), vy: rnd(-0.9, -0.3), s: rnd(3, 8), k: Math.floor(rnd(0, 3)), life: rnd(300, 700), sway: rnd(0, TAU), amp: rnd(0.2, 0.5), vr: rnd(-0.03, 0.03) };
-            return Math.random() < 0.07
-              ? { t: 'ring', x: w / 2, y: h * 0.4, vx: 0, vy: 0, r: rnd(4, 24), grow: rnd(5, 9), life: rnd(60, 95) }
-              : radial(w / 2, h * 0.4, [3, 12], { t: 'shape', g: 0.05, drag: 0.97, s: rnd(4, 9), k: Math.floor(rnd(0, 3)), life: rnd(70, 140), vr: rnd(-0.15, 0.15) });
-          case 'hearts':
-            // Serduszka unoszą się jak baloniki; wybuch — rozlatują się z środka i opadają.
-            return burst
-              ? radial(w / 2, h * 0.42, [3, 13], { t: 'heart', g: 0.12, drag: 0.976, s: rnd(5, 11), rot: rnd(-0.4, 0.4), vr: rnd(-0.06, 0.06), sway: rnd(0, TAU), life: rnd(100, 180) })
-              : { t: 'heart', x: rnd(0, w), y: h + rnd(0, 40), vx: 0, vy: rnd(-1.1, -0.35), s: rnd(3.5, 8), rot: rnd(-0.3, 0.3), sway: rnd(0, TAU), amp: rnd(0.3, 0.8), life: rnd(320, 700) };
-          case 'halloween': {
-            // Nietoperze przelatują przez ekran, w górę unoszą się duszkowe ogniki; wybuch — dynie i nietoperze.
-            if (burst) {
-              const k = Math.random();
-              return k < 0.25
-                ? radial(w / 2, h * 0.42, [3, 11], { t: 'pumpkin', g: 0.14, drag: 0.978, s: rnd(7, 13), rot: rnd(-0.5, 0.5), vr: rnd(-0.08, 0.08), life: rnd(110, 190), ...(own ? {} : { c: pickOne(['#ff7a18', '#ff8a2a', '#f26b0f']) }) })
-                : k < 0.5
-                  ? radial(w / 2, h * 0.42, [4, 12], { t: 'bat', drag: 0.985, s: rnd(5, 10), flap: rnd(0.25, 0.4), sway: rnd(0, TAU), life: rnd(90, 160) })
-                  : radial(w / 2, h * 0.42, [2, 10], { t: 'spark', g: 0.05, drag: 0.975, r: rnd(1.4, 3.4), life: rnd(70, 140) });
-            }
-            if (Math.random() < 0.3) {
-              const dir = Math.random() < 0.5 ? 1 : -1;
-              return { t: 'bat', x: dir > 0 ? -30 : w + 30, y: rnd(h * 0.05, h * 0.75), vx: dir * rnd(0.8, 2), vy: rnd(-0.2, 0.2), s: rnd(4, 8), flap: rnd(0.18, 0.32), sway: rnd(0, TAU), bob: rnd(0.3, 0.8) };
-            }
-            return { t: 'ember', x: rnd(0, w), y: h + rnd(0, 40), vx: rnd(-0.3, 0.3), vy: rnd(-1.2, -0.35), g: -0.003, r: rnd(1, 2.8), life: rnd(240, 520), sway: rnd(0, TAU), amp: rnd(0.3, 0.9) };
-          }
-          case 'leaves':
-            // Liście spadają, kręcąc się; wybuch — podmuch wiatru z boku ekranu.
-            return burst
-              ? { t: 'leaf', x: side ? w + rnd(10, w * 0.3) : -rnd(10, w * 0.3), y: rnd(-h * 0.1, h * 0.85), vx: (side ? -1 : 1) * rnd(5, 14), vy: rnd(-3, 2), g: 0.05, drag: 0.99, s: rnd(6, 12), vr: rnd(-0.2, 0.2), sway: rnd(0, TAU), life: rnd(150, 260) }
-              : { t: 'leaf', x: rnd(0, w), y: rnd(-50, -10), vx: rnd(-0.5, 0.3), vy: rnd(0.5, 1.3), s: rnd(5, 10), vr: rnd(-0.04, 0.04), sway: rnd(0, TAU), amp: rnd(0.6, 1.4) };
-          case 'sakura':
-            // Płatki wiśni niesione wiatrem w prawo; wybuch — wir płatków i kwiatków.
-            return burst
-              ? radial(w / 2, h * 0.4, [2, 10], { t: Math.random() < 0.18 ? 'blossom' : 'petal', g: 0.04, drag: 0.985, s: rnd(5, 10), vr: rnd(-0.15, 0.15), sway: rnd(0, TAU), amp: rnd(0.3, 0.8), life: rnd(150, 250) })
-              : { t: Math.random() < 0.1 ? 'blossom' : 'petal', x: rnd(-100, w), y: rnd(-40, -8), vx: rnd(0.3, 0.9), vy: rnd(0.4, 1), s: rnd(3.5, 7), vr: rnd(-0.05, 0.05), sway: rnd(0, TAU), amp: rnd(0.4, 1) };
-          case 'coins':
-            // Monety spadają, obracając się, a obok migoczą złote iskierki; wybuch — fontanna monet z dołu ekranu.
-            if (burst) {
-              return Math.random() < 0.72
-                ? { t: 'coin', x: w / 2 + rnd(-w * 0.18, w * 0.18), y: h + 10, vx: rnd(-7, 7), vy: rnd(-21, -10), g: 0.42, drag: 0.99, s: rnd(6, 11), spin: rnd(0.08, 0.25), sway: rnd(0, TAU), rot: 0, life: rnd(150, 240) }
-                : radial(w / 2, h * 0.75, [3, 11], { t: 'spark', g: 0.08, drag: 0.975, r: rnd(1.4, 3.2), life: rnd(60, 120) });
-            }
-            return Math.random() < 0.45
-              ? { t: 'coin', x: rnd(0, w), y: rnd(-40, -8), vx: rnd(-0.2, 0.2), vy: rnd(0.6, 1.5), s: rnd(3.5, 7), spin: rnd(0.04, 0.12), sway: rnd(0, TAU), rot: 0 }
-              : { t: 'twinkle', x: rnd(0, w), y: rnd(0, h), vx: 0, vy: 0, r: rnd(0.6, 2), ph: rnd(0, TAU), sp: rnd(0.03, 0.08), life: rnd(300, 700) };
-          case 'storm':
-            // Ukośny deszcz i co jakiś czas błyskawica; wybuch — uderzenie pioruna z iskrami.
-            if (burst) {
-              if (i < 3) {
-                const paths = boltPaths(w, h);
-                if (i === 0) strike = paths[0].slice(-2);
-                return { t: 'bolt', x: w / 2, y: 0, vx: 0, vy: 0, paths, flash: i === 0 ? 0.12 : 0, instant: true, life: rnd(26, 40) + i * 6, age: -i * 7 };
-              }
-              const [sx, sy] = strike ?? [w / 2, h / 2];
-              return radial(sx, sy, [2, 10], { t: 'spark', g: 0.08, drag: 0.97, r: rnd(1.2, 3), life: rnd(50, 110) });
-            }
-            return { t: 'rain', x: rnd(-w * 0.05, w * 1.15), y: rnd(-60, -8), vx: rnd(-2.6, -1.4), vy: rnd(9, 15), len: rnd(8, 18), a: rnd(0.25, 0.6) };
-          case 'bubbles':
-            // Bańki unoszą się, kołysząc, i pękają na końcu; wybuch — chmura baniek z dołu ekranu.
-            return burst
-              ? { t: 'bubble', x: rnd(0, w), y: h + rnd(0, 60), vx: rnd(-1, 1), vy: rnd(-9, -3), g: -0.02, drag: 0.985, r: rnd(4, 16), sway: rnd(0, TAU), amp: rnd(0.3, 0.9), life: rnd(80, 200) }
-              : { t: 'bubble', x: rnd(0, w), y: h + rnd(0, 40), vx: 0, vy: rnd(-1.2, -0.4), r: rnd(3, 12), sway: rnd(0, TAU), amp: rnd(0.3, 0.9), life: rnd(300, 800) };
-          case 'matrix': {
-            // Spadające kolumny znaków; wybuch — rozpryśnięte znaki.
-            if (burst) return radial(w / 2, h * 0.42, [3, 12], { t: 'glyph', ch: pickOne(GLYPHS), font: font(Math.round(rnd(12, 22))), g: 0.05, drag: 0.975, life: rnd(60, 130) });
-            const size = pickOne([11, 13, 15]);
-            const len = Math.floor(rnd(5, 13));
-            return { t: 'code', x: Math.round(rnd(0, w) / 14) * 14, y: rnd(-h * 0.25, -10), vx: 0, vy: rnd(1.6, 4.2), size, font: font(size), glyphs: Array.from({ length: len }, () => pickOne(GLYPHS)), tail: len * size };
-          }
-          default:
-            return burst
-              ? { t: 'paper', x: side ? w + 10 : -10, y: h * rnd(0.55, 0.9), vx: (side ? -1 : 1) * rnd(4, 14), vy: rnd(-18, -7), g: 0.32, drag: 0.982, life: rnd(160, 260), vr: rnd(-0.3, 0.3), s: rnd(6, 10) }
-              : Math.random() < 0.07
-                ? { t: 'balloon', x: rnd(0, w), y: h + rnd(20, 50), vx: 0, vy: rnd(-1.2, -0.55), s: rnd(8, 14), sway: rnd(0, TAU), amp: rnd(0.3, 0.6) }
-                : { t: 'paper', x: rnd(0, w), y: rnd(-60, -10), vx: rnd(-0.4, 0.4), vy: rnd(0.7, 1.6), sway: rnd(0, TAU), amp: rnd(0.3, 0.9), vr: rnd(-0.05, 0.05), s: rnd(5, 9) };
-        }
-      };
-      // Kliknięcie: kilka małych cząsteczek efektu z miejsca kliknięcia.
-      const makePop = (x, y) => {
-        const base = (t, extra) => radial(x, y, [1.5, 5.5], { t, g: 0.12, drag: 0.95, life: rnd(35, 70), ...extra });
-        switch (theme) {
-          case 'fire': return base('ember', { r: rnd(1, 2.6), g: -0.05 });
-          case 'snow': return base('flake', { r: rnd(1, 2.6), g: 0.04 });
-          case 'stars': return base('spark', { r: rnd(1, 2.4), g: 0.03 });
-          case 'neon': return base('shape', { s: rnd(2, 4.5), k: Math.floor(rnd(0, 3)), vr: rnd(-0.2, 0.2), g: 0.05 });
-          case 'hearts': return base('heart', { s: rnd(3, 6), sway: rnd(0, TAU), g: -0.04, rot: rnd(-0.4, 0.4) });
-          case 'halloween': return Math.random() < 0.3 ? base('bat', { s: rnd(3, 5), flap: rnd(0.3, 0.45), sway: rnd(0, TAU), g: -0.03 }) : base('spark', { r: rnd(1, 2.4) });
-          case 'leaves': return base('leaf', { s: rnd(3, 6), sway: rnd(0, TAU), vr: rnd(-0.2, 0.2), g: 0.06 });
-          case 'sakura': return base(Math.random() < 0.2 ? 'blossom' : 'petal', { s: rnd(3, 5.5), sway: rnd(0, TAU), vr: rnd(-0.2, 0.2), g: 0.05 });
-          case 'coins': return base('coin', { s: rnd(3, 5.5), spin: rnd(0.1, 0.3), sway: rnd(0, TAU), rot: 0, g: 0.22, drag: 0.97, vy: rnd(-7, -3) });
-          case 'storm': return base('spark', { r: rnd(1, 2.4), g: 0.08 });
-          case 'bubbles': return base('bubble', { r: rnd(2, 6), g: -0.05, sway: rnd(0, TAU), amp: 0.4, life: rnd(40, 80) });
-          case 'matrix': return base('glyph', { ch: pickOne(GLYPHS), font: font(Math.round(rnd(10, 16))), g: 0.04 });
-          default: return base('paper', { s: rnd(3, 6), vr: rnd(-0.3, 0.3), g: 0.15 });
-        }
-      };
       const add = (p, amb) => list.push({ g: 0, drag: 1, life: Infinity, rot: rnd(0, TAU), vr: 0, c: pickOne(colors), age: 0, amb, ...p });
       // Tło strony: liczba cząsteczek zależna od wielkości ekranu; baner: stała.
       const target = () => Math.round(ambient * (canvas.classList.contains('ev-canvas') ? 1 : Math.min(1.3, Math.max(0.45, (w * h) / (1366 * 768)))));
-      function fillAmbient(dt = 1) {
+      function fill(dt = 1) {
         let have = 0;
         for (const p of list) if (p.amb) have += 1;
-        const want = target();
-        for (let i = have; i < want; i++) {
-          const p = make(false);
+        for (let i = have, want = target(); i < want; i++) {
+          const p = fxSpawn(theme, 'ambient', { w, h, own });
           if (!filled && p.t !== 'twinkle') {
             p.y = rnd(0, h);
             if (p.t === 'bat') p.x = rnd(0, w);
@@ -2617,222 +2887,9 @@
           add(p, true);
         }
         filled = true;
-        // Burza: co kilka sekund błyskawica w tle (słaby błysk, bez migotania).
+        // Burza: co kilka sekund błyskawica w tle (słaby błysk, bez migotania). Gwiazdy: spadająca gwiazda.
         if (theme === 'storm' && Math.random() < dt / 480) add({ t: 'bolt', x: w / 2, y: 0, vx: 0, vy: 0, paths: boltPaths(w, h), flash: 0.06, instant: true, life: rnd(26, 38) }, false);
-        // Gwiazdy: co kilka sekund spadająca gwiazda.
         if (theme === 'stars' && Math.random() < dt / 560) add({ t: 'comet', x: rnd(w * 0.3, w * 1.1), y: rnd(-40, h * 0.4), vx: rnd(-14, -8), vy: rnd(4, 8), life: rnd(50, 90) }, false);
-      }
-      // Kształt z pamięci podręcznej, obrócony i ściśnięty (fx, fy — „obrót w 3D”).
-      function drawSprite(p, kind, size, fx = 1, fy = 1) {
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rot);
-        ctx.scale(fx, fy);
-        ctx.drawImage(sprite(kind, p.c), -size / 2, -size / 2, size, size);
-        ctx.restore();
-      }
-      function draw(p, alpha) {
-        ctx.globalAlpha = alpha;
-        switch (p.t) {
-          case 'paper': {
-            ctx.save();
-            ctx.translate(p.x, p.y);
-            ctx.rotate(p.rot);
-            ctx.scale(1, Math.cos(p.age * 0.11 + (p.sway ?? 0)));
-            ctx.fillStyle = p.c;
-            ctx.fillRect(-p.s / 2, -p.s * 0.7, p.s, p.s * 1.4);
-            ctx.restore();
-            break;
-          }
-          case 'ember':
-          case 'spark': {
-            // Iskry migoczą; „lighter” — nakładające się świecą mocniej.
-            if (p.t === 'ember') ctx.globalAlpha = alpha * (0.7 + 0.3 * Math.sin(p.age * 0.35 + (p.sway ?? p.rot)));
-            ctx.globalCompositeOperation = 'lighter';
-            const size = p.r * 7;
-            ctx.drawImage(glowSprite(p.c), p.x - size / 2, p.y - size / 2, size, size);
-            ctx.globalCompositeOperation = 'source-over';
-            break;
-          }
-          case 'flake': {
-            const size = p.r * 3.6;
-            ctx.drawImage(glowSprite(p.c), p.x - size / 2, p.y - size / 2, size, size);
-            break;
-          }
-          case 'twinkle': {
-            ctx.globalAlpha = alpha * (0.3 + 0.7 * Math.abs(Math.sin(p.age * p.sp + p.ph)));
-            ctx.fillStyle = p.c;
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.fill();
-            if (p.r > 1.5) {
-              ctx.strokeStyle = p.c;
-              ctx.lineWidth = 0.7;
-              ctx.beginPath();
-              ctx.moveTo(p.x - p.r * 3.5, p.y); ctx.lineTo(p.x + p.r * 3.5, p.y);
-              ctx.moveTo(p.x, p.y - p.r * 3.5); ctx.lineTo(p.x, p.y + p.r * 3.5);
-              ctx.stroke();
-            }
-            break;
-          }
-          case 'comet': {
-            const tail = ctx.createLinearGradient(p.x, p.y, p.x - p.vx * 7, p.y - p.vy * 7);
-            tail.addColorStop(0, '#ffffff');
-            tail.addColorStop(1, 'rgba(255, 255, 255, 0)');
-            ctx.strokeStyle = tail;
-            ctx.lineWidth = 2;
-            ctx.lineCap = 'round';
-            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 7, p.y - p.vy * 7); ctx.stroke();
-            break;
-          }
-          case 'shape': {
-            ctx.save();
-            ctx.translate(p.x, p.y);
-            ctx.rotate(p.rot);
-            ctx.strokeStyle = p.c;
-            ctx.lineWidth = 1.6;
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = p.c;
-            ctx.beginPath();
-            if (p.k === 0) ctx.arc(0, 0, p.s, 0, TAU);
-            else if (p.k === 1) ctx.rect(-p.s, -p.s, p.s * 2, p.s * 2);
-            else { ctx.moveTo(0, -p.s * 1.15); ctx.lineTo(p.s, p.s * 0.75); ctx.lineTo(-p.s, p.s * 0.75); ctx.closePath(); }
-            ctx.stroke();
-            ctx.restore();
-            break;
-          }
-          case 'ring': {
-            ctx.save();
-            ctx.strokeStyle = p.c;
-            ctx.lineWidth = p.lw ?? 2.2;
-            ctx.shadowBlur = p.lw ? 0 : 16;
-            ctx.shadowColor = p.c;
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.stroke();
-            ctx.restore();
-            break;
-          }
-          case 'heart':
-            drawSprite(p, 'heart', p.s * 2.6 * (1 + 0.08 * Math.sin(p.age * 0.12 + p.sway)));
-            break;
-          case 'leaf':
-            drawSprite(p, 'leaf', p.s * 2.6, Math.cos(p.age * 0.06 + p.sway));
-            break;
-          case 'petal':
-          case 'blossom':
-            drawSprite(p, p.t, p.s * (p.t === 'blossom' ? 3.2 : 2.4), 1, Math.cos(p.age * 0.08 + p.sway));
-            break;
-          case 'coin':
-            drawSprite(p, 'coin', p.s * 2.4, Math.cos(p.age * p.spin + p.sway));
-            break;
-          case 'pumpkin':
-            drawSprite(p, 'pumpkin', p.s * 2.6);
-            break;
-          case 'bubble': {
-            const size = p.r * 2;
-            ctx.drawImage(sprite('bubble', p.c), p.x - size / 2, p.y - size / 2, size, size);
-            break;
-          }
-          case 'bat': {
-            // Sylwetka z poświatą w kolorze cząsteczki; skrzydła machają (skalowanie w pionie).
-            const flap = Math.sin(p.age * p.flap + p.sway);
-            const s = p.s;
-            ctx.save();
-            ctx.translate(p.x, p.y);
-            if (p.vx < 0) ctx.scale(-1, 1);
-            ctx.fillStyle = '#140a1f';
-            ctx.shadowBlur = 9;
-            ctx.shadowColor = p.c;
-            ctx.beginPath();
-            for (const dir of [-1, 1]) {
-              ctx.moveTo(0, 0);
-              ctx.quadraticCurveTo(dir * s * 0.9, -s * 1.3 * flap, dir * s * 2, -s * 0.7 * flap);
-              ctx.quadraticCurveTo(dir * s * 1.5, s * 0.1, dir * s * 1.2, s * 0.35);
-              ctx.quadraticCurveTo(dir * s * 0.8, s * 0.05, dir * s * 0.55, s * 0.4);
-              ctx.quadraticCurveTo(dir * s * 0.3, s * 0.1, 0, s * 0.45);
-            }
-            ctx.fill();
-            ctx.beginPath(); ctx.ellipse(0, s * 0.1, s * 0.32, s * 0.5, 0, 0, TAU); ctx.fill();
-            ctx.restore();
-            break;
-          }
-          case 'balloon': {
-            // Balonik na sznurku, lekko się kołysze.
-            const s = p.s;
-            ctx.save();
-            ctx.translate(p.x, p.y);
-            ctx.rotate(Math.sin(p.age * 0.03 + p.sway) * 0.12);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-            ctx.lineWidth = 0.8;
-            ctx.beginPath(); ctx.moveTo(0, s * 1.15); ctx.quadraticCurveTo(s * 0.4, s * 2, 0, s * 2.8); ctx.stroke();
-            ctx.fillStyle = p.c;
-            ctx.beginPath(); ctx.ellipse(0, 0, s * 0.82, s, 0, 0, TAU); ctx.fill();
-            ctx.beginPath(); ctx.moveTo(-s * 0.16, s * 1.12); ctx.lineTo(s * 0.16, s * 1.12); ctx.lineTo(0, s * 0.95); ctx.fill();
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-            ctx.beginPath(); ctx.ellipse(-s * 0.3, -s * 0.35, s * 0.18, s * 0.3, -0.5, 0, TAU); ctx.fill();
-            ctx.restore();
-            break;
-          }
-          case 'rain': {
-            const k = p.len / Math.hypot(p.vx, p.vy);
-            ctx.strokeStyle = p.c;
-            ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * k, p.y - p.vy * k); ctx.stroke();
-            break;
-          }
-          case 'bolt': {
-            // Migotanie: jest — znika na chwilę — wraca i gaśnie.
-            if (p.age < 0 || (p.age > 4 && p.age < 7)) break;
-            if (p.flash && !p.lit) {
-              p.lit = true;
-              onFlash?.();
-            }
-            const k = alpha * (p.age > 10 ? Math.max(0, 1 - (p.age - 10) / (p.life - 10)) : 1);
-            if (p.flash && p.age < 10) {
-              ctx.globalAlpha = k * p.flash;
-              ctx.fillStyle = '#dfe6ff';
-              ctx.fillRect(0, 0, w, h);
-            }
-            ctx.globalCompositeOperation = 'lighter';
-            ctx.lineJoin = 'round';
-            for (const [lw, a, color] of [[8, 0.16, p.c], [3.2, 0.45, p.c], [1.3, 1, '#ffffff']]) {
-              ctx.globalAlpha = k * a;
-              ctx.strokeStyle = color;
-              ctx.lineWidth = lw;
-              ctx.beginPath();
-              for (const seg of p.paths) {
-                ctx.moveTo(seg[0], seg[1]);
-                for (let j = 2; j < seg.length; j += 2) ctx.lineTo(seg[j], seg[j + 1]);
-              }
-              ctx.stroke();
-            }
-            ctx.globalCompositeOperation = 'source-over';
-            break;
-          }
-          case 'code': {
-            ctx.font = p.font;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            const n = p.glyphs.length;
-            for (let j = 0; j < n; j++) {
-              const gy = p.y - j * p.size;
-              if (gy < -p.size || gy > h + p.size) continue;
-              ctx.globalAlpha = alpha * (j === 0 ? 1 : (1 - j / n) * 0.7);
-              ctx.fillStyle = j === 0 ? '#eafff2' : p.c;
-              ctx.fillText(p.glyphs[j], p.x, gy);
-            }
-            if (Math.random() < 0.08) p.glyphs[Math.floor(Math.random() * n)] = pickOne(GLYPHS);
-            break;
-          }
-          case 'glyph': {
-            ctx.font = p.font;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.globalCompositeOperation = 'lighter';
-            ctx.fillStyle = p.c;
-            ctx.fillText(p.ch, p.x, p.y);
-            ctx.globalCompositeOperation = 'source-over';
-            if (Math.random() < 0.1) p.ch = pickOne(GLYPHS);
-            break;
-          }
-        }
       }
       function frame(now) {
         raf = 0;
@@ -2857,17 +2914,15 @@
             if (p.t === 'bubble' && p.age > p.life && p.y > 0) born.push({ t: 'ring', x: p.x, y: p.y, vx: 0, vy: 0, r: p.r, grow: 1.4, lw: 1.2, c: p.c, a: 0.8, life: 14 });
             return false;
           }
-          // Błyskawica sama decyduje o jasności (migotanie), pęknięcie bańki gaśnie szybko.
           const fadeIn = p.instant ? 1 : Math.min(1, p.age / (p.amb ? 30 : 6));
           const fadeOut = p.instant || !Number.isFinite(p.life) ? 1 : Math.min(1, (p.life - p.age) / (p.lw ? 14 : 40));
-          draw(p, Math.max(0, Math.min(fadeIn, fadeOut)) * (p.a ?? 1));
+          fxDraw(ctx, p, Math.max(0, Math.min(fadeIn, fadeOut)) * (p.a ?? 1), env);
           return true;
         });
         for (const p of born) add(p, false);
         ctx.globalAlpha = 1;
-        if (ambient) fillAmbient(dt);
-        if (list.length) raf = requestAnimationFrame(frame);
-        else if (!ambient) { destroy(); onDone?.(); }
+        fill(dt);
+        raf = requestAnimationFrame(frame);
       }
       const run = () => { if (!raf && !dead && !document.hidden) { last = 0; raf = requestAnimationFrame(frame); } };
       const onVisible = () => (document.hidden ? (cancelAnimationFrame(raf), (raf = 0)) : run());
@@ -2882,26 +2937,1170 @@
       fit();
       ro.observe(canvas);
       document.addEventListener('visibilitychange', onVisible);
-      if (ambient) { fillAmbient(); run(); }
+      if (ambient) { fill(); run(); }
+      return { destroy };
+    }
+
+    // ---------- Świat nad stroną: cząsteczki lądują na kartach, zbierają się i reagują na kursor ----------
+    // Kursor: pozycja i prędkość (px na klatkę) oraz krótki ślad (neon).
+    const pointer = { x: -1e4, y: -1e4, vx: 0, vy: 0, speed: 0, t: 0, on: false, trail: [] };
+    addEventListener('pointermove', (event) => {
+      const t = performance.now();
+      if (pointer.on && t - pointer.t < 150) {
+        const k = 16.67 / Math.max(4, t - pointer.t);
+        pointer.vx = pointer.vx * 0.35 + (event.clientX - pointer.x) * k * 0.65;
+        pointer.vy = pointer.vy * 0.35 + (event.clientY - pointer.y) * k * 0.65;
+      }
+      pointer.x = event.clientX;
+      pointer.y = event.clientY;
+      pointer.t = t;
+      pointer.on = true;
+      const lastPt = pointer.trail.at(-1);
+      if (!lastPt || Math.abs(lastPt.x - pointer.x) + Math.abs(lastPt.y - pointer.y) > 3) {
+        pointer.trail.push({ x: pointer.x, y: pointer.y, t });
+        if (pointer.trail.length > 90) pointer.trail.shift();
+      }
+    }, { passive: true });
+    function pointerOff() {
+      pointer.on = false;
+      pointer.x = pointer.y = -1e4;
+      pointer.vx = pointer.vy = pointer.speed = 0;
+      pointer.trail.length = 0;
+    }
+    document.documentElement.addEventListener('pointerleave', pointerOff);
+    addEventListener('blur', pointerOff);
+    addEventListener('pointercancel', pointerOff);
+    addEventListener('pointerup', (event) => { if (event.pointerType !== 'mouse') pointerOff(); });
+
+    // Co się dzieje po spadnięciu: śnieg się zbiera (mapa wysokości), liście, konfetti i płatki leżą (i dają się
+    // strącić kursorem), monety i dynie odbijają się i układają w kupki, deszcz się rozpryskuje.
+    const LAND = { flake: 'pile', leaf: 'rest', paper: 'rest', petal: 'rest', blossom: 'rest', coin: 'bounce', pumpkin: 'bounce', rain: 'splash' };
+    // Opór powietrza: prędkość opadania lekkich cząsteczek (px na klatkę) — płatki i liście szybują.
+    const TERM = { flake: 1, leaf: 1.5, paper: 1.7, petal: 1.05, blossom: 1.2 };
+    // Grubość leżącej cząsteczki (px) — z tego rośnie kupka.
+    const THICK = { leaf: 2.4, paper: 1.3, petal: 1.1, blossom: 1.8, coin: 2.6 };
+    const WIND = { snow: 0.15, leaves: 0.35, sakura: 0.55, confetti: 0.05, hearts: 0.05, bubbles: 0.05 };
+    // Ile cząsteczek w powietrzu nad stroną (intensywność „normalne”, ekran 1366×768).
+    const NEAR = { snow: 110, leaves: 16, sakura: 26, confetti: 20, coins: 6, hearts: 12, halloween: 10, stars: 80, neon: 10, storm: 110, bubbles: 18, matrix: 9, fire: 0 };
+    const BIN = 4;
+    const PILE_BIN = 8;
+    const PAD = 10;
+    const SLOPE = 1.4;
+    const KERNEL = [0.06, 0.12, 0.18, 0.28, 0.18, 0.12, 0.06];
+
+    // Wygładzanie śniegu: różnica wysokości sąsiednich słupków najwyżej SLOPE (zsypuje się na boki). edges — przy
+    // brzegach karty śnieg się nie utrzyma i zsuwa w dół (spill: [lewy, prawy] w px²); nad max — nadmiar też spada.
+    function relaxSnow(s, max, edges, spill) {
+      const n = s.length;
+      for (let pass = 0; pass < 2; pass++) {
+        for (let i = 0; i < n - 1; i++) {
+          const d = s[i] - s[i + 1];
+          if (d > SLOPE) {
+            const m = (d - SLOPE) * 0.5;
+            s[i] -= m;
+            s[i + 1] += m;
+          } else if (d < -SLOPE) {
+            const m = (-d - SLOPE) * 0.5;
+            s[i + 1] -= m;
+            s[i] += m;
+          }
+        }
+      }
+      // Osiadanie: każdy słupek trochę wyrównuje się z sąsiadami (ilość śniegu bez zmian).
+      let prev = s[0];
+      for (let i = 1; i < n - 1; i++) {
+        const cur = s[i];
+        const m = (prev + s[i + 1]) * 0.5 - cur;
+        s[i] = cur + m * 0.08;
+        prev = cur;
+      }
+      if (edges) {
+        const edge = SLOPE * 0.8;
+        if (s[0] > edge) { if (spill) spill[0] += (s[0] - edge) * BIN; s[0] = edge; }
+        if (s[n - 1] > edge) { if (spill) spill[1] += (s[n - 1] - edge) * BIN; s[n - 1] = edge; }
+      }
+      for (let i = 0; i < n; i++) {
+        if (s[i] <= max) continue;
+        if (spill && edges) spill[i < n / 2 ? 0 : 1] += (s[i] - max) * BIN * 0.5;
+        s[i] = max;
+      }
+    }
+    const sample = (arr, step, x) => {
+      const i = clamp(x / step, 0, arr.length - 1);
+      const a = Math.floor(i);
+      const b = Math.min(arr.length - 1, a + 1);
+      return arr[a] + (arr[b] - arr[a]) * (i - a);
+    };
+
+    function world(theme, { level = 1, kk = 0.65, colors: own = null } = {}) {
+      const colors = own ?? FX_COLORS[theme] ?? FX_COLORS.confetti;
+      const canvas = document.createElement('canvas');
+      canvas.className = 'fx-world';
+      canvas.setAttribute('aria-hidden', 'true');
+      document.body.append(canvas);
+      const ctx = canvas.getContext('2d');
+      const env = { w: 0, h: 0, onFlash: flashPage, lens: null };
+      let w = 0, h = 0, raf = 0, last = 0, dead = false, frameNo = 0, now = 0, acc = 0, stepping = false;
+      let list = [];
+      const pending = [];
+      const snowy = theme === 'snow';
+      const piles = ['leaves', 'confetti', 'sakura', 'coins', 'halloween'].includes(theme);
+      const needSurfaces = snowy || piles || theme === 'storm';
+      const capMax = snowy ? 5 + 15 * kk : 8 + 12 * kk;
+      const groundMax = snowy ? 8 + 24 * kk : 14 + 20 * kk;
+      const accent = own ? own[0] : null;
+      const snowTop = accent ? hexMix('#ffffff', accent, 0.12) : '#ffffff';
+      const snowBottom = accent ? hexMix('#d5e4f7', accent, 0.3) : '#d5e4f7';
+      const wind = { base: WIND[theme] ?? 0, x: WIND[theme] ?? 0, target: WIND[theme] ?? 0, next: rnd(240, 520), until: 0 };
+      const REST_MAX = Math.round(240 + 260 * kk);
+      let restCount = 0;
+      let fireWind = 0;
+      let umbrella = 0; // ile kropel ostatnio uderzyło w parasol (gaśnie z czasem)
+
+      function add(p) {
+        const q = { g: 0, drag: 1, life: Infinity, rot: rnd(0, TAU), vr: 0, c: pickOne(colors), age: 0, ...p };
+        if (!q.noLand && LAND[q.t] && q.land === undefined) {
+          q.land = LAND[q.t];
+          if (q.land !== 'splash') q.life = Infinity;
+        }
+        (stepping ? pending : list).push(q);
+        return q;
+      }
+
+      // ---- Powierzchnie: górne krawędzie elementów strony i dół ekranu ----
+      // Każda ma własne płótno przypięte do elementu (w warstwie najbliższego przodka „sticky” albo w <main>), więc
+      // śnieg i liście przewijają się razem ze stroną bez opóźnienia. Rysowane tylko po zmianie.
+      const SEL = EMBED ? '.event' : '.banner, .event, .toolbar, .table, .side .card, .top3 .pod-col';
+      const INSET = 7;
+      const surfMap = new Map();
+      const layers = new Map();
+      let els = [];
+      const surfs = [];
+      function anchorOf(el) {
+        if (getComputedStyle(el).position === 'sticky') return el;
+        for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+          const pos = getComputedStyle(a).position;
+          if (pos === 'sticky' || pos === 'fixed') return a;
+        }
+        return document.querySelector('main');
+      }
+      function layerOf(anchor) {
+        let layer = layers.get(anchor);
+        if (!layer || !layer.isConnected) {
+          layer = document.createElement('div');
+          layer.className = 'fx-caps';
+          layer.setAttribute('aria-hidden', 'true');
+          anchor.append(layer);
+          layers.set(anchor, layer);
+        }
+        return layer;
+      }
+      function makeSurface(el) {
+        const cv = document.createElement('canvas');
+        cv.className = el ? 'fx-cap' : 'fx-ground';
+        cv.setAttribute('aria-hidden', 'true');
+        const st = { el, cv, cx: cv.getContext('2d'), w: 0, ch: 0, x: 0, y: 0, max: el ? capMax : groundMax, snow: null, pile: null, rest: [], dirty: true, hot: 0, spill: [0, 0], anchor: el ? anchorOf(el) : null, pos: '', dpr: 1 };
+        if (!el) document.body.append(cv);
+        return st;
+      }
+      const ground = makeSurface(null);
+      function sizeSurface(st, width) {
+        const old = st.w;
+        st.w = width;
+        st.ch = Math.ceil(st.max + (piles ? 20 : 10));
+        st.dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const cssW = width + PAD * 2;
+        st.cv.width = Math.round(cssW * st.dpr);
+        st.cv.height = Math.round(st.ch * st.dpr);
+        st.cv.style.width = `${cssW}px`;
+        st.cv.style.height = `${st.ch}px`;
+        if (!st.el) st.cv.style.left = `${-PAD}px`;
+        if (snowy) {
+          const n = Math.max(2, Math.ceil(width / BIN) + 1);
+          const next = new Float32Array(n);
+          if (st.snow && old > 0) {
+            for (let i = 0; i < n; i++) next[i] = sample(st.snow, BIN * (old / width), i * BIN);
+          } else {
+            // Na start już trochę napadało: równa warstwa z zaokrąglonymi brzegami.
+            const base = st.max * rnd(0.4, 0.52);
+            const ph = rnd(0, TAU);
+            for (let i = 0; i < n; i++) next[i] = base * (1 + 0.12 * Math.sin((i * BIN) / 90 + ph) + 0.06 * Math.sin((i * BIN) / 37 + ph * 2));
+            for (let k = 0; k < 60; k++) relaxSnow(next, st.max, Boolean(st.el), null);
+          }
+          st.snow = next;
+          st.hot = 20;
+        }
+        if (piles) {
+          st.pile = new Float32Array(Math.max(2, Math.ceil(width / PILE_BIN) + 1));
+          const ratio = old > 0 ? width / old : 1;
+          const items = st.rest;
+          st.rest = [];
+          for (const it of items) {
+            it.x = Math.min(width, it.x * ratio);
+            stack(st, it);
+          }
+        }
+        st.dirty = true;
+      }
+      function collect() {
+        els = [...document.querySelectorAll(SEL)];
+        for (const el of els) if (!surfMap.has(el)) surfMap.set(el, makeSurface(el));
+        for (const [el, st] of surfMap) {
+          if (el.isConnected) continue;
+          dropAll(st);
+          st.cv.remove();
+          surfMap.delete(el);
+        }
+      }
+      // Element zniknął (np. nowe podium po zmianie zakładki): to, co na nim leżało, spada.
+      function dropAll(st) {
+        if (!st.w) return;
+        if (st.snow) {
+          for (let i = 0, n = 0; i < st.snow.length && n < 50; i += 4) {
+            if (st.snow[i] < 1.5) continue;
+            n += 1;
+            add({ t: 'flake', x: st.x + i * BIN, y: st.y - st.snow[i], vx: rnd(-0.5, 0.5), vy: rnd(0, 0.8), g: 0.05, r: rnd(1, 2), a: 0.9, vol: st.snow[i] * BIN * 4, tk: 1, wk: 0.3, sway: rnd(0, TAU), amp: 0.2 });
+          }
+        }
+        for (const it of st.rest.slice(-40)) fling(st, it, rnd(-0.8, 0.8), rnd(-1, 0.4));
+        restCount -= st.rest.length;
+        st.rest = [];
+      }
+      function measure() {
+        surfs.length = 0;
+        if (!needSurfaces) return;
+        const rects = new Map();
+        const tb = EMBED ? null : document.querySelector('.toolbar');
+        const tr = tb ? tb.getBoundingClientRect() : null;
+        for (const el of els) {
+          const st = surfMap.get(el);
+          if (!st) continue;
+          const r = el.getBoundingClientRect();
+          if (r.width < 40 || r.height < 4) {
+            if (st.cv.style.display !== 'none') st.cv.style.display = 'none';
+            continue;
+          }
+          if (st.cv.style.display === 'none') st.cv.style.display = '';
+          const width = Math.round(r.width - INSET * 2);
+          if (width !== st.w) sizeSurface(st, width);
+          const layer = layerOf(st.anchor);
+          if (st.cv.parentNode !== layer) layer.append(st.cv);
+          let ar = rects.get(st.anchor);
+          if (!ar) {
+            ar = st.anchor.getBoundingClientRect();
+            rects.set(st.anchor, ar);
+          }
+          const left = r.left - ar.left - st.anchor.clientLeft + INSET - PAD;
+          const top = r.top - ar.top - st.anchor.clientTop - st.ch + 3;
+          const pos = `translate(${left.toFixed(1)}px, ${top.toFixed(1)}px)`;
+          if (pos !== st.pos) {
+            st.cv.style.transform = pos;
+            st.pos = pos;
+          }
+          st.x = r.left + INSET;
+          st.y = r.top;
+          if (r.top < -60 || r.top > h + 60) continue;
+          // Pod przyklejonym paskiem nic nie widać, więc nic tam nie spada.
+          if (tr && el !== tb && r.top > tr.top - 4 && r.top < tr.bottom + 2 && r.right > tr.left && r.left < tr.right) continue;
+          surfs.push(st);
+        }
+        if (ground.w !== Math.round(w)) sizeSurface(ground, Math.round(w));
+        ground.x = 0;
+        ground.y = h;
+        surfs.push(ground);
+      }
+
+      // ---- Śnieg na powierzchniach ----
+      function addSnow(st, lx, vol) {
+        const s = st.snow;
+        const c = Math.round(lx / BIN);
+        for (let k = -3; k <= 3; k++) {
+          const i = c + k;
+          if (i >= 0 && i < s.length) s[i] += (vol * KERNEL[k + 3]) / BIN;
+        }
+        st.hot = 45;
+        st.dirty = true;
+      }
+      // Kursor zgarnia śnieg: ubywa go pod kursorem, a płatki lecą w stronę ruchu i spadają gdzie indziej.
+      function sweepSnow(st, lx) {
+        const s = st.snow;
+        const R = 26;
+        const i0 = Math.max(0, Math.floor((lx - R) / BIN));
+        const i1 = Math.min(s.length - 1, Math.ceil((lx + R) / BIN));
+        let removed = 0;
+        let topY = st.y;
+        for (let i = i0; i <= i1; i++) {
+          if (s[i] < 0.2) continue;
+          if (pointer.y < st.y - s[i] - 10 || pointer.y > st.y + 6) continue;
+          const f = 1 - Math.abs(i * BIN - lx) / R;
+          if (f <= 0) continue;
+          const take = Math.min(s[i], f * (1.8 + pointer.speed * 0.8));
+          topY = Math.min(topY, st.y - s[i]);
+          s[i] -= take;
+          removed += take * BIN;
+        }
+        if (removed < 1) return;
+        st.hot = 45;
+        st.dirty = true;
+        const n = Math.min(20, Math.max(1, Math.round(removed / 7)));
+        for (let k = 0; k < n; k++) {
+          add({ t: 'flake', x: st.x + lx + rnd(-R * 0.6, R * 0.6), y: topY - rnd(1, 5), vx: pointer.vx * rnd(0.5, 1.2) + rnd(-0.6, 0.6), vy: Math.min(pointer.vy * 0.3, 0) - rnd(1, 3), g: 0.045, r: rnd(0.9, 2.2), a: rnd(0.75, 1), vol: removed / n, sway: rnd(0, TAU), amp: rnd(0.1, 0.4), wk: 0.4, tk: 1.1, free: 26 });
+        }
+      }
+      // Kliknięcie w śnieg: wydmuchuje dołek i rozrzuca płatki.
+      function blast(x, y) {
+        const R = 44;
+        for (const st of surfs) {
+          if (!st.snow) continue;
+          const lx = x - st.x;
+          if (lx < -R || lx > st.w + R || y < st.y - st.max - R || y > st.y + R) continue;
+          let removed = 0;
+          for (let i = 0; i < st.snow.length; i++) {
+            const d = Math.hypot(i * BIN - lx, st.y - st.snow[i] * 0.5 - y);
+            if (d >= R) continue;
+            const take = st.snow[i] * (1 - d / R);
+            st.snow[i] -= take;
+            removed += take * BIN;
+          }
+          if (removed < 1) continue;
+          st.hot = 45;
+          st.dirty = true;
+          const n = Math.min(30, Math.round(removed / 6));
+          for (let k = 0; k < n; k++) add({ ...radial(x + rnd(-14, 14), Math.min(y, st.y - 3) - 3, [1.5, 4.5], {}), vy: -rnd(1.5, 4.5), t: 'flake', g: 0.05, r: rnd(0.9, 2.2), a: 0.95, vol: removed / n, sway: rnd(0, TAU), amp: 0.2, wk: 0.4, tk: 1.1, free: 30 });
+        }
+      }
+      function settleSnow(st) {
+        relaxSnow(st.snow, st.max, Boolean(st.el), st.spill);
+        st.hot -= 1;
+        st.dirty = true;
+        if (!st.el) {
+          st.spill[0] = st.spill[1] = 0;
+          return;
+        }
+        // Nadmiar zsuwa się z brzegów karty pojedynczymi płatkami.
+        let n = 0;
+        for (const side of [0, 1]) {
+          while (st.spill[side] >= 14 && n < 4) {
+            st.spill[side] -= 14;
+            n += 1;
+            add({ t: 'flake', x: st.x + (side ? st.w + 1 : -1), y: st.y - 1, vx: (side ? 1 : -1) * rnd(0.25, 0.8), vy: rnd(0.1, 0.5), g: 0.04, r: rnd(1, 1.7), a: 0.95, vol: 14, tk: 1.1, wk: 0.25, sway: rnd(0, TAU), amp: 0.15 });
+          }
+        }
+      }
+
+      // ---- Leżące liście, konfetti, płatki, monety i dynie ----
+      const restRot = (p) =>
+        p.t === 'leaf' ? (Math.random() < 0.5 ? -1 : 1) * (Math.PI / 2) + rnd(-0.35, 0.35)
+          : p.t === 'petal' ? Math.PI / 2 + rnd(-0.6, 0.6)
+            : p.t === 'blossom' ? rnd(0, TAU)
+              : p.t === 'paper' ? rnd(-0.5, 0.5)
+                : p.t === 'pumpkin' ? rnd(-0.15, 0.15) : 0;
+      function stack(st, it) {
+        const s = st.pile;
+        it.y = sample(s, PILE_BIN, it.x) + it.th * 0.5;
+        const c = Math.round(it.x / PILE_BIN);
+        for (let k = -1; k <= 1; k++) if (s[c + k] !== undefined) s[c + k] += it.th * (k ? 0.35 : 0.85);
+      }
+      function unstack(st, it) {
+        const s = st.pile;
+        const c = Math.round(it.x / PILE_BIN);
+        for (let k = -1; k <= 1; k++) if (s[c + k] !== undefined) s[c + k] = Math.max(0, s[c + k] - it.th * (k ? 0.35 : 0.85));
+      }
+      function settle(st, p, lx) {
+        const th = p.t === 'pumpkin' ? p.s * 1.7 : THICK[p.t] ?? 2;
+        const base = sample(st.pile, PILE_BIN, lx);
+        if (base + th > st.max) {
+          // Za wysoka kupka — zsuwa się w bok.
+          p.vx = (lx < st.w / 2 ? -1 : 1) * rnd(0.6, 1.4);
+          p.vy = -0.3;
+          p.y = st.y - base - 1;
+          return false;
+        }
+        const it = { t: p.t, c: p.c, s: p.s, x: lx, th, rot: restRot(p), y: 0 };
+        stack(st, it);
+        st.rest.push(it);
+        restCount += 1;
+        st.dirty = true;
+        if (restCount > REST_MAX) {
+          // Za dużo leży — najstarsze znika (z tej karty albo z dołu ekranu).
+          const from = st.rest.length > 6 ? st : ground;
+          const old = from.rest.shift();
+          if (old) {
+            unstack(from, old);
+            restCount -= 1;
+            from.dirty = true;
+          }
+        }
+        return true;
+      }
+      function fling(st, it, vx, vy) {
+        const heavy = it.t === 'coin' || it.t === 'pumpkin';
+        add({ t: it.t, c: it.c, s: it.s, x: st.x + it.x, y: st.y - it.y - 2, vx, vy, g: it.t === 'coin' ? 0.3 : it.t === 'pumpkin' ? 0.35 : 0.06, drag: 0.99, vr: rnd(-0.25, 0.25), rot: it.rot, sway: rnd(0, TAU), amp: heavy ? 0 : rnd(0.3, 0.9), wk: heavy ? 0 : 1, tk: rnd(0.9, 1.2), spin: rnd(0.1, 0.3) });
+      }
+      // Kursor strąca to, co leży (jak przejście przez kupkę liści).
+      function kickRest(st) {
+        const R = 24;
+        let kicked = 0;
+        for (let j = st.rest.length - 1; j >= 0 && kicked < 12; j--) {
+          const it = st.rest[j];
+          const dx = st.x + it.x - pointer.x;
+          const dy = st.y - it.y - pointer.y;
+          if (dx * dx + dy * dy > R * R) continue;
+          st.rest.splice(j, 1);
+          restCount -= 1;
+          unstack(st, it);
+          kicked += 1;
+          fling(st, it, pointer.vx * rnd(0.35, 0.8) + rnd(-1, 1), Math.min(pointer.vy * 0.45, 0) - rnd(1.6, 4.2));
+        }
+        if (kicked) st.dirty = true;
+      }
+      function drawRest(c, it, x, y) {
+        c.save();
+        c.translate(x, y);
+        switch (it.t) {
+          case 'paper':
+            c.rotate(it.rot);
+            c.fillStyle = it.c;
+            c.fillRect(-it.s * 0.55, -it.s * 0.22, it.s * 1.1, it.s * 0.44);
+            c.fillStyle = 'rgba(0, 0, 0, 0.18)';
+            c.fillRect(-it.s * 0.55, it.s * 0.12, it.s * 1.1, it.s * 0.1);
+            break;
+          case 'coin':
+            c.scale(1, 0.42);
+            c.drawImage(sprite('coin', it.c), -it.s * 1.2, -it.s * 1.2, it.s * 2.4, it.s * 2.4);
+            break;
+          case 'pumpkin':
+            c.rotate(it.rot);
+            c.drawImage(sprite('pumpkin', it.c), -it.s * 1.3, -it.s * 1.3, it.s * 2.6, it.s * 2.6);
+            break;
+          default: {
+            const size = it.s * (it.t === 'blossom' ? 3.2 : it.t === 'leaf' ? 2.6 : 2.4);
+            c.scale(1, it.t === 'blossom' ? 0.7 : 0.5);
+            c.rotate(it.rot);
+            c.drawImage(sprite(it.t, it.c), -size / 2, -size / 2, size, size);
+          }
+        }
+        c.restore();
+      }
+      function paint(st) {
+        const c = st.cx;
+        c.setTransform(st.dpr, 0, 0, st.dpr, 0, 0);
+        c.clearRect(0, 0, st.w + PAD * 2, st.ch);
+        const base = st.el ? st.ch - 3 : st.ch;
+        if (st.snow) paintSnow(c, st, base);
+        for (const it of st.rest) drawRest(c, it, PAD + it.x, base - it.y);
+        st.dirty = false;
+      }
+      // Czapa śniegu: gładki obrys przez środki słupków, gradient od bieli do błękitnego cienia i jasna krawędź.
+      function paintSnow(c, st, base) {
+        const s = st.snow;
+        const n = s.length;
+        let peak = 0;
+        for (let i = 0; i < n; i++) if (s[i] > peak) peak = s[i];
+        if (peak < 0.4) return;
+        const line = new Path2D();
+        let px = PAD;
+        let py = base - s[0];
+        line.moveTo(px, py);
+        for (let i = 1; i < n; i++) {
+          const x = PAD + Math.min(i * BIN, st.w);
+          const y = base - s[i];
+          line.quadraticCurveTo(px, py, (px + x) / 2, (py + y) / 2);
+          px = x;
+          py = y;
+        }
+        line.lineTo(px, py);
+        const body = new Path2D(line);
+        body.lineTo(px, base + 1);
+        body.lineTo(PAD, base + 1);
+        body.closePath();
+        const g = c.createLinearGradient(0, base - peak, 0, base);
+        g.addColorStop(0, snowTop);
+        g.addColorStop(1, snowBottom);
+        c.save();
+        c.translate(0, 1.6);
+        c.fillStyle = 'rgba(30, 60, 110, 0.28)';
+        c.fill(body);
+        c.restore();
+        c.fillStyle = g;
+        c.fill(body);
+        c.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+        c.lineWidth = 1.1;
+        c.stroke(line);
+      }
+
+      // ---- Lądowanie ----
+      function landOn(st, p, lx, top) {
+        switch (p.land) {
+          case 'pile':
+            if (!st.snow) return false;
+            addSnow(st, lx, p.vol ?? 30 * (p.r / 2) ** 2);
+            return true;
+          case 'rest':
+            if (!st.pile) return false;
+            p.y = top;
+            return settle(st, p, lx);
+          case 'bounce':
+            if (!st.pile) return false;
+            if (p.vy > 2.2) {
+              p.y = top - 0.5;
+              p.vy = -p.vy * (p.t === 'pumpkin' ? 0.3 : 0.45);
+              p.vx *= 0.78;
+              p.vr *= 0.5;
+              if (p.t === 'coin' && p.vy < -1.5) add({ t: 'glint', x: p.x, y: top, vx: 0, vy: 0, s: rnd(4, 7), life: rnd(10, 16), c: '#fff1b8', noLand: true });
+              return false;
+            }
+            p.y = top;
+            return settle(st, p, lx);
+          case 'splash':
+            for (let k = 0; k < 3; k++) add({ t: 'drop', x: p.x, y: top - 1, vx: rnd(-1.8, 1.8) + p.vx * 0.15, vy: -rnd(1, 2.6), g: 0.22, life: rnd(12, 22), c: p.c, a: 0.8, noLand: true });
+            return true;
+        }
+        return false;
+      }
+      function collide(p, prevY) {
+        for (const st of surfs) {
+          const lx = p.x - st.x;
+          if (lx < 0 || lx > st.w) continue;
+          const top = st.y - (st.snow ? sample(st.snow, BIN, lx) : st.pile ? sample(st.pile, PILE_BIN, lx) : 0);
+          if (prevY <= top + 0.5 && p.y >= top) return landOn(st, p, lx, top);
+        }
+        return false;
+      }
+
+      // ---- Kursor ----
+      function popBubble(p) {
+        add({ t: 'ring', x: p.x, y: p.y, vx: 0, vy: 0, r: p.r, grow: 1.6, lw: 1.2, c: p.c, a: 0.9, life: 14, noLand: true });
+        for (let k = 0; k < 5; k++) add({ ...radial(p.x, p.y, [1, 2.6], {}), t: 'drop', g: 0.12, life: rnd(12, 22), c: p.c, a: 0.8, noLand: true });
+      }
+      function popBalloon(p) {
+        add({ t: 'ring', x: p.x, y: p.y, vx: 0, vy: 0, r: p.s, grow: 3, lw: 1.5, c: p.c, a: 0.9, life: 14, noLand: true });
+        for (let k = 0; k < 36; k++) add(radial(p.x, p.y, [2, 7], { t: 'paper', g: 0.14, drag: 0.98, s: rnd(4, 7), vr: rnd(-0.3, 0.3), sway: rnd(0, TAU), amp: rnd(0.2, 0.6), wk: 0.8 }));
+      }
+      function burstHeart(p) {
+        for (let k = 0; k < 4; k++) add(radial(p.x, p.y, [1.2, 3], { t: 'heart', s: p.s * 0.45, g: -0.02, drag: 0.97, life: rnd(40, 60), sway: rnd(0, TAU), mini: true, c: p.c, noLand: true }));
+      }
+      function cursorForce(p, dt) {
+        if (p.free > 0) {
+          p.free -= dt;
+          return;
+        }
+        const dx = p.x - pointer.x;
+        const dy = p.y - pointer.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 > 72900) return;
+        const d = Math.sqrt(d2) || 1;
+        switch (p.t) {
+          case 'flake':
+            if (d < 90) {
+              const f = (1 - d / 90) ** 2;
+              p.vx += ((dx / d) * 0.32 + pointer.vx * 0.05) * f * dt;
+              p.vy += ((dy / d) * 0.32 + pointer.vy * 0.05) * f * dt;
+            }
+            break;
+          case 'leaf':
+          case 'paper':
+          case 'petal':
+          case 'blossom':
+            if (d < 100) {
+              const f = (1 - d / 100) ** 2;
+              p.vx += ((dx / d) * 0.12 + pointer.vx * 0.13) * f * dt;
+              p.vy += ((dy / d) * 0.12 + pointer.vy * 0.13) * f * dt;
+              p.vr += pointer.vx * 0.004 * f;
+            }
+            break;
+          case 'coin':
+            if (d < 70 && pointer.speed > 1) {
+              const f = 1 - d / 70;
+              p.vx += pointer.vx * 0.1 * f * dt;
+              p.vy += Math.min(pointer.vy, 0) * 0.1 * f * dt;
+            }
+            break;
+          case 'ember':
+          case 'smoke':
+            if (d < 110) {
+              const f = (1 - d / 110) ** 2;
+              p.vx += (pointer.vx * 0.09 + (dx / d) * 0.15) * f * dt;
+              p.vy += (pointer.vy * 0.09 + (dy / d) * 0.15) * f * dt;
+            }
+            break;
+          case 'shape':
+            if (d < 120) {
+              const f = (1 - d / 120) ** 2;
+              p.vx += (dx / d) * 0.6 * f * dt;
+              p.vy += (dy / d) * 0.6 * f * dt;
+            }
+            break;
+          case 'bubble':
+            if (d < p.r + 5) {
+              popBubble(p);
+              p.dead = true;
+            } else if (d < 110) {
+              const f = (1 - d / 110) ** 2;
+              p.vx += (pointer.vx * 0.06 + (dx / d) * 0.12) * f * dt;
+              p.vy += (pointer.vy * 0.06 + (dy / d) * 0.12) * f * dt;
+            }
+            break;
+          case 'balloon':
+            if (d < p.s * 1.1) {
+              popBalloon(p);
+              p.dead = true;
+            }
+            break;
+          case 'heart':
+            // Serca lgną do kursora i krążą wokół niego (każde po swojej orbicie).
+            if (p.mini || d > 260) break;
+            {
+              const a = p.age * 0.045 * (p.spinDir ?? 1) + p.sway;
+              const R = 30 + p.s * 3;
+              p.vx += (pointer.x + Math.cos(a) * R - p.x) * 0.003 * dt;
+              p.vy += (pointer.y + Math.sin(a) * R * 0.8 - p.y) * 0.003 * dt;
+              p.love = 25;
+            }
+            break;
+          case 'bat':
+            if (d < 150) {
+              const f = 1 - d / 150;
+              p.vx += (dx / d) * 0.6 * f * dt;
+              p.vy += (dy / d) * 0.6 * f * dt;
+              p.panic = 30;
+            }
+            break;
+          case 'wisp':
+            if (d < 260) {
+              const a = p.age * 0.045 + p.sway;
+              p.vx += (pointer.x + Math.cos(a) * 38 - p.x) * 0.0018 * dt;
+              p.vy += (pointer.y + Math.sin(a) * 38 - p.y) * 0.0018 * dt;
+            }
+            break;
+          case 'rain':
+            // Kursor jak parasol: krople rozbijają się na kopule nad nim.
+            if (d < 52 && dy < 0) {
+              const ux = pointer.x + (dx / d) * 52;
+              const uy = pointer.y + (dy / d) * 52;
+              for (let k = 0; k < 3; k++) add({ t: 'drop', x: ux, y: uy, vx: (dx / d) * rnd(1.2, 2.6) + rnd(-0.4, 0.4), vy: -rnd(0.4, 1.6), g: 0.22, life: rnd(14, 24), c: '#dfe8ff', a: 0.9, noLand: true });
+              umbrella = Math.min(1, umbrella + 0.12);
+              p.dead = true;
+            }
+            break;
+        }
+      }
+      // Własne zachowanie cząsteczki (bez kursora): serca wracają do unoszenia się, nietoperze do lotu, ogniki krążą.
+      function behave(p, dt) {
+        switch (p.t) {
+          case 'heart':
+            if (!p.mini) {
+              if (p.love > 0) {
+                p.love -= dt;
+                p.vx *= 0.96 ** dt;
+                p.vy *= 0.96 ** dt;
+              } else {
+                p.vx *= 0.985 ** dt;
+                p.vy += ((p.vy0 ?? -0.6) - p.vy) * 0.012 * dt;
+              }
+            }
+            break;
+          case 'bat': {
+            const dir = p.vx < 0 ? -1 : 1;
+            p.vx += (dir * (p.cruise ?? 1.4) - p.vx) * 0.02 * dt;
+            p.vy *= 0.97 ** dt;
+            if (p.panic > 0) p.panic -= dt;
+            break;
+          }
+          case 'wisp':
+            p.vx += Math.sin(p.age * 0.021 + p.sway) * 0.012 * dt;
+            p.vy += Math.cos(p.age * 0.017 + p.sway) * 0.012 * dt;
+            p.vx *= 0.975 ** dt;
+            p.vy *= 0.975 ** dt;
+            break;
+          case 'ember':
+            if (p.streak) p.vx += Math.sin(p.age * 0.12 + p.sway) * 0.06 * dt;
+            break;
+          case 'smoke':
+            p.vx += Math.sin(p.age * 0.03 + p.sway) * 0.01 * dt;
+            break;
+        }
+      }
+      // Kursor na powierzchniach: zgarnia śnieg i strąca to, co leży.
+      function interact() {
+        if (pointer.speed < 0.5) return;
+        for (const st of surfs) {
+          const lx = pointer.x - st.x;
+          if (lx < -30 || lx > st.w + 30) continue;
+          if (pointer.y < st.y - st.max - 30 || pointer.y > st.y + 8) continue;
+          if (st.snow) sweepSnow(st, lx);
+          if (st.rest.length) kickRest(st);
+        }
+      }
+
+      // ---- Cząsteczki w powietrzu nad stroną ----
+      const countType = (t) => list.reduce((n, p) => n + (p.t === t && p.near ? 1 : 0), 0);
+      function near(initial) {
+        switch (theme) {
+          case 'snow': {
+            const r = Math.random() < 0.18 ? rnd(2.8, 4.2) : rnd(1.3, 2.8);
+            return { t: 'flake', x: rnd(-w * 0.1, w * 1.1), y: initial ? rnd(-20, h * 0.95) : rnd(-30, -6), vx: 0, vy: rnd(0.3, 0.8), r, a: rnd(0.6, 1), c: pickOne(colors), sway: rnd(0, TAU), amp: rnd(0.25, 0.8), wk: rnd(0.5, 1), tk: 0.5 + r * 0.3, crystal: r > 2.6 && Math.random() < 0.6, vr: rnd(-0.02, 0.02) };
+          }
+          case 'leaves':
+            return { t: 'leaf', x: rnd(-40, w + 40), y: initial ? rnd(-20, h * 0.9) : rnd(-40, -10), vx: rnd(-0.3, 0.3), vy: rnd(0.3, 0.9), s: rnd(5, 9.5), vr: rnd(-0.05, 0.05), sway: rnd(0, TAU), amp: rnd(0.5, 1.3), wk: rnd(0.8, 1.2), tk: rnd(0.8, 1.2) };
+          case 'sakura':
+            return { t: Math.random() < 0.12 ? 'blossom' : 'petal', x: rnd(-120, w), y: initial ? rnd(-20, h * 0.9) : rnd(-40, -8), vx: rnd(0.2, 0.8), vy: rnd(0.3, 0.8), s: rnd(3.5, 6.5), vr: rnd(-0.05, 0.05), sway: rnd(0, TAU), amp: rnd(0.4, 1), wk: rnd(0.9, 1.3), tk: rnd(0.8, 1.2) };
+          case 'confetti':
+            if (countType('balloon') < 2 && Math.random() < 0.08) return { t: 'balloon', x: rnd(40, w - 40), y: initial ? rnd(h * 0.3, h) : h + rnd(30, 60), vx: 0, vy: rnd(-0.9, -0.5), s: rnd(11, 16), sway: rnd(0, TAU), amp: rnd(0.3, 0.6), noLand: true };
+            return { t: 'paper', x: rnd(0, w), y: initial ? rnd(-20, h * 0.9) : rnd(-40, -10), vx: rnd(-0.4, 0.4), vy: rnd(0.4, 1.2), s: rnd(5, 8.5), sway: rnd(0, TAU), amp: rnd(0.3, 0.9), vr: rnd(-0.08, 0.08), wk: 0.8, tk: rnd(0.8, 1.2) };
+          case 'coins':
+            return { t: 'coin', x: rnd(20, w - 20), y: initial ? rnd(-h * 0.8, -10) : rnd(-60, -10), vx: rnd(-0.3, 0.3), vy: rnd(0.5, 1.5), g: 0.08, drag: 0.995, s: rnd(4.5, 7.5), spin: rnd(0.06, 0.16), sway: rnd(0, TAU), rot: 0 };
+          case 'hearts': {
+            const vy = rnd(-1, -0.4);
+            return { t: 'heart', x: rnd(0, w), y: initial ? rnd(0, h) : h + rnd(10, 40), vx: 0, vy, vy0: vy, s: rnd(4, 8), rot: rnd(-0.3, 0.3), sway: rnd(0, TAU), amp: rnd(0.3, 0.8), wk: 0.3, spinDir: Math.random() < 0.5 ? -1 : 1, noLand: true };
+          }
+          case 'halloween':
+            if (countType('bat') < 3 + Math.round(kk * 2) && Math.random() < 0.4) {
+              const dir = Math.random() < 0.5 ? 1 : -1;
+              const cruise = rnd(1, 2.2);
+              return { t: 'bat', x: initial ? rnd(0, w) : dir > 0 ? -30 : w + 30, y: rnd(h * 0.08, h * 0.7), vx: dir * cruise, vy: rnd(-0.3, 0.3), cruise, s: rnd(5, 9), flap: rnd(0.2, 0.32), sway: rnd(0, TAU), bob: rnd(0.3, 0.8), panic: 0, noLand: true };
+            }
+            return { t: 'wisp', x: rnd(0, w), y: initial ? rnd(0, h) : h + 20, vx: rnd(-0.3, 0.3), vy: rnd(-0.6, -0.2), r: rnd(2, 4), life: rnd(500, 1100), sway: rnd(0, TAU), c: pickOne(['#7cff4f', '#b388ff', '#ffb347']), noLand: true };
+          case 'stars':
+            return { t: 'twinkle', x: rnd(0, w), y: rnd(0, h), vx: 0, vy: 0, r: rnd(0.7, 2.2), ph: rnd(0, TAU), sp: rnd(0.02, 0.06), life: rnd(600, 1400), star: true };
+          case 'neon':
+            return { t: 'shape', x: rnd(0, w), y: initial ? rnd(0, h) : h + rnd(10, 50), vx: rnd(-0.2, 0.2), vy: rnd(-0.8, -0.3), s: rnd(4, 9), k: Math.floor(rnd(0, 3)), life: rnd(500, 1000), sway: rnd(0, TAU), amp: rnd(0.2, 0.5), vr: rnd(-0.03, 0.03), drag: 0.99 };
+          case 'storm':
+            return { t: 'rain', x: rnd(-w * 0.05, w * 1.2), y: initial ? rnd(-20, h) : rnd(-80, -10), vx: rnd(-2.4, -1.6), vy: rnd(10, 15), len: rnd(10, 20), a: rnd(0.3, 0.65) };
+          case 'bubbles':
+            return { t: 'bubble', x: rnd(0, w), y: initial ? rnd(0, h) : h + rnd(10, 40), vx: 0, vy: rnd(-1.1, -0.35), r: rnd(3, 11), sway: rnd(0, TAU), amp: rnd(0.3, 0.8), life: rnd(400, 900), drag: 0.995 };
+          case 'matrix': {
+            const size = pickOne([12, 14, 16]);
+            const len = Math.floor(rnd(6, 14));
+            return { t: 'code', x: Math.round(rnd(0, w) / 16) * 16, y: initial ? rnd(0, h) : rnd(-h * 0.3, -10), vx: 0, vy: rnd(2, 4.5), size, font: fxFont(size), glyphs: Array.from({ length: len }, () => pickOne(GLYPHS)), tail: len * size, a: 0.85 };
+          }
+        }
+        return null;
+      }
+      function spawnNear(initial) {
+        const want = Math.round((NEAR[theme] ?? 0) * level * clamp((w * h) / (1366 * 768), 0.45, 1.4));
+        let have = 0;
+        for (const p of list) if (p.near) have += 1;
+        const room = initial ? want - have : Math.min(want - have, Math.ceil(want / 50) + 1);
+        for (let i = 0; i < room; i++) {
+          const p = near(initial);
+          if (p) add({ ...p, near: true });
+        }
+      }
+
+      // ---- Ogień: płomienie jak w Doomie (siatka w niskiej rozdzielczości) dodane światłem na dole ekranu ----
+      const fire = theme === 'fire' ? makeFire() : null;
+      function makeFire() {
+        const L = 36;
+        const stops = accent
+          ? [[0, '#000000', 0], [0.16, hexMix(accent, '#000000', 0.75), 0.4], [0.34, hexMix(accent, '#000000', 0.4), 0.75], [0.52, accent, 0.92], [0.7, hexMix(accent, '#ffffff', 0.35), 1], [0.86, hexMix(accent, '#ffffff', 0.65), 1], [1, '#ffffff', 1]]
+          : [[0, '#000000', 0], [0.16, '#5a0c02', 0.4], [0.34, '#b3200a', 0.75], [0.52, '#f0560f', 0.92], [0.7, '#ff9a22', 1], [0.86, '#ffd350', 1], [1, '#fff6cf', 1]];
+        const pal = new Uint8ClampedArray((L + 1) * 4);
+        for (let v = 0; v <= L; v++) {
+          const t = v / L;
+          let k = 0;
+          while (k < stops.length - 2 && t > stops[k + 1][0]) k += 1;
+          const [t0, c0, a0] = stops[k];
+          const [t1, c1, a1] = stops[k + 1];
+          const f = clamp((t - t0) / (t1 - t0 || 1), 0, 1);
+          const n = parseInt(hexMix(c0, c1, f).slice(1), 16);
+          pal[v * 4] = n >> 16;
+          pal[v * 4 + 1] = (n >> 8) & 255;
+          pal[v * 4 + 2] = n & 255;
+          pal[v * 4 + 3] = Math.round((a0 + (a1 - a0) * f) * 255);
+        }
+        const glowRgb = `${pal[28 * 4]}, ${pal[28 * 4 + 1]}, ${pal[28 * 4 + 2]}`;
+        const cv = document.createElement('canvas');
+        const fc = cv.getContext('2d');
+        const F = { L, cols: 0, rows: 0, cell: 4, fh: 0, top: 0, grid: null, soft: null, img: null, boost: 0 };
+        F.size = () => {
+          F.fh = Math.min(h * (0.06 + kk * 0.09), 200);
+          F.cell = Math.max(4, Math.round(F.fh / 26));
+          F.cols = Math.ceil(w / F.cell) + 2;
+          F.rows = Math.ceil((F.fh * 1.7) / F.cell) + 2;
+          F.top = h - (F.rows - 2) * F.cell;
+          F.grid = new Uint8Array(F.cols * F.rows);
+          F.soft = new Uint8Array(F.cols * F.rows);
+          cv.width = F.cols;
+          cv.height = F.rows;
+          F.img = fc.createImageData(F.cols, F.rows);
+        };
+        F.heat = (x, y, r) => {
+          const cx = Math.round(x / F.cell) + 1;
+          const cy = Math.round((y - F.top) / F.cell);
+          if (cy < 1 - r || cy > F.rows) return false;
+          for (let yy = -r; yy <= r; yy++) {
+            for (let xx = -r; xx <= r; xx++) {
+              const gx = cx + xx;
+              const gy = cy + yy;
+              if (gx < 0 || gx >= F.cols || gy < 1 || gy >= F.rows) continue;
+              const v = L - Math.round(Math.hypot(xx, yy) * 3);
+              const i = gy * F.cols + gx;
+              if (F.grid[i] < v) F.grid[i] = v;
+            }
+          }
+          return true;
+        };
+        F.step = (t) => {
+          const { cols, rows, grid } = F;
+          // Średnio o ile słabnie żar z wiersza na wiersz (ułamek → losowo 1 albo 2) — z tego wysokość płomieni.
+          const decay = Math.max(0.2, (L * F.cell) / (F.fh * 1.3 * (1 + F.boost * 0.9)));
+          const base = (rows - 1) * cols;
+          for (let x = 0; x < cols; x++) {
+            const wave = 0.68 + 0.32 * Math.sin(x * 0.06 + t * 0.0011) * Math.sin(x * 0.017 - t * 0.0006);
+            grid[base + x] = Math.random() < wave + F.boost * 0.4 ? L : L - 9;
+          }
+          // Kursor przy ogniu podpala: dokłada żaru tam, gdzie jest.
+          if (pointer.on && pointer.y > F.top - F.cell * 4) F.heat(pointer.x, pointer.y, 2);
+          const wd = fireWind;
+          for (let y = 1; y < rows; y++) {
+            const row = y * cols;
+            const up = row - cols;
+            for (let x = 0; x < cols; x++) {
+              const v = grid[row + x];
+              if (v === 0) {
+                grid[up + x] = 0;
+                continue;
+              }
+              let nx = x + 1 - ((Math.random() * 3) | 0);
+              if (wd && Math.random() < Math.abs(wd)) nx += wd > 0 ? 1 : -1;
+              nx = nx < 0 ? 0 : nx >= cols ? cols - 1 : nx;
+              const nv = v - ((decay + Math.random()) | 0);
+              grid[up + nx] = nv > 0 ? nv : 0;
+            }
+          }
+          F.boost = Math.max(0, F.boost - 0.006);
+        };
+        F.draw = () => {
+          const { grid, soft, img, cols, rows } = F;
+          const d = img.data;
+          // Rozmycie [1 2 1] w poziomie i w pionie — miękkie języki ognia zamiast zaszumionych pikseli.
+          for (let y = 0; y < rows; y++) {
+            const row = y * cols;
+            for (let x = 0; x < cols; x++) {
+              const l = grid[row + (x > 0 ? x - 1 : x)];
+              const r = grid[row + (x < cols - 1 ? x + 1 : x)];
+              soft[row + x] = (l + grid[row + x] * 2 + r) >> 2;
+            }
+          }
+          for (let y = 0; y < rows; y++) {
+            const row = y * cols;
+            const upRow = (y > 0 ? y - 1 : y) * cols;
+            const downRow = (y < rows - 1 ? y + 1 : y) * cols;
+            for (let x = 0; x < cols; x++) {
+              const v = (soft[upRow + x] + soft[row + x] * 2 + soft[downRow + x]) >> 2;
+              const o = (row + x) * 4;
+              const p = v * 4;
+              d[o] = pal[p];
+              d[o + 1] = pal[p + 1];
+              d[o + 2] = pal[p + 2];
+              d[o + 3] = pal[p + 3];
+            }
+          }
+          fc.putImageData(img, 0, 0);
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          // Poświata nad ogniem — migocze razem z płomieniami.
+          const flick = 0.8 + 0.2 * Math.sin(now * 0.013) * Math.sin(now * 0.031);
+          const gh = F.fh * (2.4 + F.boost);
+          const glow = ctx.createLinearGradient(0, h, 0, h - gh);
+          glow.addColorStop(0, `rgba(${glowRgb}, ${(0.16 + kk * 0.12) * flick})`);
+          glow.addColorStop(1, `rgba(${glowRgb}, 0)`);
+          ctx.fillStyle = glow;
+          ctx.fillRect(0, h - gh, w, gh);
+          ctx.drawImage(cv, -F.cell, F.top, cols * F.cell, rows * F.cell);
+          ctx.restore();
+        };
+        return F;
+      }
+      function spawnFire(dt) {
+        const rate = (w / 1366) * (0.5 + kk * 1.2) * dt;
+        for (let n = rate + Math.random(); n >= 1; n -= 1) {
+          add({ t: 'ember', x: rnd(0, w), y: h - fire.fh * rnd(0.2, 0.85), vx: rnd(-0.5, 0.5), vy: rnd(-3.4, -1.1), g: -0.012, drag: 0.992, r: rnd(0.7, 2.1), life: rnd(50, 140), sway: rnd(0, TAU), streak: true, c: pickOne(colors), noLand: true });
+        }
+        if (Math.random() < 0.12 * dt * (0.5 + kk)) {
+          add({ t: 'smoke', x: rnd(0, w), y: h - fire.fh * rnd(0.8, 1.2), vx: rnd(-0.2, 0.2), vy: rnd(-1.1, -0.5), r: rnd(18, 34), grow: 0.35, life: rnd(110, 190), a: rnd(0.06, 0.11), c: '#6b6470', sway: rnd(0, TAU), noLand: true });
+        }
+        // Wiatr dla ognia: podmuchy i ruch kursora przy dole ekranu.
+        const push = pointer.on && pointer.y > h - fire.fh * 3 ? pointer.vx * 0.05 : 0;
+        fireWind = clamp(fireWind * 0.95 + push + (wind.x - fireWind) * 0.02, -0.9, 0.9);
+      }
+
+      // ---- Co klatkę ----
+      function updateWind(dt) {
+        wind.next -= dt;
+        if (wind.next <= 0) {
+          // Podmuch: na chwilę mocniej (liście i płatki wiśni lecą bokiem), potem znów spokojnie.
+          const strength = theme === 'leaves' || theme === 'sakura' ? 2.2 : 1;
+          wind.target = wind.base + rnd(-0.8, 1.6) * strength;
+          wind.until = rnd(90, 200);
+          wind.next = rnd(360, 780);
+        }
+        if (wind.until > 0) {
+          wind.until -= dt;
+          if (wind.until <= 0) wind.target = wind.base;
+        }
+        wind.x += (wind.target - wind.x) * 0.015 * dt;
+      }
+      function themeTick(dt) {
+        // Śnieg: iskrzenie na zaspach.
+        if (snowy && Math.random() < 0.35 * kk * dt) {
+          const st = pickOne(surfs);
+          if (st?.snow) {
+            const i = Math.floor(rnd(0, st.snow.length));
+            if (st.snow[i] > 2) add({ t: 'glint', x: st.x + i * BIN, y: st.y - st.snow[i] + 0.5, vx: 0, vy: 0, s: rnd(2.5, 4.5), life: rnd(10, 20), c: '#dff1ff', noLand: true });
+          }
+        }
+        // Monety: leżące błyszczą.
+        if (theme === 'coins' && Math.random() < 0.08 * dt) {
+          const st = pickOne(surfs);
+          const it = st && pickOne(st.rest);
+          if (it) add({ t: 'glint', x: st.x + it.x, y: st.y - it.y, vx: 0, vy: 0, s: rnd(3.5, 6), life: rnd(10, 18), c: '#fff1b8', noLand: true });
+        }
+        // Gwiazdy: kursor zostawia gwiezdny pył; co jakiś czas spadająca gwiazda.
+        if (theme === 'stars') {
+          if (pointer.on && pointer.speed > 2 && Math.random() < 0.7) add({ t: 'spark', x: pointer.x, y: pointer.y, vx: pointer.vx * 0.1 + rnd(-0.6, 0.6), vy: pointer.vy * 0.1 + rnd(-0.6, 0.6), g: 0.02, drag: 0.96, r: rnd(0.8, 1.6), life: rnd(25, 45), noLand: true });
+          if (Math.random() < dt / 700) add({ t: 'comet', x: rnd(w * 0.3, w * 1.1), y: rnd(-40, h * 0.35), vx: rnd(-14, -8), vy: rnd(4, 8), life: rnd(50, 90), noLand: true });
+        }
+        // Burza: rzadko piorun uderza tuż obok kursora.
+        if (theme === 'storm' && pointer.on && Math.random() < dt / 1500) strike(pointer.x + rnd(-60, 60), pointer.y + rnd(-20, 30));
+      }
+      function strike(x, y) {
+        add({ t: 'bolt', x, y: 0, vx: 0, vy: 0, paths: boltTo(x, y), flash: 0.1, instant: true, life: rnd(26, 36), c: pickOne(colors), noLand: true });
+        for (let k = 0; k < 26; k++) add(radial(x, y, [1.5, 7], { t: 'spark', g: 0.1, drag: 0.96, r: rnd(1, 2.6), life: rnd(30, 70), noLand: true }));
+      }
+      function step(p, dt) {
+        if (p.dead) return false;
+        p.age += dt;
+        if (p.age < 0) return true;
+        if (p.wk) p.vx += (wind.x * p.wk - p.vx) * 0.012 * dt;
+        if (p.drag !== 1) {
+          const k = p.drag ** dt;
+          p.vx *= k;
+          p.vy *= k;
+        }
+        p.vy += p.g * dt;
+        const term = TERM[p.t];
+        if (term && p.land) {
+          const tv = term * (p.tk ?? 1);
+          if (p.vy > tv) p.vy += (tv - p.vy) * Math.min(1, 0.12 * dt);
+        }
+        behave(p, dt);
+        if (pointer.on) cursorForce(p, dt);
+        if (p.dead) return false;
+        const prevY = p.y;
+        p.x += (p.vx + (p.amp ? Math.sin(p.age * 0.03 + p.sway) * p.amp : 0)) * dt;
+        p.y += (p.vy + (p.bob ? Math.sin(p.age * 0.05 + p.sway) * p.bob : 0)) * dt;
+        p.rot += p.vr * dt;
+        if (p.grow) p.r += p.grow * dt * 0.6;
+        if (p.land && p.y > prevY && collide(p, prevY)) return false;
+        if (p.age > p.life) {
+          if (p.t === 'bubble' && p.y > 0) popBubble(p);
+          return false;
+        }
+        if (p.y - (p.tail ?? 0) > h + 60 || p.x < -140 || p.x > w + 140) return false;
+        if (p.vy < 0 && p.g <= 0 && p.y < -80 && !p.land) return false;
+        return true;
+      }
+      function drawStarLines() {
+        if (!pointer.on) return;
+        const close = [];
+        for (const p of list) {
+          if (!p.star) continue;
+          const d = Math.hypot(p.x - pointer.x, p.y - pointer.y);
+          p.boost = d < 200 ? (1 - d / 200) * 0.9 : 0;
+          if (d < 200 && close.length < 30) close.push(p);
+        }
+        if (!close.length) return;
+        // Gwiazdozbiór pod kursorem: linie od kursora do gwiazd i między bliskimi gwiazdami.
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.lineWidth = 0.9;
+        ctx.strokeStyle = colors[1] ?? '#ffe39a';
+        for (const p of close) {
+          ctx.globalAlpha = p.boost * 0.75;
+          ctx.beginPath();
+          ctx.moveTo(pointer.x, pointer.y);
+          ctx.lineTo(p.x, p.y);
+          ctx.stroke();
+        }
+        for (let i = 0; i < close.length; i++) {
+          for (let j = i + 1; j < close.length; j++) {
+            const d = Math.hypot(close[i].x - close[j].x, close[i].y - close[j].y);
+            if (d > 120) continue;
+            ctx.globalAlpha = (1 - d / 120) * Math.min(close[i].boost, close[j].boost) * 0.9;
+            ctx.beginPath();
+            ctx.moveTo(close[i].x, close[i].y);
+            ctx.lineTo(close[j].x, close[j].y);
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+      }
+      function drawTrail() {
+        // Neonowa smuga za kursorem (ostatnie ~0,65 s ruchu).
+        const pts = pointer.trail.filter((q) => now - q.t < 650);
+        if (pts.length < 2) return;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        for (const [lw, a] of [[11, 0.12], [5, 0.3], [2, 0.95]]) {
+          for (let i = 1; i < pts.length; i++) {
+            const age = (now - pts[i].t) / 650;
+            ctx.globalAlpha = a * (1 - age);
+            ctx.strokeStyle = lw === 2 ? '#ffffff' : hexMix(colors[0], colors[1] ?? colors[0], i / pts.length);
+            ctx.lineWidth = lw * (1 - age * 0.6);
+            ctx.beginPath();
+            ctx.moveTo(pts[i - 1].x, pts[i - 1].y);
+            ctx.lineTo(pts[i].x, pts[i].y);
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+      }
+      function frame(t) {
+        raf = 0;
+        if (dead) return;
+        now = t;
+        const dt = last ? Math.min((t - last) / 16.67, 2.5) : 1;
+        last = t;
+        frameNo += 1;
+        if (needSurfaces && frameNo % 20 === 1) collect();
+        measure();
+        if (t - pointer.t > 60) {
+          pointer.vx *= 0.8;
+          pointer.vy *= 0.8;
+        }
+        pointer.speed = Math.hypot(pointer.vx, pointer.vy);
+        updateWind(dt);
+        spawnNear(false);
+        if (fire) {
+          acc += dt;
+          for (let k = 0; acc >= 1 && k < 2; k += 1) {
+            fire.step(t);
+            acc -= 1;
+          }
+          spawnFire(dt);
+        }
+        themeTick(dt);
+        if (pointer.on && needSurfaces) interact();
+        stepping = true;
+        list = list.filter((p) => step(p, dt));
+        stepping = false;
+        if (pending.length) {
+          list.push(...pending);
+          pending.length = 0;
+        }
+        if (list.length > 1400) list.splice(0, list.length - 1400);
+        for (const st of surfMap.values()) if (st.hot > 0 && st.snow) settleSnow(st);
+        if (ground.hot > 0 && ground.snow) settleSnow(ground);
+        ctx.clearRect(0, 0, w, h);
+        if (fire) fire.draw();
+        env.lens = theme === 'matrix' && pointer.on ? pointer : null;
+        for (const p of list) {
+          const fadeIn = p.instant ? 1 : Math.min(1, p.age / (p.near ? 30 : 6));
+          const fadeOut = p.instant || !Number.isFinite(p.life) ? 1 : Math.min(1, (p.life - p.age) / (p.lw ? 14 : 30));
+          fxDraw(ctx, p, Math.max(0, Math.min(fadeIn, fadeOut)) * (p.a ?? 1), env);
+        }
+        ctx.globalAlpha = 1;
+        if (theme === 'stars') drawStarLines();
+        if (theme === 'neon') drawTrail();
+        if (theme === 'storm' && pointer.on && umbrella > 0.02) {
+          // Niewidzialny parasol: szklana kopuła tam, gdzie bije deszcz.
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.strokeStyle = '#c9d6ff';
+          ctx.lineWidth = 1.5;
+          ctx.globalAlpha = umbrella * 0.55;
+          ctx.beginPath();
+          ctx.arc(pointer.x, pointer.y, 52, Math.PI * 1.05, Math.PI * 1.95);
+          ctx.stroke();
+          const g = ctx.createRadialGradient(pointer.x, pointer.y, 20, pointer.x, pointer.y, 54);
+          g.addColorStop(0, 'rgba(201, 214, 255, 0)');
+          g.addColorStop(1, `rgba(201, 214, 255, ${0.16 * umbrella})`);
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(pointer.x, pointer.y, 52, Math.PI, TAU);
+          ctx.fill();
+          ctx.restore();
+        }
+        umbrella *= 0.94;
+        // Czapy odświeżane po kolei (najwyżej co 3 klatki każda) — śnieg rośnie powoli, nie trzeba częściej.
+        let k = 0;
+        for (const st of surfMap.values()) {
+          k += 1;
+          if (st.dirty && st.w && (frameNo + k) % 3 === 0) paint(st);
+        }
+        if (ground.dirty && ground.w && frameNo % 2 === 0) paint(ground);
+        raf = requestAnimationFrame(frame);
+      }
+      function fit() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        w = env.w = innerWidth;
+        h = env.h = innerHeight;
+        canvas.width = Math.max(1, Math.round(w * dpr));
+        canvas.height = Math.max(1, Math.round(h * dpr));
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        fire?.size();
+      }
+      const run = () => {
+        if (!raf && !dead && !document.hidden) {
+          last = 0;
+          raf = requestAnimationFrame(frame);
+        }
+      };
+      const onVisible = () => (document.hidden ? (cancelAnimationFrame(raf), (raf = 0)) : run());
+      addEventListener('resize', fit);
+      document.addEventListener('visibilitychange', onVisible);
+      fit();
+      if (needSurfaces) collect();
+      spawnNear(true);
+      run();
       return {
         burst() {
-          const n = Math.round((FX_BURST[theme] ?? 120) * burstScale);
-          // Najwyżej dwa wybuchy naraz — szybkie klikanie dokłada cząsteczki tylko do tego limitu.
+          const n = Math.round((FX_BURST[theme] ?? 120) * clamp(level, 0.4, 1.5));
           let live = 0;
-          for (const p of list) if (!p.amb) live += 1;
+          for (const p of list) if (!p.near) live += 1;
           const count = Math.min(n, Math.max(0, n * 2 - live));
-          for (let i = 0; i < count; i++) add(make(true, i % 2, i), false);
-          run();
+          const state = {};
+          for (let i = 0; i < count; i++) add(fxSpawn(theme, 'burst', { w, h, side: i % 2, i, own, state }));
+          if (fire) fire.boost = 1;
+          if (snowy || theme === 'leaves' || theme === 'sakura') {
+            // Podmuch razem z wybuchem: wszystko w powietrzu leci w bok.
+            wind.target = wind.base + (snowy ? 3 : 4);
+            wind.until = 100;
+          }
         },
-        pop(x, y) {
-          let live = 0;
-          for (const p of list) if (!p.amb) live += 1;
-          if (live > 420) return;
-          const n = Math.round(14 * Math.min(Math.max(burstScale, 0.6), 1.3));
-          for (let i = 0; i < n; i++) add(makePop(x, y), false);
-          run();
+        click(x, y) {
+          for (const p of list) {
+            if (p.t === 'bubble' && Math.hypot(p.x - x, p.y - y) < p.r + 18) { popBubble(p); p.dead = true; }
+            if (p.t === 'balloon' && Math.hypot(p.x - x, p.y - y) < p.s + 14) { popBalloon(p); p.dead = true; }
+            if (p.t === 'heart' && !p.mini && Math.hypot(p.x - x, p.y - y) < 70) { burstHeart(p); p.dead = true; }
+          }
+          if (theme === 'storm') return strike(x, y);
+          if (snowy) {
+            blast(x, y);
+            for (let k = 0; k < 10; k++) add({ ...fxPop(theme, x, y), vy: -rnd(1.5, 4.5), free: 30 });
+            return;
+          }
+          if (fire && fire.heat(x, y, 4)) fire.boost = Math.max(fire.boost, 0.35);
+          for (let k = 0; k < 14; k++) add(fxPop(theme, x, y));
         },
-        destroy,
+        destroy() {
+          dead = true;
+          cancelAnimationFrame(raf);
+          raf = 0;
+          canvas.remove();
+          ground.cv.remove();
+          for (const st of surfMap.values()) st.cv.remove();
+          for (const layer of layers.values()) layer.remove();
+          removeEventListener('resize', fit);
+          document.removeEventListener('visibilitychange', onVisible);
+        },
       };
     }
 
