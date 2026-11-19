@@ -3428,6 +3428,7 @@
       let held = null; // śnieżka w ręce
       let gesture = null; // przytrzymanie przycisku: śnieżka, dmuchanie bańki, magnes na monety
       let tool = null; // narzędzie w ręce (łopata, gaśnica)
+      let fight = null; // bitwa na śnieżki (motyw śniegu)
       let toolScale = 1;
       const tools = [];
       let blowing = null; // bańka, którą właśnie się dmucha
@@ -4142,12 +4143,17 @@
           const py = p.y;
           p.x += (p.vx * dt) / n;
           p.y += (p.vy * dt) / n;
+          // Rzucona „w ekran” (odwet ludzika) leci nad stroną i plaska dopiero na szybie.
+          if (p.toward) continue;
+          if (fight && fight.hit(p)) return false;
           // Krawędzie ekranu to ściany — śnieżka plaska o nie.
           if (p.x < p.r * 0.6 || p.x > w - p.r * 0.6 || p.y < p.r * 0.6) {
             splatAt(clamp(p.x, p.r * 0.7, w - p.r * 0.7), Math.max(p.y, p.r * 0.7), p.r * 1.3, p.vx, p.vy);
             return false;
           }
           for (const st of surfs) {
+            // Ludziki bawią się przed stroną: ich śnieżki spadają tylko na śnieg na dole ekranu.
+            if (p.owner && st !== ground) continue;
             if (st.round) {
               const R = st.w / 2;
               const cx = st.x + R;
@@ -4170,7 +4176,8 @@
           }
         }
         if (p.age > p.flight) {
-          splatAt(p.x, p.y, p.r * 1.3, p.vx, p.vy);
+          // Rzucona w ekran rośnie w locie, więc i plama jest większa.
+          splatAt(p.x, p.y, p.r * (p.toward ? 3.2 : 1.3), p.vx, p.vy);
           return false;
         }
         return p.y - p.r < h + 40 && p.x > -80 && p.x < w + 80 && p.y > -600;
@@ -5875,7 +5882,7 @@
       function drawOwn(p, alpha) {
         switch (p.t) {
           case 'ball':
-            drawBall(p.x, p.y, p.r * (Number.isFinite(p.flight) ? 1 - 0.32 * Math.min(1, p.age / p.flight) : 1), p.rot, alpha);
+            drawBall(p.x, p.y, p.r * (Number.isFinite(p.flight) ? (p.toward ? 1 + 1.5 * Math.min(1, p.age / p.flight) : 1 - 0.32 * Math.min(1, p.age / p.flight)) : 1), p.rot, alpha);
             break;
           case 'clump':
             ctx.globalAlpha = alpha;
@@ -6096,6 +6103,696 @@
         ctx.restore();
       }
 
+      // ---- Bitwa na śnieżki (motyw śniegu): ludziki z awatarami losowych osób z topki ----
+      // Rundy: kilka osób wchodzi z boków, lepi śnieżki ze śniegu na dole ekranu, rzuca w drużynę naprzeciwko,
+      // robi uniki, po trzech trafieniach leży chwilę w śniegu. Kto trafi ich własną śnieżką — dostaje odwet w kursor.
+      function makeFight() {
+        const TEAMS = [
+          { color: '#e5484d', dark: '#8f2328', score: 0 },
+          { color: '#3d8bf2', dark: '#1d4a9a', score: 0 },
+        ];
+        const SAY_HIT = ['Auć!', 'Ała!', 'Oj!', 'Ej!', 'Uff!'];
+        const SAY_THROW = ['Łap!', 'Masz!', 'Leci!'];
+        const SAY_USER = ['Hej!', 'Kto to?!', 'Ej, ty!'];
+        const fighters = [];
+        let next = rnd(150, 300);
+        let clock = 0;
+        let len = 0;
+        let ending = false;
+        const scaleNow = () => clamp(h / 900, 0.75, 1.05) * (w < 640 ? 1 : 1.2);
+        // Prawa drużyna nie wchodzi na łopatę opartą o prawą krawędź ekranu.
+        const zoneOf = (side) => (side ? [w * 0.6, Math.max(w * 0.62, Math.min(w * 0.94, w - 100 * toolScale))] : [Math.max(w * 0.06, 30), w * 0.4]);
+
+        function roster() {
+          const seen = new Set();
+          const out = [];
+          for (const el of document.querySelectorAll('.top3 .top:not(.anon):not(.vacant), #list .row:not(.anon)')) {
+            const img = el.querySelector('img.avatar');
+            const name = (el.querySelector('.nick .dn') ?? el.querySelector('.nick'))?.textContent?.trim();
+            if (!name || seen.has(name)) continue;
+            seen.add(name);
+            out.push({ name, src: img ? img.currentSrc || img.src : '' });
+            if (out.length >= 15) break;
+          }
+          return out;
+        }
+        // Okrągły awatar rysowany raz do osobnego płótna; bez obrazka — kółko z pierwszą literą nicku.
+        function face(src, name, team) {
+          const c = document.createElement('canvas');
+          c.width = c.height = 64;
+          const g = c.getContext('2d');
+          g.fillStyle = team.dark;
+          g.beginPath();
+          g.arc(32, 32, 31, 0, TAU);
+          g.fill();
+          g.fillStyle = '#ffffff';
+          g.font = '700 30px Rubik, system-ui, sans-serif';
+          g.textAlign = 'center';
+          g.textBaseline = 'middle';
+          g.fillText(([...name][0] ?? '?').toUpperCase(), 32, 34);
+          if (src) {
+            const im = new Image();
+            im.decoding = 'async';
+            im.onload = () => {
+              g.clearRect(0, 0, 64, 64);
+              g.save();
+              g.beginPath();
+              g.arc(32, 32, 31, 0, TAU);
+              g.clip();
+              g.drawImage(im, 1, 1, 62, 62);
+              g.restore();
+            };
+            im.src = src;
+          }
+          return c;
+        }
+        function start() {
+          const people = roster();
+          if (people.length < 2) {
+            next = 1800;
+            return;
+          }
+          for (let i = people.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [people[i], people[j]] = [people[j], people[i]];
+          }
+          const n = Math.min(people.length, w < 640 ? 2 : 2 + Math.floor(Math.random() * (kk >= 0.6 ? 3 : 2)));
+          TEAMS[0].score = TEAMS[1].score = 0;
+          for (let i = 0; i < n; i++) {
+            const side = i % 2;
+            const team = TEAMS[side];
+            const s = scaleNow();
+            const name = [...people[i].name];
+            const f = {
+              name: name.length > 16 ? `${name.slice(0, 15).join('')}…` : people[i].name,
+              face: face(people[i].src, people[i].name, team),
+              team,
+              side,
+              s,
+              x: side ? w + 30 + i * 30 : -30 - i * 30,
+              y: h,
+              vx: 0,
+              vy: 0,
+              air: false,
+              dir: side ? -1 : 1,
+              state: 'walk',
+              t: 0,
+              tx: 0,
+              ball: false,
+              hits: 0,
+              phase: rnd(0, TAU),
+              say: '',
+              sayT: 0,
+              aim: null,
+              revenge: false,
+              lie: rnd(150, 210),
+              gone: false,
+              pose: null,
+              j: null,
+            };
+            f.tx = spot(f);
+            f.pose = target(f);
+            fighters.push(f);
+          }
+          clock = 0;
+          len = rnd(2600, 3800);
+          ending = false;
+        }
+        // Wolne miejsce na swojej połowie (nie za blisko kolegów z drużyny).
+        function spot(f) {
+          const [a, b] = zoneOf(f.side);
+          let best = rnd(a, b);
+          for (let k = 0; k < 5; k++) {
+            const x = rnd(a, b);
+            if (fighters.every((o) => o === f || o.side !== f.side || Math.abs(o.tx - x) > 46 * f.s)) return x;
+            best = x;
+          }
+          return best;
+        }
+        const alive = (o) => !o.gone && o.state !== 'down' && o.state !== 'leave' && o.x > 0 && o.x < w;
+        function foe(f) {
+          const them = fighters.filter((o) => o.side !== f.side && alive(o));
+          return them.length ? pickOne(them) : null;
+        }
+        function set(f, state) {
+          f.state = state;
+          f.t = 0;
+        }
+        function say(f, text, t = 70) {
+          f.say = text;
+          f.sayT = t;
+        }
+        const footAt = (x) => (ground.snow ? surfTop(ground, clamp(x, 0, Math.max(1, ground.w - 1))) : h) + hopOffset(ground);
+
+        // Docelowa poza (kąty w radianach od pionu w dół, dodatnie — do przodu): uda a, kolana k, ramiona s, łokcie e.
+        function target(f) {
+          const q = { lean: 0.04, tilt: 0, a1: 0.06, a2: -0.06, k1: 0.12, k2: 0.12, s1: 0.2, s2: -0.15, e1: 0.5, e2: 0.4, rot: 0 };
+          const t = f.t;
+          switch (f.state) {
+            case 'walk':
+            case 'leave': {
+              const sw = Math.sin(f.phase);
+              q.a1 = 0.5 * sw;
+              q.a2 = -0.5 * sw;
+              q.k1 = 0.12 + 0.8 * Math.max(0, Math.cos(f.phase));
+              q.k2 = 0.12 + 0.8 * Math.max(0, -Math.cos(f.phase));
+              q.s1 = f.ball ? 0.9 : -0.45 * sw;
+              q.e1 = f.ball ? 0.9 : 0.55;
+              q.s2 = 0.45 * sw;
+              q.e2 = 0.55;
+              q.lean = 0.12;
+              break;
+            }
+            case 'idle': {
+              q.s1 = f.ball ? 0.7 : 0.2;
+              q.e1 = f.ball ? 1 : 0.5;
+              q.lean = 0.04 + Math.sin(t * 0.06) * 0.03;
+              break;
+            }
+            case 'scoop': {
+              const d = Math.min(1, t / 14) * (t > 40 ? Math.max(0, 1 - (t - 40) / 12) : 1);
+              q.lean = 1.05 * d;
+              q.a1 = 1.15 * d;
+              q.a2 = 0.45 * d;
+              q.k1 = 0.1 + 2 * d;
+              q.k2 = 0.1 + 1.25 * d;
+              q.s1 = 0.2 + 0.85 * d + 0.3 * Math.sin(t * 0.55) * d;
+              q.s2 = 0.1 + 0.85 * d - 0.3 * Math.sin(t * 0.55) * d;
+              q.e1 = 0.25;
+              q.e2 = 0.25;
+              break;
+            }
+            case 'aim': {
+              const k = Math.min(1, t / 16);
+              q.lean = -0.18 * k;
+              q.a1 = 0.38;
+              q.a2 = -0.4;
+              q.k1 = 0.3;
+              q.k2 = 0.2;
+              q.s1 = -1.9 * k;
+              q.e1 = -0.9 * k;
+              q.s2 = 0.2 + 1.1 * k;
+              q.e2 = 0.3;
+              break;
+            }
+            case 'throw': {
+              q.lean = 0.38;
+              q.a1 = 0.5;
+              q.a2 = -0.45;
+              q.k1 = 0.4;
+              q.k2 = 0.2;
+              q.s1 = t < 6 ? 2.2 : 0.9;
+              q.e1 = 0.15;
+              q.s2 = -0.7;
+              q.e2 = 0.5;
+              break;
+            }
+            case 'hit': {
+              const wv = Math.sin(t * 0.7);
+              q.lean = -0.45;
+              q.tilt = -0.35;
+              q.a1 = -0.3;
+              q.a2 = 0.35;
+              q.k1 = 0.3;
+              q.k2 = 0.45;
+              q.s1 = -1.7 + 0.7 * wv;
+              q.s2 = 1.7 - 0.7 * wv;
+              q.e1 = 0.6;
+              q.e2 = 0.6;
+              break;
+            }
+            case 'down': {
+              const fall = t < 16 ? t / 16 : t < f.lie ? 1 : Math.max(0, 1 - (t - f.lie) / 24);
+              q.rot = -f.dir * 1.5 * fall;
+              q.a1 = 0.15 * fall;
+              q.a2 = -0.2 * fall;
+              q.k1 = 0.1;
+              q.k2 = 0.2;
+              q.s1 = 0.2 + 2.3 * fall;
+              q.s2 = 0.2 + 1.9 * fall;
+              q.e1 = 0.3;
+              q.e2 = 0.4;
+              break;
+            }
+            case 'cheer': {
+              const up = Math.sin(t * 0.3);
+              q.s1 = 2.75 + 0.25 * up;
+              q.s2 = 2.75 - 0.25 * up;
+              q.e1 = 0.15;
+              q.e2 = 0.15;
+              q.lean = 0;
+              break;
+            }
+            case 'sulk': {
+              q.lean = 0.35;
+              q.tilt = 0.4;
+              q.s1 = 0.08;
+              q.s2 = 0.04;
+              q.e1 = 0.15;
+              q.e2 = 0.15;
+              break;
+            }
+            case 'dodge': {
+              q.a1 = 0.9;
+              q.a2 = 0.55;
+              q.k1 = 1.5;
+              q.k2 = 1.2;
+              q.s1 = 2.3;
+              q.s2 = 2.1;
+              q.e1 = 0.3;
+              q.e2 = 0.3;
+              q.lean = 0.15;
+              break;
+            }
+          }
+          if (f.air && f.state !== 'dodge') {
+            q.a1 = 0.45;
+            q.a2 = -0.25;
+            q.k1 = 0.7;
+            q.k2 = 0.5;
+          }
+          return q;
+        }
+        // Kinematyka: z kątów — punkty stawów w układzie strony (lustrzane odbicie dla patrzących w lewo, obrót przy upadku).
+        function solve(f) {
+          const p = f.pose;
+          const s = f.s;
+          const T = 10.5 * s;
+          const S = 10.5 * s;
+          const TOR = 17 * s;
+          const U = 9 * s;
+          const FO = 8.5 * s;
+          const R = 10 * s;
+          const leg = (a, k) => {
+            const kx = Math.sin(a) * T;
+            const ky = Math.cos(a) * T;
+            return [kx, ky, kx + Math.sin(a - k) * S, ky + Math.cos(a - k) * S];
+          };
+          const L1 = leg(p.a1, p.k1);
+          const L2 = leg(p.a2, p.k2);
+          const lift = Math.max(L1[3], L2[3]);
+          const neck = [Math.sin(p.lean) * TOR, -Math.cos(p.lean) * TOR];
+          const sh = [neck[0] * 0.86, neck[1] * 0.86];
+          const ha = p.lean + p.tilt * 0.8;
+          const head = [neck[0] + Math.sin(ha) * (R + 1.5 * s), neck[1] - Math.cos(ha) * (R + 1.5 * s)];
+          const arm = (a, e) => {
+            const ex = sh[0] + Math.sin(a) * U;
+            const ey = sh[1] + Math.cos(a) * U;
+            return [ex, ey, ex + Math.sin(a + e) * FO, ey + Math.cos(a + e) * FO];
+          };
+          const A1 = arm(p.s1, p.e1);
+          const A2 = arm(p.s2, p.e2);
+          const d = f.dir;
+          const ox = f.x;
+          const oy = f.y - Math.abs(Math.sin(p.rot)) * R * 0.8;
+          const cr = Math.cos(p.rot);
+          const sr = Math.sin(p.rot);
+          const W = (x, y) => {
+            const lx = d * x;
+            const ly = y - lift;
+            return [ox + lx * cr - ly * sr, oy + lx * sr + ly * cr];
+          };
+          f.j = {
+            hip: W(0, 0),
+            k1: W(L1[0], L1[1]),
+            f1: W(L1[2], L1[3]),
+            k2: W(L2[0], L2[1]),
+            f2: W(L2[2], L2[3]),
+            neck: W(neck[0], neck[1]),
+            sh: W(sh[0], sh[1]),
+            e1: W(A1[0], A1[1]),
+            h1: W(A1[2], A1[3]),
+            e2: W(A2[0], A2[1]),
+            h2: W(A2[2], A2[3]),
+            head: W(head[0], head[1]),
+            R,
+            ang: p.rot + d * ha * 0.7,
+          };
+        }
+        // Rzut po łuku: w przeciwnika (z lekkim rozrzutem) albo — w odwecie — prosto w kursor.
+        function release(f) {
+          const [sx, sy] = f.j.h1;
+          const g = 0.16;
+          if (f.revenge && pointer.on) {
+            f.revenge = false;
+            const T = clamp(Math.hypot(pointer.x - sx, pointer.y - sy) / 9, 22, 46);
+            add({ t: 'ball', x: sx, y: sy, vx: (pointer.x - sx) / T, vy: (pointer.y - sy) / T - (g * (T + 1)) / 2, r: 3.6 * f.s, vol: 90, rot: 0, vr: 0.1, g, drag: 1, flight: T, toward: true, owner: f, z: 0, noLand: true, instant: true });
+            say(f, 'Odwet!', 60);
+            return;
+          }
+          const o = f.aim && alive(f.aim) ? f.aim : foe(f);
+          if (!o?.j) return;
+          const tx = o.x + rnd(-1, 1) * 26 * f.s;
+          const ty = o.j.neck[1] + rnd(-12, 10) * f.s;
+          const dx = tx - sx;
+          const T = clamp(Math.abs(dx) / (6.5 * f.s), 26, 72);
+          add({ t: 'ball', x: sx, y: sy, vx: dx / T, vy: (ty - sy) / T - (g * (T + 1)) / 2, r: 3.6 * f.s, vol: 110, rot: 0, vr: (dx / T) * 0.05, g, drag: 1, flight: Infinity, owner: f, z: 0, noLand: true, instant: true });
+          if (Math.random() < 0.3) say(f, pickOne(SAY_THROW), 45);
+        }
+        function struck(f, p) {
+          f.hits += 1;
+          if (p.owner) p.owner.team.score += 1;
+          const from = Math.sign(p.vx) || -f.dir;
+          f.vx = from * 2.2 * f.s;
+          if (!f.air) {
+            f.vy = -1.6 * f.s;
+            f.air = true;
+          }
+          if (f.state === 'scoop' || f.state === 'aim') f.ball = false;
+          set(f, 'hit');
+          if (!p.owner) {
+            f.revenge = true;
+            say(f, pickOne(SAY_USER), 80);
+          } else say(f, pickOne(SAY_HIT), 60);
+          poof(p.x, p.y, p.r * 1.3, -from * 0.6, -0.7, 0.8);
+          for (let k = 0; k < 8; k++) add({ t: 'clump', x: p.x, y: p.y, vx: rnd(-1.6, 1.6) - from * 0.6, vy: rnd(-2.2, 0.2), g: 0.2, drag: 0.99, r: rnd(0.9, 1.7), vol: 3, z: 0, wall: true });
+        }
+        const seg = (px, py, a, b) => {
+          const vx = b[0] - a[0];
+          const vy = b[1] - a[1];
+          const t = clamp(((px - a[0]) * vx + (py - a[1]) * vy) / (vx * vx + vy * vy || 1), 0, 1);
+          return Math.hypot(px - a[0] - vx * t, py - a[1] - vy * t);
+        };
+        function think(f, dt) {
+          const t = f.t;
+          if (ending && (f.state === 'idle' || f.state === 'aim' || f.state === 'scoop' || f.state === 'throw' || f.state === 'walk')) {
+            leave(f);
+            return;
+          }
+          switch (f.state) {
+            case 'walk':
+            case 'leave': {
+              const dx = f.tx - f.x;
+              const sp = (f.state === 'leave' ? 1.25 : 0.95) * f.s;
+              if (Math.abs(dx) > 2) {
+                f.dir = Math.sign(dx);
+                f.x += Math.sign(dx) * Math.min(Math.abs(dx), sp * dt);
+                f.phase += 0.19 * dt;
+              } else if (f.state === 'leave') f.gone = true;
+              else set(f, f.ball ? 'aim' : 'scoop');
+              if (f.state === 'leave' && (f.x < -50 || f.x > w + 50)) f.gone = true;
+              break;
+            }
+            case 'idle': {
+              const o = foe(f);
+              if (o) f.dir = Math.sign(o.x - f.x) || f.dir;
+              if (t > 40) set(f, f.ball ? 'aim' : 'scoop');
+              break;
+            }
+            case 'scoop':
+              if (t >= 26 && !f.ball) {
+                f.ball = true;
+                const lx = clamp(f.x + f.dir * 9 * f.s, 0, Math.max(1, ground.w - 1));
+                if (ground.snow) scoop(ground, lx, 9, 160);
+                for (let k = 0; k < 4; k++) add({ t: 'flake', x: f.x + f.dir * 9 * f.s + rnd(-5, 5), y: f.y - rnd(1, 5), vx: rnd(-0.8, 0.8), vy: -rnd(0.4, 1.4), g: 0.05, r: rnd(0.8, 1.5), a: 0.9, vol: 2, sway: rnd(0, TAU), amp: 0.2, wk: 0.3, tk: 1, z: 0 });
+              }
+              if (t >= 52) set(f, 'aim');
+              break;
+            case 'aim': {
+              if (t < 1) f.aim = f.revenge && pointer.on ? null : foe(f);
+              const tx = f.revenge && pointer.on ? pointer.x : f.aim?.x;
+              if (tx === undefined) {
+                set(f, 'idle');
+                break;
+              }
+              f.dir = Math.sign(tx - f.x) || f.dir;
+              if (t >= 18) set(f, 'throw');
+              break;
+            }
+            case 'throw':
+              if (t >= 3 && f.ball) {
+                f.ball = false;
+                release(f);
+              }
+              if (t >= 18) {
+                if (Math.random() < 0.55) {
+                  f.tx = spot(f);
+                  set(f, 'walk');
+                } else set(f, 'scoop');
+              }
+              break;
+            case 'hit':
+              if (t >= 34 && !f.air) {
+                if (ending) leave(f);
+                else if (f.hits >= 3) {
+                  set(f, 'down');
+                  say(f, 'Poddaję się…', 90);
+                } else {
+                  f.tx = spot(f);
+                  set(f, 'walk');
+                }
+              }
+              break;
+            case 'down':
+              if (t >= f.lie + 24) {
+                f.hits = 0;
+                if (ending) leave(f);
+                else {
+                  f.tx = spot(f);
+                  set(f, 'walk');
+                }
+              }
+              break;
+            case 'cheer':
+              if (!f.air && Math.floor(t / 34) !== Math.floor((t - dt) / 34)) {
+                f.vy = -3.4 * f.s;
+                f.air = true;
+              }
+              if (t > 170) leave(f);
+              break;
+            case 'sulk':
+              if (t > 150) leave(f);
+              break;
+          }
+        }
+        function leave(f) {
+          f.tx = f.side ? w + 60 : -60;
+          set(f, 'leave');
+        }
+        function finish() {
+          ending = true;
+          const [a, b] = TEAMS;
+          for (const f of fighters) {
+            if (f.state === 'down') continue;
+            f.ball = false;
+            if (a.score === b.score) {
+              say(f, 'Remis!', 90);
+              leave(f);
+            } else if ((a.score > b.score) === (f.side === 0)) {
+              say(f, pickOne(['GG!', 'Wygrana!', 'Hehe!']), 100);
+              set(f, 'cheer');
+            } else {
+              say(f, pickOne(['Rewanż!', 'Jeszcze raz!']), 100);
+              set(f, 'sulk');
+            }
+          }
+        }
+        function rrect(x, y, ww, hh, r) {
+          ctx.beginPath();
+          if (ctx.roundRect) ctx.roundRect(x, y, ww, hh, r);
+          else ctx.rect(x, y, ww, hh);
+        }
+        function speech(x, y, text, s) {
+          ctx.font = `700 ${Math.round(11 * s + 1)}px Rubik, system-ui, sans-serif`;
+          const pw = ctx.measureText(text).width + 12 * s;
+          const ph = 18 * s;
+          const bx = clamp(x - pw / 2, 4, w - pw - 4);
+          const by = y - ph - 6 * s;
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.96)';
+          rrect(bx, by, pw, ph, 7 * s);
+          ctx.fill();
+          const tx = clamp(x, bx + 8 * s, bx + pw - 8 * s);
+          ctx.beginPath();
+          ctx.moveTo(tx - 4 * s, by + ph - 0.5);
+          ctx.lineTo(tx, by + ph + 5 * s);
+          ctx.lineTo(tx + 4 * s, by + ph - 0.5);
+          ctx.fill();
+          ctx.fillStyle = '#152033';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(text, bx + pw / 2, by + ph / 2 + 0.5);
+        }
+        function drawOne(f) {
+          const j = f.j;
+          const s = f.s;
+          const R = j.R;
+          const line = (...pts) => {
+            ctx.moveTo(pts[0][0], pts[0][1]);
+            for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+          };
+          ctx.globalAlpha = 1;
+          // Cień na śniegu.
+          ctx.fillStyle = 'rgba(40, 60, 100, 0.28)';
+          ctx.beginPath();
+          ctx.ellipse(f.x, f.y - 0.5, (f.state === 'down' ? 24 : 10) * s, 2.6 * s, 0, 0, TAU);
+          ctx.fill();
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          // Obrys całej sylwetki (ciemny), potem dalsza ręka i noga (ciemniejsze) i reszta.
+          ctx.strokeStyle = 'rgba(6, 14, 30, 0.6)';
+          ctx.lineWidth = 5.4 * s;
+          ctx.beginPath();
+          line(j.hip, j.k2, j.f2);
+          line(j.hip, j.k1, j.f1);
+          line(j.hip, j.neck);
+          line(j.sh, j.e2, j.h2);
+          line(j.sh, j.e1, j.h1);
+          ctx.stroke();
+          ctx.lineWidth = 3.1 * s;
+          ctx.strokeStyle = '#a9b8cd';
+          ctx.beginPath();
+          line(j.hip, j.k2, j.f2);
+          line(j.sh, j.e2, j.h2);
+          ctx.stroke();
+          ctx.strokeStyle = '#eef4fc';
+          ctx.beginPath();
+          line(j.hip, j.k1, j.f1);
+          line(j.hip, j.neck);
+          line(j.sh, j.e1, j.h1);
+          ctx.stroke();
+          // Buty i rękawiczki.
+          ctx.fillStyle = '#273246';
+          for (const p of [j.f1, j.f2]) {
+            ctx.beginPath();
+            ctx.ellipse(p[0] + f.dir * 1.2 * s, p[1], 2.9 * s, 2 * s, 0, 0, TAU);
+            ctx.fill();
+          }
+          ctx.fillStyle = f.team.color;
+          for (const p of [j.h1, j.h2]) {
+            ctx.beginPath();
+            ctx.arc(p[0], p[1], 2.1 * s, 0, TAU);
+            ctx.fill();
+          }
+          if (f.ball) drawBall(j.h1[0], j.h1[1] - 1.5 * s, 3.6 * s, 0, 1);
+          // Szalik: pętla na szyi i powiewający koniec.
+          ctx.strokeStyle = f.team.color;
+          ctx.lineWidth = 3.4 * s;
+          ctx.beginPath();
+          const nx = j.neck[0];
+          const ny = j.neck[1] + 1.5 * s;
+          ctx.moveTo(nx - 3 * s, ny);
+          ctx.lineTo(nx + 3 * s, ny);
+          const flap = Math.sin(now * 0.012 + f.phase) * 2 * s;
+          ctx.moveTo(nx - f.dir * 1.5 * s, ny + 1 * s);
+          ctx.quadraticCurveTo(nx - f.dir * 6 * s, ny + 3 * s + flap, nx - f.dir * 10 * s, ny + 5 * s - flap);
+          ctx.stroke();
+          // Głowa: awatar w kółku, czapka z pomponem w kolorze drużyny.
+          ctx.save();
+          ctx.translate(j.head[0], j.head[1]);
+          ctx.rotate(j.ang);
+          ctx.fillStyle = 'rgba(6, 14, 30, 0.6)';
+          ctx.beginPath();
+          ctx.arc(0, 0, R + 1.6 * s, 0, TAU);
+          ctx.fill();
+          ctx.drawImage(f.face, -R, -R, R * 2, R * 2);
+          ctx.fillStyle = f.team.color;
+          ctx.beginPath();
+          ctx.ellipse(0, -R * 0.68, R * 0.9, R * 0.66, 0, Math.PI, TAU);
+          ctx.fill();
+          ctx.fillStyle = f.team.dark;
+          ctx.beginPath();
+          ctx.ellipse(R * 0.22, -R * 0.98, R * 0.42, R * 0.24, -0.4, Math.PI * 1.1, TAU);
+          ctx.fill();
+          ctx.fillStyle = '#f3f6fb';
+          rrect(-R * 0.98, -R * 0.84, R * 1.96, R * 0.32, R * 0.16);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(-f.dir * R * 0.28, -R * 1.42, R * 0.28, 0, TAU);
+          ctx.fill();
+          ctx.restore();
+          // Nick nad głową.
+          const top = j.head[1] - R * 1.75 - 3 * s;
+          if (f.state !== 'down') {
+            ctx.font = `600 ${Math.round(10 * s + 1)}px Rubik, system-ui, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = 'rgba(5, 10, 22, 0.75)';
+            ctx.strokeText(f.name, j.head[0], top);
+            ctx.fillStyle = 'rgba(236, 242, 252, 0.95)';
+            ctx.fillText(f.name, j.head[0], top);
+          }
+          if (f.sayT > 0) speech(j.head[0], top - (f.state === 'down' ? 0 : 13 * s), f.say, s);
+        }
+        return {
+          tick(dt) {
+            if (!fighters.length) {
+              next -= dt;
+              if (next <= 0) start();
+              return;
+            }
+            clock += dt;
+            if (!ending && clock > len) finish();
+            const balls = list.filter((p) => p.t === 'ball' && !p.toward);
+            for (const f of fighters) {
+              f.t += dt;
+              if (f.sayT > 0) f.sayT -= dt;
+              f.s = scaleNow();
+              // Uniki: lecąca śnieżka przeciwnika (albo od kursora) blisko — czasem podskok.
+              if (!f.air && (f.state === 'walk' || f.state === 'idle' || f.state === 'scoop' || f.state === 'aim')) {
+                for (const p of balls) {
+                  if (p.owner && p.owner.side === f.side) continue;
+                  const dx = f.x - p.x;
+                  if (Math.abs(dx) > 120 * f.s || (p.owner && Math.sign(p.vx) !== Math.sign(dx))) continue;
+                  p.seen ??= new Set();
+                  if (p.seen.has(f)) continue;
+                  p.seen.add(f);
+                  if (Math.random() < (p.owner ? 0.3 : 0.2)) {
+                    f.vy = -4.4 * f.s;
+                    f.air = true;
+                    set(f, 'dodge');
+                  }
+                  break;
+                }
+              }
+              f.x += f.vx * dt;
+              f.vx *= 0.9 ** dt;
+              const gy = footAt(f.x) + 1.5 * f.s;
+              if (f.air) {
+                f.vy += 0.3 * dt;
+                f.y += f.vy * dt;
+                if (f.y >= gy) {
+                  f.y = gy;
+                  f.air = false;
+                  f.vy = 0;
+                  for (let k = 0; k < 3; k++) add({ t: 'flake', x: f.x + rnd(-6, 6), y: gy - 1, vx: rnd(-0.9, 0.9), vy: -rnd(0.3, 1), g: 0.05, r: rnd(0.8, 1.4), a: 0.9, vol: 2, sway: rnd(0, TAU), amp: 0.2, wk: 0.3, tk: 1, z: 0 });
+                  if (f.state === 'dodge') set(f, 'idle');
+                }
+              } else f.y = gy;
+              think(f, dt);
+              const q = target(f);
+              const k = 1 - (f.state === 'throw' ? 0.45 : 0.72) ** dt;
+              for (const key in q) f.pose[key] += (q[key] - f.pose[key]) * k;
+              solve(f);
+            }
+            for (let i = fighters.length - 1; i >= 0; i--) if (fighters[i].gone) fighters.splice(i, 1);
+            if (!fighters.length) next = rnd(1500, 3000);
+          },
+          draw() {
+            for (const f of fighters) if (f.j) drawOne(f);
+            ctx.globalAlpha = 1;
+          },
+          end: () => ending || finish(),
+          peek: () => ({ held: Boolean(held), balls: list.filter((p) => p.t === 'ball').map((p) => [Math.round(p.x), Math.round(p.y), p.owner ? p.owner.name : 'user']), fighters: fighters.map((f) => ({ name: f.name, side: f.side, state: f.state, x: f.x, y: f.y, hits: f.hits, revenge: f.revenge, head: f.j?.head })) }),
+          // Czy śnieżka trafiła ludzika (własnej drużyny nie trafia; leżących też nie).
+          hit(p) {
+            if (p.toward) return false;
+            for (const f of fighters) {
+              if (!f.j || f.gone || f.state === 'down' || f.state === 'leave') continue;
+              if (p.owner && p.owner.side === f.side) continue;
+              const j = f.j;
+              const rr = p.r * 0.75;
+              if (Math.hypot(p.x - j.head[0], p.y - j.head[1]) < j.R + rr || seg(p.x, p.y, j.hip, j.neck) < 4 * f.s + rr || seg(p.x, p.y, j.hip, j.f1) < 3 * f.s + rr || seg(p.x, p.y, j.hip, j.f2) < 3 * f.s + rr) {
+                struck(f, p);
+                return true;
+              }
+            }
+            return false;
+          },
+        };
+      }
+
       function frame(t) {
         raf = 0;
         if (dead) return;
@@ -6125,6 +6822,7 @@
         if (held) rollBall(dt);
         themeTick(dt);
         if (pointer.on && piles) interact();
+        if (fight) fight.tick(dt);
         stepping = true;
         list = list.filter((p) => step(p, dt));
         stepping = false;
@@ -6175,6 +6873,7 @@
         umbrella *= 0.94;
         if (gesture?.kind === 'magnet' && pointer.on) drawMagnet();
         if (blowing) drawWand();
+        if (fight) fight.draw();
         if (held) drawBall(held.x, held.y, held.r, held.rot, 1);
         ctx.globalAlpha = 1;
         for (const tl of tools) {
@@ -6212,6 +6911,10 @@
       listen(document, 'visibilitychange', onVisible);
       fit();
       if (caps || bubbly) collect();
+      if (snowy && !EMBED) {
+        fight = makeFight();
+        if (QS.get('fxdebug') === '1') window.__fxFight = fight;
+      }
       spawnNear(true);
       if (bubbly) for (let i = 2 + Math.round(kk * 3); i > 0; i--) fish.push(spawnFish(true));
       if (snowy) makeTool('shovel');
