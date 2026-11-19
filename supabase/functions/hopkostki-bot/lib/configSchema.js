@@ -56,12 +56,15 @@ function cleanServerInfoSections(input, current) {
   });
 }
 
-export const XP_EVENT_THEMES = ['confetti', 'fire', 'snow', 'stars', 'neon'];
+export const XP_EVENT_THEMES = ['confetti', 'fire', 'snow', 'stars', 'neon', 'hearts', 'halloween', 'leaves', 'sakura', 'coins', 'storm', 'bubbles', 'matrix'];
+// Intensywność efektów na stronie rankingu: none = baner bez animacji i cząsteczek.
+export const XP_EVENT_INTENSITY = ['none', 'low', 'medium', 'high'];
 export const XP_EVENT_KINDS = ['message', 'voice', 'reaction'];
 const XP_EVENT_MAX_MS = 31 * 24 * 60 * 60_000;
 
-// Wydarzenia XP z panelu: poprawne daty (koniec po początku, najwyżej 31 dni), mnożnik 1,1–10, co najmniej jeden
-// rodzaj XP; najwyżej 50, posortowane po początku.
+// Wydarzenia XP z panelu: poprawne daty (koniec po początku, najwyżej 31 dni), dowolny mnożnik 1,1–10 (do dwóch
+// miejsc po przecinku), co najmniej jeden rodzaj XP; styl: motyw, intensywność efektów i opcjonalny własny kolor
+// (#rrggbb). Najwyżej 50, posortowane po początku.
 function cleanXpEvents(input, current) {
   if (!Array.isArray(input)) return current;
   const seen = new Set();
@@ -84,6 +87,8 @@ function cleanXpEvents(input, current) {
       endsAt: new Date(end).toISOString(),
       kinds,
       theme: XP_EVENT_THEMES.includes(e?.theme) ? e.theme : 'confetti',
+      intensity: XP_EVENT_INTENSITY.includes(e?.intensity) ? e.intensity : 'medium',
+      accent: /^#[0-9a-f]{6}$/i.test(String(e?.accent ?? '')) ? String(e.accent).toLowerCase() : null,
     });
   }
   return out.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)).slice(-50);

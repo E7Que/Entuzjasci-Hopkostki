@@ -547,7 +547,20 @@ export const XP_EVENT_STYLE = {
   snow: { emoji: '❄️', color: 0x7cc8ff },
   stars: { emoji: '✨', color: 0xf5c04a },
   neon: { emoji: '⚡', color: 0x22e5c8 },
+  hearts: { emoji: '💖', color: 0xff5c8a },
+  halloween: { emoji: '🎃', color: 0xff7a18 },
+  leaves: { emoji: '🍂', color: 0xd9822b },
+  sakura: { emoji: '🌸', color: 0xffa6c9 },
+  coins: { emoji: '🪙', color: 0xf2c14e },
+  storm: { emoji: '⛈️', color: 0x7a8cff },
+  bubbles: { emoji: '🫧', color: 0x5fd3ff },
+  matrix: { emoji: '💚', color: 0x31e981 },
 };
+// Styl ogłoszenia: emoji motywu, kolor motywu albo własny kolor wydarzenia.
+function eventStyle(event) {
+  const style = XP_EVENT_STYLE[event.theme] ?? XP_EVENT_STYLE.confetti;
+  return /^#[0-9a-f]{6}$/i.test(event.accent ?? '') ? { ...style, color: parseInt(event.accent.slice(1), 16) } : style;
+}
 const XP_KIND_NAMES = { message: 'wiadomości', voice: 'kanały głosowe', reaction: 'reakcje' };
 const listText = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} i ${items.at(-1)}` : (items[0] ?? ''));
 export const multiplierText = (m) => `×${String(m).replace('.', ',')}`;
@@ -571,7 +584,20 @@ function lastXpEvent(config, now, within = 3 * DAY) {
     .sort((a, b) => eventTime(b, 'endsAt') - eventTime(a, 'endsAt'))[0] ?? null;
 }
 
-export const publicXpEvent = (e) => (e ? { id: e.id, name: e.name, multiplier: e.multiplier, startsAt: e.startsAt, endsAt: e.endsAt, kinds: e.kinds, theme: e.theme } : null);
+export const publicXpEvent = (e) =>
+  e
+    ? {
+        id: e.id,
+        name: e.name,
+        multiplier: e.multiplier,
+        startsAt: e.startsAt,
+        endsAt: e.endsAt,
+        kinds: e.kinds,
+        theme: e.theme,
+        intensity: e.intensity ?? 'medium',
+        accent: e.accent ?? null,
+      }
+    : null;
 
 // Dla strony rankingu: trwające wydarzenie, najbliższe zaplanowane (do 14 dni) i ostatnie zakończone (do 3 dni).
 export function xpEventsOverview(config, now = Date.now()) {
@@ -599,7 +625,7 @@ function eventFooter(guild) {
 }
 
 export function xpEventStartEmbed(config, event, guild = null) {
-  const style = XP_EVENT_STYLE[event.theme] ?? XP_EVENT_STYLE.confetti;
+  const style = eventStyle(event);
   const end = Math.floor(eventTime(event, 'endsAt') / 1000);
   const cap = config.antiFarm.dailyCap > 0 ? Math.round(config.antiFarm.dailyCap * event.multiplier) : 0;
   const lines = [
@@ -625,7 +651,7 @@ function peopleEarned(n) {
 }
 
 export function xpEventEndEmbed(config, event, top, summary, guild = null) {
-  const style = XP_EVENT_STYLE[event.theme] ?? XP_EVENT_STYLE.confetti;
+  const style = eventStyle(event);
   const lines = top.map((row, i) => `${MEDALS[i] ?? `\`${String(i + 1).padStart(2, ' ')}.\``} <@${row.userId}> — **${pl(row.periodXp)} XP**`);
   const description = top.length
     ? `Najwięcej XP w czasie wydarzenia:\n\n${lines.join('\n')}\n\nŁącznie ${peopleEarned(summary.people)} **${pl(summary.xp)} XP**. Dzięki za udział!`

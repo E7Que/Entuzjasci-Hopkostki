@@ -30,7 +30,9 @@ import {
   winnersArchiveTick,
   periodLabel,
   canManageXp,
+  XP_EVENT_STYLE,
 } from '../supabase/functions/hopkostki-bot/lib/levels.js';
+import { XP_EVENT_THEMES, XP_EVENT_INTENSITY } from '../supabase/functions/hopkostki-bot/lib/configSchema.js';
 import { P } from '../supabase/functions/hopkostki-bot/lib/permissions.js';
 
 const LVL5 = '100000000000000060';
@@ -303,6 +305,64 @@ test('wydarzenia XP: wybór wydarzenia dla strony, nakładające się wydarzenia
   assert.equal(xpEventsOverview(config, now + 10 * 3_600_000).current, null);
   assert.equal(multiplierText(1.5), '×1,5');
   assert.equal(multiplierText(2), '×2');
+});
+
+test('wydarzenia XP: własny mnożnik, efekt, intensywność i własny kolor (zapis, publiczne API, ogłoszenie)', async () => {
+  const now = Date.now();
+  const EVENT_CH = '100000000000000069';
+  const iso = (ms) => new Date(ms).toISOString();
+  const base = { name: 'Burza', startsAt: iso(now - 60_000), endsAt: iso(now + 3_600_000), kinds: ['message'] };
+  const s = await setup({
+    publicLeaderboard: true,
+    message: { min: 10, max: 10, cooldown: 0 },
+    events: [
+      { ...base, id: 'evstorm1', multiplier: 1.257, theme: 'storm', intensity: 'high', accent: '#3B82F6' },
+      { ...base, id: 'evlow001', multiplier: 1.05, theme: 'storm' },
+      { ...base, id: 'evhigh01', multiplier: 10.5, theme: 'storm' },
+      { ...base, id: 'evodd001', multiplier: 3, theme: 'disco', intensity: 'max', accent: 'red', startsAt: iso(now + 86_400_000), endsAt: iso(now + 90_000_000) },
+    ],
+    eventsAnnounce: { enabled: true, channelId: EVENT_CH },
+  });
+  // Mnożnik dowolny od ×1,1 do ×10 (2 miejsca po przecinku); nieznany efekt/intensywność/kolor → domyślne.
+  assert.deepEqual((await s.store.getConfig()).levels.events.map((e) => [e.id, e.multiplier, e.theme, e.intensity, e.accent]), [
+    ['evstorm1', 1.26, 'storm', 'high', '#3b82f6'],
+    ['evodd001', 3, 'confetti', 'medium', null],
+  ]);
+  await onMessageLevels(s.bot, message('target', { content: 'hej' }));
+  assert.equal((await s.store.getLevel('target')).xp, 13, '10 XP × 1,26 = 12,6 → 13');
+
+  const handle = createHandler(s.bot);
+  const body = await (await handle(new Request('https://x.supabase.co/functions/v1/hopkostki-bot/panel/public/leaderboard'))).json();
+  assert.deepEqual(
+    [body.events.current.theme, body.events.current.intensity, body.events.current.accent, body.events.current.multiplier],
+    ['storm', 'high', '#3b82f6', 1.26],
+  );
+  assert.deepEqual([body.events.next.theme, body.events.next.intensity, body.events.next.accent], ['confetti', 'medium', null]);
+
+  // Ogłoszenie: emoji efektu, kolor z własnego koloru wydarzenia, mnożnik z przecinkiem.
+  await xpEventsTick(s.bot, { now });
+  const post = s.discord.state.channels.get(EVENT_CH)[0].embeds[0];
+  assert.equal(post.title, '⛈️ Wydarzenie XP: Burza');
+  assert.equal(post.color, 0x3b82f6);
+  assert.match(post.description, /\*\*×1,26 XP\*\* za wiadomości!/);
+});
+
+test('wydarzenia XP: ta sama lista efektów w bocie, panelu i na stronie rankingu', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const panel = await readFile(new URL('../panel/public/app.js', import.meta.url), 'utf8');
+  const page = await readFile(new URL('../panel/public/ranking.html', import.meta.url), 'utf8');
+  const html = await readFile(new URL('../panel/public/index.html', import.meta.url), 'utf8');
+  const panelThemes = [...panel.match(/const EV_THEMES = \{([\s\S]*?)\};/)[1].matchAll(/(\w+): '/g)].map((m) => m[1]);
+  const pageThemes = JSON.parse(page.match(/const EV_THEMES = (\[[^\]]*\]);/)[1].replaceAll("'", '"'));
+  const formThemes = [...html.match(/<select id="ev-theme">([\s\S]*?)<\/select>/)[1].matchAll(/value="(\w+)"/g)].map((m) => m[1]);
+  const formLevels = [...html.match(/<select id="ev-intensity">([\s\S]*?)<\/select>/)[1].matchAll(/value="(\w+)"/g)].map((m) => m[1]);
+  assert.deepEqual(panelThemes, XP_EVENT_THEMES, 'panel (app.js)');
+  assert.deepEqual(pageThemes, XP_EVENT_THEMES, 'strona rankingu');
+  assert.deepEqual(formThemes, XP_EVENT_THEMES, 'formularz w panelu');
+  assert.deepEqual(formLevels, XP_EVENT_INTENSITY, 'intensywność w formularzu');
+  for (const theme of XP_EVENT_THEMES) assert.ok(XP_EVENT_STYLE[theme], `styl ogłoszenia: ${theme}`);
+  const pageLevels = Object.keys(JSON.parse(page.match(/const FX_LEVEL = (\{[^}]*\});/)[1].replace(/(\w+):/g, '"$1":')));
+  assert.deepEqual(pageLevels, XP_EVENT_INTENSITY, 'intensywność na stronie rankingu');
 });
 
 test('prywatność: /prywatnosc ukrywa osobę na stronie rankingu (anonimowe miejsce, bez wyszukiwania i profilu)', async () => {
