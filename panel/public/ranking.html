@@ -3615,7 +3615,7 @@
       let held = null; // śnieżka w ręce
       let gesture = null; // przytrzymanie przycisku: śnieżka, dmuchanie bańki, magnes na monety
       let tool = null; // narzędzie w ręce (łopata, gaśnica)
-      let fight = null; // bitwa na śnieżki (motyw śniegu)
+      let crowd = null; // ludziki z topki na dole ekranu
       let toolScale = 1;
       const tools = [];
       let blowing = null; // bańka, którą właśnie się dmucha
@@ -4332,7 +4332,7 @@
           p.y += (p.vy * dt) / n;
           // Rzucona „w ekran” (odwet ludzika) leci nad stroną i plaska dopiero na szybie.
           if (p.toward) continue;
-          if (fight && fight.hit(p)) return false;
+          if (crowd && crowd.hit(p)) return false;
           // Krawędzie ekranu to ściany — śnieżka plaska o nie.
           if (p.x < p.r * 0.6 || p.x > w - p.r * 0.6 || p.y < p.r * 0.6) {
             splatAt(clamp(p.x, p.r * 0.7, w - p.r * 0.7), Math.max(p.y, p.r * 0.7), p.r * 1.3, p.vx, p.vy);
@@ -5825,6 +5825,7 @@
         );
       }
       function click(x, y) {
+        crowd?.near(x, y);
         for (const p of list) {
           if (p.t === 'bubble' && !p.held && Math.hypot(p.x - x, p.y - y) < p.r + 18) {
             popBubble(p);
@@ -5846,7 +5847,7 @@
             for (let k = 0; k < 8; k++) add({ ...fxPop(theme, x, y), z: 0 });
             return;
           case 'fire':
-            if (fire.heat(x, y, 3, 1)) fire.boost = Math.max(fire.boost, 0.35);
+            if (fire?.heat(x, y, 3, 1)) fire.boost = Math.max(fire.boost, 0.35);
             break;
           case 'leaves':
           case 'sakura':
@@ -6290,25 +6291,32 @@
         ctx.restore();
       }
 
-      // ---- Bitwa na śnieżki (motyw śniegu): ludziki z awatarami losowych osób z topki ----
-      // Rundy: kilka osób wchodzi z boków, lepi śnieżki ze śniegu na dole ekranu, rzuca w drużynę naprzeciwko,
-      // robi uniki, po trzech trafieniach leży chwilę w śniegu. Kto trafi ich własną śnieżką — dostaje odwet w kursor.
-      function makeFight() {
-        const TEAMS = [
-          { color: '#e5484d', dark: '#8f2328', score: 0 },
-          { color: '#3d8bf2', dark: '#1d4a9a', score: 0 },
-        ];
-        const SAY_HIT = ['Auć!', 'Ała!', 'Oj!', 'Ej!', 'Uff!'];
-        const SAY_THROW = ['Łap!', 'Masz!', 'Leci!'];
-        const SAY_USER = ['Hej!', 'Kto to?!', 'Ej, ty!'];
-        const fighters = [];
-        let next = rnd(150, 300);
+      // ---- Ludziki: osoby z topki bawią się na dole ekranu — każdy efekt ma własną zabawę ----
+      // Wspólne: awatar jako głowa, nick, szkielet z pozami, chód, dymki i rozmowy (zaczepiają się po nickach
+      // i odpowiadają sobie). Sceny: wchodzą z boków, bawią się dłuższą chwilę, żegnają się i wychodzą, a po krótkiej
+      // przerwie przychodzą następni. Motyw (S) dokłada: co robią, co mają na głowie i w rękach, co mówią.
+      function makeCrowd() {
+        const CHAT = ['Elo!', 'Siema, {n}!', 'Ile masz XP?', 'Mam {lvl} poziom!', 'Kto tu jest top 1?', '{n}, gonię cię w rankingu!', 'Jeszcze trochę do awansu…', 'Wbijam na podium!', 'Ale tu tłoczno!', 'Grind XP trwa', 'Kto na głosowy?', 'GG wszystkim!', 'Nie śpimy, farmimy XP', '{n}, wbijasz na kanał?', 'Wydarzenie {mult}, lecimy!', 'Kto pisze najwięcej?', '{n}, ile ci brakuje do awansu?', 'Ranking się grzeje!', 'Dzisiaj nabiję poziom', 'Co tam, {n}?', 'Widzieliście top 3?', 'Ja tu tylko na chwilę', 'Ale klimat!'];
+        const REPLY = ['No hej!', 'Siema!', 'Co tam?', 'Haha', 'Nie dam się!', 'Zobaczymy!', 'Trzymaj się!', 'Jasne!', 'Później!', 'XD', 'Serio?', 'No pewnie!', 'Ja też!', 'Spokojnie', 'Hehe', 'Może…', 'Dawaj!', 'Elo!'];
+        const HELLO = ['Siema!', 'Jestem!', 'Hej wszystkim!', 'Co tu się dzieje?', 'Elo!', 'Cześć!', 'O, impreza?', 'Już jestem!', 'Hejka!'];
+        const BYE = ['Pa!', 'Na razie!', 'Do jutra!', 'Lecę!', 'Było super!', 'Spadam farmić XP', 'Do zobaczenia!', 'Narka!', 'Muszę iść', 'Papa!'];
+        const POKE = ['Hej!', 'Ej, nie klikaj!', 'Łaskocze!', 'Co jest?', 'Halo?', 'Hihi', 'Uważaj!', 'Ała!', 'Kto to?', 'Nie szturchaj!', 'Hop!', 'Hej, to ja!'];
+        const WOW = ['Wow!', 'Ooo!', 'Co to było?!', 'Łał!', 'Ale efekt!', 'Jeszcze raz!', 'Super!'];
+        const PAL = ['#e5484d', '#3d8bf2', '#2fbf71', '#f5a524', '#a35cf2', '#ec4899', '#14b8a6', '#f97316'];
+        const mult = ((document.querySelector('#event .ev-mult')?.textContent ?? '').match(/×\s*[\d.,]+/)?.[0] ?? '×2').replace(/\s+/g, '');
+        const ppl = [];
+        let next = rnd(90, 170);
         let clock = 0;
         let len = 0;
         let ending = false;
+        let chatT = rnd(100, 180);
         const scaleNow = () => clamp(h / 900, 0.75, 1.05) * (w < 640 ? 1 : 1.2);
-        // Prawa drużyna nie wchodzi na łopatę opartą o prawą krawędź ekranu.
-        const zoneOf = (side) => (side ? [w * 0.6, Math.max(w * 0.62, Math.min(w * 0.94, w - 100 * toolScale))] : [Math.max(w * 0.06, 30), w * 0.4]);
+        const right = () => (tools.length ? w - 100 * toolScale : w * 0.95);
+        const footAt = (x) => (caps && ground.w ? surfTop(ground, clamp(x, 0, Math.max(1, ground.w - 1))) : h) + hopOffset(ground);
+        const onScreen = (o) => !o.gone && o.x > 0 && o.x < w;
+        const others = (f) => ppl.filter((o) => o !== f && onScreen(o) && o.state !== 'leave');
+        const beat = () => clock * 0.2;
+        const dark = (c, k = 0.42) => hexMix(c, '#000000', k);
 
         function roster() {
           const seen = new Set();
@@ -6318,17 +6326,18 @@
             const name = (el.querySelector('.nick .dn') ?? el.querySelector('.nick'))?.textContent?.trim();
             if (!name || seen.has(name)) continue;
             seen.add(name);
-            out.push({ name, src: img ? img.currentSrc || img.src : '' });
-            if (out.length >= 15) break;
+            const lvl = parseInt((el.querySelector('.pod-lvl, .lvl b')?.textContent ?? '').replace(/\D+/g, ''), 10);
+            out.push({ name, src: img ? img.currentSrc || img.src : '', lvl: Number.isFinite(lvl) ? lvl : 0 });
+            if (out.length >= 24) break;
           }
           return out;
         }
         // Okrągły awatar rysowany raz do osobnego płótna; bez obrazka — kółko z pierwszą literą nicku.
-        function face(src, name, team) {
+        function face(src, name, bg) {
           const c = document.createElement('canvas');
           c.width = c.height = 64;
           const g = c.getContext('2d');
-          g.fillStyle = team.dark;
+          g.fillStyle = bg;
           g.beginPath();
           g.arc(32, 32, 31, 0, TAU);
           g.fill();
@@ -6353,6 +6362,51 @@
           }
           return c;
         }
+        function set(f, state) {
+          f.state = state;
+          f.t = 0;
+        }
+        function say(f, text, t) {
+          f.say = text;
+          f.sayT = t ?? 55 + text.length * 3.2;
+        }
+        // Tekst z podstawieniami: {n} — nick kogoś obok (ta osoba zwykle odpowiada), {lvl} — własny poziom,
+        // {mult} — mnożnik wydarzenia, {c} — licznik motywu (np. zebrane monety).
+        function talk(f, lines, t) {
+          let to = null;
+          const text = pickOne(lines).replace(/\{(n|lvl|mult|c)\}/g, (_, k) => {
+            if (k === 'n') {
+              to = to ?? pickOne(others(f)) ?? null;
+              return to ? to.short : 'ty';
+            }
+            if (k === 'lvl') return String(f.lvl || Math.floor(rnd(5, 40)));
+            if (k === 'c') return String(f.count ?? 0);
+            return mult;
+          });
+          say(f, text, t);
+          if (to && to.replyT <= 0 && Math.random() < 0.8) {
+            to.replyT = rnd(45, 85);
+            to.reply = pickOne(S.reply ?? REPLY);
+          }
+        }
+        function spot(f, zone) {
+          const [a, b] = zone ?? S.zone?.(f) ?? [Math.max(w * 0.05, 30), right()];
+          let best = rnd(a, b);
+          for (let k = 0; k < 6; k++) {
+            const x = rnd(a, b);
+            if (ppl.every((o) => o === f || o.gone || Math.abs(o.tx - x) > 52 * f.s)) return x;
+            best = x;
+          }
+          return best;
+        }
+        function walkTo(f, x, state = 'walk') {
+          f.tx = x;
+          set(f, state);
+        }
+        function leave(f) {
+          f.tx = f.side ? w + 70 : -70;
+          set(f, 'leave');
+        }
         function start() {
           const people = roster();
           if (people.length < 2) {
@@ -6360,140 +6414,122 @@
             return;
           }
           for (let i = people.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [people[i], people[j]] = [people[j], people[i]];
+            const k = Math.floor(Math.random() * (i + 1));
+            [people[i], people[k]] = [people[k], people[i]];
           }
-          const n = Math.min(people.length, w < 640 ? 2 : 2 + Math.floor(Math.random() * (kk >= 0.6 ? 3 : 2)));
-          TEAMS[0].score = TEAMS[1].score = 0;
+          const n = Math.min(people.length, S.n());
           for (let i = 0; i < n; i++) {
-            const side = i % 2;
-            const team = TEAMS[side];
+            const p = people[i];
+            const nm = [...p.name];
             const s = scaleNow();
-            const name = [...people[i].name];
             const f = {
-              name: name.length > 16 ? `${name.slice(0, 15).join('')}…` : people[i].name,
-              face: face(people[i].src, people[i].name, team),
-              team,
-              side,
+              name: nm.length > 16 ? `${nm.slice(0, 15).join('')}…` : p.name,
+              short: [...(p.name.split(/\s+/)[0] || p.name)].slice(0, 12).join(''),
+              lvl: p.lvl,
+              color: PAL[i % PAL.length],
+              side: i % 2,
               s,
-              x: side ? w + 30 + i * 30 : -30 - i * 30,
+              x: 0,
               y: h,
               vx: 0,
               vy: 0,
               air: false,
-              dir: side ? -1 : 1,
+              float: false,
+              dir: 1,
               state: 'walk',
               t: 0,
               tx: 0,
-              ball: false,
+              wait: rnd(60, 160),
               hits: 0,
               phase: rnd(0, TAU),
               say: '',
               sayT: 0,
-              aim: null,
-              revenge: false,
-              lie: rnd(150, 210),
+              reply: '',
+              replyT: 0,
+              hello: false,
               gone: false,
+              role: '',
+              count: 0,
               pose: null,
               j: null,
             };
-            f.tx = spot(f);
-            f.pose = target(f);
-            fighters.push(f);
+            S.setup?.(f, i, n);
+            f.x = f.side ? w + 40 + i * 55 : -40 - i * 55;
+            f.dir = f.side ? -1 : 1;
+            f.face = face(p.src, p.name, dark(f.color, 0.35));
+            ppl.push(f);
           }
+          for (const f of ppl) if (!f.tx) f.tx = spot(f);
+          S.start?.();
+          for (const f of ppl) f.pose = target(f);
           clock = 0;
-          len = rnd(2600, 3800);
+          len = rnd(4200, 6600);
           ending = false;
+          chatT = rnd(140, 240);
         }
-        // Wolne miejsce na swojej połowie (nie za blisko kolegów z drużyny).
-        function spot(f) {
-          const [a, b] = zoneOf(f.side);
-          let best = rnd(a, b);
-          for (let k = 0; k < 5; k++) {
-            const x = rnd(a, b);
-            if (fighters.every((o) => o === f || o.side !== f.side || Math.abs(o.tx - x) > 46 * f.s)) return x;
-            best = x;
+        function finish() {
+          ending = true;
+          if (S.finish) return S.finish();
+          for (const f of ppl) {
+            if (f.state === 'leave' || f.gone) continue;
+            say(f, pickOne(BYE), 90);
+            f.float = S.swim ? f.float : false;
+            set(f, 'wave');
           }
-          return best;
         }
-        const alive = (o) => !o.gone && o.state !== 'down' && o.state !== 'leave' && o.x > 0 && o.x < w;
-        function foe(f) {
-          const them = fighters.filter((o) => o.side !== f.side && alive(o));
-          return them.length ? pickOne(them) : null;
-        }
-        function set(f, state) {
-          f.state = state;
-          f.t = 0;
-        }
-        function say(f, text, t = 70) {
-          f.say = text;
-          f.sayT = t;
-        }
-        const footAt = (x) => (ground.snow ? surfTop(ground, clamp(x, 0, Math.max(1, ground.w - 1))) : h) + hopOffset(ground);
 
-        // Docelowa poza (kąty w radianach od pionu w dół, dodatnie — do przodu): uda a, kolana k, ramiona s, łokcie e.
+        // Pozy: kąty od pionu w dół (dodatnie — do przodu): uda a, kolana k, ramiona s, łokcie e; lean — tułów,
+        // tilt — głowa, rot — obrót całej postaci (upadek, leżenie, pływanie).
         function target(f) {
           const q = { lean: 0.04, tilt: 0, a1: 0.06, a2: -0.06, k1: 0.12, k2: 0.12, s1: 0.2, s2: -0.15, e1: 0.5, e2: 0.4, rot: 0 };
           const t = f.t;
           switch (f.state) {
             case 'walk':
-            case 'leave': {
+            case 'leave':
+            case 'run': {
               const sw = Math.sin(f.phase);
-              q.a1 = 0.5 * sw;
-              q.a2 = -0.5 * sw;
-              q.k1 = 0.12 + 0.8 * Math.max(0, Math.cos(f.phase));
-              q.k2 = 0.12 + 0.8 * Math.max(0, -Math.cos(f.phase));
-              q.s1 = f.ball ? 0.9 : -0.45 * sw;
-              q.e1 = f.ball ? 0.9 : 0.55;
-              q.s2 = 0.45 * sw;
-              q.e2 = 0.55;
-              q.lean = 0.12;
+              const r = f.state === 'run' ? 1.45 : 1;
+              q.a1 = 0.5 * sw * r;
+              q.a2 = -0.5 * sw * r;
+              q.k1 = 0.12 + 0.8 * r * Math.max(0, Math.cos(f.phase));
+              q.k2 = 0.12 + 0.8 * r * Math.max(0, -Math.cos(f.phase));
+              q.s1 = -0.45 * sw * r;
+              q.s2 = 0.45 * sw * r;
+              q.e1 = r > 1 ? 1.2 : 0.55;
+              q.e2 = r > 1 ? 1.2 : 0.55;
+              q.lean = 0.12 * r;
               break;
             }
-            case 'idle': {
-              q.s1 = f.ball ? 0.7 : 0.2;
-              q.e1 = f.ball ? 1 : 0.5;
+            case 'idle':
               q.lean = 0.04 + Math.sin(t * 0.06) * 0.03;
               break;
-            }
-            case 'scoop': {
-              const d = Math.min(1, t / 14) * (t > 40 ? Math.max(0, 1 - (t - 40) / 12) : 1);
-              q.lean = 1.05 * d;
-              q.a1 = 1.15 * d;
-              q.a2 = 0.45 * d;
-              q.k1 = 0.1 + 2 * d;
-              q.k2 = 0.1 + 1.25 * d;
-              q.s1 = 0.2 + 0.85 * d + 0.3 * Math.sin(t * 0.55) * d;
-              q.s2 = 0.1 + 0.85 * d - 0.3 * Math.sin(t * 0.55) * d;
-              q.e1 = 0.25;
-              q.e2 = 0.25;
-              break;
-            }
-            case 'aim': {
-              const k = Math.min(1, t / 16);
-              q.lean = -0.18 * k;
-              q.a1 = 0.38;
-              q.a2 = -0.4;
-              q.k1 = 0.3;
-              q.k2 = 0.2;
-              q.s1 = -1.9 * k;
-              q.e1 = -0.9 * k;
-              q.s2 = 0.2 + 1.1 * k;
+            case 'jump':
+              q.s1 = 2.4;
+              q.s2 = 2.2;
+              q.e1 = 0.3;
               q.e2 = 0.3;
               break;
-            }
-            case 'throw': {
-              q.lean = 0.38;
-              q.a1 = 0.5;
-              q.a2 = -0.45;
-              q.k1 = 0.4;
-              q.k2 = 0.2;
-              q.s1 = t < 6 ? 2.2 : 0.9;
+            case 'wave':
+              q.s1 = 2.5 + 0.35 * Math.sin(t * 0.35);
+              q.e1 = 0.5 + 0.3 * Math.sin(t * 0.35);
+              break;
+            case 'cheer': {
+              const up = Math.sin(t * 0.3);
+              q.s1 = 2.75 + 0.25 * up;
+              q.s2 = 2.75 - 0.25 * up;
               q.e1 = 0.15;
-              q.s2 = -0.7;
-              q.e2 = 0.5;
+              q.e2 = 0.15;
+              q.lean = 0;
               break;
             }
+            case 'sulk':
+              q.lean = 0.35;
+              q.tilt = 0.4;
+              q.s1 = 0.08;
+              q.s2 = 0.04;
+              q.e1 = 0.15;
+              q.e2 = 0.15;
+              break;
             case 'hit': {
               const wv = Math.sin(t * 0.7);
               q.lean = -0.45;
@@ -6521,51 +6557,44 @@
               q.e2 = 0.4;
               break;
             }
-            case 'cheer': {
-              const up = Math.sin(t * 0.3);
-              q.s1 = 2.75 + 0.25 * up;
-              q.s2 = 2.75 - 0.25 * up;
-              q.e1 = 0.15;
-              q.e2 = 0.15;
-              q.lean = 0;
+            case 'sit':
+              q.a1 = 1.45;
+              q.a2 = 1.32;
+              q.k1 = 0.3;
+              q.k2 = 0.55;
+              q.lean = -0.06;
+              q.s1 = 0.55;
+              q.e1 = 0.7;
+              q.s2 = 0.35;
+              q.e2 = 0.5;
               break;
-            }
-            case 'sulk': {
-              q.lean = 0.35;
-              q.tilt = 0.4;
-              q.s1 = 0.08;
-              q.s2 = 0.04;
-              q.e1 = 0.15;
-              q.e2 = 0.15;
+            case 'lie':
+              q.rot = -f.dir * 1.52;
+              q.a1 = 0.05;
+              q.a2 = 0.35;
+              q.k1 = 0.1;
+              q.k2 = 0.7;
+              q.s1 = 2.9;
+              q.e1 = 2.3;
+              q.s2 = 2.7;
+              q.e2 = 2.3;
               break;
-            }
-            case 'dodge': {
-              q.a1 = 0.9;
-              q.a2 = 0.55;
-              q.k1 = 1.5;
-              q.k2 = 1.2;
-              q.s1 = 2.3;
-              q.s2 = 2.1;
-              q.e1 = 0.3;
-              q.e2 = 0.3;
-              q.lean = 0.15;
-              break;
-            }
           }
-          if (f.air && f.state !== 'dodge') {
+          if (f.air && f.state !== 'dodge' && f.state !== 'leap') {
             q.a1 = 0.45;
             q.a2 = -0.25;
             q.k1 = 0.7;
             q.k2 = 0.5;
           }
+          S.pose?.(f, q, t);
           return q;
         }
-        // Kinematyka: z kątów — punkty stawów w układzie strony (lustrzane odbicie dla patrzących w lewo, obrót przy upadku).
+        // Kinematyka: z kątów — punkty stawów w układzie strony (lustrzane odbicie dla patrzących w lewo, obrót).
         function solve(f) {
           const p = f.pose;
           const s = f.s;
           const T = 10.5 * s;
-          const S = 10.5 * s;
+          const SH = 10.5 * s;
           const TOR = 17 * s;
           const U = 9 * s;
           const FO = 8.5 * s;
@@ -6573,11 +6602,11 @@
           const leg = (a, k) => {
             const kx = Math.sin(a) * T;
             const ky = Math.cos(a) * T;
-            return [kx, ky, kx + Math.sin(a - k) * S, ky + Math.cos(a - k) * S];
+            return [kx, ky, kx + Math.sin(a - k) * SH, ky + Math.cos(a - k) * SH];
           };
           const L1 = leg(p.a1, p.k1);
           const L2 = leg(p.a2, p.k2);
-          const lift = Math.max(L1[3], L2[3]);
+          const lift = Math.max(L1[3], L2[3], 1.5 * s);
           const neck = [Math.sin(p.lean) * TOR, -Math.cos(p.lean) * TOR];
           const sh = [neck[0] * 0.86, neck[1] * 0.86];
           const ha = p.lean + p.tilt * 0.8;
@@ -6616,129 +6645,50 @@
             ang: p.rot + d * ha * 0.7,
           };
         }
-        // Rzut po łuku: w przeciwnika (z lekkim rozrzutem) albo — w odwecie — prosto w kursor.
-        function release(f) {
-          const [sx, sy] = f.j.h1;
-          const g = 0.16;
-          if (f.revenge && pointer.on) {
-            f.revenge = false;
-            const T = clamp(Math.hypot(pointer.x - sx, pointer.y - sy) / 9, 22, 46);
-            add({ t: 'ball', x: sx, y: sy, vx: (pointer.x - sx) / T, vy: (pointer.y - sy) / T - (g * (T + 1)) / 2, r: 3.6 * f.s, vol: 90, rot: 0, vr: 0.1, g, drag: 1, flight: T, toward: true, owner: f, z: 0, noLand: true, instant: true });
-            say(f, 'Odwet!', 60);
-            return;
-          }
-          const o = f.aim && alive(f.aim) ? f.aim : foe(f);
-          if (!o?.j) return;
-          const tx = o.x + rnd(-1, 1) * 26 * f.s;
-          const ty = o.j.neck[1] + rnd(-12, 10) * f.s;
-          const dx = tx - sx;
-          const T = clamp(Math.abs(dx) / (6.5 * f.s), 26, 72);
-          add({ t: 'ball', x: sx, y: sy, vx: dx / T, vy: (ty - sy) / T - (g * (T + 1)) / 2, r: 3.6 * f.s, vol: 110, rot: 0, vr: (dx / T) * 0.05, g, drag: 1, flight: Infinity, owner: f, z: 0, noLand: true, instant: true });
-          if (Math.random() < 0.3) say(f, pickOne(SAY_THROW), 45);
-        }
-        function struck(f, p) {
-          f.hits += 1;
-          if (p.owner) p.owner.team.score += 1;
-          const from = Math.sign(p.vx) || -f.dir;
-          f.vx = from * 2.2 * f.s;
-          if (!f.air) {
-            f.vy = -1.6 * f.s;
-            f.air = true;
-          }
-          if (f.state === 'scoop' || f.state === 'aim') f.ball = false;
-          set(f, 'hit');
-          if (!p.owner) {
-            f.revenge = true;
-            say(f, pickOne(SAY_USER), 80);
-          } else say(f, pickOne(SAY_HIT), 60);
-          poof(p.x, p.y, p.r * 1.3, -from * 0.6, -0.7, 0.8);
-          for (let k = 0; k < 8; k++) add({ t: 'clump', x: p.x, y: p.y, vx: rnd(-1.6, 1.6) - from * 0.6, vy: rnd(-2.2, 0.2), g: 0.2, drag: 0.99, r: rnd(0.9, 1.7), vol: 3, z: 0, wall: true });
-        }
-        const seg = (px, py, a, b) => {
+        const segDist = (px, py, a, b) => {
           const vx = b[0] - a[0];
           const vy = b[1] - a[1];
           const t = clamp(((px - a[0]) * vx + (py - a[1]) * vy) / (vx * vx + vy * vy || 1), 0, 1);
           return Math.hypot(px - a[0] - vx * t, py - a[1] - vy * t);
         };
+        const touches = (f, x, y, pad) => f.j && (Math.hypot(x - f.j.head[0], y - f.j.head[1]) < f.j.R + pad || segDist(x, y, f.j.hip, f.j.neck) < 5 * f.s + pad || segDist(x, y, f.j.hip, f.j.f1) < 4 * f.s + pad || segDist(x, y, f.j.hip, f.j.f2) < 4 * f.s + pad);
+
         function think(f, dt) {
           const t = f.t;
-          if (ending && (f.state === 'idle' || f.state === 'aim' || f.state === 'scoop' || f.state === 'throw' || f.state === 'walk')) {
-            leave(f);
-            return;
-          }
+          if (S.think?.(f, dt, t)) return;
           switch (f.state) {
             case 'walk':
-            case 'leave': {
+            case 'leave':
+            case 'run': {
               const dx = f.tx - f.x;
-              const sp = (f.state === 'leave' ? 1.25 : 0.95) * f.s;
+              const sp = (f.state === 'run' ? 2.1 : f.state === 'leave' ? 1.25 : 0.95) * f.s * (S.speed?.(f) ?? 1);
               if (Math.abs(dx) > 2) {
                 f.dir = Math.sign(dx);
                 f.x += Math.sign(dx) * Math.min(Math.abs(dx), sp * dt);
-                f.phase += 0.19 * dt;
+                f.phase += (f.state === 'run' ? 0.3 : 0.19) * dt;
               } else if (f.state === 'leave') f.gone = true;
-              else set(f, f.ball ? 'aim' : 'scoop');
-              if (f.state === 'leave' && (f.x < -50 || f.x > w + 50)) f.gone = true;
-              break;
-            }
-            case 'idle': {
-              const o = foe(f);
-              if (o) f.dir = Math.sign(o.x - f.x) || f.dir;
-              if (t > 40) set(f, f.ball ? 'aim' : 'scoop');
-              break;
-            }
-            case 'scoop':
-              if (t >= 26 && !f.ball) {
-                f.ball = true;
-                const lx = clamp(f.x + f.dir * 9 * f.s, 0, Math.max(1, ground.w - 1));
-                if (ground.snow) scoop(ground, lx, 9, 160);
-                for (let k = 0; k < 4; k++) add({ t: 'flake', x: f.x + f.dir * 9 * f.s + rnd(-5, 5), y: f.y - rnd(1, 5), vx: rnd(-0.8, 0.8), vy: -rnd(0.4, 1.4), g: 0.05, r: rnd(0.8, 1.5), a: 0.9, vol: 2, sway: rnd(0, TAU), amp: 0.2, wk: 0.3, tk: 1, z: 0 });
-              }
-              if (t >= 52) set(f, 'aim');
-              break;
-            case 'aim': {
-              if (t < 1) f.aim = f.revenge && pointer.on ? null : foe(f);
-              const tx = f.revenge && pointer.on ? pointer.x : f.aim?.x;
-              if (tx === undefined) {
+              else if (S.arrive) S.arrive(f);
+              else {
                 set(f, 'idle');
-                break;
+                f.wait = rnd(80, 220);
               }
-              f.dir = Math.sign(tx - f.x) || f.dir;
-              if (t >= 18) set(f, 'throw');
+              if (f.state === 'leave' && (f.x < -60 || f.x > w + 60)) f.gone = true;
               break;
             }
-            case 'throw':
-              if (t >= 3 && f.ball) {
-                f.ball = false;
-                release(f);
-              }
-              if (t >= 18) {
-                if (Math.random() < 0.55) {
-                  f.tx = spot(f);
-                  set(f, 'walk');
-                } else set(f, 'scoop');
+            case 'idle':
+              if (t > f.wait) {
+                if (S.next) S.next(f);
+                else walkTo(f, spot(f));
               }
               break;
-            case 'hit':
-              if (t >= 34 && !f.air) {
-                if (ending) leave(f);
-                else if (f.hits >= 3) {
-                  set(f, 'down');
-                  say(f, 'Poddaję się…', 90);
-                } else {
-                  f.tx = spot(f);
-                  set(f, 'walk');
-                }
+            case 'jump':
+              if (!f.air && t > 6) {
+                set(f, 'idle');
+                f.wait = rnd(30, 80);
               }
               break;
-            case 'down':
-              if (t >= f.lie + 24) {
-                f.hits = 0;
-                if (ending) leave(f);
-                else {
-                  f.tx = spot(f);
-                  set(f, 'walk');
-                }
-              }
+            case 'wave':
+              if (t > 70) leave(f);
               break;
             case 'cheer':
               if (!f.air && Math.floor(t / 34) !== Math.floor((t - dt) / 34)) {
@@ -6752,28 +6702,12 @@
               break;
           }
         }
-        function leave(f) {
-          f.tx = f.side ? w + 60 : -60;
-          set(f, 'leave');
+        function hop(f, v = 3.2) {
+          if (f.air || f.float) return;
+          f.vy = -v * f.s;
+          f.air = true;
         }
-        function finish() {
-          ending = true;
-          const [a, b] = TEAMS;
-          for (const f of fighters) {
-            if (f.state === 'down') continue;
-            f.ball = false;
-            if (a.score === b.score) {
-              say(f, 'Remis!', 90);
-              leave(f);
-            } else if ((a.score > b.score) === (f.side === 0)) {
-              say(f, pickOne(['GG!', 'Wygrana!', 'Hehe!']), 100);
-              set(f, 'cheer');
-            } else {
-              say(f, pickOne(['Rewanż!', 'Jeszcze raz!']), 100);
-              set(f, 'sulk');
-            }
-          }
-        }
+
         function rrect(x, y, ww, hh, r) {
           ctx.beginPath();
           if (ctx.roundRect) ctx.roundRect(x, y, ww, hh, r);
@@ -6784,7 +6718,7 @@
           const pw = ctx.measureText(text).width + 12 * s;
           const ph = 18 * s;
           const bx = clamp(x - pw / 2, 4, w - pw - 4);
-          const by = y - ph - 6 * s;
+          const by = Math.max(4, y - ph - 6 * s);
           ctx.globalAlpha = 1;
           ctx.fillStyle = 'rgba(255, 255, 255, 0.96)';
           rrect(bx, by, pw, ph, 7 * s);
@@ -6800,60 +6734,49 @@
           ctx.textBaseline = 'middle';
           ctx.fillText(text, bx + pw / 2, by + ph / 2 + 0.5);
         }
-        function drawOne(f) {
-          const j = f.j;
-          const s = f.s;
-          const R = j.R;
-          const line = (...pts) => {
-            ctx.moveTo(pts[0][0], pts[0][1]);
-            for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
-          };
-          ctx.globalAlpha = 1;
-          // Cień na śniegu.
-          ctx.fillStyle = 'rgba(40, 60, 100, 0.28)';
+        const path = (...pts) => {
+          ctx.moveTo(pts[0][0], pts[0][1]);
+          for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+        };
+        function stroke(pts, wd, col) {
+          ctx.strokeStyle = col;
+          ctx.lineWidth = wd;
           ctx.beginPath();
-          ctx.ellipse(f.x, f.y - 0.5, (f.state === 'down' ? 24 : 10) * s, 2.6 * s, 0, 0, TAU);
+          path(...pts);
+          ctx.stroke();
+        }
+        function dot(x, y, r, col) {
+          ctx.fillStyle = col;
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, TAU);
           ctx.fill();
-          ctx.lineCap = 'round';
-          ctx.lineJoin = 'round';
-          // Obrys całej sylwetki (ciemny), potem dalsza ręka i noga (ciemniejsze) i reszta.
-          ctx.strokeStyle = 'rgba(6, 14, 30, 0.6)';
-          ctx.lineWidth = 5.4 * s;
+        }
+        // Punkt dalej wzdłuż odcinka a→b (np. koniec kija trzymanego w dłoni).
+        const beyond = (a, b, l) => {
+          const dx = b[0] - a[0];
+          const dy = b[1] - a[1];
+          const d = Math.hypot(dx, dy) || 1;
+          return [b[0] + (dx / d) * l, b[1] + (dy / d) * l];
+        };
+        function beanie(f, R, col, band = '#f3f6fb') {
+          ctx.fillStyle = col;
           ctx.beginPath();
-          line(j.hip, j.k2, j.f2);
-          line(j.hip, j.k1, j.f1);
-          line(j.hip, j.neck);
-          line(j.sh, j.e2, j.h2);
-          line(j.sh, j.e1, j.h1);
-          ctx.stroke();
-          ctx.lineWidth = 3.1 * s;
-          ctx.strokeStyle = '#a9b8cd';
+          ctx.ellipse(0, -R * 0.68, R * 0.9, R * 0.66, 0, Math.PI, TAU);
+          ctx.fill();
+          ctx.fillStyle = dark(col, 0.3);
           ctx.beginPath();
-          line(j.hip, j.k2, j.f2);
-          line(j.sh, j.e2, j.h2);
-          ctx.stroke();
-          ctx.strokeStyle = '#eef4fc';
+          ctx.ellipse(R * 0.22, -R * 0.98, R * 0.42, R * 0.24, -0.4, Math.PI * 1.1, TAU);
+          ctx.fill();
+          ctx.fillStyle = band;
+          rrect(-R * 0.98, -R * 0.84, R * 1.96, R * 0.32, R * 0.16);
+          ctx.fill();
           ctx.beginPath();
-          line(j.hip, j.k1, j.f1);
-          line(j.hip, j.neck);
-          line(j.sh, j.e1, j.h1);
-          ctx.stroke();
-          // Buty i rękawiczki.
-          ctx.fillStyle = '#273246';
-          for (const p of [j.f1, j.f2]) {
-            ctx.beginPath();
-            ctx.ellipse(p[0] + f.dir * 1.2 * s, p[1], 2.9 * s, 2 * s, 0, 0, TAU);
-            ctx.fill();
-          }
-          ctx.fillStyle = f.team.color;
-          for (const p of [j.h1, j.h2]) {
-            ctx.beginPath();
-            ctx.arc(p[0], p[1], 2.1 * s, 0, TAU);
-            ctx.fill();
-          }
-          if (f.ball) drawBall(j.h1[0], j.h1[1] - 1.5 * s, 3.6 * s, 0, 1);
-          // Szalik: pętla na szyi i powiewający koniec.
-          ctx.strokeStyle = f.team.color;
+          ctx.arc(-f.dir * R * 0.28, -R * 1.42, R * 0.28, 0, TAU);
+          ctx.fill();
+        }
+        function scarf(f, j, col) {
+          const s = f.s;
+          ctx.strokeStyle = col;
           ctx.lineWidth = 3.4 * s;
           ctx.beginPath();
           const nx = j.neck[0];
@@ -6864,33 +6787,92 @@
           ctx.moveTo(nx - f.dir * 1.5 * s, ny + 1 * s);
           ctx.quadraticCurveTo(nx - f.dir * 6 * s, ny + 3 * s + flap, nx - f.dir * 10 * s, ny + 5 * s - flap);
           ctx.stroke();
-          // Głowa: awatar w kółku, czapka z pomponem w kolorze drużyny.
+        }
+        function glasses(f, R, frame, lens, k = 1) {
+          ctx.fillStyle = lens;
+          ctx.strokeStyle = frame;
+          ctx.lineWidth = Math.max(1, R * 0.12);
+          for (const sx of [-1, 1]) {
+            ctx.beginPath();
+            ctx.ellipse(sx * R * 0.4 + f.dir * R * 0.12, -R * 0.08, R * 0.34 * k, R * 0.22 * k, 0, 0, TAU);
+            ctx.fill();
+            ctx.stroke();
+          }
+          ctx.beginPath();
+          ctx.moveTo(-R * 0.08 + f.dir * R * 0.12, -R * 0.1);
+          ctx.lineTo(R * 0.08 + f.dir * R * 0.12, -R * 0.1);
+          ctx.stroke();
+        }
+
+        function drawOne(f) {
+          const j = f.j;
+          const s = f.s;
+          const R = j.R;
+          const B = S.body ?? { line: '#eef4fc', back: '#a9b8cd', out: 'rgba(6, 14, 30, 0.6)' };
+          ctx.globalAlpha = 1;
+          if (!f.float) {
+            ctx.fillStyle = 'rgba(40, 60, 100, 0.26)';
+            ctx.beginPath();
+            ctx.ellipse(f.x, f.y - 0.5, (Math.abs(f.pose.rot) > 0.8 ? 24 : 10) * s, 2.6 * s, 0, 0, TAU);
+            ctx.fill();
+          }
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          S.back?.(f, j);
+          ctx.strokeStyle = B.out;
+          ctx.lineWidth = 5.4 * s;
+          ctx.beginPath();
+          path(j.hip, j.k2, j.f2);
+          path(j.hip, j.k1, j.f1);
+          path(j.hip, j.neck);
+          path(j.sh, j.e2, j.h2);
+          path(j.sh, j.e1, j.h1);
+          ctx.stroke();
+          ctx.lineWidth = 3.1 * s;
+          ctx.strokeStyle = B.back;
+          ctx.beginPath();
+          path(j.hip, j.k2, j.f2);
+          path(j.sh, j.e2, j.h2);
+          ctx.stroke();
+          ctx.strokeStyle = B.line;
+          ctx.beginPath();
+          path(j.hip, j.k1, j.f1);
+          path(j.hip, j.neck);
+          path(j.sh, j.e1, j.h1);
+          ctx.stroke();
+          if (S.feet) S.feet(f, j);
+          else {
+            ctx.fillStyle = S.boots ?? '#273246';
+            for (const p of [j.f1, j.f2]) {
+              ctx.beginPath();
+              ctx.ellipse(p[0] + f.dir * 1.2 * s, p[1], 2.9 * s, 2 * s, f.pose.rot, 0, TAU);
+              ctx.fill();
+            }
+          }
+          ctx.fillStyle = S.hands?.(f) ?? f.color;
+          for (const p of [j.h1, j.h2]) {
+            ctx.beginPath();
+            ctx.arc(p[0], p[1], 2.1 * s, 0, TAU);
+            ctx.fill();
+          }
+          S.neck?.(f, j);
+          S.hand?.(f, j);
           ctx.save();
           ctx.translate(j.head[0], j.head[1]);
           ctx.rotate(j.ang);
-          ctx.fillStyle = 'rgba(6, 14, 30, 0.6)';
+          ctx.fillStyle = B.out;
           ctx.beginPath();
           ctx.arc(0, 0, R + 1.6 * s, 0, TAU);
           ctx.fill();
           ctx.drawImage(f.face, -R, -R, R * 2, R * 2);
-          ctx.fillStyle = f.team.color;
-          ctx.beginPath();
-          ctx.ellipse(0, -R * 0.68, R * 0.9, R * 0.66, 0, Math.PI, TAU);
-          ctx.fill();
-          ctx.fillStyle = f.team.dark;
-          ctx.beginPath();
-          ctx.ellipse(R * 0.22, -R * 0.98, R * 0.42, R * 0.24, -0.4, Math.PI * 1.1, TAU);
-          ctx.fill();
-          ctx.fillStyle = '#f3f6fb';
-          rrect(-R * 0.98, -R * 0.84, R * 1.96, R * 0.32, R * 0.16);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.arc(-f.dir * R * 0.28, -R * 1.42, R * 0.28, 0, TAU);
-          ctx.fill();
+          S.face?.(f, R);
+          S.hat?.(f, R);
           ctx.restore();
-          // Nick nad głową.
-          const top = j.head[1] - R * 1.75 - 3 * s;
-          if (f.state !== 'down') {
+          S.front?.(f, j);
+          ctx.lineCap = 'round';
+          const top = j.head[1] - R * 1.75 - 3 * s - (S.tall?.(f) ?? 0) * R;
+          const flat = Math.abs(f.pose.rot) > 0.8;
+          if (!flat) {
             ctx.font = `600 ${Math.round(10 * s + 1)}px Rubik, system-ui, sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'bottom';
@@ -6900,24 +6882,236 @@
             ctx.fillStyle = 'rgba(236, 242, 252, 0.95)';
             ctx.fillText(f.name, j.head[0], top);
           }
-          if (f.sayT > 0) speech(j.head[0], top - (f.state === 'down' ? 0 : 13 * s), f.say, s);
+          if (f.sayT > 0) speech(j.head[0], top - (flat ? 0 : 13 * s), f.say, s);
         }
-        return {
-          tick(dt) {
-            if (!fighters.length) {
-              next -= dt;
-              if (next <= 0) start();
-              return;
-            }
-            clock += dt;
-            if (!ending && clock > len) finish();
-            const balls = list.filter((p) => p.t === 'ball' && !p.toward);
-            for (const f of fighters) {
-              f.t += dt;
-              if (f.sayT > 0) f.sayT -= dt;
-              f.s = scaleNow();
-              // Uniki: lecąca śnieżka przeciwnika (albo od kursora) blisko — czasem podskok.
-              if (!f.air && (f.state === 'walk' || f.state === 'idle' || f.state === 'scoop' || f.state === 'aim')) {
+
+        // ---- Motywy ----
+        const TEAMS = [
+          { color: '#e5484d', score: 0 },
+          { color: '#3d8bf2', score: 0 },
+        ];
+        const foeOf = (f) => {
+          const them = ppl.filter((o) => o.side !== f.side && onScreen(o) && o.state !== 'down' && o.state !== 'leave');
+          return them.length ? pickOne(them) : null;
+        };
+        const flakes = (x, y, n) => {
+          for (let k = 0; k < n; k++) add({ t: 'flake', x: x + rnd(-6, 6), y: y - rnd(1, 5), vx: rnd(-0.9, 0.9), vy: -rnd(0.3, 1.2), g: 0.05, r: rnd(0.8, 1.5), a: 0.9, vol: 2, sway: rnd(0, TAU), amp: 0.2, wk: 0.3, tk: 1, z: 0 });
+        };
+        // Bitwa na śnieżki: rzut po łuku w przeciwnika albo (odwet) prosto w kursor.
+        function release(f) {
+          const [sx, sy] = f.j.h1;
+          const g = 0.16;
+          if (f.revenge && pointer.on) {
+            f.revenge = false;
+            const T = clamp(Math.hypot(pointer.x - sx, pointer.y - sy) / 9, 22, 46);
+            add({ t: 'ball', x: sx, y: sy, vx: (pointer.x - sx) / T, vy: (pointer.y - sy) / T - (g * (T + 1)) / 2, r: 3.6 * f.s, vol: 90, rot: 0, vr: 0.1, g, drag: 1, flight: T, toward: true, owner: f, z: 0, noLand: true, instant: true });
+            say(f, pickOne(['Odwet!', 'Masz za swoje!', 'Teraz ty!', 'Łap, klikaczu!']), 60);
+            return;
+          }
+          const o = f.aim && onScreen(f.aim) && f.aim.state !== 'down' ? f.aim : foeOf(f);
+          if (!o?.j) return;
+          const tx = o.x + rnd(-1, 1) * 26 * f.s;
+          const ty = o.j.neck[1] + rnd(-12, 10) * f.s;
+          const dx = tx - sx;
+          const T = clamp(Math.abs(dx) / (6.5 * f.s), 26, 72);
+          add({ t: 'ball', x: sx, y: sy, vx: dx / T, vy: (ty - sy) / T - (g * (T + 1)) / 2, r: 3.6 * f.s, vol: 110, rot: 0, vr: (dx / T) * 0.05, g, drag: 1, flight: Infinity, owner: f, z: 0, noLand: true, instant: true });
+          if (Math.random() < 0.35) talk(f, ['Łap!', 'Masz!', 'Leci!', '{n}, łap!', 'Prezent!', 'Uwaga!']);
+        }
+        function struck(f, p) {
+          f.hits += 1;
+          if (p.owner) p.owner.side === 0 ? (TEAMS[0].score += 1) : (TEAMS[1].score += 1);
+          const from = Math.sign(p.vx) || -f.dir;
+          f.vx = from * 2.2 * f.s;
+          if (!f.air) {
+            f.vy = -1.6 * f.s;
+            f.air = true;
+          }
+          if (f.state === 'scoop' || f.state === 'aim') f.ball = false;
+          set(f, 'hit');
+          if (!p.owner) {
+            f.revenge = true;
+            say(f, pickOne(['Hej!', 'Kto to?!', 'Ej, ty!', 'To ty, klikaczu?!', 'Zaraz oddam!']), 80);
+          } else say(f, pickOne(['Auć!', 'Ała!', 'Oj!', 'Ej!', 'Uff!', 'Śnieg w oku!', 'Trafiony!', `${p.owner.short}, za co?!`]), 60);
+          poof(p.x, p.y, p.r * 1.3, -from * 0.6, -0.7, 0.8);
+          for (let k = 0; k < 8; k++) add({ t: 'clump', x: p.x, y: p.y, vx: rnd(-1.6, 1.6) - from * 0.6, vy: rnd(-2.2, 0.2), g: 0.2, drag: 0.99, r: rnd(0.9, 1.7), vol: 3, z: 0, wall: true });
+        }
+        // Konfetti: tuba z konfetti strzela z ręki w górę.
+        function popper(f) {
+          const [x, y] = f.j.h1;
+          add({ t: 'ring', x, y, vx: 0, vy: 0, r: 4, grow: 3, lw: 2, c: pickOne(colors), a: 0.9, life: 14, noLand: true });
+          for (let k = 0; k < 22; k++) {
+            const a = -Math.PI / 2 + rnd(-0.55, 0.55) + f.dir * 0.15;
+            const v = rnd(4, 9);
+            add({ t: 'paper', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 0.2, drag: 0.975, s: rnd(3.5, 6), vr: rnd(-0.3, 0.3), sway: rnd(0, TAU), amp: rnd(0.2, 0.6), wk: 0.8, tk: rnd(0.8, 1.2) });
+          }
+          for (let k = 0; k < 2; k++) add({ t: 'streamer', x, y, vx: rnd(-1.5, 1.5) + f.dir, vy: -rnd(6, 9), g: 0.16, drag: 0.982, life: rnd(120, 170), wd: rnd(2, 2.8), hist: [], sway: rnd(0, TAU), noLand: true });
+        }
+        const camp = { x: 0 };
+        const scope = { x: 0 };
+        const blanket = { x: 0, w: 0 };
+        let pileX = 0;
+        const arrows = [];
+        const bullets = [];
+        let event = rnd(400, 700);
+
+        const SCRIPTS = {
+          snow: {
+            n: () => clamp(Math.floor(w / 230) + (kk >= 0.6 ? 1 : 0), 2, 8),
+            setup(f, i) {
+              f.side = i % 2;
+              f.color = TEAMS[f.side].color;
+              f.lie = rnd(150, 210);
+            },
+            zone: (f) => (f.side ? [w * 0.58, Math.max(w * 0.62, right())] : [Math.max(w * 0.05, 30), w * 0.42]),
+            start() {
+              TEAMS[0].score = TEAMS[1].score = 0;
+            },
+            arrive: (f) => set(f, f.ball ? 'aim' : 'scoop'),
+            next: (f) => set(f, f.ball ? 'aim' : 'scoop'),
+            busy: (f) => f.state === 'throw' || f.state === 'aim',
+            chat: ['Bitwa!', 'Nie trafisz mnie!', '{n}, poddaj się!', 'Zimno w ręce!', 'Śnieg za kołnierzem!', 'Kto ulepi największą?', 'Atak!', 'Osłaniaj mnie!', 'Za mną, drużyno!', '{n}, ty następny!', 'Mam zapas śnieżek', 'Brr, zimno', 'Ulepimy bałwana?', 'Mam mokre rękawiczki', '{n}, rozejm?', 'Nigdy!'],
+            chatFor: (f) => [f.side ? 'Niebiescy górą!' : 'Czerwoni górą!', `${f.side ? 'Czerwoni' : 'Niebiescy'} nie mają szans!`],
+            think(f, dt, t) {
+              if (ending && ['idle', 'aim', 'scoop', 'throw', 'walk'].includes(f.state)) {
+                leave(f);
+                return true;
+              }
+              switch (f.state) {
+                case 'scoop':
+                  if (t >= 26 && !f.ball) {
+                    f.ball = true;
+                    const lx = clamp(f.x + f.dir * 9 * f.s, 0, Math.max(1, ground.w - 1));
+                    if (ground.snow) scoop(ground, lx, 9, 160);
+                    flakes(f.x + f.dir * 9 * f.s, f.y, 4);
+                  }
+                  if (t >= 52) set(f, 'aim');
+                  return true;
+                case 'aim': {
+                  if (t < 1) f.aim = f.revenge && pointer.on ? null : foeOf(f);
+                  const tx = f.revenge && pointer.on ? pointer.x : f.aim?.x;
+                  if (tx === undefined) {
+                    set(f, 'idle');
+                    f.wait = 40;
+                    return true;
+                  }
+                  f.dir = Math.sign(tx - f.x) || f.dir;
+                  if (t >= 18) set(f, 'throw');
+                  return true;
+                }
+                case 'throw':
+                  if (t >= 3 && f.ball) {
+                    f.ball = false;
+                    release(f);
+                  }
+                  if (t >= 18) {
+                    if (Math.random() < 0.55) walkTo(f, spot(f));
+                    else set(f, 'scoop');
+                  }
+                  return true;
+                case 'hit':
+                  if (t >= 34 && !f.air) {
+                    if (ending) leave(f);
+                    else if (f.hits >= 3) {
+                      set(f, 'down');
+                      say(f, pickOne(['Poddaję się…', 'Leżę…', 'Dobra, wygraliście…', 'Śnieg w uszach!', 'Potrzebuję przerwy']), 90);
+                    } else walkTo(f, spot(f));
+                  }
+                  return true;
+                case 'down':
+                  if (t >= f.lie + 24) {
+                    f.hits = 0;
+                    if (ending) leave(f);
+                    else {
+                      walkTo(f, spot(f));
+                      if (Math.random() < 0.5) say(f, pickOne(['Wracam do gry!', 'Jeszcze nie koniec!', 'Teraz się zemszczę']));
+                    }
+                  }
+                  return true;
+                case 'dodge':
+                  return true;
+              }
+              return false;
+            },
+            land(f) {
+              if (f.state === 'dodge') {
+                set(f, 'idle');
+                f.wait = 20;
+                if (Math.random() < 0.5) say(f, pickOne(['Pudło!', 'Nie trafisz!', 'Hehe, obok!', 'Za wolno!']));
+              } else if (f.state === 'jump') {
+                set(f, 'idle');
+                f.wait = 30;
+              }
+              flakes(f.x, f.y, 3);
+            },
+            pose(f, q, t) {
+              switch (f.state) {
+                case 'walk':
+                case 'idle':
+                  if (f.ball) {
+                    q.s1 = 0.8;
+                    q.e1 = 1;
+                  }
+                  break;
+                case 'scoop': {
+                  const d = Math.min(1, t / 14) * (t > 40 ? Math.max(0, 1 - (t - 40) / 12) : 1);
+                  q.lean = 1.05 * d;
+                  q.a1 = 1.15 * d;
+                  q.a2 = 0.45 * d;
+                  q.k1 = 0.1 + 2 * d;
+                  q.k2 = 0.1 + 1.25 * d;
+                  q.s1 = 0.2 + 0.85 * d + 0.3 * Math.sin(t * 0.55) * d;
+                  q.s2 = 0.1 + 0.85 * d - 0.3 * Math.sin(t * 0.55) * d;
+                  q.e1 = 0.25;
+                  q.e2 = 0.25;
+                  break;
+                }
+                case 'aim': {
+                  const k = Math.min(1, t / 16);
+                  q.lean = -0.18 * k;
+                  q.a1 = 0.38;
+                  q.a2 = -0.4;
+                  q.k1 = 0.3;
+                  q.k2 = 0.2;
+                  q.s1 = -1.9 * k;
+                  q.e1 = -0.9 * k;
+                  q.s2 = 0.2 + 1.1 * k;
+                  q.e2 = 0.3;
+                  break;
+                }
+                case 'throw':
+                  q.lean = 0.38;
+                  q.a1 = 0.5;
+                  q.a2 = -0.45;
+                  q.k1 = 0.4;
+                  q.k2 = 0.2;
+                  q.s1 = t < 6 ? 2.2 : 0.9;
+                  q.e1 = 0.15;
+                  q.s2 = -0.7;
+                  q.e2 = 0.5;
+                  break;
+                case 'dodge':
+                  q.a1 = 0.9;
+                  q.a2 = 0.55;
+                  q.k1 = 1.5;
+                  q.k2 = 1.2;
+                  q.s1 = 2.3;
+                  q.s2 = 2.1;
+                  q.e1 = 0.3;
+                  q.e2 = 0.3;
+                  q.lean = 0.15;
+                  break;
+              }
+            },
+            snap: (f) => f.state === 'throw',
+            hat: (f, R) => beanie(f, R, f.color),
+            neck: (f, j) => scarf(f, j, f.color),
+            hand(f, j) {
+              if (f.ball) drawBall(j.h1[0], j.h1[1] - 1.5 * f.s, 3.6 * f.s, 0, 1);
+            },
+            tick() {
+              const balls = list.filter((p) => p.t === 'ball' && !p.toward);
+              for (const f of ppl) {
+                if (f.air || f.gone || !['walk', 'idle', 'scoop', 'aim'].includes(f.state)) continue;
                 for (const p of balls) {
                   if (p.owner && p.owner.side === f.side) continue;
                   const dx = f.x - p.x;
@@ -6933,50 +7127,1983 @@
                   break;
                 }
               }
+            },
+            hit(p) {
+              if (p.toward) return false;
+              for (const f of ppl) {
+                if (!f.j || f.gone || f.state === 'down' || f.state === 'leave') continue;
+                if (p.owner && p.owner.side === f.side) continue;
+                if (touches(f, p.x, p.y, p.r * 0.75)) {
+                  struck(f, p);
+                  return true;
+                }
+              }
+              return false;
+            },
+            finish() {
+              const [a, b] = TEAMS;
+              for (const f of ppl) {
+                if (f.state === 'down' || f.gone) continue;
+                f.ball = false;
+                if (a.score === b.score) {
+                  say(f, pickOne(['Remis!', 'Remis, rewanż jutro!', 'Nikt nie wygrał!']), 90);
+                  leave(f);
+                } else if ((a.score > b.score) === (f.side === 0)) {
+                  say(f, pickOne(['GG!', 'Wygrana!', 'Hehe!', 'Mistrzowie śniegu!', `${a.score}:${b.score}!`]), 100);
+                  set(f, 'cheer');
+                } else {
+                  say(f, pickOne(['Rewanż!', 'Jeszcze raz!', 'Następnym razem…', 'Mieliście szczęście']), 100);
+                  set(f, 'sulk');
+                }
+              }
+            },
+          },
+
+          confetti: {
+            n: () => clamp(Math.floor(w / 220) + 1, 3, 8),
+            setup(f, i) {
+              f.style = i % 3;
+              f.hc = [pickOne(colors), pickOne(colors)];
+            },
+            arrive(f) {
+              set(f, 'dance');
+              f.wait = rnd(300, 620);
+            },
+            next(f) {
+              set(f, 'dance');
+              f.wait = rnd(300, 600);
+            },
+            busy: (f) => f.state === 'popper',
+            chat: ['Impreza!', 'Juhu!', 'Tańczymy!', 'Ale bit!', '{n}, chodź tańczyć!', 'Konfetti!', 'Najlepsza impreza!', 'DJ, głośniej!', 'Woo!', 'Kto przyniósł tort?', 'Sto lat!', 'Gdzie są balony?', 'Ręce w górę!', '{n}, ale ruchy!', 'Ta piosenka!', 'Nie przestawajcie!', 'Imprezka do rana!', 'Kto ma jeszcze konfetti?'],
+            think(f, dt, t) {
+              if (f.state === 'dance') {
+                if (f.style === 2) {
+                  const sb = Math.sin(beat());
+                  if (sb > 0 && (f.lb ?? 0) <= 0) hop(f, 2.4);
+                  f.lb = sb;
+                }
+                if (t > f.wait) {
+                  if (Math.random() < 0.4) set(f, 'popper');
+                  else walkTo(f, spot(f));
+                }
+                return true;
+              }
+              if (f.state === 'popper') {
+                if (t > 24 && !f.popped) {
+                  f.popped = true;
+                  popper(f);
+                  talk(f, ['Juhu!', 'Sto lat!', 'Bum!', 'Niespodzianka!', 'Konfetti dla {n}!', 'Pif-paf!']);
+                }
+                if (t > 56) {
+                  f.popped = false;
+                  set(f, 'dance');
+                  f.wait = rnd(260, 520);
+                }
+                return true;
+              }
+              return false;
+            },
+            land(f) {
+              if (f.state === 'jump') set(f, 'dance');
+            },
+            pose(f, q, t) {
+              const b = beat();
+              const sb = Math.sin(b);
+              if (f.state === 'dance') {
+                if (f.style === 0) {
+                  q.s1 = 2.7 + 0.35 * sb;
+                  q.s2 = 2.7 - 0.35 * sb;
+                  q.e1 = 0.3;
+                  q.e2 = 0.3;
+                  q.lean = 0.06 * sb;
+                  q.k1 = 0.3 + 0.3 * Math.abs(sb);
+                  q.k2 = q.k1;
+                  q.a1 = 0.2;
+                  q.a2 = -0.1;
+                } else if (f.style === 1) {
+                  const up = Math.sin(b * 0.5) > 0;
+                  q.s1 = up ? 2.6 : 0.5;
+                  q.e1 = 0.1;
+                  q.s2 = up ? -0.4 : 0.9;
+                  q.e2 = 0.3;
+                  q.lean = up ? -0.1 : 0.1;
+                  q.a1 = 0.25 * sb;
+                  q.a2 = -0.25 * sb;
+                  q.k1 = 0.35;
+                  q.k2 = 0.2;
+                } else {
+                  q.s1 = 2.4;
+                  q.s2 = 2.4;
+                  q.e1 = 0.4 + 0.4 * sb;
+                  q.e2 = 0.4 - 0.4 * sb;
+                }
+              } else if (f.state === 'popper') {
+                q.s1 = 2.8;
+                q.e1 = 0.1;
+                q.s2 = t < 24 ? 2.3 : 1.1;
+                q.e2 = t < 24 ? 0.3 : 1.3;
+                q.lean = -0.1;
+              }
+            },
+            hat(f, R) {
+              // Czapeczka imprezowa w paski z pomponem.
+              const ax = f.dir * R * 0.12;
+              ctx.save();
+              ctx.beginPath();
+              ctx.moveTo(-R * 0.62, -R * 0.62);
+              ctx.lineTo(R * 0.62, -R * 0.62);
+              ctx.lineTo(ax, -R * 2.15);
+              ctx.closePath();
+              ctx.fillStyle = f.hc[0];
+              ctx.fill();
+              ctx.clip();
+              ctx.strokeStyle = f.hc[1];
+              ctx.lineWidth = R * 0.26;
+              for (let k = -2; k <= 3; k++) {
+                ctx.beginPath();
+                ctx.moveTo(-R, -R * (0.62 + k * 0.42));
+                ctx.lineTo(R, -R * (0.98 + k * 0.42));
+                ctx.stroke();
+              }
+              ctx.restore();
+              ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(-R * 0.62, -R * 0.62);
+              ctx.lineTo(ax, -R * 2.15);
+              ctx.lineTo(R * 0.62, -R * 0.62);
+              ctx.stroke();
+              dot(ax, -R * 2.2, R * 0.24, '#ffffff');
+              dot(ax - R * 0.08, -R * 2.28, R * 0.09, f.hc[1]);
+            },
+            hand(f, j) {
+              if (f.state !== 'popper' || f.t > 26) return;
+              // Tuba konfetti w uniesionej dłoni.
+              const [x, y] = j.h1;
+              ctx.fillStyle = f.hc[1];
+              ctx.beginPath();
+              ctx.moveTo(x - 2 * f.s, y + 3 * f.s);
+              ctx.lineTo(x + 2 * f.s, y + 3 * f.s);
+              ctx.lineTo(x + 3.5 * f.s, y - 7 * f.s);
+              ctx.lineTo(x - 3.5 * f.s, y - 7 * f.s);
+              ctx.fill();
+              dot(x, y - 7 * f.s, 3.5 * f.s, f.hc[0]);
+            },
+          },
+
+          // Ogień z płomieniami na dole: strażacy gaszą (piana naprawdę gasi). Bez płomieni: ognisko z piankami.
+          fire: fire
+            ? {
+                n: () => clamp(Math.floor(w / 300) + 1, 2, 6),
+                setup(f, i) {
+                  f.role = i % 3 === 2 ? 'bucket' : 'hose';
+                  f.color = '#f5c518';
+                  f.full = true;
+                },
+                arrive(f) {
+                  set(f, f.role === 'hose' ? 'spray' : 'pour');
+                  f.wait = rnd(260, 460);
+                  f.full = true;
+                },
+                next: (f) => walkTo(f, spot(f)),
+                busy: () => false,
+                chat: ['Gasimy!', 'Woda!', 'Gorąco!', 'Tu się pali!', 'Trzymaj wąż!', '{n}, pomóż!', 'Uwaga, para!', 'Prawie ugaszone!', 'Kto tu podpalił?!', 'Straż na miejscu!', 'Więcej wody!', 'Pali się!', '{n}, tam też się pali!', 'Ciśnienie w normie', 'Nie damy się!', 'Ale żar!'],
+                think(f, dt, t) {
+                  if (f.state === 'spray') {
+                    const [nx, ny] = beyond(f.j.e1, f.j.h1, 7 * f.s);
+                    for (let k = 0; k < Math.max(1, Math.round(3 * dt)); k++) {
+                      const a = f.dir > 0 ? rnd(0.24, 0.5) : Math.PI - rnd(0.24, 0.5);
+                      const v = rnd(6.5, 9.5);
+                      add({ t: 'foam', x: nx, y: ny, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 0.12, drag: 0.96, r: rnd(1.6, 3), grow: rnd(0.15, 0.35), life: rnd(36, 60), c: pickOne(['#e8f4ff', '#cfe6ff', '#ffffff', '#b8dcff']), a: 0.9, z: 0, noLand: true, wall: true });
+                    }
+                    if (t > f.wait) {
+                      set(f, 'idle');
+                      f.wait = rnd(30, 80);
+                    }
+                    return true;
+                  }
+                  if (f.state === 'pour') {
+                    if (t > 22 && f.full) {
+                      f.full = false;
+                      const [x, y] = f.j.h1;
+                      for (let k = 0; k < 30; k++) {
+                        const a = f.dir > 0 ? rnd(-0.6, 0.3) : Math.PI - rnd(-0.6, 0.3);
+                        const v = rnd(3, 7.5);
+                        add({ t: 'foam', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 0.16, drag: 0.97, r: rnd(2, 3.6), grow: rnd(0.2, 0.4), life: rnd(40, 64), c: pickOne(['#e8f4ff', '#cfe6ff', '#b8dcff']), a: 0.9, z: 0, noLand: true, wall: true });
+                      }
+                      if (Math.random() < 0.5) say(f, pickOne(['Chlust!', 'Masz, ogniu!', 'Wiadro wody!']));
+                    }
+                    if (t > 50) {
+                      f.full = true;
+                      walkTo(f, spot(f));
+                    }
+                    return true;
+                  }
+                  return false;
+                },
+                pose(f, q, t) {
+                  if (f.state === 'spray') {
+                    q.s1 = 1.45;
+                    q.e1 = 0.1;
+                    q.s2 = 1.15;
+                    q.e2 = 0.35;
+                    q.lean = 0.22;
+                    q.a1 = 0.38;
+                    q.a2 = -0.4;
+                    q.k1 = 0.35;
+                    q.k2 = 0.1;
+                  } else if (f.state === 'pour') {
+                    const sw = t < 22 ? -0.7 * Math.min(1, t / 14) : 1.9;
+                    q.s1 = sw;
+                    q.s2 = sw + 0.2;
+                    q.e1 = 0.3;
+                    q.e2 = 0.3;
+                    q.lean = t < 22 ? -0.15 : 0.35;
+                    q.a1 = 0.4;
+                    q.a2 = -0.35;
+                    q.k1 = 0.35;
+                  } else if (f.role === 'hose' && (f.state === 'walk' || f.state === 'idle')) {
+                    q.s1 = 0.8;
+                    q.e1 = 0.6;
+                  } else if (f.role === 'bucket' && f.state === 'walk') {
+                    q.s1 = 0.1;
+                    q.e1 = 0.1;
+                  }
+                },
+                hat(f, R) {
+                  // Hełm strażacki: czerwona kopuła, szerokie rondo, złota odznaka.
+                  ctx.fillStyle = '#d42a1f';
+                  ctx.beginPath();
+                  ctx.ellipse(0, -R * 0.5, R * 1.02, R * 0.78, 0, Math.PI, TAU);
+                  ctx.fill();
+                  ctx.fillStyle = '#9e1a12';
+                  ctx.beginPath();
+                  ctx.ellipse(-f.dir * R * 0.15, -R * 0.42, R * 1.4, R * 0.2, 0, 0, TAU);
+                  ctx.fill();
+                  ctx.strokeStyle = '#ff8a7a';
+                  ctx.lineWidth = Math.max(1, R * 0.1);
+                  ctx.beginPath();
+                  ctx.arc(0, -R * 0.5, R * 0.62, Math.PI * 1.15, Math.PI * 1.85);
+                  ctx.stroke();
+                  ctx.fillStyle = '#ffd34d';
+                  ctx.beginPath();
+                  const bx = f.dir * R * 0.55;
+                  ctx.moveTo(bx, -R * 1.02);
+                  ctx.lineTo(bx + R * 0.2, -R * 0.86);
+                  ctx.lineTo(bx, -R * 0.6);
+                  ctx.lineTo(bx - R * 0.2, -R * 0.86);
+                  ctx.fill();
+                },
+                back(f, j) {
+                  if (f.role !== 'hose') return;
+                  // Wąż ciągnie się po ziemi od krawędzi ekranu do prądownicy w dłoni.
+                  const edge = f.side ? w + 30 : -30;
+                  ctx.strokeStyle = '#7a1f17';
+                  ctx.lineWidth = 3.4 * f.s;
+                  ctx.beginPath();
+                  ctx.moveTo(j.h1[0], j.h1[1]);
+                  ctx.quadraticCurveTo(f.x - f.dir * 10 * f.s, f.y + 2 * f.s, f.x - f.dir * 30 * f.s, f.y - 1.5 * f.s);
+                  ctx.lineTo(edge, f.y - 1.5 * f.s);
+                  ctx.stroke();
+                },
+                hand(f, j) {
+                  if (f.role === 'hose') {
+                    const tip = beyond(j.e1, j.h1, 7 * f.s);
+                    stroke([j.h1, tip], 3.2 * f.s, '#3a3f48');
+                    dot(tip[0], tip[1], 1.8 * f.s, '#c9d2dc');
+                  } else {
+                    // Wiadro (z wodą, dopóki pełne).
+                    const [x, y] = j.h1;
+                    const s = f.s;
+                    ctx.fillStyle = '#8f9aa6';
+                    ctx.beginPath();
+                    ctx.moveTo(x - 4.5 * s, y + 1 * s);
+                    ctx.lineTo(x + 4.5 * s, y + 1 * s);
+                    ctx.lineTo(x + 3.5 * s, y + 9 * s);
+                    ctx.lineTo(x - 3.5 * s, y + 9 * s);
+                    ctx.fill();
+                    if (f.full) dot(x, y + 1.6 * s, 3.8 * s, '#7cc4ff');
+                    ctx.strokeStyle = '#5b636d';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(x, y + 1 * s, 4.5 * s, Math.PI, TAU);
+                    ctx.stroke();
+                  }
+                },
+              }
+            : {
+                n: () => clamp(Math.floor(w / 280) + 2, 3, 6),
+                start() {
+                  camp.x = clamp(w * 0.5, 140, w - 180);
+                  ppl.forEach((f, i) => {
+                    const side = i % 2 ? 1 : -1;
+                    f.seat = camp.x + side * (52 + Math.floor(i / 2) * 44) * f.s;
+                    f.tx = f.seat;
+                    f.mallow = 0;
+                  });
+                },
+                arrive(f) {
+                  f.dir = Math.sign(camp.x - f.x) || 1;
+                  set(f, 'roast');
+                  f.wait = rnd(500, 900);
+                },
+                busy: () => false,
+                chat: ['Pianki!', 'Ale ciepło…', 'Opowiedz coś strasznego', 'Ktoś ma kiełbaskę?', '{n}, podaj patyk', 'Mmm, chrupiące', 'Iskry lecą!', 'Ognisko!', 'Zaśpiewajmy coś', 'Dorzućcie drewna', '{n}, twoja się przypala!', 'Najlepsze są złote', 'Gwiazdy widać', 'Pachnie dymem'],
+                think(f, dt, t) {
+                  if (f.state !== 'roast') return false;
+                  if (f.burn) {
+                    f.burn += dt;
+                    if (f.burn > 80) {
+                      f.burn = 0;
+                      f.mallow = 1.35;
+                      say(f, pickOne(['Węgielek…', 'Chrupiąca!', 'Ups…']));
+                    }
+                  } else if (f.mallow < 1.35) {
+                    f.mallow += dt * 0.0026;
+                    if (f.mallow > 0.95 && Math.random() < 0.0016 * dt) {
+                      f.burn = 1;
+                      talk(f, ['Ups! Pali się!', 'Moja pianka!', 'Ogień!', '{n}, ratuj!', 'Dmuchaj!']);
+                    }
+                  }
+                  if (t > f.wait && !f.burn) {
+                    f.eat = 40;
+                    say(f, pickOne(['Mniam!', 'Pyszne!', 'Następna!', 'Gorące!']));
+                    f.mallow = 0;
+                    f.t = 0;
+                    f.wait = rnd(500, 900);
+                  }
+                  if (f.eat > 0) f.eat -= dt;
+                  return true;
+                },
+                pose(f, q, t) {
+                  if (f.state !== 'roast') return;
+                  Object.assign(q, { a1: 1.45, a2: 1.32, k1: 0.3, k2: 0.55, lean: 0.06, s2: 0.35, e2: 0.5 });
+                  if (f.eat > 0) {
+                    q.s1 = 0.9;
+                    q.e1 = 2.3;
+                  } else {
+                    q.s1 = 1.25 + (f.burn ? 0.5 * Math.sin(t * 0.5) : 0);
+                    q.e1 = 0.2;
+                  }
+                },
+                hand(f, j) {
+                  if (f.state !== 'roast' || f.eat > 0) return;
+                  // Patyk nad ogniskiem i pianka: biała → złota → brązowa → czarna; czasem płonie.
+                  const tip = beyond(j.e1, j.h1, 30 * f.s);
+                  stroke([j.h1, tip], 1.6 * f.s, '#8a5a32');
+                  const m = f.mallow;
+                  const col = m < 0.5 ? hexMix('#fffaf0', '#f2c46d', m * 2) : m < 1 ? hexMix('#f2c46d', '#a8642a', (m - 0.5) * 2) : hexMix('#a8642a', '#1d1410', Math.min(1, (m - 1) * 3));
+                  ctx.fillStyle = col;
+                  ctx.beginPath();
+                  ctx.ellipse(tip[0], tip[1], 3.4 * f.s, 2.6 * f.s, 0, 0, TAU);
+                  ctx.fill();
+                  if (f.burn) {
+                    const fl = 5 + Math.sin(now * 0.03) * 1.5;
+                    ctx.fillStyle = 'rgba(255, 150, 40, 0.9)';
+                    ctx.beginPath();
+                    ctx.moveTo(tip[0] - 3 * f.s, tip[1] - 1 * f.s);
+                    ctx.quadraticCurveTo(tip[0], tip[1] - fl * 2.2 * f.s, tip[0] + 3 * f.s, tip[1] - 1 * f.s);
+                    ctx.fill();
+                  }
+                },
+                under() {
+                  const y = footAt(camp.x);
+                  const s = scaleNow();
+                  const glow = ctx.createRadialGradient(camp.x, y - 10 * s, 2, camp.x, y - 10 * s, 120 * s);
+                  glow.addColorStop(0, 'rgba(255, 150, 60, 0.32)');
+                  glow.addColorStop(1, 'rgba(255, 150, 60, 0)');
+                  ctx.fillStyle = glow;
+                  ctx.fillRect(camp.x - 130 * s, y - 130 * s, 260 * s, 140 * s);
+                  for (let k = -3; k <= 3; k++) dot(camp.x + k * 7 * s, y - 2 * s, 3.4 * s, k % 2 ? '#6b6f78' : '#80848d');
+                  ctx.lineCap = 'round';
+                  stroke([[camp.x - 16 * s, y - 3 * s], [camp.x + 14 * s, y - 10 * s]], 5 * s, '#6b4226');
+                  stroke([[camp.x + 16 * s, y - 3 * s], [camp.x - 14 * s, y - 10 * s]], 5 * s, '#5a361f');
+                },
+                over() {
+                  // Płomienie ogniska: kilka migoczących języków.
+                  const y = footAt(camp.x) - 6;
+                  const s = scaleNow();
+                  for (let k = 0; k < 4; k++) {
+                    const hgt = (24 + 10 * Math.sin(now * 0.011 + k * 1.7) + 6 * Math.sin(now * 0.023 + k)) * s * (k === 1 || k === 2 ? 1 : 0.7);
+                    const x = camp.x + (k - 1.5) * 6 * s + Math.sin(now * 0.017 + k) * 1.5 * s;
+                    const g = ctx.createLinearGradient(0, y, 0, y - hgt);
+                    g.addColorStop(0, 'rgba(255, 90, 20, 0.95)');
+                    g.addColorStop(0.5, 'rgba(255, 170, 40, 0.85)');
+                    g.addColorStop(1, 'rgba(255, 240, 160, 0)');
+                    ctx.fillStyle = g;
+                    ctx.beginPath();
+                    ctx.moveTo(x - 6 * s, y);
+                    ctx.quadraticCurveTo(x - 5 * s, y - hgt * 0.6, x + Math.sin(now * 0.02 + k) * 3 * s, y - hgt);
+                    ctx.quadraticCurveTo(x + 5 * s, y - hgt * 0.6, x + 6 * s, y);
+                    ctx.fill();
+                  }
+                },
+                tick(dt) {
+                  if (Math.random() < 0.12 * dt) add(fxPop('fire', camp.x + rnd(-8, 8), footAt(camp.x) - 20 * scaleNow()));
+                },
+              },
+
+          halloween: {
+            n: () => clamp(Math.floor(w / 240) + 1, 3, 7),
+            setup(f, i) {
+              f.costume = ['witch', 'devil', 'cat', 'vampire', 'pumpkin'][i % 5];
+              f.color = { witch: '#7b3fbf', devil: '#d9342b', cat: '#2a2a33', vampire: '#9e1b2c', pumpkin: '#ff7a18' }[f.costume];
+              f.bucket = i % 3 !== 1;
+            },
+            next(f) {
+              const v = Math.random() < 0.35 ? pickOne(others(f).filter((o) => o.state === 'idle' || o.state === 'walk')) : null;
+              if (v) {
+                f.victim = v;
+                set(f, 'sneak');
+              } else walkTo(f, spot(f));
+            },
+            busy: (f) => ['sneak', 'boo', 'scared'].includes(f.state),
+            chat: ['Cukierek albo psikus!', 'Ale strój!', 'Boisz się?', '{n}, masz cukierka?', 'Dynie świecą…', 'Słyszałeś to?', 'Hehehe', 'Nietoperze!', 'Mam pełne wiadro!', 'Uuu, straszno', 'Kto tam?', '{n}, zamienimy się cukierkami?', 'Pajęczyny wszędzie', 'Duchy tu są…', 'Wesołego Halloween!', 'Nie ma psikusa bez cukierka'],
+            think(f, dt, t) {
+              if (f.state === 'sneak') {
+                const v = f.victim;
+                if (!v || v.gone || v.state === 'leave' || t > 360) {
+                  set(f, 'idle');
+                  f.wait = 40;
+                  return true;
+                }
+                const goal = v.x - v.dir * 22 * f.s;
+                const dx = goal - f.x;
+                f.dir = Math.sign(v.x - f.x) || f.dir;
+                if (Math.abs(dx) > 4) {
+                  f.x += Math.sign(dx) * Math.min(Math.abs(dx), 0.5 * f.s * dt);
+                  f.phase += 0.12 * dt;
+                } else {
+                  set(f, 'boo');
+                  say(f, pickOne(['Buu!', 'BUUU!', 'Psikus!', 'Mam cię!']), 60);
+                  set(v, 'scared');
+                  hop(v, 4.6);
+                  talk(v, ['Aaa!', 'Ratunku!', 'Ojej!', 'Ale strach!', '{n}, przestań!', 'Serce mi stanęło!']);
+                  spook(v.x, v.y - 44 * v.s);
+                }
+                return true;
+              }
+              if (f.state === 'boo') {
+                if (t > 50) {
+                  say(f, pickOne(['Hehehe', 'Mwahaha!', 'Hihi, mam cię']));
+                  set(f, 'idle');
+                  f.wait = rnd(60, 140);
+                }
+                return true;
+              }
+              if (f.state === 'scared') {
+                if (!f.air && t > 10) {
+                  const far = f.x < w / 2 ? rnd(w * 0.6, right()) : rnd(Math.max(30, w * 0.05), w * 0.4);
+                  walkTo(f, far, 'run');
+                }
+                return true;
+              }
+              return false;
+            },
+            pose(f, q, t) {
+              if (f.state === 'sneak') {
+                Object.assign(q, { lean: 0.38, a1: 0.5 * Math.sin(f.phase), a2: -0.5 * Math.sin(f.phase), k1: 0.6, k2: 0.6, s1: 1.35, e1: 0.7, s2: 1.15, e2: 0.8 });
+              } else if (f.state === 'boo') {
+                Object.assign(q, { lean: -0.12, s1: 2.6, e1: -0.5, s2: 2.4, e2: -0.4, a1: 0.35, a2: -0.35 });
+              } else if (f.state === 'scared') {
+                Object.assign(q, { lean: -0.3, tilt: -0.3, s1: 2.95, e1: 0.1, s2: 2.85, e2: 0.1 });
+              }
+              if (f.bucket && ['walk', 'idle', 'run'].includes(f.state)) {
+                q.s2 = 0.35;
+                q.e2 = 0.25;
+              }
+            },
+            back(f, j) {
+              if (f.costume !== 'vampire') return;
+              // Peleryna wampira (czarna z czerwoną podszewką), za ciałem.
+              const s = f.s;
+              const flap = Math.sin(now * 0.008 + f.phase) * 3 * s;
+              ctx.fillStyle = '#7a0f1c';
+              ctx.beginPath();
+              ctx.moveTo(j.sh[0] - f.dir * 1 * s, j.sh[1] - 2 * s);
+              ctx.quadraticCurveTo(j.hip[0] - f.dir * 14 * s, j.hip[1], j.hip[0] - f.dir * (16 * s + flap), j.hip[1] + 12 * s);
+              ctx.lineTo(j.hip[0] - f.dir * 2 * s, j.hip[1] + 10 * s);
+              ctx.closePath();
+              ctx.fill();
+              ctx.fillStyle = '#120a14';
+              ctx.beginPath();
+              ctx.moveTo(j.sh[0] - f.dir * 1 * s, j.sh[1] - 3 * s);
+              ctx.quadraticCurveTo(j.hip[0] - f.dir * 12 * s, j.hip[1] - 2 * s, j.hip[0] - f.dir * (14 * s + flap), j.hip[1] + 11 * s);
+              ctx.lineTo(j.hip[0] - f.dir * 4 * s, j.hip[1] + 8 * s);
+              ctx.closePath();
+              ctx.fill();
+            },
+            hat(f, R) {
+              switch (f.costume) {
+                case 'witch': {
+                  ctx.fillStyle = '#1c1426';
+                  ctx.beginPath();
+                  ctx.ellipse(0, -R * 0.62, R * 1.45, R * 0.26, -f.dir * 0.08, 0, TAU);
+                  ctx.fill();
+                  ctx.beginPath();
+                  ctx.moveTo(-R * 0.68, -R * 0.68);
+                  ctx.quadraticCurveTo(-f.dir * R * 0.1, -R * 1.9, -f.dir * R * 0.95, -R * 2.35);
+                  ctx.quadraticCurveTo(f.dir * R * 0.15, -R * 1.6, R * 0.68, -R * 0.68);
+                  ctx.closePath();
+                  ctx.fill();
+                  ctx.fillStyle = '#8f5bd6';
+                  ctx.fillRect(-R * 0.66, -R * 0.92, R * 1.32, R * 0.22);
+                  ctx.fillStyle = '#ffd34d';
+                  ctx.fillRect(-R * 0.14, -R * 0.94, R * 0.28, R * 0.26);
+                  break;
+                }
+                case 'devil':
+                  ctx.fillStyle = '#d9342b';
+                  for (const sx of [-1, 1]) {
+                    ctx.beginPath();
+                    ctx.moveTo(sx * R * 0.35, -R * 0.82);
+                    ctx.quadraticCurveTo(sx * R * 0.75, -R * 1.25, sx * R * 0.55, -R * 1.62);
+                    ctx.quadraticCurveTo(sx * R * 0.48, -R * 1.2, sx * R * 0.12, -R * 0.9);
+                    ctx.fill();
+                  }
+                  break;
+                case 'cat':
+                  for (const sx of [-1, 1]) {
+                    ctx.fillStyle = '#16161c';
+                    ctx.beginPath();
+                    ctx.moveTo(sx * R * 0.2, -R * 0.88);
+                    ctx.lineTo(sx * R * 0.62, -R * 1.62);
+                    ctx.lineTo(sx * R * 0.86, -R * 0.55);
+                    ctx.fill();
+                    ctx.fillStyle = '#ff8fb1';
+                    ctx.beginPath();
+                    ctx.moveTo(sx * R * 0.36, -R * 0.86);
+                    ctx.lineTo(sx * R * 0.6, -R * 1.34);
+                    ctx.lineTo(sx * R * 0.74, -R * 0.68);
+                    ctx.fill();
+                  }
+                  break;
+                case 'vampire':
+                  ctx.fillStyle = '#121016';
+                  ctx.beginPath();
+                  ctx.ellipse(0, -R * 0.62, R * 0.98, R * 0.48, 0, Math.PI, TAU);
+                  ctx.fill();
+                  ctx.beginPath();
+                  ctx.moveTo(-R * 0.25, -R * 0.66);
+                  ctx.lineTo(0, -R * 0.3);
+                  ctx.lineTo(R * 0.25, -R * 0.66);
+                  ctx.fill();
+                  break;
+                case 'pumpkin':
+                  ctx.fillStyle = '#ff7a18';
+                  ctx.beginPath();
+                  ctx.ellipse(0, -R * 0.7, R * 0.95, R * 0.6, 0, Math.PI, TAU);
+                  ctx.fill();
+                  ctx.strokeStyle = '#c4520a';
+                  ctx.lineWidth = Math.max(1, R * 0.1);
+                  ctx.beginPath();
+                  ctx.moveTo(0, -R * 1.28);
+                  ctx.lineTo(0, -R * 0.72);
+                  ctx.moveTo(-R * 0.45, -R * 1.15);
+                  ctx.quadraticCurveTo(-R * 0.55, -R * 0.9, -R * 0.5, -R * 0.72);
+                  ctx.moveTo(R * 0.45, -R * 1.15);
+                  ctx.quadraticCurveTo(R * 0.55, -R * 0.9, R * 0.5, -R * 0.72);
+                  ctx.stroke();
+                  stroke([[0, -R * 1.28], [f.dir * R * 0.18, -R * 1.62]], R * 0.18, '#3f7a2a');
+                  break;
+              }
+            },
+            hand(f, j) {
+              if (!f.bucket) return;
+              // Wiaderko-dynia na cukierki.
+              const s = f.s;
+              const [x, y0] = j.h2;
+              const y = y0 + 6 * s;
+              ctx.strokeStyle = '#2a1a10';
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.arc(x, y - 1 * s, 4.6 * s, Math.PI * 1.1, Math.PI * 1.9);
+              ctx.stroke();
+              dot(x, y, 4.8 * s, '#ff7a18');
+              ctx.fillStyle = '#2a1306';
+              ctx.beginPath();
+              ctx.moveTo(x - 2.6 * s, y - 1.2 * s);
+              ctx.lineTo(x - 1 * s, y - 2.6 * s);
+              ctx.lineTo(x - 0.6 * s, y - 0.8 * s);
+              ctx.moveTo(x + 2.6 * s, y - 1.2 * s);
+              ctx.lineTo(x + 1 * s, y - 2.6 * s);
+              ctx.lineTo(x + 0.6 * s, y - 0.8 * s);
+              ctx.fill();
+              ctx.fillRect(x - 2.4 * s, y + 1.2 * s, 4.8 * s, 1.2 * s);
+              for (let k = 0; k < 3; k++) dot(x - 2 * s + k * 2 * s, y - 4.2 * s, 1.1 * s, ['#7cff4f', '#b388ff', '#ffe27a'][k]);
+            },
+          },
+
+          hearts: {
+            n: () => clamp(Math.floor(w / 260), 1, 3) * 2 + (w > 900 ? 1 : 0),
+            setup(f, i, n) {
+              f.color = pickOne(['#ff5c8a', '#ff3d6e', '#ff8fb1', '#e2669f']);
+              if (n % 2 === 1 && i === n - 1) {
+                f.role = 'cupid';
+                f.float = true;
+                f.y = h - 70;
+              }
+            },
+            start() {
+              const couples = ppl.filter((f) => f.role !== 'cupid');
+              for (let i = 0; i + 1 < couples.length; i += 2) {
+                const a = couples[i];
+                const b = couples[i + 1];
+                a.mate = b;
+                b.mate = a;
+                a.lead = true;
+                const mid = spot(a);
+                a.tx = mid - 17 * a.s;
+                b.tx = mid + 17 * b.s;
+              }
+            },
+            arrive(f) {
+              if (f.role === 'cupid') {
+                set(f, 'idle');
+                f.wait = rnd(150, 260);
+                return;
+              }
+              set(f, 'wait');
+            },
+            next(f) {
+              if (f.role === 'cupid') {
+                const lead = pickOne(ppl.filter((o) => o.lead && o.state === 'hold'));
+                if (lead) {
+                  f.aim = lead;
+                  set(f, 'cupidAim');
+                } else walkTo(f, spot(f));
+                return;
+              }
+              set(f, 'wait');
+            },
+            busy: (f) => f.state === 'cupidAim',
+            chat: ['Kocham cię!', '<3', 'Jesteś super!', 'Buziaki!', '{n}, będziesz moją walentynką?', 'Aww', 'Serduszko dla ciebie', 'Zakochani!', 'Słodko!', 'Trzymaj mnie za rękę', '{n}, jesteś najlepszy!', 'Randka!', 'Motylki w brzuchu', 'Kupidyn tu lata!', 'Ile serduszek!'],
+            each(f, dt) {
+              if (f.role === 'cupid') f.y += (footAt(f.x) - 64 * f.s + Math.sin(now * 0.004 + f.phase) * 6 * f.s - f.y) * 0.08 * dt;
+            },
+            think(f, dt, t) {
+              if (f.state === 'wait') {
+                const m = f.mate;
+                if (!m || m.gone) {
+                  set(f, 'idle');
+                  f.wait = 100;
+                  return true;
+                }
+                if (m.state === 'wait' || m.state === 'hold') {
+                  f.dir = Math.sign(m.x - f.x) || 1;
+                  set(f, 'hold');
+                  f.wait = rnd(360, 640);
+                }
+                return true;
+              }
+              if (f.state === 'hold') {
+                const m = f.mate;
+                if (m && !m.gone) f.dir = Math.sign(m.x - f.x) || f.dir;
+                if (f.lead && Math.floor(t / 110) !== Math.floor((t - dt) / 110)) for (let k = 0; k < 3; k++) add(fxPop('hearts', (f.x + (m?.x ?? f.x)) / 2 + rnd(-6, 6), f.y - 48 * f.s));
+                if (f.lead && t > f.wait && m && m.state === 'hold') {
+                  // Spacer: para przechodzi razem w inne miejsce.
+                  const mid = spot(f);
+                  const left = f.x < m.x;
+                  walkTo(f, mid + (left ? -17 : 17) * f.s);
+                  walkTo(m, mid + (left ? 17 : -17) * m.s);
+                  if (Math.random() < 0.5) talk(f, ['Chodź, {n}!', 'Idziemy na spacer', 'Tam jest ładniej']);
+                }
+                return true;
+              }
+              if (f.state === 'cupidAim') {
+                const a = f.aim;
+                if (!a || a.gone || a.state !== 'hold') {
+                  set(f, 'idle');
+                  f.wait = 80;
+                  return true;
+                }
+                f.dir = Math.sign(a.x - f.x) || f.dir;
+                if (t > 34 && !f.shot) {
+                  f.shot = true;
+                  const [sx, sy] = f.j.h2;
+                  const tx = (a.x + (a.mate?.x ?? a.x)) / 2;
+                  const ty = a.y - 34 * a.s;
+                  const T = clamp(Math.abs(tx - sx) / 7, 18, 60);
+                  arrows.push({ x: sx, y: sy, vx: (tx - sx) / T, vy: (ty - sy) / T - (0.1 * (T + 1)) / 2, g: 0.1, age: 0, life: T + 4, to: a });
+                  say(f, pickOne(['Strzała miłości!', 'Pif!', 'Celuję…', 'Trafię!']));
+                }
+                if (t > 60) {
+                  f.shot = false;
+                  set(f, 'idle');
+                  f.wait = rnd(260, 480);
+                }
+                return true;
+              }
+              return false;
+            },
+            pose(f, q, t) {
+              if (f.state === 'hold' || f.state === 'wait') {
+                q.s1 = 1.3;
+                q.e1 = 0.12;
+                q.lean = 0.05 * Math.sin(t * 0.05);
+                q.k1 = 0.15 + 0.1 * Math.sin(t * 0.05);
+              }
+              if (f.role === 'cupid') {
+                Object.assign(q, { a1: 0.5, a2: 0.2, k1: 0.9, k2: 0.7 });
+                if (f.state === 'cupidAim') {
+                  q.s2 = 1.57;
+                  q.e2 = 0;
+                  q.s1 = 1.35;
+                  q.e1 = t < 34 ? -1.9 : -0.4;
+                }
+              }
+            },
+            back(f, j) {
+              if (f.role !== 'cupid') return;
+              // Skrzydełka Kupidyna machają.
+              const s = f.s;
+              const fl = Math.sin(now * 0.02) * 0.5;
+              for (const k of [1, 0.75]) {
+                ctx.save();
+                ctx.translate(j.sh[0] - f.dir * 2 * s, j.sh[1]);
+                ctx.rotate(-f.dir * (0.6 + fl * k));
+                ctx.fillStyle = k === 1 ? 'rgba(255, 255, 255, 0.95)' : 'rgba(225, 232, 245, 0.9)';
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.quadraticCurveTo(-f.dir * 16 * s * k, -12 * s * k, -f.dir * 20 * s * k, -2 * s);
+                ctx.quadraticCurveTo(-f.dir * 12 * s * k, 2 * s, 0, 2 * s);
+                ctx.fill();
+                ctx.restore();
+              }
+            },
+            hat(f, R) {
+              if (f.role === 'cupid') {
+                ctx.strokeStyle = '#ffd34d';
+                ctx.lineWidth = Math.max(1.2, R * 0.12);
+                ctx.beginPath();
+                ctx.ellipse(0, -R * 1.25, R * 0.62, R * 0.18, 0, 0, TAU);
+                ctx.stroke();
+                return;
+              }
+              // Opaska z serduszkami na sprężynkach.
+              ctx.strokeStyle = '#e8336a';
+              ctx.lineWidth = Math.max(1.2, R * 0.14);
+              ctx.beginPath();
+              ctx.arc(0, 0, R * 1.02, Math.PI * 1.15, Math.PI * 1.85);
+              ctx.stroke();
+              for (const sx of [-1, 1]) {
+                const bx = sx * R * 0.45;
+                const by = -R * 0.9;
+                const tx = sx * R * 0.7 + Math.sin(now * 0.01 + sx) * R * 0.08;
+                const ty = -R * 1.75;
+                ctx.strokeStyle = '#c9ccd6';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(bx, by);
+                for (let k = 1; k <= 6; k++) ctx.lineTo(bx + (tx - bx) * (k / 6) + (k % 2 ? 1.5 : -1.5), by + (ty - by) * (k / 6));
+                ctx.stroke();
+                ctx.save();
+                ctx.translate(tx, ty);
+                ctx.scale(R / 36, R / 36);
+                heartPath(0, 0, 1);
+                ctx.fillStyle = '#ff3d6e';
+                ctx.fill();
+                ctx.restore();
+              }
+            },
+            hand(f, j) {
+              if (f.role !== 'cupid') return;
+              // Łuk w lewej dłoni, cięciwa do prawej, gdy naciąga.
+              const s = f.s;
+              const [x, y] = j.h2;
+              ctx.strokeStyle = '#c9822a';
+              ctx.lineWidth = 1.6 * s;
+              ctx.beginPath();
+              ctx.arc(x - f.dir * 4 * s, y, 9 * s, -1.1, 1.1);
+              if (f.dir < 0) {
+                ctx.beginPath();
+                ctx.arc(x + 4 * s, y, 9 * s, Math.PI - 1.1, Math.PI + 1.1);
+              }
+              ctx.stroke();
+              const top = [x - f.dir * 4 * s + Math.cos(-1.1) * 9 * s * f.dir, y + Math.sin(-1.1) * 9 * s];
+              const bot = [x - f.dir * 4 * s + Math.cos(1.1) * 9 * s * f.dir, y + Math.sin(1.1) * 9 * s];
+              const pull = f.state === 'cupidAim' && f.t < 34 ? j.h1 : [x - f.dir * 4 * s, y];
+              stroke([top, pull, bot], 0.8, 'rgba(255, 255, 255, 0.8)');
+            },
+            tick(dt) {
+              for (let i = arrows.length - 1; i >= 0; i--) {
+                const a = arrows[i];
+                a.age += dt;
+                a.vy += a.g * dt;
+                a.x += a.vx * dt;
+                a.y += a.vy * dt;
+                if (a.age >= a.life) {
+                  for (let k = 0; k < 12; k++) add(fxPop('hearts', a.x + rnd(-10, 10), a.y + rnd(-6, 6)));
+                  add({ t: 'ring', x: a.x, y: a.y, vx: 0, vy: 0, r: 6, grow: 3, lw: 2, c: '#ff5c8a', a: 0.9, life: 18, noLand: true });
+                  for (const o of [a.to, a.to?.mate]) {
+                    if (!o || o.gone) continue;
+                    hop(o, 3);
+                    say(o, pickOne(['<3', 'Kocham!', 'Ojej, strzała!', 'Aww!', 'Zakochałem się!', 'Serduszko!']));
+                  }
+                  arrows.splice(i, 1);
+                }
+              }
+            },
+            land(f) {
+              if (f.mate && (f.mate.state === 'hold' || f.mate.state === 'wait')) set(f, 'hold');
+              else if (f.state === 'jump') set(f, 'idle');
+            },
+            over() {
+              for (const a of arrows) {
+                const ang = Math.atan2(a.vy, a.vx);
+                ctx.save();
+                ctx.translate(a.x, a.y);
+                ctx.rotate(ang);
+                stroke([[-12, 0], [8, 0]], 1.4, '#c9822a');
+                ctx.fillStyle = '#ff3d6e';
+                ctx.beginPath();
+                ctx.moveTo(12, 0);
+                ctx.lineTo(6, -3.5);
+                ctx.lineTo(6, 3.5);
+                ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.moveTo(-12, 0);
+                ctx.lineTo(-16, -3);
+                ctx.lineTo(-10, 0);
+                ctx.lineTo(-16, 3);
+                ctx.fill();
+                ctx.restore();
+              }
+            },
+          },
+
+          stars: {
+            n: () => clamp(Math.floor(w / 300) + 2, 3, 6),
+            start() {
+              scope.x = clamp(w * rnd(0.22, 0.38), 90, w - 220);
+              ppl.forEach((f, i) => {
+                f.role = i === 0 ? 'astro' : i % 2 ? 'lie' : 'gaze';
+                if (f.role === 'astro') f.tx = scope.x - 14 * f.s;
+              });
+            },
+            arrive(f) {
+              if (f.role === 'astro') {
+                f.dir = 1;
+                set(f, 'scope');
+                f.wait = rnd(700, 1100);
+              } else if (f.role === 'lie') {
+                set(f, 'lie');
+                f.wait = rnd(600, 1000);
+              } else {
+                set(f, 'gaze');
+                f.wait = rnd(400, 700);
+              }
+            },
+            next: (f) => walkTo(f, spot(f)),
+            busy: () => false,
+            chat: ['Ale niebo!', 'Widzę Wielki Wóz', 'Tam jest Mars!', 'Pomyśl życzenie', '{n}, patrz w górę!', 'Gwiazdy są piękne', 'Ile ich jest?', 'Kosmos…', 'Księżyc świeci', 'Czy tam ktoś jest?', 'Widzę satelitę!', '{n}, widzisz Orion?', 'Ale cisza', 'Chcę lecieć w kosmos', 'To chyba kometa'],
+            think(f, dt, t) {
+              if (f.state === 'scope' || f.state === 'lie' || f.state === 'gaze') {
+                if (f.point > 0) f.point -= dt;
+                if (t > f.wait) {
+                  if (f.role === 'astro') {
+                    f.wait = t + rnd(500, 900);
+                    talk(f, ['Widzę pierścienie Saturna!', '{n}, chodź zobaczyć!', 'Ale krater na Księżycu!', 'Jest Jowisz!']);
+                  } else {
+                    f.role = f.role === 'lie' ? 'gaze' : 'lie';
+                    walkTo(f, spot(f));
+                  }
+                }
+                return true;
+              }
+              return false;
+            },
+            pose(f, q, t) {
+              if (f.state === 'scope') {
+                Object.assign(q, { lean: 0.5, tilt: -0.2, s1: 1.35, e1: -0.35, s2: 1.05, e2: 0.25, a1: 0.25, a2: -0.2, k1: 0.25 });
+              } else if (f.state === 'gaze') {
+                q.tilt = -0.45;
+                q.lean = -0.08;
+                if (f.point > 0) {
+                  q.s1 = 2.35;
+                  q.e1 = 0.05;
+                }
+              } else if (f.state === 'lie' && f.point > 0) {
+                q.s1 = 3.1;
+                q.e1 = 0;
+              }
+            },
+            hat(f, R) {
+              if (f.role === 'astro') beanie(f, R, '#2a3a8a', '#ffe08a');
+            },
+            under() {
+              // Teleskop na trójnogu skierowany w niebo.
+              const s = scaleNow();
+              const y = footAt(scope.x);
+              const top = [scope.x, y - 30 * s];
+              ctx.lineCap = 'round';
+              for (const dx of [-11, 0, 11]) stroke([top, [scope.x + dx * s, y]], 1.8 * s, '#8a93a3');
+              ctx.save();
+              ctx.translate(top[0], top[1]);
+              ctx.rotate(-0.62);
+              ctx.fillStyle = '#d7dce6';
+              ctx.fillRect(-14 * s, -3.2 * s, 34 * s, 6.4 * s);
+              ctx.fillStyle = '#3d4a66';
+              ctx.fillRect(18 * s, -4.2 * s, 6 * s, 8.4 * s);
+              ctx.fillStyle = '#2a3247';
+              ctx.fillRect(-18 * s, -1.6 * s, 5 * s, 3.2 * s);
+              ctx.restore();
+            },
+            tick() {
+              for (const p of list) {
+                if (p.t !== 'comet' || p.cseen) continue;
+                p.cseen = true;
+                const lookers = ppl.filter((o) => onScreen(o) && o.role !== 'astro');
+                for (const o of lookers) o.point = 90;
+                const who = pickOne(lookers);
+                if (who) talk(who, ['Spadająca gwiazda!', 'Pomyśl życzenie!', 'Widziałeś?!', 'Kometa!', '{n}, patrz!', 'Szybko, życzenie!']);
+              }
+            },
+            near(f) {
+              if (Math.random() < 0.5) say(f, pickOne(['Nowa gwiazda!', 'Gwiazdozbiór!', 'Ładna!', 'Kto ją tam dał?']));
+              f.point = 80;
+            },
+          },
+
+          neon: {
+            n: () => clamp(Math.floor(w / 200) + 1, 3, 8),
+            setup(f) {
+              f.gc = pickOne(['#ff3fd6', '#22e5c8', '#ffe14d', '#7c5cff']);
+              f.sc = [pickOne(colors), pickOne(colors)];
+            },
+            arrive(f) {
+              set(f, 'disco');
+              f.wait = rnd(500, 900);
+            },
+            next(f) {
+              set(f, 'disco');
+              f.wait = rnd(500, 900);
+            },
+            busy: (f) => f.state === 'solo',
+            chat: ['Dyskoteka!', 'Ale bit!', 'Taniec!', '{n}, pokaż ruchy!', 'Woo!', 'Neon świeci!', 'Robot dance!', 'Ooo!', 'DJ, jeszcze raz!', 'Ręce w górę!', 'Ten kawałek!', 'Ale światła!', '{n}, tańczysz jak robot', 'Bas siedzi!', 'Do rana!'],
+            think(f, dt, t) {
+              if (f.state === 'disco') {
+                if (t > f.wait && Math.random() < 0.004 * dt) walkTo(f, spot(f));
+                return true;
+              }
+              if (f.state === 'solo' || f.state === 'clap') {
+                if (f.off && t > f.off) {
+                  f.off = 0;
+                  set(f, 'disco');
+                  f.wait = rnd(400, 800);
+                }
+                return true;
+              }
+              return false;
+            },
+            tick(dt) {
+              event -= dt;
+              if (event > 0 || ending) return;
+              const free = ppl.filter((o) => onScreen(o) && o.state === 'disco');
+              if (free.length < 2) {
+                event = 60;
+                return;
+              }
+              event = rnd(700, 1200);
+              const a = pickOne(free);
+              const b = free.filter((o) => o !== a).sort((u, v) => Math.abs(u.x - a.x) - Math.abs(v.x - a.x))[0];
+              a.dir = Math.sign(b.x - a.x) || 1;
+              b.dir = -a.dir;
+              set(a, 'solo');
+              set(b, 'clap');
+              a.off = 260;
+              b.off = 260;
+              say(a, pickOne(['Dance-off!', 'Patrz na to!', 'Pojedynek!']));
+              setTimeout(() => {
+                if (dead || a.gone || b.gone || a.state !== 'solo') return;
+                set(b, 'solo');
+                set(a, 'clap');
+                a.off = 220;
+                b.off = 220;
+                say(b, pickOne(['Moja kolej!', 'Teraz ja!', 'Łap rytm!']));
+                const fan = pickOne(ppl.filter((o) => o !== a && o !== b && onScreen(o)));
+                if (fan) say(fan, pickOne(['Ooo!', 'Brawo!', 'Ale ruchy!']));
+              }, 4400);
+            },
+            pose(f, q, t) {
+              const b = beat();
+              const sb = Math.sin(b);
+              if (f.state === 'disco') {
+                switch (Math.floor(clock / 170) % 5) {
+                  case 0:
+                    Object.assign(q, { s1: 2.55 + 0.18 * sb, s2: 2.55 - 0.18 * sb, e1: 0.15, e2: 0.15, k1: 0.3 + 0.25 * Math.abs(sb), k2: 0.3 + 0.25 * Math.abs(sb), a1: 0.2, a2: -0.15 });
+                    break;
+                  case 1: {
+                    const up = Math.sin(b * 0.5) > 0;
+                    Object.assign(q, { s1: up ? 2.65 : 0.4, e1: 0.05, s2: up ? -0.3 : 0.7, e2: 0.2, lean: up ? -0.1 : 0.08, a1: 0.3 * sb, a2: -0.3 * sb, k1: 0.35, k2: 0.15 });
+                    break;
+                  }
+                  case 2:
+                    Object.assign(q, { s1: 1.57, e1: sb > 0 ? -1.57 : 0, s2: 1.57, e2: sb > 0 ? 0 : -1.57, lean: 0, k1: 0.15, k2: 0.15 });
+                    break;
+                  case 3:
+                    Object.assign(q, { s1: 1.6 + 0.6 * sb, e1: 0.4, s2: -0.8 + 0.6 * sb, e2: 0.4, lean: 0.08 * sb, k1: 0.35, k2: 0.35 });
+                    break;
+                  default:
+                    Object.assign(q, { a1: 0.6 * sb, a2: -0.6 * sb, k1: 0.9 * Math.max(0, Math.cos(b)), k2: 0.9 * Math.max(0, -Math.cos(b)), s1: 0.8 * -sb, s2: 0.8 * sb, e1: 1.4, e2: 1.4, lean: 0.1 });
+                }
+              } else if (f.state === 'solo') {
+                Object.assign(q, { s1: 2.7 + 0.3 * sb, s2: 0.3 - 0.4 * sb, e1: 0.2, e2: 0.8, lean: -0.15 * sb, a1: 0.5 * sb, a2: -0.4 * sb, k1: 0.5, k2: 0.4 });
+                if (Math.floor(t / 40) % 2) q.s2 = 2.6;
+              } else if (f.state === 'clap') {
+                const c = Math.sin(t * 0.45);
+                Object.assign(q, { s1: 1.3 + 0.15 * c, s2: 1.2 - 0.15 * c, e1: 0.7 + 0.25 * c, e2: 0.7 - 0.25 * c });
+              }
+            },
+            land(f) {
+              if (f.state === 'jump') set(f, 'disco');
+            },
+            face: (f, R) => glasses(f, R, f.gc, 'rgba(25, 0, 45, 0.75)'),
+            hand(f, j) {
+              // Świecące pałeczki w obu dłoniach.
+              const s = f.s;
+              for (const [e, hd, c] of [[j.e1, j.h1, f.sc[0]], [j.e2, j.h2, f.sc[1]]]) {
+                const tip = beyond(e, hd, 8 * s);
+                stroke([hd, tip], 5 * s, `${c}55`);
+                stroke([hd, tip], 2 * s, '#ffffff');
+                stroke([hd, tip], 1.2 * s, c);
+              }
+            },
+          },
+
+          leaves: {
+            n: () => clamp(Math.floor(w / 280) + 2, 3, 6),
+            start() {
+              pileX = clamp(w * rnd(0.35, 0.6), 140, w - 180);
+              ppl.forEach((f, i) => {
+                f.role = i === 1 ? 'jumper' : 'rake';
+                f.tx = spot(f);
+              });
+            },
+            zone: () => [clamp(pileX - 280 * scaleNow(), 30, w), clamp(pileX + 280 * scaleNow(), 0, right())],
+            arrive(f) {
+              f.dir = Math.sign(pileX - f.x) || 1;
+              if (f.role === 'jumper' && Math.random() < 0.6) {
+                set(f, 'idle');
+                f.wait = rnd(60, 160);
+                f.runup = true;
+                return;
+              }
+              set(f, 'rake');
+              f.wait = rnd(300, 520);
+            },
+            next(f) {
+              if (f.runup) {
+                f.runup = false;
+                set(f, 'sprint');
+                say(f, pickOne(['Uwaga, skaczę!', 'Rozbieg!', 'Patrzcie!']));
+                return;
+              }
+              walkTo(f, spot(f));
+            },
+            busy: (f) => f.state === 'sprint' || f.state === 'leap',
+            chat: ['Grabimy!', 'Ale kupa liści!', 'Hop do liści!', 'Jesień!', '{n}, pomóż grabić', 'Szur, szur', 'Kasztany!', 'Liście wszędzie!', 'Nie skacz w moją kupkę!', 'Ale szeleści', '{n}, to moje grabie', 'Złote liście', 'Kto zrobi największą kupkę?', 'Herbatka po grabieniu?'],
+            think(f, dt, t) {
+              if (f.state === 'rake') {
+                f.dir = Math.sign(pileX - f.x) || f.dir;
+                const ph = t * 0.12;
+                if (Math.sin(ph) < 0 && Math.sin(ph - 0.12 * dt) >= 0) rake(f);
+                if (t > f.wait) {
+                  set(f, 'idle');
+                  f.wait = rnd(40, 120);
+                  if (f.role === 'jumper') f.runup = true;
+                }
+                return true;
+              }
+              if (f.state === 'sprint') {
+                const dx = pileX - f.x;
+                f.dir = Math.sign(dx) || f.dir;
+                f.x += f.dir * Math.min(Math.abs(dx), 2.2 * f.s * dt);
+                f.phase += 0.32 * dt;
+                if (Math.abs(dx) < 46 * f.s) {
+                  set(f, 'leap');
+                  hop(f, 5.2);
+                  f.vx = f.dir * 2.4 * f.s;
+                }
+                return true;
+              }
+              if (f.state === 'leap') return true;
+              if (f.state === 'lie') {
+                if (t > 170) {
+                  say(f, pickOne(['Jeszcze raz!', 'Ale frajda!', 'Mam liście we włosach']));
+                  walkTo(f, spot(f));
+                }
+                return true;
+              }
+              return false;
+            },
+            land(f) {
+              if (f.state === 'leap') {
+                let n = 0;
+                for (let k = ground.rest.length - 1; k >= 0 && n < 40; k--) {
+                  const it = ground.rest[k];
+                  if (Math.abs(ground.x + it.x - f.x) > 70 * f.s) continue;
+                  takeRest(ground, k);
+                  fling(ground, it, rnd(-2.6, 2.6), -rnd(2.5, 7));
+                  n += 1;
+                }
+                for (let k = 0; k < 10; k++) add(fxPop('leaves', f.x + rnd(-20, 20), f.y - 8));
+                say(f, pickOne(['Juhuu!', 'Hop!', 'Plusk w liście!', 'Wow!']));
+                set(f, 'lie');
+              } else if (f.state === 'jump') set(f, 'idle');
+            },
+            pose(f, q, t) {
+              if (f.state === 'rake') {
+                const ph = Math.sin(t * 0.12);
+                Object.assign(q, { lean: 0.28 + 0.1 * ph, s1: 1.05 + 0.4 * ph, e1: 0.15, s2: 0.55 + 0.4 * ph, e2: 0.6, a1: 0.35, a2: -0.3, k1: 0.3, k2: 0.15 });
+              } else if (f.state === 'sprint') {
+                const sw = Math.sin(f.phase);
+                Object.assign(q, { a1: 0.75 * sw, a2: -0.75 * sw, k1: 0.2 + 1.1 * Math.max(0, Math.cos(f.phase)), k2: 0.2 + 1.1 * Math.max(0, -Math.cos(f.phase)), s1: -0.7 * sw, s2: 0.7 * sw, e1: 1.3, e2: 1.3, lean: 0.3 });
+              } else if (f.state === 'leap') {
+                Object.assign(q, { s1: 2.8, s2: 2.7, e1: 0.2, e2: 0.2, a1: 0.9, a2: 0.4, k1: 1.2, k2: 0.6, lean: 0.2 });
+              }
+            },
+            hat: (f, R) => beanie(f, R, f.role === 'jumper' ? '#d9822b' : '#a3361b', '#f2c14e'),
+            neck: (f, j) => scarf(f, j, '#e8b04a'),
+            hand(f, j) {
+              if (f.state !== 'rake' && f.state !== 'idle' && f.state !== 'walk') return;
+              if (f.role === 'jumper' && f.state !== 'rake') return;
+              // Grabie: trzonek przez obie dłonie aż do ziemi, na końcu wachlarz zębów.
+              const s = f.s;
+              const a = j.h2;
+              const b = j.h1;
+              const dx = b[0] - a[0];
+              const dy = b[1] - a[1];
+              const k = dy > 0.5 ? (f.y - 2 * s - a[1]) / dy : 2.2;
+              const end = [a[0] + dx * clamp(k, 1.2, 3.2), Math.min(f.y - 2 * s, a[1] + dy * clamp(k, 1.2, 3.2))];
+              const start = [a[0] - dx * 0.25, a[1] - dy * 0.25];
+              stroke([start, end], 1.8 * s, '#9a6a3a');
+              ctx.strokeStyle = '#9aa3ad';
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              for (let i = -3; i <= 3; i++) {
+                ctx.moveTo(end[0], end[1]);
+                ctx.lineTo(end[0] + i * 1.8 * s + f.dir * 3 * s, end[1] + 2 * s);
+              }
+              ctx.stroke();
+            },
+          },
+
+          sakura: {
+            n: () => clamp(Math.floor(w / 300) + 2, 3, 6),
+            start() {
+              const s = scaleNow();
+              blanket.w = clamp(w * 0.26, 170, 330) * s;
+              blanket.x = clamp(w * 0.5, blanket.w / 2 + 30, right() - blanket.w / 2);
+              const sitters = ppl.filter((f, i) => !(i === ppl.length - 1 && ppl.length >= 4));
+              sitters.forEach((f, i) => {
+                f.role = 'sit';
+                f.cup = Math.random() < 0.6;
+                f.tx = blanket.x - blanket.w / 2 + ((i + 0.5) * blanket.w) / sitters.length;
+              });
+              for (const f of ppl) if (!f.role) f.role = 'photo';
+            },
+            arrive(f) {
+              if (f.role === 'sit') {
+                f.dir = f.x < blanket.x ? 1 : -1;
+                set(f, 'picnic');
+                f.act = rnd(120, 300);
+              } else {
+                f.dir = Math.sign(blanket.x - f.x) || 1;
+                set(f, 'photo');
+              }
+            },
+            next: (f) => walkTo(f, spot(f, [Math.max(30, blanket.x - blanket.w), Math.min(right(), blanket.x + blanket.w)])),
+            busy: () => false,
+            chat: ['Hanami!', 'Piękne kwiaty', 'Herbatki?', 'Płatek wpadł mi do herbaty', '{n}, zrób zdjęcie!', 'Wiosna!', 'Pachnie wiśnią', 'Jak różowo', 'Uśmiech!', 'Smaczne onigiri', '{n}, podasz herbatę?', 'Tu jest pięknie', 'Ale płatki lecą', 'Zostańmy do wieczora'],
+            think(f, dt, t) {
+              if (f.state === 'picnic') {
+                f.act -= dt;
+                if (f.act <= 0) {
+                  f.do = f.cup && Math.random() < 0.5 ? 'sip' : 'catch';
+                  f.doT = f.do === 'sip' ? 45 : 90;
+                  f.act = rnd(220, 420);
+                  if (f.do === 'sip' && Math.random() < 0.4) say(f, pickOne(['Mmm, herbata', 'Pycha', 'Gorąca!']));
+                }
+                if (f.doT > 0) {
+                  f.doT -= dt;
+                  if (f.do === 'catch' && f.j) {
+                    for (const p of list) {
+                      if ((p.t !== 'petal' && p.t !== 'blossom') || p.dead) continue;
+                      if (Math.hypot(p.x - f.j.h1[0], p.y - f.j.h1[1]) > 16 * f.s) continue;
+                      p.dead = true;
+                      f.count += 1;
+                      add({ t: 'glint', x: f.j.h1[0], y: f.j.h1[1], vx: 0, vy: 0, s: 5, life: 14, c: '#ffd6e6', noLand: true });
+                      say(f, pickOne(['Mam płatek!', 'Złapane!', 'Mam {c}!'.replace('{c}', String(f.count))]));
+                      break;
+                    }
+                  }
+                } else f.do = '';
+                return true;
+              }
+              if (f.state === 'photo') {
+                if (t > 40 && !f.snap) {
+                  f.snap = true;
+                  const [x, y] = f.j.h1;
+                  add({ t: 'flash', x: x + f.dir * 4 * f.s, y, vx: 0, vy: 0, r: 7, grow: 3, life: 8, z: 0, noLand: true, instant: true });
+                  talk(f, ['Cyk!', 'Uśmiech!', 'Super zdjęcie!', '{n}, wyszłaś pięknie!', 'Jeszcze jedno!']);
+                }
+                if (t > 90) {
+                  f.snap = false;
+                  set(f, 'idle');
+                  f.wait = rnd(80, 200);
+                }
+                return true;
+              }
+              return false;
+            },
+            pose(f, q) {
+              if (f.state === 'picnic') {
+                Object.assign(q, { a1: 1.45, a2: 1.32, k1: 0.3, k2: 0.55, lean: -0.06, s1: 0.55, e1: 0.7, s2: 0.35, e2: 0.5 });
+                if (f.do === 'sip') {
+                  q.s1 = 0.95;
+                  q.e1 = 2.25;
+                } else if (f.do === 'catch') {
+                  q.s1 = 2.75;
+                  q.e1 = 0.15;
+                  q.tilt = -0.3;
+                } else if (f.cup) {
+                  q.s1 = 0.9;
+                  q.e1 = 1.1;
+                }
+              } else if (f.state === 'photo') {
+                Object.assign(q, { s1: 1.4, e1: -1.55, s2: 1.3, e2: -1.4, lean: 0.06 });
+              }
+            },
+            hat(f, R) {
+              if (f.role === 'photo' || f.lvl % 2) {
+                // Słomkowy kapelusz.
+                ctx.fillStyle = '#e8c97a';
+                ctx.beginPath();
+                ctx.ellipse(0, -R * 0.62, R * 1.4, R * 0.24, 0, 0, TAU);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(0, -R * 0.78, R * 0.72, R * 0.5, 0, Math.PI, TAU);
+                ctx.fill();
+                ctx.fillStyle = '#ff8fb1';
+                ctx.fillRect(-R * 0.72, -R * 0.86, R * 1.44, R * 0.16);
+              } else {
+                // Kwiat wiśni we włosach.
+                const cx = f.dir * R * 0.62;
+                const cy = -R * 0.68;
+                for (let k = 0; k < 5; k++) {
+                  const a = (k / 5) * TAU;
+                  dot(cx + Math.cos(a) * R * 0.2, cy + Math.sin(a) * R * 0.2, R * 0.17, '#ffc1d8');
+                }
+                dot(cx, cy, R * 0.09, '#ffcf5a');
+              }
+            },
+            hand(f, j) {
+              const s = f.s;
+              const [x, y] = j.h1;
+              if (f.role === 'photo') {
+                ctx.fillStyle = '#1d2230';
+                ctx.fillRect(x - 4 * s, y - 3 * s, 8 * s, 6 * s);
+                dot(x + f.dir * 3.2 * s, y, 2.2 * s, '#5b6b8c');
+                dot(x + f.dir * 3.2 * s, y, 1 * s, '#c9d6ff');
+              } else if (f.cup && f.do !== 'catch') {
+                ctx.fillStyle = '#f7f3ee';
+                ctx.beginPath();
+                ctx.moveTo(x - 2.6 * s, y - 2.5 * s);
+                ctx.lineTo(x + 2.6 * s, y - 2.5 * s);
+                ctx.lineTo(x + 1.9 * s, y + 1.6 * s);
+                ctx.lineTo(x - 1.9 * s, y + 1.6 * s);
+                ctx.fill();
+                ctx.fillStyle = '#e2669f';
+                ctx.fillRect(x - 2.6 * s, y - 2.5 * s, 5.2 * s, 0.9 * s);
+              }
+            },
+            under() {
+              // Koc w kratkę, kosz i dzbanek.
+              const s = scaleNow();
+              const y = footAt(blanket.x);
+              const x0 = blanket.x - blanket.w / 2;
+              const n = Math.max(6, Math.round(blanket.w / (12 * s)));
+              for (let k = 0; k < n; k++) {
+                ctx.fillStyle = k % 2 ? '#ffd6e6' : '#e8577f';
+                ctx.fillRect(x0 + (k * blanket.w) / n, y - 4 * s, blanket.w / n + 0.5, 4 * s);
+              }
+              ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
+              ctx.fillRect(x0, y - 1.2 * s, blanket.w, 1.2 * s);
+              const bx = blanket.x + blanket.w * 0.1;
+              ctx.fillStyle = '#9a6a3a';
+              ctx.fillRect(bx - 7 * s, y - 13 * s, 14 * s, 9 * s);
+              ctx.strokeStyle = '#7a4f28';
+              ctx.lineWidth = 1.4 * s;
+              ctx.beginPath();
+              ctx.arc(bx, y - 13 * s, 6 * s, Math.PI, TAU);
+              ctx.stroke();
+              const tx = blanket.x - blanket.w * 0.12;
+              dot(tx, y - 9 * s, 5.5 * s, '#f2efe9');
+              ctx.fillStyle = '#f2efe9';
+              ctx.fillRect(tx + 4 * s, y - 12 * s, 5 * s, 1.6 * s);
+              dot(tx, y - 15 * s, 1.6 * s, '#e2669f');
+            },
+          },
+
+          coins: {
+            n: () => clamp(Math.floor(w / 260) + 2, 3, 7),
+            setup(f, i) {
+              f.hatK = i % 2 ? 'miner' : 'top';
+              f.color = '#ffd34d';
+            },
+            arrive: (f) => set(f, 'hunt'),
+            next: (f) => set(f, 'hunt'),
+            busy: (f) => f.state === 'pick',
+            chat: ['Złoto!', 'Moje!', 'Bogactwo!', 'Ile masz?', '{n}, oddaj monetę!', 'Kasa, kasa!', 'Błyszczy!', 'Jeszcze jedna!', 'Na lody starczy', 'Mam już {c}!', '{n}, nie podbieraj!', 'Gorączka złota!', 'Deszcz monet!', 'Kupię sobie zamek', 'Liczę: {c}…'],
+            think(f, dt, t) {
+              if (f.state === 'hunt') {
+                let best = null;
+                let bd = Infinity;
+                for (const it of ground.rest) {
+                  if (it.t !== 'coin') continue;
+                  const x = ground.x + it.x;
+                  if (x < 20 || x > right()) continue;
+                  const d = Math.abs(x - f.x);
+                  if (d < bd && ppl.every((o) => o === f || o.state !== 'hunt' || Math.abs(o.tx - x) > 10 || Math.abs(o.x - x) > d)) {
+                    bd = d;
+                    best = x;
+                  }
+                }
+                if (best === null) {
+                  if (t > 120 && Math.random() < 0.01) talk(f, ['Gdzie te monety?', 'Pusto…', 'Niech pada złoto!']);
+                  if (t > 240) {
+                    walkTo(f, spot(f));
+                  }
+                  return true;
+                }
+                f.tx = best;
+                const dx = best - f.x;
+                if (Math.abs(dx) > 3) {
+                  f.dir = Math.sign(dx);
+                  const sp = (Math.abs(dx) > 120 ? 1.9 : 1.05) * f.s;
+                  f.x += Math.sign(dx) * Math.min(Math.abs(dx), sp * dt);
+                  f.phase += (Math.abs(dx) > 120 ? 0.3 : 0.19) * dt;
+                  f.moving = Math.abs(dx) > 120 ? 2 : 1;
+                } else {
+                  f.moving = 0;
+                  set(f, 'pick');
+                }
+                return true;
+              }
+              if (f.state === 'pick') {
+                if (t > 14 && !f.took) {
+                  f.took = true;
+                  for (let k = ground.rest.length - 1; k >= 0; k--) {
+                    const it = ground.rest[k];
+                    if (it.t !== 'coin' || Math.abs(ground.x + it.x - (f.x + f.dir * 6 * f.s)) > 12 * f.s) continue;
+                    takeRest(ground, k);
+                    gain(f);
+                    break;
+                  }
+                }
+                if (t > 26) {
+                  f.took = false;
+                  set(f, 'hunt');
+                }
+                return true;
+              }
+              return false;
+            },
+            tick() {
+              for (const p of list) {
+                if (p.t !== 'coin' || p.dead || p.y < h - 140) continue;
+                for (const f of ppl) {
+                  if (!f.j || f.gone) continue;
+                  if (Math.hypot(p.x - f.j.h1[0], p.y - f.j.h1[1]) < 14 * f.s || Math.hypot(p.x - f.j.head[0], p.y - f.j.head[1]) < 12 * f.s) {
+                    p.dead = true;
+                    gain(f, true);
+                    break;
+                  }
+                }
+              }
+            },
+            pose(f, q, t) {
+              if (f.state === 'hunt' && f.moving) {
+                const sw = Math.sin(f.phase);
+                const r = f.moving > 1 ? 1.45 : 1;
+                Object.assign(q, { a1: 0.5 * sw * r, a2: -0.5 * sw * r, k1: 0.12 + 0.8 * r * Math.max(0, Math.cos(f.phase)), k2: 0.12 + 0.8 * r * Math.max(0, -Math.cos(f.phase)), s1: -0.45 * sw * r, e1: 0.55 * r, lean: 0.12 * r });
+              } else if (f.state === 'hunt') {
+                q.s1 = 2.3;
+                q.e1 = 0.3;
+                q.tilt = -0.3;
+              } else if (f.state === 'pick') {
+                const d = Math.min(1, t / 10) * (t > 18 ? Math.max(0, 1 - (t - 18) / 8) : 1);
+                Object.assign(q, { lean: 1 * d, a1: 1.1 * d, a2: 0.4 * d, k1: 0.1 + 1.9 * d, k2: 0.1 + 1.2 * d, s1: 0.2 + 0.9 * d, e1: 0.2 });
+              }
+              q.s2 = -0.35;
+              q.e2 = 0.2;
+            },
+            hat(f, R) {
+              if (f.hatK === 'top') {
+                ctx.fillStyle = '#16171b';
+                ctx.beginPath();
+                ctx.ellipse(0, -R * 0.66, R * 1.2, R * 0.2, 0, 0, TAU);
+                ctx.fill();
+                ctx.fillRect(-R * 0.62, -R * 1.8, R * 1.24, R * 1.14);
+                ctx.fillStyle = '#d6a12a';
+                ctx.fillRect(-R * 0.62, -R * 0.96, R * 1.24, R * 0.2);
+              } else {
+                ctx.fillStyle = '#f5c518';
+                ctx.beginPath();
+                ctx.ellipse(0, -R * 0.55, R * 1.02, R * 0.72, 0, Math.PI, TAU);
+                ctx.fill();
+                ctx.fillStyle = '#c99a0c';
+                ctx.fillRect(-R * 1.08, -R * 0.62, R * 2.16, R * 0.18);
+                const lx = f.dir * R * 0.5;
+                dot(lx, -R * 0.95, R * 0.22, '#fff6c2');
+                // Snop światła z czołówki.
+                const g = ctx.createLinearGradient(lx, -R * 0.95, lx + f.dir * R * 4, R * 1.5);
+                g.addColorStop(0, 'rgba(255, 246, 194, 0.45)');
+                g.addColorStop(1, 'rgba(255, 246, 194, 0)');
+                ctx.fillStyle = g;
+                ctx.beginPath();
+                ctx.moveTo(lx, -R * 0.95);
+                ctx.lineTo(lx + f.dir * R * 4.4, R * 0.2);
+                ctx.lineTo(lx + f.dir * R * 3.2, R * 2.2);
+                ctx.fill();
+              }
+            },
+            hand(f, j) {
+              // Worek na monety za plecami — rośnie z każdą monetą.
+              const s = f.s;
+              const r = (4.2 + Math.min(f.count, 24) * 0.28) * s;
+              const [x, y0] = j.h2;
+              const y = y0 + r * 0.9;
+              ctx.fillStyle = '#9a6a3a';
+              ctx.beginPath();
+              ctx.ellipse(x, y, r, r * 0.95, 0, 0, TAU);
+              ctx.fill();
+              ctx.fillStyle = '#7a4f28';
+              ctx.beginPath();
+              ctx.moveTo(x - r * 0.35, y - r * 0.85);
+              ctx.lineTo(x + r * 0.35, y - r * 0.85);
+              ctx.lineTo(x, y - r * 1.25);
+              ctx.fill();
+              ctx.fillStyle = '#ffd34d';
+              ctx.font = `700 ${Math.round(r * 1.1)}px Rubik, system-ui, sans-serif`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText('$', x, y + r * 0.08);
+            },
+            finish() {
+              const best = Math.max(...ppl.map((o) => o.count));
+              for (const f of ppl) {
+                if (f.gone || f.state === 'leave') continue;
+                if (best > 0 && f.count === best) {
+                  say(f, pickOne(['Jestem bogaty!', `${f.count} monet!`, 'Najbogatszy!', 'Złoto moje!']), 100);
+                  set(f, 'cheer');
+                } else {
+                  say(f, pickOne(['Następnym razem…', 'Eh…', `Tylko ${f.count}…`, 'Podziel się!']), 100);
+                  set(f, 'sulk');
+                }
+              }
+            },
+          },
+
+          storm: {
+            n: () => clamp(Math.floor(w / 260) + 2, 3, 7),
+            setup(f, i) {
+              f.umb = i % 3 !== 2;
+              f.uc = pickOne(['#e5484d', '#3d8bf2', '#f5a524', '#2fbf71', '#a35cf2', '#ec4899']);
+              f.flip = 0;
+              f.lie = 90;
+            },
+            speed: (f) => (Math.sign(wind.x) === -f.dir ? 0.7 : 1.1),
+            busy: (f) => f.state === 'zap' || f.state === 'down',
+            chat: ['Ale leje!', 'Burza!', 'Mój parasol!', 'Piorun!', '{n}, chodź pod parasol', 'Mokro…', 'Wieje!', 'Chowajmy się!', 'Grzmi!', 'Liczę do pioruna…', '{n}, masz płaszcz?', 'Kałuże wszędzie', 'Buty mam mokre', 'Ale błyska!', 'Lubię burzę'],
+            think(f, dt, t) {
+              if (f.flip > 0) f.flip -= dt;
+              if (f.state === 'zap') {
+                if (t > 46) {
+                  set(f, 'down');
+                  f.lie = 80;
+                }
+                return true;
+              }
+              if (f.state === 'down') {
+                if (t >= f.lie + 24) {
+                  say(f, pickOne(['Włosy mi stoją!', 'Żyję!', 'Ale kopnęło!', 'Uff…']));
+                  walkTo(f, spot(f));
+                }
+                return true;
+              }
+              return false;
+            },
+            tick(dt) {
+              const gust = Math.abs(wind.x - wind.base) > 2.2;
+              if (gust && Math.random() < 0.012 * dt) {
+                const f = pickOne(ppl.filter((o) => o.umb && o.flip <= 0 && onScreen(o) && o.state !== 'zap' && o.state !== 'down'));
+                if (f) {
+                  f.flip = 110;
+                  say(f, pickOne(['Mój parasol!', 'Ojej!', 'Wieje!', 'Parasol na lewą stronę!']));
+                }
+              }
+              // Krople rozbijają się na parasolach.
+              for (const p of list) {
+                if (p.t !== 'rain' || p.dead || p.y < h - 220) continue;
+                for (const f of ppl) {
+                  if (!f.umb || !f.cap || f.flip > 0) continue;
+                  const dx = p.x - f.cap[0];
+                  const dy = p.y - f.cap[1];
+                  if (Math.abs(dx) < f.cap[2] && dy > -f.cap[3] && dy < 2) {
+                    add({ t: 'drop', x: p.x, y: f.cap[1] - f.cap[3] * (1 - (dx / f.cap[2]) ** 2), vx: Math.sign(dx || 1) * rnd(0.8, 2), vy: -rnd(0.5, 1.5), g: 0.22, life: rnd(12, 20), c: '#dfe8ff', a: 0.9, noLand: true });
+                    p.dead = true;
+                    break;
+                  }
+                }
+              }
+            },
+            near(f, x) {
+              if (Math.abs(x - f.x) > 110 * f.s || f.state === 'zap' || f.state === 'down') return;
+              set(f, 'zap');
+              say(f, pickOne(['Bzzt!', 'Auć, prąd!', 'Aaa!', 'Trafiło mnie!']));
+            },
+            pose(f, q, t) {
+              if (f.state === 'zap') {
+                const j1 = Math.sin(t * 2.3);
+                Object.assign(q, { s1: 2.1 + 0.3 * j1, s2: 1.9 - 0.3 * j1, e1: 0.4, e2: 0.4, lean: -0.15 * j1, a1: 0.35, a2: -0.35 });
+                return;
+              }
+              if (f.umb && f.state !== 'down') {
+                q.s1 = 2.35;
+                q.e1 = 0.45;
+              }
+              if ((f.state === 'walk' || f.state === 'idle') && Math.sign(wind.x) === -f.dir) q.lean += 0.22;
+            },
+            hand(f, j) {
+              f.cap = null;
+              if (!f.umb || f.state === 'down') return;
+              // Parasol: kij z dłoni w górę, czasza nad głową; w podmuchu wywija się na drugą stronę.
+              const s = f.s;
+              const [x, y] = j.h1;
+              const top = [x + f.dir * 1 * s, Math.min(y - 20 * s, j.head[1] - j.R - 8 * s)];
+              stroke([[x, y + 3 * s], top], 1.4 * s, '#3a3f48');
+              const rx = 22 * s;
+              const ry = 11 * s;
+              const inv = f.flip > 0;
+              ctx.fillStyle = f.uc;
+              ctx.beginPath();
+              if (!inv) {
+                ctx.moveTo(top[0] - rx, top[1] + ry * 0.55);
+                ctx.quadraticCurveTo(top[0] - rx * 0.9, top[1] - ry * 0.9, top[0], top[1] - ry);
+                ctx.quadraticCurveTo(top[0] + rx * 0.9, top[1] - ry * 0.9, top[0] + rx, top[1] + ry * 0.55);
+                for (let k = 3; k >= -3; k--) ctx.quadraticCurveTo(top[0] + ((k + 0.5) * rx) / 3.5, top[1] + ry * 0.2, top[0] + (k * rx) / 3.5 - rx / 7, top[1] + ry * 0.55);
+                f.cap = [top[0], top[1] + ry * 0.5, rx, ry * 1.5];
+              } else {
+                const lean = Math.sin(now * 0.02) * 4 * s;
+                ctx.moveTo(top[0] - rx * 0.8 + lean, top[1] - ry * 1.2);
+                ctx.quadraticCurveTo(top[0] - rx * 0.3, top[1] + ry * 0.4, top[0], top[1] + ry * 0.2);
+                ctx.quadraticCurveTo(top[0] + rx * 0.3, top[1] + ry * 0.4, top[0] + rx * 0.8 + lean, top[1] - ry * 1.2);
+                ctx.lineTo(top[0] + lean * 0.5, top[1] - ry * 0.4);
+              }
+              ctx.closePath();
+              ctx.fill();
+              ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+              ctx.lineWidth = 1;
+              ctx.stroke();
+              dot(top[0], top[1] - (inv ? 0 : ry) - 1.5 * s, 1.4 * s, '#3a3f48');
+            },
+            hat(f, R) {
+              if (f.state === 'zap' || (f.state === 'down' && f.t < 60)) {
+                // Włosy stają dęba od prądu.
+                ctx.strokeStyle = '#ffe14d';
+                ctx.lineWidth = Math.max(1, R * 0.1);
+                ctx.beginPath();
+                for (let k = -3; k <= 3; k++) {
+                  const a = -Math.PI / 2 + k * 0.32;
+                  ctx.moveTo(Math.cos(a) * R, Math.sin(a) * R);
+                  ctx.lineTo(Math.cos(a) * R * 1.55 + rnd(-1, 1), Math.sin(a) * R * 1.55);
+                }
+                ctx.stroke();
+                return;
+              }
+              if (f.umb) return;
+              // Żółty kapelusz przeciwdeszczowy z dłuższym tyłem.
+              ctx.fillStyle = '#f5c518';
+              ctx.beginPath();
+              ctx.ellipse(0, -R * 0.6, R * 0.95, R * 0.62, 0, Math.PI, TAU);
+              ctx.fill();
+              ctx.beginPath();
+              ctx.moveTo(-f.dir * R * 1.5, -R * 0.2);
+              ctx.quadraticCurveTo(0, -R * 0.75, f.dir * R * 1.15, -R * 0.55);
+              ctx.lineTo(f.dir * R * 0.9, -R * 0.42);
+              ctx.quadraticCurveTo(0, -R * 0.5, -f.dir * R * 1.3, -R * 0.05);
+              ctx.fill();
+            },
+            front(f, j) {
+              if (f.state !== 'zap') return;
+              // Iskry prądu wokół ciała.
+              ctx.strokeStyle = 'rgba(190, 220, 255, 0.9)';
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              for (let k = 0; k < 4; k++) {
+                let x = j.hip[0] + rnd(-12, 12) * f.s;
+                let y = j.hip[1] - rnd(0, 30) * f.s;
+                ctx.moveTo(x, y);
+                for (let i = 0; i < 3; i++) {
+                  x += rnd(-6, 6) * f.s;
+                  y += rnd(-6, 6) * f.s;
+                  ctx.lineTo(x, y);
+                }
+              }
+              ctx.stroke();
+            },
+          },
+
+          bubbles: {
+            n: () => clamp(Math.floor(w / 280) + 2, 3, 6),
+            swim: true,
+            setup(f) {
+              f.float = true;
+              f.depth = rnd(70, 190);
+              f.y = h - f.depth;
+              f.fin = pickOne(PAL);
+              f.puff = rnd(30, 80);
+            },
+            arrive(f) {
+              set(f, 'idle');
+              f.wait = rnd(120, 260);
+            },
+            next(f) {
+              f.depth = rnd(60, 200);
+              walkTo(f, spot(f));
+            },
+            busy: () => false,
+            chat: ['Blub blub', 'Rybka!', 'Ale głęboko', 'Gdzie skarb?', '{n}, płyń tutaj!', 'Bąbelki!', 'Widzę rafę!', 'Uwaga, meduza!', 'Pływamy!', '{n}, ścigamy się?', 'Muszelka!', 'Tlen w normie', 'Ciekawe, co tam na dnie', 'Ośmiornica?!'],
+            each(f, dt) {
+              if (f.state === 'wave' || f.state === 'leave' || !f.float) f.float = true;
+              f.y += (h - f.depth + Math.sin(now * 0.002 + f.phase) * 7 - f.y) * 0.04 * dt;
+              f.puff -= dt;
+              if (f.puff <= 0 && f.j) {
+                f.puff = rnd(30, 90);
+                const tipX = f.j.head[0] - f.dir * f.j.R * 0.9;
+                const tipY = f.j.head[1] - f.j.R * 1.4;
+                for (let k = 0; k < 3; k++) add(fxPop('bubbles', tipX + rnd(-2, 2), tipY));
+              }
+              if (f.state === 'idle' && !f.fishT && fish.length && Math.random() < 0.003 * dt) {
+                const fi = fish.find((o) => Math.abs(o.x - f.x) < 220);
+                if (fi) {
+                  f.fishT = 1;
+                  say(f, pickOne(['Rybka!', 'Patrz, rybka!', 'Ale kolorowa!', 'Hej, rybko!']));
+                }
+              }
+            },
+            pose(f, q, t) {
+              const sw = Math.sin(f.phase * 1.6);
+              if (f.state === 'walk' || f.state === 'leave') {
+                Object.assign(q, { rot: f.dir * 1.42, lean: 0, tilt: -0.5, a1: 0.32 * sw, a2: -0.32 * sw, k1: 0.25, k2: 0.25, s1: 2.95 + 0.3 * Math.sin(f.phase), e1: 0.1, s2: 2.95 - 0.3 * Math.sin(f.phase), e2: 0.1 });
+              } else {
+                const k = Math.sin(t * 0.08);
+                Object.assign(q, { rot: f.dir * 0.3, a1: 0.25 * k, a2: -0.25 * k, k1: 0.3, k2: 0.3, s1: 1.3 + 0.45 * k, e1: 0.3, s2: 1.2 - 0.45 * k, e2: 0.3 });
+                if (f.state === 'wave') {
+                  q.s1 = 2.6 + 0.35 * Math.sin(t * 0.35);
+                  q.e1 = 0.5;
+                }
+              }
+            },
+            feet(f, j) {
+              // Płetwy w kolorze nurka.
+              for (const [kn, ft] of [[j.k1, j.f1], [j.k2, j.f2]]) {
+                const end = beyond(kn, ft, 9 * f.s);
+                ctx.fillStyle = f.fin;
+                ctx.beginPath();
+                const dx = end[0] - ft[0];
+                const dy = end[1] - ft[1];
+                ctx.moveTo(ft[0] - dy * 0.25, ft[1] + dx * 0.25);
+                ctx.lineTo(end[0] - dy * 0.45, end[1] + dx * 0.45);
+                ctx.lineTo(end[0] + dy * 0.45, end[1] - dx * 0.45);
+                ctx.lineTo(ft[0] + dy * 0.25, ft[1] - dx * 0.25);
+                ctx.fill();
+              }
+            },
+            face(f, R) {
+              // Maska do nurkowania i pasek.
+              ctx.fillStyle = 'rgba(150, 225, 255, 0.35)';
+              ctx.strokeStyle = '#1d2b3a';
+              ctx.lineWidth = Math.max(1.4, R * 0.16);
+              rrect(-R * 0.72 + f.dir * R * 0.12, -R * 0.42, R * 1.44, R * 0.62, R * 0.25);
+              ctx.fill();
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.arc(0, 0, R * 0.98, Math.PI * 0.95, Math.PI * 1.08);
+              ctx.stroke();
+            },
+            hat(f, R) {
+              // Fajka (rurka) z boku głowy.
+              ctx.strokeStyle = f.fin;
+              ctx.lineWidth = Math.max(1.6, R * 0.2);
+              ctx.beginPath();
+              ctx.moveTo(f.dir * R * 0.3, R * 0.45);
+              ctx.quadraticCurveTo(-f.dir * R * 0.9, R * 0.5, -f.dir * R * 0.9, -R * 0.2);
+              ctx.lineTo(-f.dir * R * 0.9, -R * 1.4);
+              ctx.stroke();
+            },
+          },
+
+          matrix: {
+            n: () => clamp(Math.floor(w / 320) + 2, 2, 5),
+            body: { line: '#2b3137', back: '#1b1f23', out: 'rgba(110, 255, 160, 0.55)' },
+            boots: '#08090a',
+            hands: () => '#1d2226',
+            setup(f, i) {
+              f.role = i === 0 ? 'neo' : 'agent';
+              f.color = '#7dffb0';
+            },
+            busy: (f) => ['bullet', 'shoot', 'spar'].includes(f.state),
+            chat: ['Whoa.', 'Pan Anderson…', 'Nie ma łyżki.', 'Witaj w Matrixie', 'Czerwona czy niebieska?', '{n}, obudź się', 'Déjà vu…', 'Znam kung-fu', 'Unikaj kul!', 'System nas widzi', 'Wybór należy do ciebie', '{n}, idź za białym królikiem', 'To tylko kod', 'Jestem wybrańcem?'],
+            think(f, dt, t) {
+              if (f.state === 'shoot') {
+                const neo = f.aim;
+                if (!neo || neo.gone) {
+                  set(f, 'idle');
+                  f.wait = 60;
+                  return true;
+                }
+                f.dir = Math.sign(neo.x - f.x) || f.dir;
+                if (t > 24 && (f.shots ?? 0) < 3 && Math.floor((t - 24) / 20) >= (f.shots ?? 0)) {
+                  f.shots = (f.shots ?? 0) + 1;
+                  const [x, y] = beyond(f.j.e1, f.j.h1, 5 * f.s);
+                  bullets.push({ x, y: y + rnd(-3, 3), vx: f.dir * 1.6, age: 0, by: f });
+                  if (f.shots === 1 && neo.state !== 'bullet') {
+                    set(neo, 'bullet');
+                    say(f, pickOne(['Pan Anderson…', 'Koniec gry.', 'Żegnaj.']));
+                  }
+                }
+                if (t > 130) {
+                  f.shots = 0;
+                  set(f, 'idle');
+                  f.wait = rnd(80, 160);
+                }
+                return true;
+              }
+              if (f.state === 'bullet') {
+                if (t > 150 && !bullets.some((b) => Math.abs(b.x - f.x) < 60)) {
+                  say(f, pickOne(['Whoa.', 'Nie ma łyżki.', 'Za wolno.', 'Hm.']));
+                  set(f, 'idle');
+                  f.wait = rnd(100, 200);
+                }
+                return true;
+              }
+              if (f.state === 'spar') {
+                const o = f.aim;
+                if (!o || o.gone || t > 200) {
+                  set(f, 'idle');
+                  f.wait = rnd(80, 160);
+                  return true;
+                }
+                f.dir = Math.sign(o.x - f.x) || f.dir;
+                if (Math.floor(t / 26) !== Math.floor((t - dt) / 26) && Math.random() < 0.5) say(f, pickOne(['Hia!', 'Hm!', 'Ha!', 'Szybciej!']), 30);
+                return true;
+              }
+              return false;
+            },
+            tick(dt) {
+              for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                b.age += dt;
+                b.x += b.vx * dt;
+                if (b.x < -20 || b.x > w + 20 || b.age > 600) bullets.splice(i, 1);
+              }
+              event -= dt;
+              if (event > 0 || ending) return;
+              const calm = (o) => onScreen(o) && o.x > 40 && o.x < w - 40 && (o.state === 'idle' || o.state === 'walk');
+              const neo = ppl.find((o) => o.role === 'neo' && calm(o));
+              const ag = pickOne(ppl.filter((o) => o.role === 'agent' && calm(o)));
+              if (!neo || !ag) {
+                event = 60;
+                return;
+              }
+              event = rnd(600, 1000);
+              if (Math.random() < 0.6 && Math.abs(ag.x - neo.x) > 140) {
+                ag.aim = neo;
+                set(ag, 'shoot');
+              } else {
+                const side = ag.x < neo.x ? -1 : 1;
+                ag.tx = clamp(neo.x + side * 34 * neo.s, 30, right());
+                ag.aim = neo;
+                neo.aim = ag;
+                set(ag, 'spar');
+                set(neo, 'spar');
+                ag.x = ag.x + (ag.tx - ag.x) * 0.6;
+                say(neo, pickOne(['Znam kung-fu.', 'Pokaż mi.', 'Dawaj.']));
+              }
+            },
+            pose(f, q, t) {
+              if (f.state === 'bullet') {
+                Object.assign(q, { lean: -1.15 + 0.05 * Math.sin(t * 0.05), tilt: -0.3, a1: 0.95, a2: 0.75, k1: 1.45, k2: 1.3, s1: -2.3 + 0.3 * Math.sin(t * 0.04), e1: 0.4, s2: -1.7 - 0.3 * Math.sin(t * 0.04), e2: 0.3 });
+              } else if (f.state === 'shoot') {
+                Object.assign(q, { s1: 1.57, e1: 0, s2: 1.4, e2: 0.3, a1: 0.3, a2: -0.3 });
+              } else if (f.state === 'spar') {
+                const ph = Math.floor(t / 26) % 3;
+                Object.assign(q, { s1: 1.2, e1: 1.8, s2: 0.9, e2: 1.9, a1: 0.3, a2: -0.35, k1: 0.35, k2: 0.25, lean: 0.05 });
+                if (ph === 1) Object.assign(q, { a1: 1.6, k1: 0.05, lean: -0.25 });
+                if (ph === 2) Object.assign(q, { s1: 1.65, e1: 0, lean: 0.25 });
+              }
+            },
+            snap: (f) => f.state === 'spar',
+            face: (f, R) => glasses(f, R, '#050607', '#0a0c0d', 0.78),
+            hand(f, j) {
+              if (f.state !== 'shoot') return;
+              const tip = beyond(j.e1, j.h1, 6 * f.s);
+              stroke([j.h1, tip], 2.6 * f.s, '#0b0d0f');
+              stroke([j.h1, [j.h1[0], j.h1[1] + 3 * f.s]], 2 * f.s, '#0b0d0f');
+            },
+            over() {
+              // Kule w zwolnionym tempie z falującym powietrzem za sobą.
+              for (const b of bullets) {
+                ctx.strokeStyle = 'rgba(160, 255, 200, 0.5)';
+                ctx.lineWidth = 1;
+                for (let k = 1; k <= 4; k++) {
+                  ctx.globalAlpha = 0.5 - k * 0.1;
+                  ctx.beginPath();
+                  ctx.ellipse(b.x - Math.sign(b.vx) * k * 9, b.y, 2 + k * 0.6, 3 + k * 1.6, 0, 0, TAU);
+                  ctx.stroke();
+                }
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = '#c9a24a';
+                ctx.beginPath();
+                ctx.ellipse(b.x, b.y, 3.2, 1.6, 0, 0, TAU);
+                ctx.fill();
+              }
+            },
+          },
+        };
+        const S = SCRIPTS[theme];
+        if (!S) return null;
+        function rake(f) {
+          let moved = 0;
+          for (let k = ground.rest.length - 1; k >= 0 && moved < 10; k--) {
+            const it = ground.rest[k];
+            const x = ground.x + it.x;
+            const d = (x - f.x) * f.dir;
+            if (d < 6 * f.s || d > 64 * f.s || Math.abs(x - pileX) < 12) continue;
+            takeRest(ground, k);
+            it.x = clamp(it.x + f.dir * rnd(6, 12), 0, ground.w);
+            if ((f.dir > 0 && ground.x + it.x > pileX) || (f.dir < 0 && ground.x + it.x < pileX)) it.x = pileX - ground.x + rnd(-8, 8);
+            stack(ground, it);
+            ground.rest.push(it);
+            restCount += 1;
+            ground.dirty = true;
+            moved += 1;
+          }
+        }
+        function gain(f, caught) {
+          f.count += 1;
+          const [x, y] = f.j.h1;
+          add({ t: 'glint', x, y, vx: 0, vy: 0, s: rnd(5, 8), life: 14, c: '#fff1b8', noLand: true });
+          add({ t: 'plus', x: x + rnd(-6, 6), y: y - 14, vx: 0, vy: -0.9, life: 40, noLand: true, instant: true });
+          if (Math.random() < (caught ? 0.5 : 0.25)) talk(f, caught ? ['Złapane!', 'Prosto z nieba!', 'Mam!'] : ['Moje!', 'Złoto!', '+1!', 'Mam {c}!', 'Błyszczy!']);
+        }
+        const JUMPY = ['idle', 'walk', 'dance', 'disco', 'hold', 'wait', 'rake', 'gaze', 'hunt'];
+        return {
+          tick(dt) {
+            if (!ppl.length) {
+              next -= dt;
+              if (next <= 0) start();
+              return;
+            }
+            clock += dt;
+            if (!ending && clock > len) finish();
+            S.tick?.(dt);
+            for (const f of ppl) {
+              f.t += dt;
+              if (f.sayT > 0) f.sayT -= dt;
+              if (f.replyT > 0) {
+                f.replyT -= dt;
+                if (f.replyT <= 0 && f.reply && !f.gone && f.state !== 'leave') say(f, f.reply);
+              }
+              f.s = scaleNow();
+              if (!f.hello && f.x > 24 && f.x < w - 24) {
+                f.hello = true;
+                if (Math.random() < 0.55) say(f, pickOne(S.hello ?? HELLO), 70);
+              }
+              S.each?.(f, dt);
               f.x += f.vx * dt;
               f.vx *= 0.9 ** dt;
-              const gy = footAt(f.x) + 1.5 * f.s;
-              if (f.air) {
-                f.vy += 0.3 * dt;
-                f.y += f.vy * dt;
-                if (f.y >= gy) {
-                  f.y = gy;
-                  f.air = false;
-                  f.vy = 0;
-                  for (let k = 0; k < 3; k++) add({ t: 'flake', x: f.x + rnd(-6, 6), y: gy - 1, vx: rnd(-0.9, 0.9), vy: -rnd(0.3, 1), g: 0.05, r: rnd(0.8, 1.4), a: 0.9, vol: 2, sway: rnd(0, TAU), amp: 0.2, wk: 0.3, tk: 1, z: 0 });
-                  if (f.state === 'dodge') set(f, 'idle');
-                }
-              } else f.y = gy;
+              if (!f.float) {
+                const gy = footAt(f.x) + 1.5 * f.s;
+                if (f.air) {
+                  f.vy += 0.3 * dt;
+                  f.y += f.vy * dt;
+                  if (f.y >= gy) {
+                    f.y = gy;
+                    f.air = false;
+                    f.vy = 0;
+                    if (S.land) S.land(f);
+                    else if (f.state === 'jump') {
+                      set(f, 'idle');
+                      f.wait = rnd(30, 70);
+                    }
+                  }
+                } else f.y = gy;
+              } else if (f.air) {
+                f.air = false;
+                f.vy = 0;
+                if (f.state === 'jump') set(f, 'idle');
+              }
               think(f, dt);
               const q = target(f);
-              const k = 1 - (f.state === 'throw' ? 0.45 : 0.72) ** dt;
+              const k = 1 - (S.snap?.(f) ? 0.45 : 0.72) ** dt;
               for (const key in q) f.pose[key] += (q[key] - f.pose[key]) * k;
               solve(f);
             }
-            for (let i = fighters.length - 1; i >= 0; i--) if (fighters[i].gone) fighters.splice(i, 1);
-            if (!fighters.length) next = rnd(1500, 3000);
+            for (let i = ppl.length - 1; i >= 0; i--) if (ppl[i].gone) ppl.splice(i, 1);
+            if (!ppl.length) {
+              // Krótka przerwa i przychodzą następni.
+              next = rnd(420, 840);
+              arrows.length = 0;
+              bullets.length = 0;
+              return;
+            }
+            chatT -= dt;
+            if (chatT <= 0 && !ending) {
+              chatT = rnd(100, 210) * (ppl.length > 4 ? 0.75 : 1);
+              const free = ppl.filter((o) => onScreen(o) && o.sayT <= 0 && o.replyT <= 0 && !['leave', 'down', 'hit', 'wave', 'zap'].includes(o.state) && !S.busy?.(o));
+              if (free.length) {
+                const f = pickOne(free);
+                talk(f, Math.random() < 0.6 ? [...(S.chat ?? CHAT), ...(S.chatFor?.(f) ?? [])] : CHAT);
+              }
+            }
           },
           draw() {
-            for (const f of fighters) if (f.j) drawOne(f);
+            if (!ppl.length) return;
+            S.under?.();
+            for (const f of ppl) if (f.j) drawOne(f);
+            S.over?.();
             ctx.globalAlpha = 1;
           },
-          end: () => ending || finish(),
-          peek: () => ({ held: Boolean(held), balls: list.filter((p) => p.t === 'ball').map((p) => [Math.round(p.x), Math.round(p.y), p.owner ? p.owner.name : 'user']), fighters: fighters.map((f) => ({ name: f.name, side: f.side, state: f.state, x: f.x, y: f.y, hits: f.hits, revenge: f.revenge, head: f.j?.head })) }),
-          // Czy śnieżka trafiła ludzika (własnej drużyny nie trafia; leżących też nie).
-          hit(p) {
-            if (p.toward) return false;
-            for (const f of fighters) {
-              if (!f.j || f.gone || f.state === 'down' || f.state === 'leave') continue;
-              if (p.owner && p.owner.side === f.side) continue;
-              const j = f.j;
-              const rr = p.r * 0.75;
-              if (Math.hypot(p.x - j.head[0], p.y - j.head[1]) < j.R + rr || seg(p.x, p.y, j.hip, j.neck) < 4 * f.s + rr || seg(p.x, p.y, j.hip, j.f1) < 3 * f.s + rr || seg(p.x, p.y, j.hip, j.f2) < 3 * f.s + rr) {
-                struck(f, p);
-                return true;
+          // Śnieżka (motyw śniegu) trafiła ludzika?
+          hit: (p) => (S.hit ? S.hit(p) : false),
+          // Kliknięcie w ludzika: podskakuje i coś mówi.
+          poke(x, y) {
+            for (const f of ppl) {
+              if (f.gone || !touches(f, x, y, 6)) continue;
+              say(f, pickOne(S.pokes ?? POKE), 60);
+              if (!f.float && !f.air && JUMPY.includes(f.state)) {
+                set(f, 'jump');
+                hop(f, 3.2);
               }
+              return true;
             }
             return false;
           },
+          // Efekt kliknięcia (piorun, wir liści, armatka…) obok ludzików — reagują.
+          near(x, y) {
+            for (const f of ppl) {
+              if (f.gone || !onScreen(f) || Math.abs(f.x - x) > 160 * f.s) continue;
+              if (S.near) S.near(f, x, y);
+              else if (Math.random() < 0.4 && f.sayT <= 0) say(f, pickOne(WOW));
+            }
+          },
+          end: () => ending || finish(),
+          peek: () => ({ held: Boolean(held), balls: list.filter((p) => p.t === 'ball').map((p) => [Math.round(p.x), Math.round(p.y), p.owner ? p.owner.name : 'user']), fighters: ppl.map((f) => ({ name: f.name, side: f.side, state: f.state, role: f.role, x: f.x, y: f.y, hits: f.hits, count: f.count, revenge: f.revenge, say: f.sayT > 0 ? f.say : '', head: f.j?.head })) }),
         };
       }
 
@@ -7009,7 +9136,7 @@
         if (held) rollBall(dt);
         themeTick(dt);
         if (pointer.on && piles) interact();
-        if (fight) fight.tick(dt);
+        if (crowd) crowd.tick(dt);
         stepping = true;
         list = list.filter((p) => step(p, dt));
         stepping = false;
@@ -7060,7 +9187,7 @@
         umbrella *= 0.94;
         if (gesture?.kind === 'magnet' && pointer.on) drawMagnet();
         if (blowing) drawWand();
-        if (fight) fight.draw();
+        if (crowd) crowd.draw();
         if (held) drawBall(held.x, held.y, held.r, held.rot, 1);
         ctx.globalAlpha = 1;
         for (const tl of tools) {
@@ -7098,9 +9225,9 @@
       listen(document, 'visibilitychange', onVisible);
       fit();
       if (caps || bubbly) collect();
-      if (snowy && !EMBED) {
-        fight = makeFight();
-        if (QS.get('fxdebug') === '1') window.__fxFight = fight;
+      if (!EMBED) {
+        crowd = makeCrowd();
+        if (QS.get('fxdebug') === '1') window.__fxFight = crowd;
       }
       spawnNear(true);
       if (bubbly) for (let i = 2 + Math.round(kk * 3); i > 0; i--) fish.push(spawnFish(true));
@@ -7146,6 +9273,7 @@
           if (tool || dead) return;
           const x = event.clientX;
           const y = event.clientY;
+          if (crowd?.poke(x, y)) return;
           const mouse = event.pointerType !== 'touch';
           const busy = Boolean(event.target?.closest?.(INTERACTIVE));
           if (snowy && mouse) {
