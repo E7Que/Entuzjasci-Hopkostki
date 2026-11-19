@@ -1839,7 +1839,58 @@ function evSyncForm() {
   const name = $('#ev-name').value.trim();
   if (name) p.set('name', name.slice(0, 80));
   $('#ev-preview').href = `ranking.html?${p}`;
+  evLiveUpdate();
 }
+// Podgląd efektu na żywo: strona rankingu w trybie osadzonym w ramce (ta sama domena), sterowana wiadomościami.
+// Ramka ładuje się dopiero, gdy podgląd jest na ekranie; poza ekranem efekty w niej są wstrzymane.
+const evLive = { ready: false, visible: false, timer: 0 };
+function evLiveData() {
+  const m = evMultValue();
+  return {
+    name: $('#ev-name').value.replace(/\s+/g, ' ').trim().slice(0, 80) || 'Podgląd wydarzenia XP',
+    multiplier: m >= 1.1 && m <= 10 ? m : 2,
+    theme: $('#ev-theme').value,
+    intensity: $('#ev-intensity').value,
+    accent: $('#ev-accent-on').checked && EV_HEX.test($('#ev-accent').value) ? $('#ev-accent').value.toLowerCase() : null,
+  };
+}
+function evLivePost(message) {
+  const win = $('#ev-live').contentWindow;
+  if (evLive.ready && win) win.postMessage(message, location.origin);
+}
+function evLiveUpdate() {
+  clearTimeout(evLive.timer);
+  evLive.timer = setTimeout(() => evLivePost({ type: 'hk-ev-preview', event: evLiveData() }), 120);
+}
+function evLiveStart() {
+  const frame = $('#ev-live');
+  if (frame.getAttribute('src')) return;
+  const e = evLiveData();
+  const p = new URLSearchParams({ embed: '1', preview: e.theme, intensity: e.intensity, mult: String(e.multiplier), name: e.name });
+  if (e.accent) p.set('accent', e.accent.slice(1));
+  frame.src = `ranking.html?${p}`;
+}
+window.addEventListener('message', (event) => {
+  const frame = $('#ev-live');
+  if (event.origin !== location.origin || event.source !== frame.contentWindow) return;
+  const m = event.data ?? {};
+  if (m.type === 'hk-ev-ready') {
+    evLive.ready = true;
+    evLivePost({ type: 'hk-ev-preview', event: evLiveData() });
+    if (!evLive.visible) evLivePost({ type: 'hk-ev-pause' });
+  } else if (m.type === 'hk-ev-size' && Number.isFinite(m.height)) {
+    frame.style.height = `${Math.min(460, Math.max(140, Math.round(m.height)))}px`;
+  }
+});
+new IntersectionObserver(
+  (entries) => {
+    evLive.visible = entries.at(-1).isIntersecting;
+    if (evLive.visible) evLiveStart();
+    evLivePost({ type: evLive.visible ? 'hk-ev-resume' : 'hk-ev-pause' });
+  },
+  { rootMargin: '120px 0px' },
+).observe($('#ev-live'));
+$('#ev-live-burst').addEventListener('click', () => evLivePost({ type: 'hk-ev-burst' }));
 // Wypełnia formularz danymi wydarzenia; `copy` = jako nowe (od najbliższej pełnej godziny, ta sama długość).
 function evFill(e, { copy = false } = {}) {
   let start = Date.parse(e.startsAt);

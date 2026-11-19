@@ -681,6 +681,12 @@
     .pv-color input[type="color"] { width: 32px; height: 32px; padding: 2px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); cursor: pointer; }
     body:has(.pv-bar) footer { padding-bottom: 64px; }
 
+    /* Tryb osadzony (ranking.html?embed=1) — podgląd efektu w panelu: sam baner wydarzenia i efekty w tle */
+    html.embed, html.embed body { overflow: hidden; }
+    html.embed main { padding: 16px 14px; }
+    html.embed header, html.embed .toolbar, html.embed .layout, html.embed footer, html.embed .backdrop, html.embed .rail, html.embed .bg-banner { display: none !important; }
+    html.embed .event { margin: 0; }
+
     .event.upcoming, .event.ended { box-shadow: none; }
     .event.upcoming { background: linear-gradient(115deg, color-mix(in srgb, var(--e1) 60%, #151b1e), color-mix(in srgb, var(--e2) 50%, #151b1e) 60%, color-mix(in srgb, var(--e3) 35%, #151b1e)); }
     .event.ended { background: linear-gradient(115deg, color-mix(in srgb, var(--e1) 34%, #151b1e), color-mix(in srgb, var(--e2) 28%, #151b1e)); }
@@ -762,6 +768,7 @@
       .pod-av, .pod-col { transition: none; }
     }
   </style>
+  <script>if (/[?&]embed=1(&|$)/.test(location.search)) document.documentElement.classList.add('embed');</script>
 </head>
 <body>
   <div class="bg" aria-hidden="true">
@@ -1673,8 +1680,11 @@
     const listPl = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} i ${items.at(-1)}` : items[0] ?? '');
     const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
     const QS = new URLSearchParams(location.search);
-    const PREVIEW = EV_THEMES.includes(QS.get('preview')) ? QS.get('preview') : null;
-    const ev = { events: null, pick: null, key: '', back: null, banner: null, top: null, fx: null };
+    const EMBED = QS.get('embed') === '1';
+    const PREVIEW = EV_THEMES.includes(QS.get('preview')) ? QS.get('preview') : EMBED ? 'confetti' : null;
+    // fxKey — efekt, który teraz działa (zmiana samej nazwy czy mnożnika nie restartuje cząsteczek); burstFx — efekt
+    // ostatniego wybuchu w podglądzie; paused — podgląd w panelu jest poza ekranem.
+    const ev = { events: null, pick: null, key: '', fxKey: '', burstFx: '', paused: false, back: null, banner: null, top: null, fx: null };
 
     function evStatus(e, now = Date.now()) {
       return now < Date.parse(e.startsAt) ? 'upcoming' : now < Date.parse(e.endsAt) ? 'active' : 'ended';
@@ -1718,8 +1728,7 @@
       const next = p.next ? `<div class="ev-next">Następne: <b>${esc(p.next.name)}</b> (${multText(p.next.multiplier)} XP) — ${esc(whenText(p.next.startsAt))}</div>` : '';
       const mult = multText(e.multiplier);
       const playful = status === 'active' && FX_LEVEL[evIntensity(e)] > 0;
-      return `<canvas class="ev-canvas" aria-hidden="true"></canvas>
-        <button type="button" class="ev-mult" aria-label="Mnożnik XP ${mult}"${playful ? ' title="Jeszcze raz!"' : ''}><b data-len="${Math.min(mult.length, 6)}">${mult}</b><small>XP</small></button>
+      return `<button type="button" class="ev-mult" aria-label="Mnożnik XP ${mult}"${playful ? ' title="Jeszcze raz!"' : ''}><b data-len="${Math.min(mult.length, 6)}">${mult}</b><small>XP</small></button>
         <div class="ev-body"><div class="ev-kicker"><i class="ev-dot"></i>${kicker}</div><h2 class="ev-name">${esc(e.name)}</h2><div class="ev-sub">${sub}</div></div>
         <div class="ev-side">${timer}${cta}</div>${next}`;
     }
@@ -1776,8 +1785,8 @@
       if (key === ev.key) return;
       const wasActive = ev.key.split(':')[1] === 'active';
       ev.key = key;
-      stopFx();
       if (!pick) {
+        stopFx();
         box.hidden = true;
         box.innerHTML = '';
         applyAccent(box, null);
@@ -1790,8 +1799,14 @@
       const intensity = evIntensity(e);
       const accent = evAccent(e);
       const level = FX_LEVEL[intensity];
+      const fxKey = [theme, intensity, accent, pick.status].join(':');
+      const keepFx = fxKey === ev.fxKey && Boolean(box.querySelector(':scope > .ev-canvas'));
+      if (!keepFx) stopFx();
       box.className = `event t-${theme} ${pick.status} fx-${intensity}`;
-      box.innerHTML = eventHtml(pick);
+      if (keepFx) {
+        box.querySelectorAll(':scope > :not(.ev-canvas)').forEach((node) => node.remove());
+        box.insertAdjacentHTML('beforeend', eventHtml(pick));
+      } else box.innerHTML = `<canvas class="ev-canvas" aria-hidden="true"></canvas>${eventHtml(pick)}`;
       box.hidden = false;
       applyAccent(box, accent);
       document.body.dataset.ev = theme;
@@ -1800,7 +1815,9 @@
       else delete document.body.dataset.evLive;
       clockTick();
       ev.fx = { theme, level, colors: accent ? accentColors(accent) : null };
-      if (pick.status !== 'active' || reduceMotion.matches || !level) return;
+      if (keepFx) return;
+      if (pick.status !== 'active' || reduceMotion.matches || !level || ev.paused) return;
+      ev.fxKey = fxKey;
       // Animacje: cząsteczki w banerze i w tle strony, a przy pierwszej wizycie (albo starcie na żywo) — wybuch.
       // Intensywność mnoży liczbę cząsteczek; „mocne” wybucha przy każdym wejściu na stronę.
       const [inBanner, inBack] = FX_AMBIENT[theme];
@@ -1810,8 +1827,10 @@
       $('.bg').append(back);
       ev.back = particles(back, theme, { ambient: Math.max(1, Math.round(inBack * level)), colors: ev.fx.colors });
       const seenKey = `ev-burst-${e.id}`;
-      if (PREVIEW || intensity === 'high' || saved.get(seenKey) !== '1' || (ev.started && !wasActive)) {
-        saved.set(seenKey, '1');
+      const fresh = PREVIEW ? fxKey !== ev.burstFx : intensity === 'high' || saved.get(seenKey) !== '1' || (ev.started && !wasActive);
+      if (fresh) {
+        if (!PREVIEW) saved.set(seenKey, '1');
+        ev.burstFx = fxKey;
         setTimeout(burst, 350);
       }
       ev.started = true;
@@ -1832,6 +1851,7 @@
     }
 
     function stopFx() {
+      ev.fxKey = '';
       for (const k of ['banner', 'back', 'top']) {
         ev[k]?.destroy();
         ev[k] = null;
@@ -2447,6 +2467,31 @@
         accent,
       };
     }
+    // Tryb osadzony: panel (ta sama domena) wysyła ustawienia z formularza wydarzenia, a strona odsyła swoją wysokość.
+    function embedBridge() {
+      const send = (msg) => { if (parent !== window) parent.postMessage(msg, location.origin); };
+      window.addEventListener('message', (event) => {
+        if (event.origin !== location.origin || event.source !== parent) return;
+        const m = event.data ?? {};
+        if (m.type === 'hk-ev-preview' && m.event) {
+          const e = m.event;
+          const params = { preview: EV_THEMES.includes(e.theme) ? e.theme : 'confetti', intensity: e.intensity, mult: e.multiplier, name: e.name, accent: HEX.test(e.accent ?? '') ? e.accent.slice(1) : '' };
+          for (const [k, v] of Object.entries(params)) v ? QS.set(k, String(v)) : QS.delete(k);
+          setEvents({ current: previewEvent() });
+        } else if (m.type === 'hk-ev-burst') burst();
+        else if (m.type === 'hk-ev-pause' && !ev.paused) {
+          ev.paused = true;
+          stopFx();
+        } else if (m.type === 'hk-ev-resume' && ev.paused) {
+          ev.paused = false;
+          ev.key = '';
+          renderEvent();
+        }
+      });
+      const main = document.querySelector('main');
+      new ResizeObserver(() => send({ type: 'hk-ev-size', height: Math.ceil(main.getBoundingClientRect().height) })).observe(main);
+      send({ type: 'hk-ev-ready' });
+    }
     function previewBar() {
       const bar = document.createElement('div');
       bar.className = 'pv-bar';
@@ -2607,14 +2652,15 @@
     }, true);
 
     const initial = location.hash.slice(1);
-    if (PREVIEW) {
-      setEvents({ current: previewEvent() });
-      previewBar();
+    if (PREVIEW) setEvents({ current: previewEvent() });
+    if (EMBED) embedBridge();
+    else {
+      if (PREVIEW) previewBar();
+      if (PERIODS.includes(initial) && initial !== 'all') selectPeriod(initial);
+      else load();
+      const linked = new URLSearchParams(location.search).get('u');
+      if (linked) openProfile(linked);
     }
-    if (PERIODS.includes(initial) && initial !== 'all') selectPeriod(initial);
-    else load();
-    const linked = new URLSearchParams(location.search).get('u');
-    if (linked) openProfile(linked);
   </script>
 </body>
 </html>
