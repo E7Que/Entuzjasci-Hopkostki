@@ -223,6 +223,20 @@
     .crown { position: absolute; z-index: 3; left: 50%; top: -22px; width: 36px; margin-left: -18px; line-height: 0; pointer-events: none; }
     .crown svg { width: 100%; fill: var(--gold); filter: drop-shadow(0 2px 5px rgba(227, 179, 65, 0.55)); animation: crown-float 3.2s ease-in-out infinite; }
     body.ev-page[data-ev="snow"] .crown svg { animation: none; }
+    /* Zwycięzca w czasie wydarzenia: nakrycie głowy w stylu efektu (HATS) zamiast korony */
+    body.has-hat .top.t1 .crown {
+      top: calc(var(--avs) * var(--ht)); width: calc(var(--avs) * var(--hw)); margin-left: calc(var(--avs) * var(--hw) / -2 + var(--avs) * var(--hx));
+      aspect-ratio: var(--ha); background: var(--dc-hat) center / 100% 100% no-repeat; transform: rotate(var(--hr)); transform-origin: 50% 100%;
+      filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.45)); animation: var(--hat-anim);
+    }
+    body.has-hat .top.t1 .crown svg { display: none; }
+    body.has-hat .top3 { --pad: var(--hat-pad, 40px); }
+    @keyframes hat-wobble { 0%, 100% { rotate: -3deg; } 50% { rotate: 3deg; } }
+    @keyframes hat-flicker { from { scale: 1 1; } to { scale: 1.03 1.09; } }
+    @keyframes hat-beat { 0%, 30%, 60%, 100% { scale: 1; } 15% { scale: 1.08; } 45% { scale: 1.05; } }
+    @keyframes hat-twinkle { 0%, 100% { filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.45)) brightness(1); } 50% { filter: drop-shadow(0 0 8px rgba(255, 224, 102, 0.55)) brightness(1.2); } }
+    @keyframes hat-neon { 0%, 44%, 50%, 68%, 74%, 100% { opacity: 1; } 46% { opacity: 0.45; } 70% { opacity: 0.75; } }
+    @keyframes hat-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -4px; } }
     .crown circle, .arch-crown circle { fill: #ffe9a6; }
     @keyframes crown-float { 50% { transform: translateY(-3px) rotate(-3deg); } }
     .spark {
@@ -736,7 +750,9 @@
     html.embed .ev-deco.top { left: 14px; right: 14px; top: 16px; }
 
     /* Konfetti: girlanda z chorągiewkami */
-    .dc-bunting { position: absolute; left: 0; top: 0; display: block; opacity: calc(0.55 + var(--evk) * 0.45); filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.35)); transform-origin: 50% 0; animation: dc-bob 4.5s ease-in-out infinite alternate; }
+    .dc-bunting { position: absolute; left: -10px; right: -10px; top: -8px; width: calc(100% + 20px); height: clamp(44px, 5.6vw, 76px); display: block; opacity: calc(0.6 + var(--evk) * 0.4); transform-origin: 50% 0; animation: dc-bob 4.5s ease-in-out infinite alternate; }
+    .dc-bunting .fl { transform-box: fill-box; transform-origin: 50% 0; animation: dc-flag 2.6s ease-in-out infinite alternate; }
+    @keyframes dc-flag { from { transform: rotate(-5deg) skewX(2deg); } to { transform: rotate(5deg) skewX(-2deg); } }
     @keyframes dc-bob { from { transform: translateY(-2px); } to { transform: translateY(2px); } }
 
 
@@ -805,10 +821,11 @@
     .dc-web svg { display: block; width: 100%; height: auto; }
     .dc-web.l { left: 0; }
     .dc-web.r { right: 0; transform: scaleX(-1); }
-    .dc-spider { position: absolute; top: 0; right: 16%; width: 30px; height: 230px; overflow: hidden; }
-    .dc-drop { position: absolute; left: 0; bottom: 0; width: 30px; animation: dc-spider 11s ease-in-out infinite; }
-    .dc-drop i { position: absolute; left: 50%; bottom: 26px; width: 1px; height: 400px; background: rgba(230, 225, 255, 0.45); }
-    .dc-drop svg { display: block; width: 30px; height: 30px; filter: drop-shadow(0 0 3px rgba(255, 140, 60, 0.6)); }
+    .dc-spider { position: absolute; top: 0; right: 16%; width: 44px; height: 240px; overflow: hidden; }
+    .dc-drop { position: absolute; left: 0; bottom: 0; width: 44px; animation: dc-spider 11s ease-in-out infinite; }
+    .dc-drop i { position: absolute; left: 50%; bottom: 38px; width: 1px; height: 400px; background: linear-gradient(rgba(230, 225, 255, 0.2), rgba(230, 225, 255, 0.6)); }
+    .dc-drop svg { display: block; width: 44px; height: 47px; transform-origin: 50% 0; animation: dc-spin 3.4s ease-in-out infinite alternate; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 4px rgba(255, 120, 40, 0.35)); }
+    @keyframes dc-spin { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
     @keyframes dc-spider { 0%, 100% { transform: translateY(-150px); } 45%, 60% { transform: translateY(-12px); } }
     body.ev-page[data-ev="halloween"] .card { position: relative; }
     body.ev-page[data-ev="halloween"] .card::after {
@@ -844,21 +861,39 @@
     body.ev-page[data-ev="coins"] .num.xp { color: color-mix(in srgb, var(--evc) 72%, #fff); }
 
     /* Burza: chmury u góry, przyciemnienie, błysk pioruna rozświetla karty */
-    .dc-clouds { position: absolute; left: -5%; top: -14px; width: 110%; height: clamp(36px, 9vw, 110px); filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45)); opacity: calc(0.6 + var(--evk) * 0.4); transition: filter 0.15s; animation: dc-drift 40s ease-in-out infinite alternate; }
+    /* Chmury: obraz SVG (rozmyte pasma + turbulencja), na całą szerokość u góry strony; przy piorunie świecą od środka */
+    .ev-deco.sky { position: absolute; left: 0; right: 0; top: 0; height: 0; z-index: 2; overflow: visible; }
+    .dc-sky { position: absolute; left: 0; right: 0; top: 0; height: clamp(110px, 14vw, 205px); overflow: hidden; opacity: calc(0.7 + var(--evk) * 0.3); -webkit-mask-image: linear-gradient(#000 56%, transparent); mask-image: linear-gradient(#000 56%, transparent); }
+    .dc-sky > div { position: absolute; top: 0; bottom: 0; left: -70px; right: -70px; will-change: transform; animation: dc-sky 60s ease-in-out infinite alternate; }
+    @keyframes dc-sky { from { transform: translateX(-50px); } to { transform: translateX(50px); } }
+    .dc-sky i, .dc-sky b { position: absolute; inset: 0; }
+    .dc-sky i { background: var(--dc-cloud) center top / cover no-repeat; transition: filter 0.3s; }
+    .dc-sky b {
+      background: radial-gradient(closest-side, rgba(226, 234, 255, 0.95), rgba(170, 190, 255, 0.4) 45%, transparent) var(--lx, 50%) 30% / clamp(240px, 36vw, 560px) 120% no-repeat;
+      -webkit-mask: var(--dc-cloud) center top / cover no-repeat; mask: var(--dc-cloud) center top / cover no-repeat;
+      opacity: 0; transition: opacity 0.35s;
+    }
+    body.ev-page[data-ev="storm"].ev-flash .dc-sky b { opacity: 1; transition: none; }
+    body.ev-page[data-ev="storm"].ev-flash .dc-sky i { filter: brightness(1.45); transition: none; }
     @keyframes dc-drift { from { transform: translateX(-2.5%); } to { transform: translateX(2.5%); } }
     body.ev-page[data-ev="storm"] .bg::before { content: ''; position: absolute; inset: 0; z-index: 1; background: rgba(4, 6, 16, calc(var(--evk) * 0.35)); }
     body.ev-page[data-ev="storm"] :is(.toolbar, .table, .card, .event) { transition: border-color 0.25s, box-shadow 0.25s; }
     body.ev-page[data-ev="storm"].ev-flash :is(.toolbar, .table, .card, .event) { border-color: rgba(214, 224, 255, 0.85); box-shadow: 0 0 34px -6px rgba(200, 214, 255, 0.55); }
-    body.ev-page[data-ev="storm"].ev-flash .dc-clouds { filter: brightness(2.2) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45)); }
 
     /* Bąbelki: tafla wody u góry, promienie światła, refleksy wody (kaustyka) */
     .dc-caustic { position: absolute; inset: 0; overflow: hidden; opacity: calc(0.07 + var(--evk) * 0.18); }
     .dc-caustic::before { content: ''; position: absolute; inset: -360px; background: var(--dc-caustic) 0 0 / 360px 360px repeat; will-change: transform; animation: dc-caus 34s linear infinite; }
     @keyframes dc-caus { to { transform: translate(360px, 360px); } }
-    .dc-water { position: absolute; left: 0; top: 0; width: 100%; height: clamp(22px, 3.5vw, 40px); border-radius: 12px 12px 0 0; opacity: calc(0.5 + var(--evk) * 0.5); animation: dc-drift 9s ease-in-out infinite alternate; }
-    .dc-water stop:first-child { stop-color: var(--evc2); stop-opacity: 0.38; }
-    .dc-water stop:last-child { stop-color: var(--evc2); stop-opacity: 0.06; }
-    .dc-water .line { fill: none; stroke: color-mix(in srgb, #ffffff 60%, var(--evc2)); stroke-width: 1.6; vector-effect: non-scaling-stroke; opacity: 0.85; }
+    .dc-surf {
+      position: absolute; left: 0; right: 0; top: 0; --sh: clamp(54px, 6.5vw, 92px); height: calc(var(--sh) * 1.35); overflow: hidden; opacity: calc(0.6 + var(--evk) * 0.4);
+      background: linear-gradient(color-mix(in srgb, var(--evc2) 36%, transparent), color-mix(in srgb, var(--evc2) 10%, transparent) 50%, transparent);
+      -webkit-mask-image: linear-gradient(#000 52%, transparent); mask-image: linear-gradient(#000 52%, transparent);
+    }
+    .dc-surf i { position: absolute; left: 0; top: 0; height: var(--sh); width: calc(100% + var(--sh) * 6); background: var(--dc-wave-a) 0 0 / calc(var(--sh) * 6) 100% repeat-x; will-change: transform; animation: dc-surf 16s linear infinite; }
+    .dc-surf i:nth-child(2) { background-image: var(--dc-wave-b); animation-duration: 11s; animation-direction: reverse; opacity: 0.65; }
+    .dc-surf i:nth-child(3) { width: auto; right: 0; height: 100%; background: var(--dc-caustic) 0 0 / 240px 240px; opacity: 0.55; -webkit-mask-image: linear-gradient(#000, transparent 75%); mask-image: linear-gradient(#000, transparent 75%); animation: dc-shim 24s linear infinite; }
+    @keyframes dc-surf { to { transform: translateX(calc(var(--sh) * -6)); } }
+    @keyframes dc-shim { to { background-position: 240px 120px; } }
     .dc-rays { position: absolute; inset: 0; overflow: hidden; -webkit-mask-image: linear-gradient(#000, transparent 75%); mask-image: linear-gradient(#000, transparent 75%); opacity: calc(0.25 + var(--evk) * 0.6); }
     .dc-rays i { position: absolute; top: -10%; width: 12vw; height: 120%; background: linear-gradient(color-mix(in srgb, var(--evc2) 30%, transparent), transparent); transform-origin: 50% 0; animation: dc-ray 9s ease-in-out infinite alternate; }
     .dc-rays i:nth-child(1) { left: 8%; }
@@ -974,6 +1009,7 @@
       .ev-deco *, body.ev-page h1, body.ev-page .event .ev-mult, body.ev-page .top.t1 .pod-av::after { animation: none !important; }
       body.ev-page[data-ev="coins"] :is(.table, .top3)::after { display: none; }
       .beam, .top.t1 .pod-av::before, .crown svg, .spark, .top.flash .pod-col { animation: none; }
+      body.has-hat .top.t1 .crown { animation: none; }
       .pod-av, .pod-col { transition: none; }
     }
   </style>
@@ -2084,65 +2120,231 @@
     };
     const svgUrl = (svg) => `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
     const f1 = (v) => v.toFixed(1);
-    // Tafla wody oglądana od spodu: jasne wypełnienie nad falą i sama linia fali.
-    function waveTop(w, n, minY, maxY) {
-      const pts = Array.from({ length: n + 1 }, (_, i) => [(i * w) / n, rnd(minY, maxY)]);
-      let line = `M0 ${f1(pts[0][1])}`;
-      for (let i = 1; i <= n; i++) {
-        const mx = f1((pts[i - 1][0] + pts[i][0]) / 2);
-        line += ` C${mx} ${f1(pts[i - 1][1])} ${mx} ${f1(pts[i][1])} ${f1(pts[i][0])} ${f1(pts[i][1])}`;
-      }
-      return { line, fill: `M0 0 L${line.slice(1)} L${w} 0 Z` };
+    // Tafla wody oglądana od spodu: powtarzalny kafel fali (całkowita liczba okresów — przesuwany bez szwu):
+    // srebrzysta powierzchnia nad linią fali, jasny grzbiet z poświatą i drobne zmarszczki.
+    function surfSvg(base, amp, seed) {
+      const W = 480;
+      const ph = [seed * 1.7, seed * 2.9, seed * 4.3];
+      const y = (x, k = 1, d = 0) => base + d + amp * k * (Math.sin((x / W) * TAU * 2 + ph[0]) + 0.42 * Math.sin((x / W) * TAU * 5 + ph[1]) + 0.2 * Math.sin((x / W) * TAU * 9 + ph[2]));
+      const line = (k, d) => {
+        let p = `M0 ${f1(y(0, k, d))}`;
+        for (let x = 8; x <= W; x += 8) p += ` L${x} ${f1(y(x, k, d))}`;
+        return p;
+      };
+      const crest = line(1, 0);
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} 80" preserveAspectRatio="none"><defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.34"/><stop offset="1" stop-color="#fff" stop-opacity="0.08"/></linearGradient></defs>`
+        + `<path d="M0 0 L${crest.slice(1)} L${W} 0 Z" fill="url(#s)"/>`
+        + `<path d="${crest}" fill="none" stroke="#fff" stroke-width="6" opacity="0.14"/>`
+        + `<path d="${crest}" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.85"/>`
+        + `<path d="${line(0.7, -7)}" fill="none" stroke="#fff" stroke-width="0.9" opacity="0.32"/>`
+        + `<path d="${line(0.5, -13)}" fill="none" stroke="#fff" stroke-width="0.7" opacity="0.2"/></svg>`;
     }
     // Pajęczyna w rogu (od punktu 0,0): nitki promieniste i obwisłe łuki.
     function webSvg(size) {
-      const n = 7;
-      const ang = (i) => (i / (n - 1)) * (Math.PI / 2);
-      let d = '';
-      for (let i = 0; i < n; i++) d += `M0 0 L${f1(Math.cos(ang(i)) * size)} ${f1(Math.sin(ang(i)) * size)} `;
-      for (const r of [0.22, 0.4, 0.58, 0.76, 0.94]) {
-        const R = r * size;
+      // Nici promieniste pod nieregularnymi kątami, spirala z łukami obwisłymi ku środkowi, krople rosy i zerwana nić.
+      const n = 8;
+      const angs = Array.from({ length: n }, (_, i) => (i / (n - 1)) * (Math.PI / 2) * 0.94 + 0.03 + (i && i < n - 1 ? rnd(-0.07, 0.07) : 0));
+      const lens = angs.map(() => size * rnd(0.9, 1));
+      const pt = (a, r) => [Math.cos(a) * r, Math.sin(a) * r];
+      let radial = '';
+      for (let i = 0; i < n; i++) {
+        const [x, y] = pt(angs[i], lens[i]);
+        const [mx, my] = pt(angs[i] + rnd(-0.02, 0.02), lens[i] * 0.5);
+        radial += `M0 0 Q${f1(mx)} ${f1(my)} ${f1(x)} ${f1(y)} `;
+      }
+      let spiral = '';
+      const drops = [];
+      let r = size * 0.1;
+      let broke = false;
+      while (r < size * 0.93) {
         for (let i = 0; i < n - 1; i++) {
-          const am = (ang(i) + ang(i + 1)) / 2;
-          d += `M${f1(Math.cos(ang(i)) * R)} ${f1(Math.sin(ang(i)) * R)} Q${f1(Math.cos(am) * R * 0.84)} ${f1(Math.sin(am) * R * 0.84)} ${f1(Math.cos(ang(i + 1)) * R)} ${f1(Math.sin(ang(i + 1)) * R)} `;
+          const r0 = r * rnd(0.95, 1.05);
+          const r1 = (r + size * 0.012) * rnd(0.95, 1.05);
+          r += size * 0.0115;
+          if (r0 > lens[i] * 0.97 || r1 > lens[i + 1] * 0.97) continue;
+          const [x0, y0] = pt(angs[i], r0);
+          const [x1, y1] = pt(angs[i + 1], r1);
+          const am = (angs[i] + angs[i + 1]) / 2;
+          const [cx, cy] = pt(am, ((r0 + r1) / 2) * rnd(0.8, 0.88));
+          // Jedna nić zerwana: zwisa luźno w dół.
+          if (!broke && r > size * 0.55 && i === 3 && Math.random() < 0.5) {
+            broke = true;
+            spiral += `M${f1(x0)} ${f1(y0)} q${f1(rnd(-4, 4))} ${f1(size * 0.08)} ${f1(rnd(-2, 2))} ${f1(size * 0.16)} `;
+            continue;
+          }
+          spiral += `M${f1(x0)} ${f1(y0)} Q${f1(cx)} ${f1(cy)} ${f1(x1)} ${f1(y1)} `;
+          if (Math.random() < 0.09) {
+            const t = rnd(0.3, 0.7);
+            drops.push([(1 - t) * (1 - t) * x0 + 2 * t * (1 - t) * cx + t * t * x1, (1 - t) * (1 - t) * y0 + 2 * t * (1 - t) * cy + t * t * y1]);
+          }
+        }
+        r += size * 0.045;
+      }
+      const dew = drops.map(([x, y]) => { const d = rnd(0.9, 1.7); return `<circle cx="${f1(x)}" cy="${f1(y + d * 0.6)}" r="${f1(d)}" fill="rgba(225,235,255,0.75)"/><circle cx="${f1(x - d * 0.3)}" cy="${f1(y + d * 0.3)}" r="${f1(d * 0.35)}" fill="#fff"/>`; }).join('');
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}"><path d="${radial}" fill="none" stroke="rgba(236,232,255,0.7)" stroke-width="1.15"/><path d="${spiral}" fill="none" stroke="rgba(232,228,255,0.55)" stroke-width="0.8"/>${dew}</svg>`;
+    }
+    // Pająk (widziany z góry, zwisa na nici): przegubowe odnóża, odwłok z pomarańczowym wzorem, świecące oczy.
+    const SPIDER = (() => {
+      const legs = [];
+      // Na każdą stronę 4 odnoża: [kąt wyjścia, długość uda, długość goleni, zgięcie].
+      const L = [[-60, 11, 13, 40], [-25, 12, 14, 32], [20, 11, 13, -30], [52, 12, 15, -40]];
+      for (const side of [-1, 1]) {
+        for (const [a, l1, l2, bend] of L) {
+          const ax = 30 + side * 4;
+          const ay = 37 + a / 30;
+          const r1 = ((side > 0 ? -a : 180 + a) * Math.PI) / 180;
+          const kx = ax + Math.cos(r1) * l1;
+          const ky = ay - Math.sin(r1) * l1 - 4;
+          const r2 = r1 + (side * bend * Math.PI) / 180;
+          const fx = kx + Math.cos(r2) * l2;
+          const fy = ky - Math.sin(r2) * l2 + 6;
+          legs.push(`<path d="M${f1(ax)} ${f1(ay)} L${f1(kx)} ${f1(ky)}" stroke-width="2.3"/><path d="M${f1(kx)} ${f1(ky)} L${f1(fx)} ${f1(fy)}" stroke-width="1.4"/>`);
         }
       }
-      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}"><path d="${d}" fill="none" stroke="rgba(232,226,255,0.55)" stroke-width="1"/></svg>`;
+      return `<svg viewBox="0 0 60 64" aria-hidden="true"><defs><radialGradient id="spa" cx="0.38" cy="0.32" r="0.75"><stop offset="0" stop-color="#5a4470"/><stop offset="0.45" stop-color="#22142e"/><stop offset="1" stop-color="#0b0610"/></radialGradient><radialGradient id="spc" cx="0.4" cy="0.35" r="0.7"><stop offset="0" stop-color="#4a3a5c"/><stop offset="1" stop-color="#0e0814"/></radialGradient></defs>`
+        + `<g fill="none" stroke="#120a1a" stroke-linecap="round" stroke-linejoin="round">${legs.join('')}</g>`
+        + '<ellipse cx="30" cy="22" rx="10.5" ry="13" fill="url(#spa)"/>'
+        + '<path d="M30 12 l3.2 4 -3.2 3.2 -3.2 -3.2 z M30 21 l3.6 4.4 -3.6 3.6 -3.6 -3.6 z" fill="#ff7a18" opacity="0.9"/>'
+        + '<g fill="#ffb347" opacity="0.8"><circle cx="24.5" cy="20" r="1.2"/><circle cx="35.5" cy="20" r="1.2"/><circle cx="25.5" cy="27" r="1"/><circle cx="34.5" cy="27" r="1"/></g>'
+        + '<ellipse cx="27" cy="16" rx="3" ry="4.5" fill="#fff" opacity="0.13" transform="rotate(-20 27 16)"/>'
+        + '<ellipse cx="30" cy="38.5" rx="7" ry="6.5" fill="url(#spc)"/>'
+        + '<g fill="#ff3b1f"><circle cx="27.6" cy="42.6" r="1.25"/><circle cx="32.4" cy="42.6" r="1.25"/><circle cx="29" cy="40.8" r="0.8"/><circle cx="31" cy="40.8" r="0.8"/></g>'
+        + '<g fill="#ffd0a0"><circle cx="27.3" cy="42.2" r="0.4"/><circle cx="32.1" cy="42.2" r="0.4"/></g>'
+        + '<path d="M28 44.5 q-1 2.4 -2.6 3 M32 44.5 q1 2.4 2.6 3" fill="none" stroke="#120a1a" stroke-width="1.4" stroke-linecap="round"/></svg>';
+    })();
+    // Girlanda: sznurek zwisa łukami między szpilkami, chorągiewki z materiału (cieniowanie, obszycie, fałda,
+    // cień) idą za nachyleniem sznurka i kołyszą się każda osobno.
+    function buntingSvg(colors) {
+      const W = 1400;
+      const SEG = 350;
+      const SAG = 24;
+      const pinY = [7, 4, 8, 5, 7];
+      const yAt = (x) => {
+        const k = Math.min(3, Math.floor(x / SEG));
+        const t = (x - k * SEG) / SEG;
+        return pinY[k] + (pinY[k + 1] - pinY[k]) * t + SAG * 4 * t * (1 - t);
+      };
+      let rope = '';
+      for (let k = 0; k < 4; k++) {
+        const x0 = k * SEG;
+        rope += `${k ? '' : `M0 ${pinY[0]}`} Q${x0 + SEG / 2} ${f1((pinY[k] + pinY[k + 1]) / 2 + SAG * 2)} ${x0 + SEG} ${pinY[k + 1]}`;
+      }
+      const grads = colors.map((col, i) => `<linearGradient id="bg${i}" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="${hexMix(col, '#ffffff', 0.35)}"/><stop offset="0.45" stop-color="${col}"/><stop offset="1" stop-color="${hexMix(col, '#000000', 0.32)}"/></linearGradient>`).join('');
+      let flags = '';
+      let i = 0;
+      for (let x = 18; x < W - 8; x += 34) {
+        if ([350, 700, 1050].some((p) => Math.abs(x - p) < 11)) continue;
+        const y = yAt(x);
+        const ang = (Math.atan2(yAt(x + 1) - yAt(x - 1), 2) * 180) / Math.PI;
+        const ci = i % colors.length;
+        const dark = hexMix(colors[ci], '#000000', 0.45);
+        const len = 28 + (i % 3) * 2;
+        const tip = f1(rnd(-1.5, 1.5));
+        const shape = `M-11.5 0 L11.5 0 Q7 ${f1(len * 0.5)} ${tip} ${len} Q-7 ${f1(len * 0.5)} -11.5 0 Z`;
+        flags += `<g transform="translate(${x} ${f1(y)}) rotate(${f1(ang)})"><g class="fl" style="animation-delay:${f1(-rnd(0, 2.6))}s;animation-duration:${f1(rnd(2.2, 3.2))}s">`
+          + `<path d="${shape}" fill="#000" opacity="0.28" transform="translate(1.6 2.6)"/>`
+          + `<path d="${shape}" fill="url(#bg${ci})"/>`
+          + `<path d="M-11.5 0 L11.5 0 L11 3.6 L-11 3.6 Z" fill="${dark}" opacity="0.55"/>`
+          + `<path d="M-3.5 4 Q-1.8 ${f1(len * 0.45)} ${f1(tip * 0.6)} ${f1(len * 0.86)}" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity="0.22"/>`
+          + `<path d="M4.5 4 Q3 ${f1(len * 0.4)} 1.5 ${f1(len * 0.7)}" fill="none" stroke="${dark}" stroke-width="1.2" stroke-linecap="round" opacity="0.35"/></g></g>`;
+        i += 1;
+      }
+      const pins = [0, 350, 700, 1050, 1400].map((x, k) => `<circle cx="${x}" cy="${pinY[k]}" r="3.4" fill="#d9dde6" stroke="#5b6170" stroke-width="1.2"/>`).join('');
+      return `<svg class="dc-bunting" viewBox="0 0 ${W} 72" preserveAspectRatio="xMidYMin slice" aria-hidden="true"><defs>${grads}</defs><path d="${rope}" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="2.2" transform="translate(1 2)"/><path d="${rope}" fill="none" stroke="#e9e4d8" stroke-width="1.6"/>${flags}${pins}</svg>`;
     }
-    const SPIDER = '<svg viewBox="0 0 40 40" aria-hidden="true"><g stroke="#1a0f24" stroke-width="2" fill="none" stroke-linecap="round"><path d="M20 20 L8 12 L4 4"/><path d="M20 20 L6 18 L1 14"/><path d="M20 22 L6 26 L2 32"/><path d="M20 24 L9 32 L7 39"/><path d="M20 20 L32 12 L36 4"/><path d="M20 20 L34 18 L39 14"/><path d="M20 22 L34 26 L38 32"/><path d="M20 24 L31 32 L33 39"/></g><ellipse cx="20" cy="25" rx="7" ry="8.5" fill="#1a0f24"/><circle cx="20" cy="15" r="4.6" fill="#1a0f24"/><circle cx="18.3" cy="14.4" r="1.1" fill="#ff7a18"/><circle cx="21.7" cy="14.4" r="1.1" fill="#ff7a18"/></svg>';
+    // Chmury burzowe (obraz SVG): rozmyte pasma i plamy przepuszczone przez turbulencję i przemieszczenie — puszyste,
+    // postrzępione brzegi. Od tyłu: dalekie smugi, masa chmury, jaśniejsze kłęby, ciemne spody i ciemna góra.
+    function stormSvg(seed) {
+      let s = seed;
+      const rand = (a, b) => a + ((s = (s * 16807) % 2147483647) / 2147483647) * (b - a);
+      const W = 2400;
+      const f0 = (v) => v.toFixed(0);
+      const band = (y0, amp, step) => {
+        let d = `M-200 -200 H${W + 200} V${y0}`;
+        for (let x = W + 200; x > -200; x -= step) {
+          const y = y0 + rand(-amp, amp);
+          d += ` Q${f0(x - step / 2)} ${f0(y + amp * rand(0.4, 1.1))} ${f0(x - step)} ${f0(y)}`;
+        }
+        return `${d} Z`;
+      };
+      const blobs = (n, y0, y1, rx0, rx1, ry0, ry1) => Array.from({ length: n }, (_, i) => `<ellipse cx="${f0((i + rand(0.1, 0.9)) * (W / n))}" cy="${f0(rand(y0, y1))}" rx="${f0(rand(rx0, rx1))}" ry="${f0(rand(ry0, ry1))}"/>`).join('');
+      const filt = (id, freq, oct, scale, blur, sd) => `<filter id="${id}" x="-10%" y="-60%" width="120%" height="220%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceGraphic" stdDeviation="${blur}" result="b"/><feTurbulence type="fractalNoise" baseFrequency="${freq}" numOctaves="${oct}" seed="${sd}" result="n"/><feDisplacementMap in="b" in2="n" scale="${scale}" xChannelSelector="R" yChannelSelector="G"/></filter>`;
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} 240" preserveAspectRatio="xMidYMin slice"><defs>${filt('w', '0.006 0.02', 4, 160, 16, seed + 3)}${filt('a', '0.008 0.016', 5, 150, 14, seed)}${filt('l', '0.011 0.02', 4, 120, 13, seed + 21)}${filt('c', '0.012 0.024', 4, 90, 9, seed + 13)}</defs>`
+        + `<g filter="url(#w)" fill="#3c4560" opacity="0.75">${blobs(12, 138, 160, 110, 190, 14, 22)}</g>`
+        + `<path d="${band(118, 24, 170)}" fill="#252c43" filter="url(#a)"/>`
+        + `<g filter="url(#l)" fill="#77819f" opacity="0.6">${blobs(17, 66, 112, 50, 110, 20, 34)}</g>`
+        + `<g filter="url(#c)" fill="#0d111f">${blobs(16, 122, 144, 50, 95, 12, 20)}</g>`
+        + `<path d="${band(44, 16, 140)}" fill="#0e1221" filter="url(#c)" opacity="0.92"/></svg>`;
+    }
     // Gałąź od lewej krawędzi (jesień: liście, sakura: kwiaty — w CSS lustrzane odbicie dla prawego rogu).
     function branchSvg(kind, colors) {
       const c = (i) => colors[i % colors.length];
-      const wood = kind === 'leaves' ? '#4a2e1f' : '#3d2622';
-      const twigs = '<path d="M-6 10 C40 18 90 26 150 52 C180 66 205 80 232 104" stroke-width="6"/><path d="M90 26 C104 44 112 58 116 78" stroke-width="3.5"/><path d="M150 52 C170 46 190 44 212 46" stroke-width="3"/><path d="M40 17 C50 30 54 40 56 52" stroke-width="2.5"/>';
+      const autumn = kind === 'leaves';
+      const wood = autumn ? '#5a3a26' : '#4a2c2a';
+      // Konary: zwężające się (odcinki z coraz cieńszą kreską), obrys, jaśniejszy grzbiet i spękania kory.
+      const bez = (p, t) => {
+        const u = 1 - t;
+        return [0, 1].map((k) => u * u * u * p[0][k] + 3 * u * u * t * p[1][k] + 3 * u * t * t * p[2][k] + t * t * t * p[3][k]);
+      };
+      const limbs = [
+        [[[-6, 10], [40, 18], [90, 26], [150, 52]], 8, 4.6],
+        [[[150, 52], [180, 66], [205, 80], [232, 104]], 4.6, 1.8],
+        [[[90, 26], [104, 44], [112, 58], [116, 78]], 3.6, 1.4],
+        [[[150, 52], [170, 46], [190, 44], [212, 46]], 3.2, 1.3],
+        [[[40, 17], [50, 30], [54, 40], [56, 52]], 2.8, 1.1],
+      ];
+      const pass = (dw, col, dy, kw, op) => limbs.map(([p, w0, w1]) => {
+        let d = '';
+        const N = 14;
+        for (let k = 0; k < N; k++) {
+          const a = bez(p, k / N);
+          const b = bez(p, (k + 1) / N);
+          const w = (w0 + (w1 - w0) * (k / N)) * kw + dw;
+          d += `<path d="M${f1(a[0])} ${f1(a[1] + dy * w)} L${f1(b[0])} ${f1(b[1] + dy * w)}" stroke-width="${f1(w)}"/>`;
+        }
+        return d;
+      }).join('');
+      const bark = `<g fill="none" stroke-linecap="round"><g stroke="#1c110b">${pass(1.6, '', 0, 1, 1)}</g><g stroke="${wood}">${pass(0, '', 0, 1, 1)}</g><g stroke="${hexMix(wood, '#ffffff', 0.28)}" opacity="0.55">${pass(0, '', -0.2, 0.32, 1)}</g></g>`;
+      const cracks = Array.from({ length: 9 }, (_, i) => {
+        const [x, y] = bez(limbs[0][0], 0.08 + i * 0.1);
+        return autumn ? `<path d="M${f1(x)} ${f1(y - 1.5)} l${f1(rnd(3, 6))} ${f1(rnd(0.5, 1.5))}" stroke="#2a1a10" stroke-width="0.8" opacity="0.6"/>` : `<path d="M${f1(x)} ${f1(y)} h${f1(rnd(2, 3.5))}" stroke="#b08a80" stroke-width="0.9" stroke-linecap="round" opacity="0.55"/>`;
+      }).join('');
       const spots = [[24, 14, 40], [44, 30, 110], [56, 52, 70], [70, 22, 60], [96, 34, 130], [112, 58, 80], [116, 80, 100], [138, 46, 20], [158, 60, 140], [176, 48, -20], [198, 44, 30], [214, 48, 70], [208, 84, 120], [230, 104, 70], [128, 52, 160]];
+      // Liść klonu: pięć klap z ząbkami, żyłki od ogonka; ogonek w (0, 0), liść skierowany w górę (−y).
+      const MAPLE = 'M0 -9 L-6 -10 L-7 -13 L-13 -11 L-17 -14 L-19 -16 L-15 -18 L-16 -21 L-12 -22 L-14 -26 L-18 -30 L-15 -31 L-12 -30 L-9 -29 L-8 -32 L-6 -31 L-5 -35 L-2 -36 L0 -40 L2 -36 L5 -35 L6 -31 L8 -32 L9 -29 L12 -30 L15 -31 L18 -30 L14 -26 L12 -22 L16 -21 L15 -18 L19 -16 L17 -14 L13 -11 L7 -13 L6 -10 Z';
+      const VEINS = 'M0 0 L0 -37 M0 -9 L-15 -30 M0 -9 L15 -30 M0 -8 L-18 -16 M0 -8 L18 -16';
+      const grads = [];
       const leaf = (x, y, r, i) => {
         const col = c(i);
-        return `<path d="M0 0 C5 -6 15 -6 20 0 C15 6 5 6 0 0 Z M0 0 L20 0" transform="translate(${x} ${y}) rotate(${r}) scale(${(0.9 + (i % 4) * 0.14).toFixed(2)})" fill="${col}" stroke="${hexMix(col, '#000000', 0.45)}" stroke-width="0.8"/>`;
+        grads.push(`<linearGradient id="lf${i}" x1="0" y1="1" x2="0.2" y2="0"><stop offset="0" stop-color="${hexMix(col, '#000000', 0.28)}"/><stop offset="0.55" stop-color="${col}"/><stop offset="1" stop-color="${hexMix(col, '#ffd27a', 0.35)}"/></linearGradient>`);
+        return `<g transform="translate(${x} ${y}) rotate(${r + 90}) scale(${(0.52 + (i % 4) * 0.06).toFixed(2)})"><path d="M0 0 L0 -9" stroke="${hexMix(col, '#000000', 0.4)}" stroke-width="1.6"/><path d="${MAPLE}" fill="url(#lf${i})" stroke="${hexMix(col, '#000000', 0.45)}" stroke-width="0.9" stroke-linejoin="round"/><path d="${VEINS}" fill="none" stroke="${hexMix(col, '#fff2c8', 0.45)}" stroke-width="0.9" opacity="0.7"/></g>`;
       };
+      // Kwiat wiśni: pięć płatków z wcięciem na końcu, różowiejących ku brzegom, pręciki z pylnikami.
+      const PETAL = 'M0 0 C-4 -2 -6.2 -7 -4.6 -10.6 C-3.6 -12.2 -1.4 -12.2 0 -10.2 C1.4 -12.2 3.6 -12.2 4.6 -10.6 C6.2 -7 4 -2 0 0 Z';
       const flower = (x, y, r, i) => {
         const col = c(i);
-        const s = 6 + (i % 3) * 1.6;
-        const petals = [0, 72, 144, 216, 288].map((a) => `<ellipse cx="0" cy="${f1(-s * 0.55)}" rx="${f1(s * 0.44)}" ry="${f1(s * 0.6)}" transform="rotate(${a + r})" fill="${col}"/>`).join('');
-        return `<g transform="translate(${x} ${y})">${petals}<circle r="${f1(s * 0.24)}" fill="#ffe08a"/></g>`;
+        grads.push(`<radialGradient id="pf${i}" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="12"><stop offset="0" stop-color="#fff6fa"/><stop offset="0.45" stop-color="${hexMix(col, '#ffffff', 0.55)}"/><stop offset="1" stop-color="${hexMix(col, '#ff6f9f', 0.25)}"/></radialGradient>`);
+        const k = (0.7 + (i % 3) * 0.12).toFixed(2);
+        const petals = [0, 72, 144, 216, 288].map((a) => `<path d="${PETAL}" transform="rotate(${a + r})" fill="url(#pf${i})" stroke="${hexMix(col, '#c2386b', 0.4)}" stroke-width="0.5"/>`).join('');
+        const stamens = Array.from({ length: 9 }, (_, j) => {
+          const a = ((j / 9) * 360 + r) * (Math.PI / 180);
+          const l = 4.2 + (j % 2) * 1.1;
+          return `<path d="M0 0 L${f1(Math.cos(a) * l)} ${f1(Math.sin(a) * l)}" stroke="#f3a6c4" stroke-width="0.5"/><circle cx="${f1(Math.cos(a) * l)}" cy="${f1(Math.sin(a) * l)}" r="0.75" fill="#ffcf5a"/>`;
+        }).join('');
+        return `<g transform="translate(${x} ${y}) scale(${k})">${petals}<circle r="2" fill="#e85d8f" opacity="0.7"/>${stamens}<circle r="0.9" fill="#b5e08a"/></g>`;
       };
-      const items = spots.map(([x, y, r], i) => (kind === 'leaves' ? leaf(x, y, r, i) : i % 4 === 3 ? `<circle cx="${x}" cy="${y}" r="3" fill="${hexMix(c(i), '#ffffff', 0.3)}"/>` : flower(x, y, r, i))).join('');
-      return `<svg viewBox="-6 0 252 130" aria-hidden="true"><g fill="none" stroke="${wood}" stroke-linecap="round">${twigs}</g>${items}</svg>`;
+      const bud = (x, y, r, i) => `<g transform="translate(${x} ${y}) rotate(${r + 90}) scale(0.8)"><path d="M0 0 L0 -4" stroke="#6b3a2a" stroke-width="1.2"/><path d="M0 -3 C-3.4 -6 -3.6 -11 0 -14 C3.6 -11 3.4 -6 0 -3 Z" fill="${hexMix(c(i), '#ff5c93', 0.3)}" stroke="#b8336a" stroke-width="0.5"/><path d="M-2.4 -4 Q0 -8 2.4 -4 L0 -2.6 Z" fill="#7a3a2a"/></g>`;
+      const sprig = (x, y, r) => `<g transform="translate(${x} ${y}) rotate(${r})"><path d="M0 0 C3 -4 9 -5 13 -1 C9 3 3 3 0 0 Z" fill="#8cbf5a" stroke="#4f7a2c" stroke-width="0.5"/><path d="M0 0 L12 -1" stroke="#4f7a2c" stroke-width="0.5"/></g>`;
+      const items = spots.map(([x, y, r], i) => (autumn ? leaf(x, y, r, i) : i % 4 === 3 ? bud(x, y, r, i) : i % 5 === 1 ? sprig(x, y, r) + flower(x + 3, y + 2, r, i) : flower(x, y, r, i))).join('');
+      return `<svg viewBox="-6 0 252 130" aria-hidden="true"><defs>${grads.join('')}</defs>${bark}${cracks}${items}</svg>`;
     }
     function decoHtml(theme, colors) {
       const c = (i) => colors[i % colors.length];
       const byLum = [...colors].sort((a, b) => lum(a) - lum(b));
       switch (theme) {
-        case 'confetti': {
-          // Girlanda z chorągiewkami u góry strony (baloniki lecą w tle jako cząsteczki).
-          const flags = Array.from({ length: 6 }, (_, i) => {
-            const x = 20 + i * 40;
-            const t = x / 240;
-            const y = 3 + 80 * t * (1 - t);
-            return `<path d="M${x - 12} ${f1(y - 1)} L${x + 12} ${f1(y + 1)} L${x + 1} ${f1(y + 22)} Z" fill="${c(i)}"/>`;
-          }).join('');
-          return { top: `<svg class="dc-bunting" width="100%" height="50"><defs><pattern id="dcb" width="240" height="50" patternUnits="userSpaceOnUse"><path d="M0 3 Q120 43 240 3" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.4"/>${flags}</pattern></defs><rect width="100%" height="50" fill="url(#dcb)"/></svg>` };
-        }
+        case 'confetti':
+          // Girlanda z materiałowych chorągiewek u góry strony (baloniki lecą w tle jako cząsteczki).
+          return { top: buntingSvg(colors) };
         case 'snow':
           // Szron w rogach ekranu (śnieg na kartach i zaspa na dole zbierają się w świecie nad stroną).
           return { front: '<div class="dc-frost"></div>' };
@@ -2180,17 +2382,14 @@
           // Kwitnąca gałąź wiśni w prawym rogu strony i różowe światło z góry.
           return { top: `<div class="dc-branch r">${branchSvg('sakura', colors)}</div>`, back: '<div class="dc-glow"></div>' };
         case 'storm': {
-          // Ciemne chmury u góry strony; błyskawica rozświetla karty i chmury (klasa ev-flash).
-          const cloud = (x, y, s) => `<g transform="translate(${f1(x)} ${f1(y)}) scale(${s.toFixed(2)})"><ellipse rx="62" ry="22"/><ellipse cx="-32" cy="-8" rx="32" ry="20"/><ellipse cx="22" cy="-15" rx="36" ry="25"/><ellipse cx="52" cy="-2" rx="27" ry="16"/></g>`;
-          const row = (dx, dy) => Array.from({ length: 10 }, (_, i) => cloud(i * 140 + dx + rnd(-25, 25), dy + rnd(0, 18), rnd(0.8, 1.25))).join('');
-          return { top: `<svg class="dc-clouds" viewBox="0 0 1400 90" preserveAspectRatio="xMidYMin slice"><g fill="#262d45" stroke="rgba(150, 170, 225, 0.28)" stroke-width="1.2" opacity="0.94">${row(70, 18)}</g><g fill="#141927" opacity="0.96">${row(0, 4)}</g></svg>` };
+          // Ciężkie chmury na całą szerokość u góry strony; piorun rozświetla karty, a chmury świecą od środka (ev-flash).
+          return { vars: { '--dc-cloud': svgUrl(stormSvg(1 + Math.floor(rnd(1, 9000)))) }, sky: '<div class="dc-sky"><div><i></i><b></b></div></div>' };
         }
         case 'bubbles': {
-          // Tafla wody u góry strony (widziana od spodu), promienie światła i refleksy wody w tle.
-          const wave = waveTop(1200, 14, 12, 30);
+          // Tafla wody na całą szerokość u góry strony (widziana od spodu), promienie światła i refleksy wody w tle.
           return {
-            vars: { '--dc-caustic': `url("${causticUrl()}")` },
-            top: `<svg class="dc-water" viewBox="0 0 1200 36" preserveAspectRatio="none"><defs><linearGradient id="dcw" x1="0" y1="0" x2="0" y2="1"><stop offset="0"/><stop offset="1"/></linearGradient></defs><path class="fill" d="${wave.fill}" fill="url(#dcw)"/><path class="line" d="${wave.line}"/></svg>`,
+            vars: { '--dc-caustic': `url("${causticUrl()}")`, '--dc-wave-a': svgUrl(surfSvg(28, 5.5, rnd(0, 9))), '--dc-wave-b': svgUrl(surfSvg(36, 3.6, rnd(0, 9))) },
+            sky: '<div class="dc-surf"><i></i><i></i><i></i></div>',
             back: '<div class="dc-rays"><i></i><i></i><i></i><i></i></div><div class="dc-caustic"></div>',
           };
         }
@@ -2201,22 +2400,51 @@
           return {};
       }
     }
+    // Zwycięzca (1. miejsce) w czasie wydarzenia: nakrycie głowy w stylu efektu zamiast korony. w — szerokość, top — górna
+    // krawędź, x — przesunięcie w bok (wszystko × rozmiar awatara), r — obrót (deg), a — proporcje, anim — animacja,
+    // prof — kontur czapki (u, v od 0 do 1), na którym zbiera się śnieg.
+    const HATS = {
+      snow: { w: 1.1, top: -0.46, x: 0.05, r: -7, a: "120 / 92", prof: [[0.06, 0.69], [0.14, 0.44], [0.3, 0.18], [0.5, 0.09], [0.66, 0.07], [0.8, 0.12], [0.9, 0.27], [0.93, 0.44], [0.96, 0.63], [0.98, 0.69]], svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 92'><defs><linearGradient id='r' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#ff4d4d'/><stop offset='1' stop-color='#b0121a'/></linearGradient><radialGradient id='f' cx='.4' cy='.3' r='.8'><stop offset='0' stop-color='#ffffff'/><stop offset='1' stop-color='#dbe6f2'/></radialGradient></defs><path d='M14 68 C15 42 33 15 63 9 C86 5 103 15 109 32 C110 39 107 46 101 49 C97 40 91 33 83 32 C86 44 93 56 106 68 Z' fill='url(#r)' stroke='#8a0e14' stroke-width='2.2' stroke-linejoin='round'/><path d='M30 54 C34 36 47 21 66 15' fill='none' stroke='#ff9a9a' stroke-width='3.4' stroke-linecap='round' opacity='.5'/><path d='M7 63 Q60 52 113 63 Q118 72 113 81 Q60 70 7 83 Q2 73 7 63 Z' fill='url(#f)' stroke='#c3d1e1' stroke-width='1.4'/><g fill='#ffffff'><circle cx='14' cy='66' r='4.6'/><circle cx='27' cy='62.5' r='4.8'/><circle cx='41' cy='60.5' r='4.6'/><circle cx='55' cy='59.5' r='4.8'/><circle cx='69' cy='59.5' r='4.6'/><circle cx='83' cy='60.5' r='4.8'/><circle cx='97' cy='62' r='4.6'/><circle cx='109' cy='65' r='4.2'/></g><circle cx='102' cy='52' r='11.5' fill='url(#f)' stroke='#c3d1e1' stroke-width='1.4'/><g fill='#ffffff'><circle cx='97' cy='47' r='4'/><circle cx='105' cy='45.5' r='3.6'/><circle cx='109' cy='52' r='3.4'/><circle cx='95' cy='55' r='3.4'/></g></svg>" },
+      confetti: { w: 0.7, top: -0.74, x: 0.06, r: 14, a: "70 / 92", anim: "hat-wobble 2.6s ease-in-out infinite", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 70 92'><defs><clipPath id='c'><path d='M35 12 L64 84 Q35 92 6 84 Z'/></clipPath></defs><g clip-path='url(#c)'><rect width='70' height='92' fill='#8a5cff'/><path d='M-10 30 L80 0 L80 14 L-10 44 Z M-10 58 L80 28 L80 42 L-10 72 Z M-10 86 L80 56 L80 70 L-10 100 Z' fill='#ffd23f'/><path d='M-10 44 L80 14 L80 21 L-10 51 Z M-10 72 L80 42 L80 49 L-10 79 Z' fill='#ff4fa3'/></g><path d='M35 12 L64 84 Q35 92 6 84 Z' fill='none' stroke='#3d2a7a' stroke-width='2' stroke-linejoin='round'/><path d='M27 30 L14 74' stroke='#ffffff' stroke-width='3' stroke-linecap='round' opacity='.4'/><g fill='#2ec5ff'><circle cx='30' cy='10' r='6'/></g><g fill='#ff4fa3'><circle cx='38' cy='7' r='5.5'/></g><g fill='#ffd23f'><circle cx='35' cy='14' r='5'/></g><g fill='#5dffb0'><circle cx='41' cy='13' r='4.5'/></g><circle cx='34' cy='9' r='3' fill='#ffffff' opacity='.8'/></svg>" },
+      fire: { w: 0.92, top: -0.5, x: 0, r: 0, a: "110 / 74", anim: "hat-flicker 0.9s ease-in-out infinite alternate", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 110 74'><defs><linearGradient id='g' x1='0' y1='1' x2='0' y2='0'><stop offset='0' stop-color='#d81e05'/><stop offset='.45' stop-color='#ff7a1a'/><stop offset='.8' stop-color='#ffc93d'/><stop offset='1' stop-color='#fff2a8'/></linearGradient><linearGradient id='b' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#ffd66b'/><stop offset='1' stop-color='#b5650d'/></linearGradient></defs><path d='M10 62 C2 44 14 36 16 22 C24 32 26 40 30 46 C30 30 38 18 42 6 C50 22 54 32 55 44 C58 32 64 18 70 8 C74 24 78 34 80 46 C84 38 88 30 94 22 C98 38 108 46 100 62 Z' fill='url(#g)' stroke='#9c1c04' stroke-width='1.6' stroke-linejoin='round'/><path d='M24 58 C20 48 26 42 28 36 C32 44 36 50 38 56 Z M48 58 C44 44 50 34 54 24 C58 36 62 46 60 58 Z M72 58 C70 46 74 38 78 32 C82 42 86 50 84 58 Z' fill='#fff3b0' opacity='.8'/><rect x='8' y='58' width='94' height='12' rx='4' fill='url(#b)' stroke='#7a3d05' stroke-width='1.4'/><g fill='#ff3b1f'><circle cx='30' cy='64' r='2.6'/><circle cx='55' cy='64' r='3.2'/><circle cx='80' cy='64' r='2.6'/></g></svg>" },
+      halloween: { w: 1.12, top: -0.82, x: 0.03, r: -6, a: "120 / 104", anim: "hat-wobble 3.4s ease-in-out infinite", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 104'><defs><linearGradient id='h' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#4a2a6e'/><stop offset='1' stop-color='#1a0f24'/></linearGradient></defs><path d='M34 84 C40 62 46 44 52 30 C58 16 70 6 86 4 C92 4 98 8 100 14 C92 12 84 14 78 22 C72 32 72 52 80 84 Z' fill='url(#h)' stroke='#0d0614' stroke-width='2' stroke-linejoin='round'/><path d='M50 66 C54 48 60 34 70 22' fill='none' stroke='#8c63c4' stroke-width='3' stroke-linecap='round' opacity='.5'/><path d='M38 70 Q58 76 80 70 L81 82 Q58 88 36 82 Z' fill='#ff7a18' stroke='#7a3205' stroke-width='1.4'/><rect x='51' y='70' width='13' height='12' rx='2' fill='none' stroke='#ffd66b' stroke-width='2.6'/><ellipse cx='60' cy='88' rx='56' ry='12' fill='url(#h)' stroke='#0d0614' stroke-width='2'/><path d='M14 86 Q60 78 106 86' fill='none' stroke='#8c63c4' stroke-width='1.6' opacity='.5'/></svg>" },
+      hearts: { w: 0.96, top: -0.42, x: 0, r: 0, a: "110 / 58", anim: "hat-beat 1.4s ease-in-out infinite", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 110 58'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#fff1b8'/><stop offset='1' stop-color='#d99a1e'/></linearGradient><radialGradient id='p' cx='.35' cy='.3' r='.8'><stop offset='0' stop-color='#ffc2d4'/><stop offset='.5' stop-color='#ff4f86'/><stop offset='1' stop-color='#c41d55'/></radialGradient></defs><path d='M6 50 Q55 30 104 50 L104 56 Q55 38 6 56 Z' fill='url(#g)' stroke='#8a5a0e' stroke-width='1.2'/><path d='M55 46 C38 34 32 24 36 15 C40 7 51 7 55 16 C59 7 70 7 74 15 C78 24 72 34 55 46 Z' fill='url(#p)' stroke='#8a0f3a' stroke-width='1.6'/><path d='M44 16 Q46 12 50 13' fill='none' stroke='#ffffff' stroke-width='2.4' stroke-linecap='round' opacity='.8'/><path d='M26 46 C18 40 15 34 17 30 C19 26 24 26 26 30 C28 26 33 26 35 30 C37 34 34 40 26 46 Z' fill='url(#p)' stroke='#8a0f3a' stroke-width='1.2'/><path d='M84 46 C76 40 73 34 75 30 C77 26 82 26 84 30 C86 26 91 26 93 30 C95 34 92 40 84 46 Z' fill='url(#p)' stroke='#8a0f3a' stroke-width='1.2'/><g fill='#ffffff'><circle cx='12' cy='48' r='2'/><circle cx='98' cy='48' r='2'/><circle cx='40' cy='44' r='1.6'/><circle cx='70' cy='44' r='1.6'/></g></svg>" },
+      stars: { w: 1.08, top: -0.9, x: -0.02, r: 5, a: "120 / 106", anim: "hat-twinkle 2.4s ease-in-out infinite", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 106'><defs><linearGradient id='h' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#3a4fd6'/><stop offset='1' stop-color='#141a5c'/></linearGradient></defs><path d='M30 86 C40 64 48 42 56 26 C62 14 72 6 84 4 C80 10 76 16 76 26 C76 46 82 66 90 86 Z' fill='url(#h)' stroke='#0a0e33' stroke-width='2' stroke-linejoin='round'/><path d='M46 70 C52 50 58 36 66 22' fill='none' stroke='#8fa2ff' stroke-width='3' stroke-linecap='round' opacity='.45'/><g fill='#ffe066'><path d='M62 44 l2.4 5 5.4.6-4 3.7 1.1 5.3-4.9-2.7-4.9 2.7 1.1-5.3-4-3.7 5.4-.6z'/><path d='M72 66 l1.6 3.4 3.7.4-2.7 2.5.8 3.6-3.4-1.9-3.3 1.9.8-3.6-2.8-2.5 3.7-.4z'/><path d='M50 72 l1.2 2.6 2.8.3-2.1 1.9.6 2.8-2.5-1.4-2.5 1.4.6-2.8-2.1-1.9 2.8-.3z'/></g><path d='M72 30 a7 7 0 1 0 7 9 a5.5 5.5 0 1 1 -7 -9 z' fill='#fff2a8'/><ellipse cx='60' cy='90' rx='56' ry='13' fill='url(#h)' stroke='#0a0e33' stroke-width='2'/><path d='M12 89 Q60 80 108 89' fill='none' stroke='#8fa2ff' stroke-width='1.6' opacity='.5'/><g fill='#ffe066'><circle cx='26' cy='92' r='1.6'/><circle cx='94' cy='93' r='1.6'/><circle cx='60' cy='97' r='1.4'/></g></svg>" },
+      neon: { w: 0.86, top: -0.42, x: 0, r: 0, a: "100 / 66", anim: "hat-neon 2.2s steps(1) infinite", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 66'><defs><filter id='b' x='-30%' y='-30%' width='160%' height='160%'><feGaussianBlur stdDeviation='3'/></filter></defs><g fill='none' stroke-linejoin='round' stroke-linecap='round'><path d='M12 56 L8 18 L30 34 L50 8 L70 34 L92 18 L88 56 Z' stroke='#ff3fd6' stroke-width='6' filter='url(#b)' opacity='.9'/><path d='M12 56 L8 18 L30 34 L50 8 L70 34 L92 18 L88 56 Z' stroke='#ffd6f6' stroke-width='2.4'/><path d='M14 48 H86' stroke='#22e5c8' stroke-width='6' filter='url(#b)'/><path d='M14 48 H86' stroke='#d6fff8' stroke-width='2.2'/></g><g fill='#22e5c8'><circle cx='8' cy='16' r='3.4'/><circle cx='50' cy='6' r='3.8'/><circle cx='92' cy='16' r='3.4'/></g></svg>" },
+      leaves: { w: 1.22, top: -0.3, x: 0, r: 0, a: "130 / 58", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 130 58'><path d='M8 50 Q65 6 122 50' fill='none' stroke='#5a3a22' stroke-width='3.4' stroke-linecap='round'/><g stroke-width='1' stroke-linejoin='round'><path d='M10 46 C2 38 4 26 14 22 C16 32 18 40 10 46 Z' fill='#c2410c' stroke='#6b2007'/><path d='M22 34 C16 22 24 12 34 12 C32 22 30 30 22 34 Z' fill='#e8b04a' stroke='#7a5410'/><path d='M38 24 C36 12 46 4 56 6 C52 16 48 22 38 24 Z' fill='#d9822b' stroke='#7a3d10'/><path d='M56 18 C58 6 70 2 78 8 C72 16 64 20 56 18 Z' fill='#a3361b' stroke='#5a1a0b'/><path d='M74 20 C82 10 94 12 98 20 C90 26 82 26 74 20 Z' fill='#f2c14e' stroke='#7a5a10'/><path d='M92 30 C102 22 114 26 116 36 C106 38 98 38 92 30 Z' fill='#d9822b' stroke='#7a3d10'/><path d='M108 44 C120 42 128 50 124 58 C116 56 110 52 108 44 Z' fill='#c2410c' stroke='#6b2007'/><path d='M30 26 C22 30 18 38 22 44 C28 38 30 32 30 26 Z' fill='#b5651d' stroke='#5a3008'/><path d='M100 28 C108 30 112 38 108 44 C102 38 100 34 100 28 Z' fill='#e8b04a' stroke='#7a5410'/></g><g fill='#a3361b'><circle cx='64' cy='26' r='4'/><circle cx='58' cy='29' r='3.4'/><circle cx='70' cy='29' r='3.4'/></g></svg>" },
+      sakura: { w: 1.22, top: -0.28, x: 0, r: 0, a: "130 / 52", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 130 52'><defs><g id='f'><path d='M0 -9 C4 -9 5 -5 2 -3 L0 -4 L-2 -3 C-5 -5 -4 -9 0 -9 Z'/><path d='M0 -9 C4 -9 5 -5 2 -3 L0 -4 L-2 -3 C-5 -5 -4 -9 0 -9 Z' transform='rotate(72)'/><path d='M0 -9 C4 -9 5 -5 2 -3 L0 -4 L-2 -3 C-5 -5 -4 -9 0 -9 Z' transform='rotate(144)'/><path d='M0 -9 C4 -9 5 -5 2 -3 L0 -4 L-2 -3 C-5 -5 -4 -9 0 -9 Z' transform='rotate(216)'/><path d='M0 -9 C4 -9 5 -5 2 -3 L0 -4 L-2 -3 C-5 -5 -4 -9 0 -9 Z' transform='rotate(288)'/></g></defs><path d='M8 46 Q65 4 122 46' fill='none' stroke='#5b3a33' stroke-width='3' stroke-linecap='round'/><g fill='#6fae4a'><path d='M20 34 C14 28 16 22 22 22 C24 28 24 30 20 34 Z'/><path d='M46 18 C42 12 46 8 52 10 C52 14 50 16 46 18 Z'/><path d='M84 18 C88 12 84 8 78 10 C78 14 80 16 84 18 Z'/><path d='M110 34 C116 28 114 22 108 22 C106 28 106 30 110 34 Z'/></g><g fill='#ffb3cf' stroke='#e2669f' stroke-width='.8'><use href='#f' x='12' y='42'/><use href='#f' x='30' y='26'/><use href='#f' x='50' y='16' transform='scale(1)'/><use href='#f' x='65' y='12'/><use href='#f' x='80' y='16'/><use href='#f' x='100' y='26'/><use href='#f' x='118' y='42'/></g><g fill='#ffe08a'><circle cx='12' cy='42' r='2'/><circle cx='30' cy='26' r='2'/><circle cx='50' cy='16' r='2'/><circle cx='65' cy='12' r='2.2'/><circle cx='80' cy='16' r='2'/><circle cx='100' cy='26' r='2'/><circle cx='118' cy='42' r='2'/></g></svg>" },
+      coins: { w: 0.82, top: -0.72, x: 0.06, r: -9, a: "100 / 94", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 94'><defs><linearGradient id='h' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='#3a3d44'/><stop offset='.35' stop-color='#1a1c20'/><stop offset='1' stop-color='#0b0c0e'/></linearGradient><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#ffe08a'/><stop offset='1' stop-color='#c8901d'/></linearGradient></defs><path d='M24 72 L26 12 Q50 4 74 12 L76 72 Z' fill='url(#h)' stroke='#000000' stroke-width='2' stroke-linejoin='round'/><ellipse cx='50' cy='12' rx='24' ry='6' fill='#2a2d33' stroke='#000000' stroke-width='1.6'/><path d='M25 58 L75 58 L75.5 70 L24.5 70 Z' fill='url(#g)' stroke='#7a5410' stroke-width='1.2'/><ellipse cx='50' cy='80' rx='46' ry='10' fill='url(#h)' stroke='#000000' stroke-width='2'/><path d='M10 80 Q50 72 90 80' fill='none' stroke='#5a5e68' stroke-width='1.6'/><circle cx='64' cy='64' r='9' fill='url(#g)' stroke='#7a5410' stroke-width='1.4'/><text x='64' y='68.5' font-family='Arial, sans-serif' font-size='12' font-weight='700' text-anchor='middle' fill='#7a5410'>$</text><path d='M32 18 L31 54' stroke='#ffffff' stroke-width='3' stroke-linecap='round' opacity='.18'/></svg>" },
+      storm: { w: 1.08, top: -0.86, x: 0, r: 0, a: "120 / 86", anim: "hat-float 3s ease-in-out infinite", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 86'><defs><linearGradient id='c' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#6b7591'/><stop offset='1' stop-color='#2a3047'/></linearGradient></defs><g stroke='#c9d6ff' stroke-width='2' stroke-linecap='round' opacity='.75'><path d='M30 58 l-4 10'/><path d='M46 62 l-4 10'/><path d='M78 62 l-4 10'/><path d='M94 58 l-4 10'/></g><path d='M64 46 L50 66 H60 L54 84 L74 58 H63 L70 46 Z' fill='#ffe066' stroke='#b88a0a' stroke-width='1.4' stroke-linejoin='round'/><g fill='url(#c)' stroke='#1a1f30' stroke-width='1.6'><path d='M22 52 C10 52 6 40 14 34 C12 22 26 16 34 22 C38 10 56 6 64 16 C72 6 92 10 92 24 C104 22 112 34 104 42 C110 50 102 56 94 52 Z'/></g><path d='M24 30 C28 24 36 24 40 28 M62 20 C66 16 72 16 76 20' fill='none' stroke='#aab4d4' stroke-width='2' stroke-linecap='round' opacity='.6'/></svg>" },
+      bubbles: { w: 1.06, top: -0.54, x: 0.02, r: -6, a: "120 / 74", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 74'><defs><linearGradient id='w' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#ffffff'/><stop offset='1' stop-color='#d6e2ee'/></linearGradient></defs><path d='M14 40 C12 18 36 6 62 6 C90 6 110 18 106 40 Z' fill='url(#w)' stroke='#8aa0b8' stroke-width='1.8' stroke-linejoin='round'/><rect x='14' y='38' width='92' height='14' rx='4' fill='#1d2b44' stroke='#0c1424' stroke-width='1.6'/><path d='M18 50 Q60 74 104 50 Q60 64 18 50 Z' fill='#0f1a2c' stroke='#060b14' stroke-width='1.4'/><path d='M18 40 H102' stroke='#e2b33a' stroke-width='2.2'/><g transform='translate(60 24)' fill='none' stroke='#d6a12a' stroke-width='2.4' stroke-linecap='round'><circle cx='0' cy='-8' r='3'/><path d='M0 -5 V9 M-6 0 H6 M-9 4 Q-8 10 0 10 Q8 10 9 4'/></g><path d='M24 30 C26 18 40 12 54 11' fill='none' stroke='#ffffff' stroke-width='3' stroke-linecap='round' opacity='.8'/></svg>" },
+      matrix: { w: 0.98, top: 0.3, x: 0, r: 0, a: "120 / 38", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 38'><defs><linearGradient id='l' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#1b2a22'/><stop offset='.6' stop-color='#050806'/><stop offset='1' stop-color='#0c1a12'/></linearGradient></defs><path d='M2 12 Q8 8 16 10 M118 12 Q112 8 104 10' fill='none' stroke='#0a0c0b' stroke-width='3' stroke-linecap='round'/><path d='M14 10 Q36 6 54 12 Q56 26 44 32 Q24 36 16 28 Q10 20 14 10 Z' fill='url(#l)' stroke='#000000' stroke-width='2'/><path d='M106 10 Q84 6 66 12 Q64 26 76 32 Q96 36 104 28 Q110 20 106 10 Z' fill='url(#l)' stroke='#000000' stroke-width='2'/><path d='M54 14 Q60 10 66 14' fill='none' stroke='#000000' stroke-width='3'/><g stroke='#5dff9e' stroke-width='1.6' stroke-linecap='round' opacity='.85'><path d='M22 14 L30 12'/><path d='M74 14 L84 12'/><path d='M24 20 L28 19'/></g></svg>" },
+    };
     function pageFx(fx) {
       document.querySelectorAll('.ev-deco').forEach((node) => node.remove());
-      for (const v of ['--evk', '--dc-cap', '--dc-web', '--dc-stars', '--dc-caustic']) document.body.style.removeProperty(v);
+      for (const v of ['--evk', '--dc-cap', '--dc-web', '--dc-stars', '--dc-caustic', '--dc-cloud', '--dc-hat', '--hw', '--ht', '--hx', '--hr', '--ha', '--hat-anim', '--hat-pad']) document.body.style.removeProperty(v);
       document.body.classList.toggle('ev-page', Boolean(fx));
+      document.body.classList.remove('has-hat');
       if (!fx) return;
       document.body.style.setProperty('--evk', String(FX_PAGE[fx.intensity] ?? 0.65));
+      const hat = HATS[fx.theme];
+      if (hat) {
+        // --hat-pad: tyle miejsca nad podium, żeby wysoka czapka się nie ucinała.
+        const vars = { '--dc-hat': svgUrl(hat.svg), '--hw': hat.w, '--ht': hat.top, '--hx': hat.x, '--hr': `${hat.r}deg`, '--ha': hat.a, '--hat-anim': hat.anim ?? 'none', '--hat-pad': `${Math.max(40, Math.round(-hat.top * 96 + 12))}px` };
+        for (const [k, v] of Object.entries(vars)) document.body.style.setProperty(k, String(v));
+        document.body.classList.add('has-hat');
+      }
       const parts = decoHtml(fx.theme, fx.colors);
       for (const [k, v] of Object.entries(parts.vars ?? {})) document.body.style.setProperty(k, v);
       const layer = (where, html) => `<div class="ev-deco ${where} d-${fx.theme}" aria-hidden="true">${html}</div>`;
       if (parts.back) $('.bg').insertAdjacentHTML('afterend', layer('back', parts.back));
       if (parts.top) $('main').insertAdjacentHTML('afterbegin', layer('top', parts.top));
+      if (parts.sky) document.body.insertAdjacentHTML('afterbegin', layer('sky', parts.sky));
       if (parts.front) document.body.insertAdjacentHTML('beforeend', layer('front', parts.front));
     }
     // Burza: błysk pioruna w tle na chwilę rozświetla karty i chmury.
     let flashTimer = 0;
     function flashPage() {
+      // Rozbłysk w chmurach w losowym miejscu.
+      document.querySelector('.dc-sky')?.style.setProperty('--lx', `${Math.round(rnd(8, 92))}%`);
       document.body.classList.add('ev-flash');
       clearTimeout(flashTimer);
       flashTimer = setTimeout(() => document.body.classList.remove('ev-flash'), 170);
@@ -3096,7 +3324,7 @@
     // Elementy, w które się klika — na nich przytrzymanie nie dmucha baniek i nie włącza magnesu.
     const INTERACTIVE = 'a, button, input, select, textarea, label, summary, [role="button"], [role="tab"], [tabindex]';
     // Kontur korony zwycięzcy (viewBox 32×24): śnieg leży też na koronie.
-    const CROWN_TOP = [[0.6, 6.5], [2.3, 4.1], [4, 7.6], [9.5, 12.1], [14.4, 5.6], [16, 0.4], [17.6, 5.6], [22.5, 12.1], [28, 7.6], [29.7, 4.1], [31.4, 6.5]];
+    const CROWN_TOP = [[0.6, 6.5], [2.3, 4.1], [4, 7.6], [9.5, 12.1], [14.4, 5.6], [16, 0.4], [17.6, 5.6], [22.5, 12.1], [28, 7.6], [29.7, 4.1], [31.4, 6.5]].map(([x, y]) => [x / 32, y / 24]);
     // Matrix: teksty, które „dekodują się” po najechaniu i same z siebie.
     const MX_SEL = 'h1, .ev-name, .ev-sub, .dn, .pod-col b, .rank, .num, dd, dt, .pod-lvl, .meta, .cmds code, .found';
     // Kliknięcia w Matrixie — deszcz znaków w tle rusza od tego miejsca.
@@ -3387,6 +3615,7 @@
       let held = null; // śnieżka w ręce
       let gesture = null; // przytrzymanie przycisku: śnieżka, dmuchanie bańki, magnes na monety
       let tool = null; // narzędzie w ręce (łopata, gaśnica)
+      let fight = null; // bitwa na śnieżki (motyw śniegu)
       let toolScale = 1;
       const tools = [];
       let blowing = null; // bańka, którą właśnie się dmucha
@@ -3486,15 +3715,16 @@
         }
         const cr = st.crown;
         if (cr) {
+          const prof = cr.prof;
           for (let i = 0; i < n; i++) {
-            const u = ((i * st.bin - cr.l) / cr.w) * 32;
-            if (u < CROWN_TOP[0][0] || u > CROWN_TOP[CROWN_TOP.length - 1][0]) continue;
+            const u = (i * st.bin - cr.l) / cr.w;
+            if (u < prof[0][0] || u > prof[prof.length - 1][0]) continue;
             let k = 0;
-            while (k < CROWN_TOP.length - 2 && u > CROWN_TOP[k + 1][0]) k += 1;
-            const [u0, y0] = CROWN_TOP[k];
-            const [u1, y1] = CROWN_TOP[k + 1];
+            while (k < prof.length - 2 && u > prof[k + 1][0]) k += 1;
+            const [u0, y0] = prof[k];
+            const [u1, y1] = prof[k + 1];
             const yy = y0 + ((y1 - y0) * (u - u0)) / (u1 - u0 || 1);
-            const top = cr.top - (yy / 24) * cr.h;
+            const top = cr.top - yy * cr.h;
             if (top > b[i]) b[i] = top;
           }
         }
@@ -3665,11 +3895,13 @@
             const cy = r.top + r.height / 2;
             st.x = r.left + r.width / 2 - width / 2;
             st.y = cy;
-            const crownEl = el.querySelector('.crown svg');
+            // Korona albo czapka zwycięzcy (w czasie wydarzenia) — śnieg leży też na niej.
+            const hatProf = document.body.classList.contains('has-hat') ? HATS[theme]?.prof : null;
+            const crownEl = el.querySelector(hatProf ? '.crown' : '.crown svg');
             let crown = null;
             if (crownEl) {
               const cr = crownEl.getBoundingClientRect();
-              if (cr.width > 4) crown = { l: cr.left - st.x, w: cr.width, top: cy - cr.top, h: cr.height };
+              if (cr.width > 4) crown = { l: cr.left - st.x, w: cr.width, top: cy - cr.top, h: cr.height, prof: hatProf ?? CROWN_TOP };
             }
             const sig = crown ? `${crown.l.toFixed(0)}:${crown.top.toFixed(0)}:${crown.w.toFixed(0)}` : '';
             st.crown = crown;
@@ -4026,7 +4258,7 @@
       const ballR = (vol) => clamp(Math.sqrt(vol / Math.PI), 4.5, 34);
       function startBall(hit) {
         const vol = scoop(hit.st, hit.lx, 24, 1100);
-        held = { x: pointer.x, y: pointer.y, vol: Math.max(vol, 380), r: 0, rot: 0 };
+        held = { x: pointer.x, y: pointer.y, vol: Math.max(vol, 380), r: 0, rot: 0, trail: [{ t: performance.now(), x: pointer.x, y: pointer.y }] };
         held.r = ballR(held.vol);
         startGesture('ball');
         for (let k = 0; k < 6; k++) add({ t: 'flake', x: pointer.x + rnd(-8, 8), y: pointer.y - rnd(0, 6), vx: rnd(-1, 1), vy: -rnd(0.5, 1.8), g: 0.05, r: rnd(0.8, 1.6), a: 0.9, vol: 3, sway: rnd(0, TAU), amp: 0.2, wk: 0.3, tk: 1, z: 0 });
@@ -4035,6 +4267,9 @@
         const b = held;
         b.x = pointer.x;
         b.y = pointer.y;
+        // Ślad ręki z ostatnich ~0,2 s — z niego siła rzutu (zdarzenia myszy bywają łączone).
+        b.trail.push({ t: now, x: b.x, y: b.y });
+        while (b.trail.length > 2 && now - b.trail[0].t > 200) b.trail.shift();
         b.rot += (pointer.vx / Math.max(4, b.r)) * dt;
         if (pointer.speed < 0.3 || b.r >= 34) return;
         for (const st of surfs) {
@@ -4054,16 +4289,34 @@
       function throwBall() {
         const b = held;
         held = null;
-        const speed = Math.hypot(pointer.vx, pointer.vy);
-        const ball = { t: 'ball', x: b.x, y: b.y, r: b.r, vol: b.vol, rot: b.rot, z: 0, noLand: true, instant: true };
+        // Siła rzutu: najszybszy ruch ręki z ostatnich ~0,22 s (ludzie puszczają przycisk chwilę po wymachu).
+        const t = performance.now();
+        // Próbki z klatek i ze zdarzeń myszy (przy wolnych klatkach te drugie łapią sam wymach).
+        const t0 = b.trail[0].t;
+        const pts = [...b.trail, ...pointer.trail].filter((q) => q.t >= t0 && t - q.t <= 220).sort((a, c) => a.t - c.t);
+        pts.push({ t, x: pointer.x, y: pointer.y });
+        let hvx = 0;
+        let hvy = 0;
+        let speed = 0;
+        for (let i = 1; i < pts.length; i++) {
+          const span = Math.max(16, pts[i].t - pts[i - 1].t);
+          const vx = ((pts[i].x - pts[i - 1].x) / span) * 16.67;
+          const vy = ((pts[i].y - pts[i - 1].y) / span) * 16.67;
+          if (Math.hypot(vx, vy) > speed) {
+            speed = Math.hypot(vx, vy);
+            hvx = vx;
+            hvy = vy;
+          }
+        }
+        const ball = { t: 'ball', x: pointer.x, y: pointer.y, r: b.r, vol: b.vol, rot: b.rot, z: 0, noLand: true, instant: true };
         if (speed < 1.5) {
           add({ ...ball, vx: 0, vy: 0.4, vr: 0, g: 0.34, drag: 0.998, flight: Infinity });
           return;
         }
         // Rzucona leci w stronę strony (maleje) i po chwili na nią plaska — im szybciej, tym krócej leci.
         const k = Math.min(1, 20 / speed);
-        const vx = pointer.vx * k;
-        const vy = pointer.vy * k;
+        const vx = hvx * k;
+        const vy = hvy * k;
         add({ ...ball, vx, vy, vr: vx * 0.012, g: 0.26, drag: 0.995, flight: clamp(12 + 220 / (Math.hypot(vx, vy) + 6), 12, 34) });
       }
       function stepBall(p, dt) {
@@ -4077,12 +4330,17 @@
           const py = p.y;
           p.x += (p.vx * dt) / n;
           p.y += (p.vy * dt) / n;
+          // Rzucona „w ekran” (odwet ludzika) leci nad stroną i plaska dopiero na szybie.
+          if (p.toward) continue;
+          if (fight && fight.hit(p)) return false;
           // Krawędzie ekranu to ściany — śnieżka plaska o nie.
           if (p.x < p.r * 0.6 || p.x > w - p.r * 0.6 || p.y < p.r * 0.6) {
-            splatAt(clamp(p.x, p.r * 0.7, w - p.r * 0.7), Math.max(p.y, p.r * 0.7), p.r);
+            splatAt(clamp(p.x, p.r * 0.7, w - p.r * 0.7), Math.max(p.y, p.r * 0.7), p.r * 1.3, p.vx, p.vy);
             return false;
           }
           for (const st of surfs) {
+            // Ludziki bawią się przed stroną: ich śnieżki spadają tylko na śnieg na dole ekranu.
+            if (p.owner && st !== ground) continue;
             if (st.round) {
               const R = st.w / 2;
               const cx = st.x + R;
@@ -4105,7 +4363,8 @@
           }
         }
         if (p.age > p.flight) {
-          splatAt(p.x, p.y, p.r);
+          // Rzucona w ekran rośnie w locie, więc i plama jest większa.
+          splatAt(p.x, p.y, p.r * (p.toward ? 3.2 : 1.3), p.vx, p.vy);
           return false;
         }
         return p.y - p.r < h + 40 && p.x > -80 && p.x < w + 80 && p.y > -600;
@@ -4129,7 +4388,29 @@
         }
         addSnow(st, lx, p.vol * 0.5, p.r * 1.7);
         debris(p, p.x, top - 2, p.vol * 0.5, Math.min(28, 8 + Math.round(p.vol / 22)), -Math.PI / 2, 1.3);
-        add({ t: 'ring', x: p.x, y: top, vx: 0, vy: 0, r: p.r * 0.8, grow: 2.2, lw: 1.4, c: '#f4f9ff', a: 0.8, life: 14, noLand: true });
+        poof(p.x, top - 1, p.r * 1.2, Math.sign(p.vx) * 0.4, -1, 1.3);
+        // Karta lekko „przyjmuje” uderzenie.
+        st.el?.animate?.([{ transform: 'none' }, { transform: 'translateY(2px)', offset: 0.3 }, { transform: 'none' }], { duration: 200, easing: 'ease-out' });
+      }
+      // Uderzenie śnieżki: obłok śnieżnego pyłu (od powierzchni, w stronę nx, ny), błysk, rozpłaszczona kulka i iskierki.
+      function poof(x, y, r, nx = 0, ny = -1, k = 1) {
+        const dir = Math.atan2(ny, nx);
+        // Pył: drobne, szybko hamujące obłoczki, rozchodzące się wachlarzem od powierzchni.
+        const n = Math.round((12 + r * 0.9) * k);
+        for (let i = 0; i < n; i++) {
+          const a = dir + rnd(-1.4, 1.4);
+          const v = rnd(1, 3 + r * 0.1) * k;
+          add({ t: 'powder', x: x + rnd(-r, r) * 0.25, y: y + rnd(-r, r) * 0.25, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 0.025, drag: 0.86, r: rnd(r * 0.18, r * 0.42), grow: rnd(0.25, 0.55), life: rnd(22, 40), a: rnd(0.35, 0.75), z: 0, noLand: true, instant: true });
+        }
+        // Okruchy: ostre smużki lecące szybciej niż pył.
+        for (let i = 0; i < Math.round((8 + r * 0.6) * k); i++) {
+          const a = dir + rnd(-1.25, 1.25);
+          const v = rnd(2.4, 5.2) * k;
+          add({ t: 'drop', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 0.16, drag: 0.94, life: rnd(12, 22), c: '#f2f8ff', a: 0.9, z: 0, noLand: true, wall: true });
+        }
+        add({ t: 'flash', x, y, vx: 0, vy: 0, r: r * 0.8, grow: 2.6, life: 7, z: 0, noLand: true, instant: true });
+        add({ t: 'squash', x, y, vx: 0, vy: 0, r, ang: dir, life: 7, z: 0, noLand: true, instant: true });
+        for (let i = 0; i < Math.round(3 * k); i++) add(radial(x, y, [1.2, 3.2], { t: 'glint', s: rnd(3, 5), life: rnd(10, 16), c: '#eaf6ff', noLand: true }));
       }
       // Trafienie w awatar: z góry śnieg zostaje na czapie, w „twarz” — plaśnięcie, a awatar się chwieje.
       function hitRound(p, st, cx, d) {
@@ -4141,7 +4422,8 @@
         const speed = Math.hypot(p.vx, p.vy);
         const upper = ny < -0.35;
         if (upper) addSnow(st, clamp(ix - st.x, 0, st.w), p.vol * (speed < 6 ? 0.9 : 0.45), p.r);
-        else splatAt(ix - nx * 2, iy - ny * 2, p.r * 0.95);
+        else splatAt(ix - nx * 2, iy - ny * 2, p.r * 0.95, p.vx, p.vy);
+        if (upper || speed >= 3) poof(ix, iy, p.r, nx, ny, speed < 6 ? 0.5 : 1);
         debris(p, ix, iy, p.vol * (upper ? (speed < 6 ? 0.1 : 0.55) : 0.7), Math.min(26, 6 + Math.round(p.vol / 24)), Math.atan2(ny, nx), 1.1);
         if (speed > 3) {
           st.el.animate?.(
@@ -4150,12 +4432,141 @@
           );
         }
       }
-      // Plaśnięcie na stronie: śnieg przykleja się do strony (przewija się z nią), po chwili zsuwa i odpada.
-      function splatAt(x, y, r) {
-        const lobes = Array.from({ length: Math.floor(rnd(7, 11)) }, () => ({ a: rnd(0, TAU), d: rnd(0.55, 1.05), s: rnd(0.28, 0.55) }));
-        const dots = Array.from({ length: 6 }, () => ({ a: rnd(0, TAU), d: rnd(1.3, 2.1), s: rnd(0.08, 0.18) }));
-        add({ t: 'splat', x, y, sy: scrollY, vx: 0, vy: 0, r, lobes, dots, life: rnd(280, 400), z: 0, noLand: true, instant: true });
-        for (let k = 0; k < 10; k++) add({ t: 'clump', x: x + rnd(-r, r), y: y + rnd(-r * 0.5, r * 0.5), vx: rnd(-2.2, 2.2), vy: rnd(-2.2, 0.6), g: 0.2, drag: 0.99, r: rnd(0.9, 1.8), vol: 4, z: 0, wall: true });
+      // Plama ubitego śniegu: nieregularny placek wydłużony w stronę lotu, promienie rozbryzgu z kropelkami,
+      // okruchy dookoła, ziarnista faktura, wypukła krawędź i cień. Rysowana raz do osobnego płótna.
+      function splatImage(r, dir, stretch) {
+        const dpr = Math.min(2, devicePixelRatio || 1);
+        const half = Math.ceil(r * 3.4);
+        const S = half * 2;
+        const layer = () => {
+          const c = document.createElement('canvas');
+          c.width = c.height = Math.ceil(S * dpr);
+          const g = c.getContext('2d');
+          g.setTransform(dpr, 0, 0, dpr, half * dpr, half * dpr);
+          return [c, g];
+        };
+        const ph = [rnd(0, TAU), rnd(0, TAU), rnd(0, TAU), rnd(0, TAU)];
+        const rad = (a) => {
+          const along = Math.max(0, Math.cos(a - dir));
+          return r * (1.02 + 0.1 * Math.sin(3 * a + ph[0]) + 0.07 * Math.sin(5 * a + ph[1]) + 0.04 * Math.sin(8 * a + ph[2])) * (1 + stretch * 0.6 * along * along);
+        };
+        const [m, mg] = layer();
+        mg.fillStyle = '#ffffff';
+        // Placek: brzeg z drobnym „ziarnem”.
+        mg.beginPath();
+        const N = 96;
+        for (let i = 0; i <= N; i++) {
+          const a = (i / N) * TAU;
+          const R = rad(a) * (i % 2 ? rnd(0.94, 1.03) : rnd(0.98, 1.06));
+          if (i) mg.lineTo(Math.cos(a) * R, Math.sin(a) * R);
+          else mg.moveTo(Math.cos(a) * R, Math.sin(a) * R);
+        }
+        mg.fill();
+        // Języki rozbryzgu: krótkie, zaokrąglone i zwężające się (głównie w stronę lotu), z kropelkami za końcem.
+        const lim = half - 3;
+        const rays = Math.round(rnd(6, 9) + stretch * 6);
+        for (let k = 0; k < rays; k++) {
+          const fwd = Math.random() < 0.45 + stretch * 0.4;
+          const a = fwd ? dir + rnd(-0.8, 0.8) : rnd(0, TAU);
+          const along = Math.max(0, Math.cos(a - dir));
+          const r0 = rad(a) * 0.8;
+          const L = Math.min(lim - r0 - 4, r * rnd(0.25, 0.65) * (1 + stretch * along * 1.3));
+          if (L < 2) continue;
+          const w = r * rnd(0.16, 0.28) * (1 - along * stretch * 0.2);
+          const ca = Math.cos(a);
+          const sa = Math.sin(a);
+          const bend = rnd(-0.12, 0.12);
+          for (let q = 0; q <= 10; q++) {
+            const f = q / 10;
+            const d = r0 + L * f;
+            const aa = a + bend * f * f;
+            mg.beginPath();
+            mg.arc(Math.cos(aa) * d, Math.sin(aa) * d, w * (1 - 0.6 * f), 0, TAU);
+            mg.fill();
+          }
+          let d = r0 + L + w * 0.4;
+          const drops = Math.random() < 0.7 ? 1 + (Math.random() < 0.4) : 0;
+          for (let j = 0; j < drops; j++) {
+            const dr = w * rnd(0.3, 0.5);
+            d += dr * 2 + rnd(1, 3);
+            if (d + dr > lim) break;
+            mg.beginPath();
+            mg.arc(Math.cos(a + bend) * d, Math.sin(a + bend) * d, dr, 0, TAU);
+            mg.fill();
+          }
+        }
+        // Okruchy wokół plamy (gęściej w stronę lotu).
+        const crumbs = Math.round(rnd(12, 20) + stretch * 12);
+        for (let k = 0; k < crumbs; k++) {
+          const a = Math.random() < 0.45 + stretch * 0.35 ? dir + rnd(-1, 1) : rnd(0, TAU);
+          const d = Math.min(lim, rad(a) * rnd(1.15, 2.1));
+          const cs = rnd(0.45, 1.4) * Math.max(0.8, r / 11);
+          mg.beginPath();
+          mg.ellipse(Math.cos(a) * d, Math.sin(a) * d, cs, cs * rnd(0.6, 1), rnd(0, TAU), 0, TAU);
+          mg.fill();
+        }
+        // Kolor: środek ubity i jasny, brzegi cieńsze i lekko niebieskie (światło z lewej góry).
+        mg.globalCompositeOperation = 'source-atop';
+        const grad = mg.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.05, 0, 0, r * 2.4);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.4, snowTop === '#ffffff' ? '#f5f9fe' : snowTop);
+        grad.addColorStop(1, snowBottom);
+        mg.fillStyle = grad;
+        mg.fillRect(-half, -half, S, S);
+        // Ziarno: ciemniejsze i jaśniejsze drobinki.
+        const grains = Math.round(r * r * 0.9);
+        for (let k = 0; k < grains; k++) {
+          const a = rnd(0, TAU);
+          const d = Math.sqrt(Math.random()) * rad(a) * 1.05;
+          mg.fillStyle = Math.random() < 0.55 ? `rgba(120, 150, 192, ${rnd(0.12, 0.3).toFixed(2)})` : `rgba(255, 255, 255, ${rnd(0.5, 0.95).toFixed(2)})`;
+          mg.beginPath();
+          mg.arc(Math.cos(a) * d, Math.sin(a) * d, rnd(0.35, 1.05), 0, TAU);
+          mg.fill();
+        }
+        // Lekkie wgłębienie w miejscu uderzenia.
+        const dent = mg.createRadialGradient(0, 0, 0, 0, 0, r * 0.55);
+        dent.addColorStop(0, 'rgba(150, 176, 212, 0.28)');
+        dent.addColorStop(0.7, 'rgba(150, 176, 212, 0.1)');
+        dent.addColorStop(1, 'rgba(150, 176, 212, 0)');
+        mg.fillStyle = dent;
+        mg.fillRect(-r, -r, r * 2, r * 2);
+        // Wypukłość: cień przy prawym dolnym brzegu, połysk przy lewym górnym (przesunięty „negatyw” kształtu).
+        const edge = (color, dx, dy, a) => {
+          const [inv, ig] = layer();
+          ig.setTransform(1, 0, 0, 1, 0, 0);
+          ig.fillStyle = color;
+          ig.fillRect(0, 0, inv.width, inv.height);
+          ig.globalCompositeOperation = 'destination-out';
+          ig.drawImage(m, 0, 0);
+          mg.save();
+          mg.setTransform(1, 0, 0, 1, 0, 0);
+          mg.globalAlpha = a;
+          mg.drawImage(inv, dx * dpr, dy * dpr);
+          mg.restore();
+        };
+        edge('#5d7aa6', -1.3, -1.7, 0.4);
+        edge('#ffffff', 1, 1.2, 0.75);
+        // Gotowa plama z miękkim cieniem pod spodem.
+        const [out, og] = layer();
+        og.setTransform(1, 0, 0, 1, 0, 0);
+        og.shadowColor = 'rgba(4, 14, 34, 0.5)';
+        og.shadowBlur = 4 * dpr;
+        og.shadowOffsetX = 1 * dpr;
+        og.shadowOffsetY = 2.2 * dpr;
+        og.drawImage(m, 0, 0);
+        return { c: out, half };
+      }
+      // Plaśnięcie na stronie: śnieg przykleja się do strony (przewija się z nią), chwilę trzyma,
+      // potem powoli zsuwa się, zostawiając mokry ślad, gubi grudki i topnieje.
+      function splatAt(x, y, r, vx = 0, vy = 0) {
+        const speed = Math.hypot(vx, vy);
+        const dir = Math.atan2(vy, vx);
+        const stretch = Math.min(0.9, speed / 18);
+        const img = splatImage(r, dir, stretch);
+        add({ t: 'splat', x, y, y0: y, sy: scrollY, vx: 0, vy: 0, r, img, hold: rnd(110, 170), life: rnd(320, 440), z: 0, noLand: true, instant: true });
+        poof(x, y, r * 1.1, Math.cos(dir), Math.sin(dir), 1.2);
+        add({ t: 'ring', x, y, vx: 0, vy: 0, r: r * 0.9, grow: 3.2, lw: 1.6, c: '#f1f8ff', a: 0.6, life: 12, noLand: true, instant: true });
+        for (let k = 0; k < 12; k++) add({ t: 'clump', x: x + rnd(-r, r) * 0.8, y: y + rnd(-r * 0.5, r * 0.5), vx: rnd(-2, 2) + Math.cos(dir) * stretch * 2, vy: rnd(-2, 0.6), g: 0.2, drag: 0.99, r: rnd(0.9, 1.8), vol: 4, z: 0, wall: true });
       }
 
       // ---- Przytrzymanie przycisku (śnieżka, bańka, magnes) ----
@@ -4622,10 +5033,10 @@
             if (p.hist.length > 30) p.hist.splice(0, 2);
             break;
           case 'splat':
-            // Po chwili śnieg zaczyna się zsuwać i odpadać grudkami.
-            if (p.age > 100) {
-              p.vy = Math.min(0.22, p.vy + 0.002 * dt);
-              if (Math.random() < 0.025 * dt) add({ t: 'clump', x: p.x + rnd(-p.r, p.r) * 0.6, y: p.y - (scrollY - p.sy) + p.r * 0.6, vx: rnd(-0.3, 0.3), vy: 0.5, g: 0.2, drag: 0.99, r: rnd(0.9, 1.7), vol: 3, z: 0 });
+            // Plama chwilę się trzyma, potem powoli zsuwa (coraz szybciej) i odpadają od niej grudki.
+            if (p.age > p.hold) {
+              p.vy = Math.min(0.2, p.vy + 0.0012 * dt);
+              if (Math.random() < 0.02 * dt) add({ t: 'clump', x: p.x + rnd(-p.r, p.r) * 0.6, y: p.y - (scrollY - p.sy) + p.r * 0.75, vx: rnd(-0.3, 0.3), vy: 0.4, g: 0.2, drag: 0.99, r: rnd(0.9, 1.7), vol: 3, z: 0 });
             }
             break;
           case 'ustar':
@@ -5619,7 +6030,7 @@
       }
 
       // ---- Rysowanie cząsteczek, które są tylko w świecie nad stroną ----
-      const OWN = new Set(['ball', 'splat', 'clump', 'foam', 'streamer', 'ghost', 'hring', 'glyphring', 'plus', 'tint', 'ustar']);
+      const OWN = new Set(['ball', 'splat', 'clump', 'foam', 'streamer', 'ghost', 'hring', 'glyphring', 'plus', 'tint', 'ustar', 'powder', 'flash', 'squash']);
       function drawBall(x, y, r, rot, alpha) {
         ctx.globalAlpha = alpha;
         const g = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.1, x, y, r);
@@ -5658,7 +6069,7 @@
       function drawOwn(p, alpha) {
         switch (p.t) {
           case 'ball':
-            drawBall(p.x, p.y, p.r * (Number.isFinite(p.flight) ? 1 - 0.32 * Math.min(1, p.age / p.flight) : 1), p.rot, alpha);
+            drawBall(p.x, p.y, p.r * (Number.isFinite(p.flight) ? (p.toward ? 1 + 1.5 * Math.min(1, p.age / p.flight) : 1 - 0.32 * Math.min(1, p.age / p.flight)) : 1), p.rot, alpha);
             break;
           case 'clump':
             ctx.globalAlpha = alpha;
@@ -5672,28 +6083,60 @@
             ctx.fill();
             break;
           case 'splat': {
-            const y = p.y - (scrollY - p.sy);
-            const blob = (x0, y0) => {
-              ctx.beginPath();
-              ctx.moveTo(x0 + p.r * 0.75, y0);
-              ctx.arc(x0, y0, p.r * 0.75, 0, TAU);
-              for (const l of [...p.lobes, ...p.dots]) {
-                const cx = x0 + Math.cos(l.a) * l.d * p.r;
-                const cy = y0 + Math.sin(l.a) * l.d * p.r;
-                ctx.moveTo(cx + l.s * p.r, cy);
-                ctx.arc(cx, cy, l.s * p.r, 0, TAU);
-              }
-              ctx.fill();
-            };
-            ctx.globalAlpha = alpha * 0.9;
-            ctx.fillStyle = 'rgba(40, 70, 120, 0.25)';
-            blob(p.x + 1, y + 1.6);
-            ctx.fillStyle = snowTop;
-            blob(p.x, y);
-            ctx.fillStyle = 'rgba(190, 210, 235, 0.5)';
+            const off = scrollY - p.sy;
+            const y = p.y - off;
+            const melt = Math.max(0, (p.age - p.life * 0.72) / (p.life * 0.28));
+            const spread = 0.62 + 0.38 * Math.min(1, (p.age + 1) / 4);
+            const slid = p.y - p.y0;
+            // Mokry ślad za zsuwającą się plamą.
+            if (slid > 1) {
+              const top = p.y0 - off;
+              const wet = ctx.createLinearGradient(0, top - p.r * 0.4, 0, y);
+              wet.addColorStop(0, 'rgba(205, 225, 250, 0)');
+              wet.addColorStop(1, 'rgba(205, 225, 250, 0.14)');
+              ctx.globalAlpha = alpha;
+              ctx.fillStyle = wet;
+              ctx.fillRect(p.x - p.r * 0.5, top - p.r * 0.4, p.r, y - top + p.r * 0.4);
+            }
+            ctx.globalAlpha = alpha * (1 - melt * 0.6);
+            const hw = p.img.half * spread * (1 - melt * 0.3);
+            const sag = Math.min(0.22, slid / 60);
+            ctx.drawImage(p.img.c, p.x - hw, y - hw, hw * 2, hw * 2 * (1 + sag));
+            break;
+          }
+          case 'powder': {
+            ctx.globalAlpha = alpha * Math.max(0, 1 - p.age / p.life);
+            const size = p.r * 2.4;
+            ctx.drawImage(sprite('puff', '#ffffff'), p.x - size / 2, p.y - size / 2, size, size);
+            break;
+          }
+          case 'flash': {
+            const k = Math.max(0, 1 - p.age / p.life);
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.globalAlpha = 0.85 * k;
+            const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+            g.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            g.addColorStop(0.45, 'rgba(225, 240, 255, 0.6)');
+            g.addColorStop(1, 'rgba(225, 240, 255, 0)');
+            ctx.fillStyle = g;
             ctx.beginPath();
-            ctx.arc(p.x + p.r * 0.2, y + p.r * 0.25, p.r * 0.45, 0, TAU);
+            ctx.arc(p.x, p.y, p.r, 0, TAU);
             ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+            break;
+          }
+          case 'squash': {
+            // Kulka rozpłaszcza się na powierzchni (dłuższa oś wzdłuż powierzchni).
+            const k = Math.min(1, p.age / p.life);
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.ang + Math.PI / 2);
+            ctx.globalAlpha = 1 - k;
+            ctx.fillStyle = snowTop;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, p.r * (1 + 0.9 * k), p.r * (1 - 0.7 * k), 0, 0, TAU);
+            ctx.fill();
+            ctx.restore();
             break;
           }
           case 'foam': {
@@ -5847,6 +6290,696 @@
         ctx.restore();
       }
 
+      // ---- Bitwa na śnieżki (motyw śniegu): ludziki z awatarami losowych osób z topki ----
+      // Rundy: kilka osób wchodzi z boków, lepi śnieżki ze śniegu na dole ekranu, rzuca w drużynę naprzeciwko,
+      // robi uniki, po trzech trafieniach leży chwilę w śniegu. Kto trafi ich własną śnieżką — dostaje odwet w kursor.
+      function makeFight() {
+        const TEAMS = [
+          { color: '#e5484d', dark: '#8f2328', score: 0 },
+          { color: '#3d8bf2', dark: '#1d4a9a', score: 0 },
+        ];
+        const SAY_HIT = ['Auć!', 'Ała!', 'Oj!', 'Ej!', 'Uff!'];
+        const SAY_THROW = ['Łap!', 'Masz!', 'Leci!'];
+        const SAY_USER = ['Hej!', 'Kto to?!', 'Ej, ty!'];
+        const fighters = [];
+        let next = rnd(150, 300);
+        let clock = 0;
+        let len = 0;
+        let ending = false;
+        const scaleNow = () => clamp(h / 900, 0.75, 1.05) * (w < 640 ? 1 : 1.2);
+        // Prawa drużyna nie wchodzi na łopatę opartą o prawą krawędź ekranu.
+        const zoneOf = (side) => (side ? [w * 0.6, Math.max(w * 0.62, Math.min(w * 0.94, w - 100 * toolScale))] : [Math.max(w * 0.06, 30), w * 0.4]);
+
+        function roster() {
+          const seen = new Set();
+          const out = [];
+          for (const el of document.querySelectorAll('.top3 .top:not(.anon):not(.vacant), #list .row:not(.anon)')) {
+            const img = el.querySelector('img.avatar');
+            const name = (el.querySelector('.nick .dn') ?? el.querySelector('.nick'))?.textContent?.trim();
+            if (!name || seen.has(name)) continue;
+            seen.add(name);
+            out.push({ name, src: img ? img.currentSrc || img.src : '' });
+            if (out.length >= 15) break;
+          }
+          return out;
+        }
+        // Okrągły awatar rysowany raz do osobnego płótna; bez obrazka — kółko z pierwszą literą nicku.
+        function face(src, name, team) {
+          const c = document.createElement('canvas');
+          c.width = c.height = 64;
+          const g = c.getContext('2d');
+          g.fillStyle = team.dark;
+          g.beginPath();
+          g.arc(32, 32, 31, 0, TAU);
+          g.fill();
+          g.fillStyle = '#ffffff';
+          g.font = '700 30px Rubik, system-ui, sans-serif';
+          g.textAlign = 'center';
+          g.textBaseline = 'middle';
+          g.fillText(([...name][0] ?? '?').toUpperCase(), 32, 34);
+          if (src) {
+            const im = new Image();
+            im.decoding = 'async';
+            im.onload = () => {
+              g.clearRect(0, 0, 64, 64);
+              g.save();
+              g.beginPath();
+              g.arc(32, 32, 31, 0, TAU);
+              g.clip();
+              g.drawImage(im, 1, 1, 62, 62);
+              g.restore();
+            };
+            im.src = src;
+          }
+          return c;
+        }
+        function start() {
+          const people = roster();
+          if (people.length < 2) {
+            next = 1800;
+            return;
+          }
+          for (let i = people.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [people[i], people[j]] = [people[j], people[i]];
+          }
+          const n = Math.min(people.length, w < 640 ? 2 : 2 + Math.floor(Math.random() * (kk >= 0.6 ? 3 : 2)));
+          TEAMS[0].score = TEAMS[1].score = 0;
+          for (let i = 0; i < n; i++) {
+            const side = i % 2;
+            const team = TEAMS[side];
+            const s = scaleNow();
+            const name = [...people[i].name];
+            const f = {
+              name: name.length > 16 ? `${name.slice(0, 15).join('')}…` : people[i].name,
+              face: face(people[i].src, people[i].name, team),
+              team,
+              side,
+              s,
+              x: side ? w + 30 + i * 30 : -30 - i * 30,
+              y: h,
+              vx: 0,
+              vy: 0,
+              air: false,
+              dir: side ? -1 : 1,
+              state: 'walk',
+              t: 0,
+              tx: 0,
+              ball: false,
+              hits: 0,
+              phase: rnd(0, TAU),
+              say: '',
+              sayT: 0,
+              aim: null,
+              revenge: false,
+              lie: rnd(150, 210),
+              gone: false,
+              pose: null,
+              j: null,
+            };
+            f.tx = spot(f);
+            f.pose = target(f);
+            fighters.push(f);
+          }
+          clock = 0;
+          len = rnd(2600, 3800);
+          ending = false;
+        }
+        // Wolne miejsce na swojej połowie (nie za blisko kolegów z drużyny).
+        function spot(f) {
+          const [a, b] = zoneOf(f.side);
+          let best = rnd(a, b);
+          for (let k = 0; k < 5; k++) {
+            const x = rnd(a, b);
+            if (fighters.every((o) => o === f || o.side !== f.side || Math.abs(o.tx - x) > 46 * f.s)) return x;
+            best = x;
+          }
+          return best;
+        }
+        const alive = (o) => !o.gone && o.state !== 'down' && o.state !== 'leave' && o.x > 0 && o.x < w;
+        function foe(f) {
+          const them = fighters.filter((o) => o.side !== f.side && alive(o));
+          return them.length ? pickOne(them) : null;
+        }
+        function set(f, state) {
+          f.state = state;
+          f.t = 0;
+        }
+        function say(f, text, t = 70) {
+          f.say = text;
+          f.sayT = t;
+        }
+        const footAt = (x) => (ground.snow ? surfTop(ground, clamp(x, 0, Math.max(1, ground.w - 1))) : h) + hopOffset(ground);
+
+        // Docelowa poza (kąty w radianach od pionu w dół, dodatnie — do przodu): uda a, kolana k, ramiona s, łokcie e.
+        function target(f) {
+          const q = { lean: 0.04, tilt: 0, a1: 0.06, a2: -0.06, k1: 0.12, k2: 0.12, s1: 0.2, s2: -0.15, e1: 0.5, e2: 0.4, rot: 0 };
+          const t = f.t;
+          switch (f.state) {
+            case 'walk':
+            case 'leave': {
+              const sw = Math.sin(f.phase);
+              q.a1 = 0.5 * sw;
+              q.a2 = -0.5 * sw;
+              q.k1 = 0.12 + 0.8 * Math.max(0, Math.cos(f.phase));
+              q.k2 = 0.12 + 0.8 * Math.max(0, -Math.cos(f.phase));
+              q.s1 = f.ball ? 0.9 : -0.45 * sw;
+              q.e1 = f.ball ? 0.9 : 0.55;
+              q.s2 = 0.45 * sw;
+              q.e2 = 0.55;
+              q.lean = 0.12;
+              break;
+            }
+            case 'idle': {
+              q.s1 = f.ball ? 0.7 : 0.2;
+              q.e1 = f.ball ? 1 : 0.5;
+              q.lean = 0.04 + Math.sin(t * 0.06) * 0.03;
+              break;
+            }
+            case 'scoop': {
+              const d = Math.min(1, t / 14) * (t > 40 ? Math.max(0, 1 - (t - 40) / 12) : 1);
+              q.lean = 1.05 * d;
+              q.a1 = 1.15 * d;
+              q.a2 = 0.45 * d;
+              q.k1 = 0.1 + 2 * d;
+              q.k2 = 0.1 + 1.25 * d;
+              q.s1 = 0.2 + 0.85 * d + 0.3 * Math.sin(t * 0.55) * d;
+              q.s2 = 0.1 + 0.85 * d - 0.3 * Math.sin(t * 0.55) * d;
+              q.e1 = 0.25;
+              q.e2 = 0.25;
+              break;
+            }
+            case 'aim': {
+              const k = Math.min(1, t / 16);
+              q.lean = -0.18 * k;
+              q.a1 = 0.38;
+              q.a2 = -0.4;
+              q.k1 = 0.3;
+              q.k2 = 0.2;
+              q.s1 = -1.9 * k;
+              q.e1 = -0.9 * k;
+              q.s2 = 0.2 + 1.1 * k;
+              q.e2 = 0.3;
+              break;
+            }
+            case 'throw': {
+              q.lean = 0.38;
+              q.a1 = 0.5;
+              q.a2 = -0.45;
+              q.k1 = 0.4;
+              q.k2 = 0.2;
+              q.s1 = t < 6 ? 2.2 : 0.9;
+              q.e1 = 0.15;
+              q.s2 = -0.7;
+              q.e2 = 0.5;
+              break;
+            }
+            case 'hit': {
+              const wv = Math.sin(t * 0.7);
+              q.lean = -0.45;
+              q.tilt = -0.35;
+              q.a1 = -0.3;
+              q.a2 = 0.35;
+              q.k1 = 0.3;
+              q.k2 = 0.45;
+              q.s1 = -1.7 + 0.7 * wv;
+              q.s2 = 1.7 - 0.7 * wv;
+              q.e1 = 0.6;
+              q.e2 = 0.6;
+              break;
+            }
+            case 'down': {
+              const fall = t < 16 ? t / 16 : t < f.lie ? 1 : Math.max(0, 1 - (t - f.lie) / 24);
+              q.rot = -f.dir * 1.5 * fall;
+              q.a1 = 0.15 * fall;
+              q.a2 = -0.2 * fall;
+              q.k1 = 0.1;
+              q.k2 = 0.2;
+              q.s1 = 0.2 + 2.3 * fall;
+              q.s2 = 0.2 + 1.9 * fall;
+              q.e1 = 0.3;
+              q.e2 = 0.4;
+              break;
+            }
+            case 'cheer': {
+              const up = Math.sin(t * 0.3);
+              q.s1 = 2.75 + 0.25 * up;
+              q.s2 = 2.75 - 0.25 * up;
+              q.e1 = 0.15;
+              q.e2 = 0.15;
+              q.lean = 0;
+              break;
+            }
+            case 'sulk': {
+              q.lean = 0.35;
+              q.tilt = 0.4;
+              q.s1 = 0.08;
+              q.s2 = 0.04;
+              q.e1 = 0.15;
+              q.e2 = 0.15;
+              break;
+            }
+            case 'dodge': {
+              q.a1 = 0.9;
+              q.a2 = 0.55;
+              q.k1 = 1.5;
+              q.k2 = 1.2;
+              q.s1 = 2.3;
+              q.s2 = 2.1;
+              q.e1 = 0.3;
+              q.e2 = 0.3;
+              q.lean = 0.15;
+              break;
+            }
+          }
+          if (f.air && f.state !== 'dodge') {
+            q.a1 = 0.45;
+            q.a2 = -0.25;
+            q.k1 = 0.7;
+            q.k2 = 0.5;
+          }
+          return q;
+        }
+        // Kinematyka: z kątów — punkty stawów w układzie strony (lustrzane odbicie dla patrzących w lewo, obrót przy upadku).
+        function solve(f) {
+          const p = f.pose;
+          const s = f.s;
+          const T = 10.5 * s;
+          const S = 10.5 * s;
+          const TOR = 17 * s;
+          const U = 9 * s;
+          const FO = 8.5 * s;
+          const R = 10 * s;
+          const leg = (a, k) => {
+            const kx = Math.sin(a) * T;
+            const ky = Math.cos(a) * T;
+            return [kx, ky, kx + Math.sin(a - k) * S, ky + Math.cos(a - k) * S];
+          };
+          const L1 = leg(p.a1, p.k1);
+          const L2 = leg(p.a2, p.k2);
+          const lift = Math.max(L1[3], L2[3]);
+          const neck = [Math.sin(p.lean) * TOR, -Math.cos(p.lean) * TOR];
+          const sh = [neck[0] * 0.86, neck[1] * 0.86];
+          const ha = p.lean + p.tilt * 0.8;
+          const head = [neck[0] + Math.sin(ha) * (R + 1.5 * s), neck[1] - Math.cos(ha) * (R + 1.5 * s)];
+          const arm = (a, e) => {
+            const ex = sh[0] + Math.sin(a) * U;
+            const ey = sh[1] + Math.cos(a) * U;
+            return [ex, ey, ex + Math.sin(a + e) * FO, ey + Math.cos(a + e) * FO];
+          };
+          const A1 = arm(p.s1, p.e1);
+          const A2 = arm(p.s2, p.e2);
+          const d = f.dir;
+          const ox = f.x;
+          const oy = f.y - Math.abs(Math.sin(p.rot)) * R * 0.8;
+          const cr = Math.cos(p.rot);
+          const sr = Math.sin(p.rot);
+          const W = (x, y) => {
+            const lx = d * x;
+            const ly = y - lift;
+            return [ox + lx * cr - ly * sr, oy + lx * sr + ly * cr];
+          };
+          f.j = {
+            hip: W(0, 0),
+            k1: W(L1[0], L1[1]),
+            f1: W(L1[2], L1[3]),
+            k2: W(L2[0], L2[1]),
+            f2: W(L2[2], L2[3]),
+            neck: W(neck[0], neck[1]),
+            sh: W(sh[0], sh[1]),
+            e1: W(A1[0], A1[1]),
+            h1: W(A1[2], A1[3]),
+            e2: W(A2[0], A2[1]),
+            h2: W(A2[2], A2[3]),
+            head: W(head[0], head[1]),
+            R,
+            ang: p.rot + d * ha * 0.7,
+          };
+        }
+        // Rzut po łuku: w przeciwnika (z lekkim rozrzutem) albo — w odwecie — prosto w kursor.
+        function release(f) {
+          const [sx, sy] = f.j.h1;
+          const g = 0.16;
+          if (f.revenge && pointer.on) {
+            f.revenge = false;
+            const T = clamp(Math.hypot(pointer.x - sx, pointer.y - sy) / 9, 22, 46);
+            add({ t: 'ball', x: sx, y: sy, vx: (pointer.x - sx) / T, vy: (pointer.y - sy) / T - (g * (T + 1)) / 2, r: 3.6 * f.s, vol: 90, rot: 0, vr: 0.1, g, drag: 1, flight: T, toward: true, owner: f, z: 0, noLand: true, instant: true });
+            say(f, 'Odwet!', 60);
+            return;
+          }
+          const o = f.aim && alive(f.aim) ? f.aim : foe(f);
+          if (!o?.j) return;
+          const tx = o.x + rnd(-1, 1) * 26 * f.s;
+          const ty = o.j.neck[1] + rnd(-12, 10) * f.s;
+          const dx = tx - sx;
+          const T = clamp(Math.abs(dx) / (6.5 * f.s), 26, 72);
+          add({ t: 'ball', x: sx, y: sy, vx: dx / T, vy: (ty - sy) / T - (g * (T + 1)) / 2, r: 3.6 * f.s, vol: 110, rot: 0, vr: (dx / T) * 0.05, g, drag: 1, flight: Infinity, owner: f, z: 0, noLand: true, instant: true });
+          if (Math.random() < 0.3) say(f, pickOne(SAY_THROW), 45);
+        }
+        function struck(f, p) {
+          f.hits += 1;
+          if (p.owner) p.owner.team.score += 1;
+          const from = Math.sign(p.vx) || -f.dir;
+          f.vx = from * 2.2 * f.s;
+          if (!f.air) {
+            f.vy = -1.6 * f.s;
+            f.air = true;
+          }
+          if (f.state === 'scoop' || f.state === 'aim') f.ball = false;
+          set(f, 'hit');
+          if (!p.owner) {
+            f.revenge = true;
+            say(f, pickOne(SAY_USER), 80);
+          } else say(f, pickOne(SAY_HIT), 60);
+          poof(p.x, p.y, p.r * 1.3, -from * 0.6, -0.7, 0.8);
+          for (let k = 0; k < 8; k++) add({ t: 'clump', x: p.x, y: p.y, vx: rnd(-1.6, 1.6) - from * 0.6, vy: rnd(-2.2, 0.2), g: 0.2, drag: 0.99, r: rnd(0.9, 1.7), vol: 3, z: 0, wall: true });
+        }
+        const seg = (px, py, a, b) => {
+          const vx = b[0] - a[0];
+          const vy = b[1] - a[1];
+          const t = clamp(((px - a[0]) * vx + (py - a[1]) * vy) / (vx * vx + vy * vy || 1), 0, 1);
+          return Math.hypot(px - a[0] - vx * t, py - a[1] - vy * t);
+        };
+        function think(f, dt) {
+          const t = f.t;
+          if (ending && (f.state === 'idle' || f.state === 'aim' || f.state === 'scoop' || f.state === 'throw' || f.state === 'walk')) {
+            leave(f);
+            return;
+          }
+          switch (f.state) {
+            case 'walk':
+            case 'leave': {
+              const dx = f.tx - f.x;
+              const sp = (f.state === 'leave' ? 1.25 : 0.95) * f.s;
+              if (Math.abs(dx) > 2) {
+                f.dir = Math.sign(dx);
+                f.x += Math.sign(dx) * Math.min(Math.abs(dx), sp * dt);
+                f.phase += 0.19 * dt;
+              } else if (f.state === 'leave') f.gone = true;
+              else set(f, f.ball ? 'aim' : 'scoop');
+              if (f.state === 'leave' && (f.x < -50 || f.x > w + 50)) f.gone = true;
+              break;
+            }
+            case 'idle': {
+              const o = foe(f);
+              if (o) f.dir = Math.sign(o.x - f.x) || f.dir;
+              if (t > 40) set(f, f.ball ? 'aim' : 'scoop');
+              break;
+            }
+            case 'scoop':
+              if (t >= 26 && !f.ball) {
+                f.ball = true;
+                const lx = clamp(f.x + f.dir * 9 * f.s, 0, Math.max(1, ground.w - 1));
+                if (ground.snow) scoop(ground, lx, 9, 160);
+                for (let k = 0; k < 4; k++) add({ t: 'flake', x: f.x + f.dir * 9 * f.s + rnd(-5, 5), y: f.y - rnd(1, 5), vx: rnd(-0.8, 0.8), vy: -rnd(0.4, 1.4), g: 0.05, r: rnd(0.8, 1.5), a: 0.9, vol: 2, sway: rnd(0, TAU), amp: 0.2, wk: 0.3, tk: 1, z: 0 });
+              }
+              if (t >= 52) set(f, 'aim');
+              break;
+            case 'aim': {
+              if (t < 1) f.aim = f.revenge && pointer.on ? null : foe(f);
+              const tx = f.revenge && pointer.on ? pointer.x : f.aim?.x;
+              if (tx === undefined) {
+                set(f, 'idle');
+                break;
+              }
+              f.dir = Math.sign(tx - f.x) || f.dir;
+              if (t >= 18) set(f, 'throw');
+              break;
+            }
+            case 'throw':
+              if (t >= 3 && f.ball) {
+                f.ball = false;
+                release(f);
+              }
+              if (t >= 18) {
+                if (Math.random() < 0.55) {
+                  f.tx = spot(f);
+                  set(f, 'walk');
+                } else set(f, 'scoop');
+              }
+              break;
+            case 'hit':
+              if (t >= 34 && !f.air) {
+                if (ending) leave(f);
+                else if (f.hits >= 3) {
+                  set(f, 'down');
+                  say(f, 'Poddaję się…', 90);
+                } else {
+                  f.tx = spot(f);
+                  set(f, 'walk');
+                }
+              }
+              break;
+            case 'down':
+              if (t >= f.lie + 24) {
+                f.hits = 0;
+                if (ending) leave(f);
+                else {
+                  f.tx = spot(f);
+                  set(f, 'walk');
+                }
+              }
+              break;
+            case 'cheer':
+              if (!f.air && Math.floor(t / 34) !== Math.floor((t - dt) / 34)) {
+                f.vy = -3.4 * f.s;
+                f.air = true;
+              }
+              if (t > 170) leave(f);
+              break;
+            case 'sulk':
+              if (t > 150) leave(f);
+              break;
+          }
+        }
+        function leave(f) {
+          f.tx = f.side ? w + 60 : -60;
+          set(f, 'leave');
+        }
+        function finish() {
+          ending = true;
+          const [a, b] = TEAMS;
+          for (const f of fighters) {
+            if (f.state === 'down') continue;
+            f.ball = false;
+            if (a.score === b.score) {
+              say(f, 'Remis!', 90);
+              leave(f);
+            } else if ((a.score > b.score) === (f.side === 0)) {
+              say(f, pickOne(['GG!', 'Wygrana!', 'Hehe!']), 100);
+              set(f, 'cheer');
+            } else {
+              say(f, pickOne(['Rewanż!', 'Jeszcze raz!']), 100);
+              set(f, 'sulk');
+            }
+          }
+        }
+        function rrect(x, y, ww, hh, r) {
+          ctx.beginPath();
+          if (ctx.roundRect) ctx.roundRect(x, y, ww, hh, r);
+          else ctx.rect(x, y, ww, hh);
+        }
+        function speech(x, y, text, s) {
+          ctx.font = `700 ${Math.round(11 * s + 1)}px Rubik, system-ui, sans-serif`;
+          const pw = ctx.measureText(text).width + 12 * s;
+          const ph = 18 * s;
+          const bx = clamp(x - pw / 2, 4, w - pw - 4);
+          const by = y - ph - 6 * s;
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.96)';
+          rrect(bx, by, pw, ph, 7 * s);
+          ctx.fill();
+          const tx = clamp(x, bx + 8 * s, bx + pw - 8 * s);
+          ctx.beginPath();
+          ctx.moveTo(tx - 4 * s, by + ph - 0.5);
+          ctx.lineTo(tx, by + ph + 5 * s);
+          ctx.lineTo(tx + 4 * s, by + ph - 0.5);
+          ctx.fill();
+          ctx.fillStyle = '#152033';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(text, bx + pw / 2, by + ph / 2 + 0.5);
+        }
+        function drawOne(f) {
+          const j = f.j;
+          const s = f.s;
+          const R = j.R;
+          const line = (...pts) => {
+            ctx.moveTo(pts[0][0], pts[0][1]);
+            for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+          };
+          ctx.globalAlpha = 1;
+          // Cień na śniegu.
+          ctx.fillStyle = 'rgba(40, 60, 100, 0.28)';
+          ctx.beginPath();
+          ctx.ellipse(f.x, f.y - 0.5, (f.state === 'down' ? 24 : 10) * s, 2.6 * s, 0, 0, TAU);
+          ctx.fill();
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          // Obrys całej sylwetki (ciemny), potem dalsza ręka i noga (ciemniejsze) i reszta.
+          ctx.strokeStyle = 'rgba(6, 14, 30, 0.6)';
+          ctx.lineWidth = 5.4 * s;
+          ctx.beginPath();
+          line(j.hip, j.k2, j.f2);
+          line(j.hip, j.k1, j.f1);
+          line(j.hip, j.neck);
+          line(j.sh, j.e2, j.h2);
+          line(j.sh, j.e1, j.h1);
+          ctx.stroke();
+          ctx.lineWidth = 3.1 * s;
+          ctx.strokeStyle = '#a9b8cd';
+          ctx.beginPath();
+          line(j.hip, j.k2, j.f2);
+          line(j.sh, j.e2, j.h2);
+          ctx.stroke();
+          ctx.strokeStyle = '#eef4fc';
+          ctx.beginPath();
+          line(j.hip, j.k1, j.f1);
+          line(j.hip, j.neck);
+          line(j.sh, j.e1, j.h1);
+          ctx.stroke();
+          // Buty i rękawiczki.
+          ctx.fillStyle = '#273246';
+          for (const p of [j.f1, j.f2]) {
+            ctx.beginPath();
+            ctx.ellipse(p[0] + f.dir * 1.2 * s, p[1], 2.9 * s, 2 * s, 0, 0, TAU);
+            ctx.fill();
+          }
+          ctx.fillStyle = f.team.color;
+          for (const p of [j.h1, j.h2]) {
+            ctx.beginPath();
+            ctx.arc(p[0], p[1], 2.1 * s, 0, TAU);
+            ctx.fill();
+          }
+          if (f.ball) drawBall(j.h1[0], j.h1[1] - 1.5 * s, 3.6 * s, 0, 1);
+          // Szalik: pętla na szyi i powiewający koniec.
+          ctx.strokeStyle = f.team.color;
+          ctx.lineWidth = 3.4 * s;
+          ctx.beginPath();
+          const nx = j.neck[0];
+          const ny = j.neck[1] + 1.5 * s;
+          ctx.moveTo(nx - 3 * s, ny);
+          ctx.lineTo(nx + 3 * s, ny);
+          const flap = Math.sin(now * 0.012 + f.phase) * 2 * s;
+          ctx.moveTo(nx - f.dir * 1.5 * s, ny + 1 * s);
+          ctx.quadraticCurveTo(nx - f.dir * 6 * s, ny + 3 * s + flap, nx - f.dir * 10 * s, ny + 5 * s - flap);
+          ctx.stroke();
+          // Głowa: awatar w kółku, czapka z pomponem w kolorze drużyny.
+          ctx.save();
+          ctx.translate(j.head[0], j.head[1]);
+          ctx.rotate(j.ang);
+          ctx.fillStyle = 'rgba(6, 14, 30, 0.6)';
+          ctx.beginPath();
+          ctx.arc(0, 0, R + 1.6 * s, 0, TAU);
+          ctx.fill();
+          ctx.drawImage(f.face, -R, -R, R * 2, R * 2);
+          ctx.fillStyle = f.team.color;
+          ctx.beginPath();
+          ctx.ellipse(0, -R * 0.68, R * 0.9, R * 0.66, 0, Math.PI, TAU);
+          ctx.fill();
+          ctx.fillStyle = f.team.dark;
+          ctx.beginPath();
+          ctx.ellipse(R * 0.22, -R * 0.98, R * 0.42, R * 0.24, -0.4, Math.PI * 1.1, TAU);
+          ctx.fill();
+          ctx.fillStyle = '#f3f6fb';
+          rrect(-R * 0.98, -R * 0.84, R * 1.96, R * 0.32, R * 0.16);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(-f.dir * R * 0.28, -R * 1.42, R * 0.28, 0, TAU);
+          ctx.fill();
+          ctx.restore();
+          // Nick nad głową.
+          const top = j.head[1] - R * 1.75 - 3 * s;
+          if (f.state !== 'down') {
+            ctx.font = `600 ${Math.round(10 * s + 1)}px Rubik, system-ui, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = 'rgba(5, 10, 22, 0.75)';
+            ctx.strokeText(f.name, j.head[0], top);
+            ctx.fillStyle = 'rgba(236, 242, 252, 0.95)';
+            ctx.fillText(f.name, j.head[0], top);
+          }
+          if (f.sayT > 0) speech(j.head[0], top - (f.state === 'down' ? 0 : 13 * s), f.say, s);
+        }
+        return {
+          tick(dt) {
+            if (!fighters.length) {
+              next -= dt;
+              if (next <= 0) start();
+              return;
+            }
+            clock += dt;
+            if (!ending && clock > len) finish();
+            const balls = list.filter((p) => p.t === 'ball' && !p.toward);
+            for (const f of fighters) {
+              f.t += dt;
+              if (f.sayT > 0) f.sayT -= dt;
+              f.s = scaleNow();
+              // Uniki: lecąca śnieżka przeciwnika (albo od kursora) blisko — czasem podskok.
+              if (!f.air && (f.state === 'walk' || f.state === 'idle' || f.state === 'scoop' || f.state === 'aim')) {
+                for (const p of balls) {
+                  if (p.owner && p.owner.side === f.side) continue;
+                  const dx = f.x - p.x;
+                  if (Math.abs(dx) > 120 * f.s || (p.owner && Math.sign(p.vx) !== Math.sign(dx))) continue;
+                  p.seen ??= new Set();
+                  if (p.seen.has(f)) continue;
+                  p.seen.add(f);
+                  if (Math.random() < (p.owner ? 0.3 : 0.2)) {
+                    f.vy = -4.4 * f.s;
+                    f.air = true;
+                    set(f, 'dodge');
+                  }
+                  break;
+                }
+              }
+              f.x += f.vx * dt;
+              f.vx *= 0.9 ** dt;
+              const gy = footAt(f.x) + 1.5 * f.s;
+              if (f.air) {
+                f.vy += 0.3 * dt;
+                f.y += f.vy * dt;
+                if (f.y >= gy) {
+                  f.y = gy;
+                  f.air = false;
+                  f.vy = 0;
+                  for (let k = 0; k < 3; k++) add({ t: 'flake', x: f.x + rnd(-6, 6), y: gy - 1, vx: rnd(-0.9, 0.9), vy: -rnd(0.3, 1), g: 0.05, r: rnd(0.8, 1.4), a: 0.9, vol: 2, sway: rnd(0, TAU), amp: 0.2, wk: 0.3, tk: 1, z: 0 });
+                  if (f.state === 'dodge') set(f, 'idle');
+                }
+              } else f.y = gy;
+              think(f, dt);
+              const q = target(f);
+              const k = 1 - (f.state === 'throw' ? 0.45 : 0.72) ** dt;
+              for (const key in q) f.pose[key] += (q[key] - f.pose[key]) * k;
+              solve(f);
+            }
+            for (let i = fighters.length - 1; i >= 0; i--) if (fighters[i].gone) fighters.splice(i, 1);
+            if (!fighters.length) next = rnd(1500, 3000);
+          },
+          draw() {
+            for (const f of fighters) if (f.j) drawOne(f);
+            ctx.globalAlpha = 1;
+          },
+          end: () => ending || finish(),
+          peek: () => ({ held: Boolean(held), balls: list.filter((p) => p.t === 'ball').map((p) => [Math.round(p.x), Math.round(p.y), p.owner ? p.owner.name : 'user']), fighters: fighters.map((f) => ({ name: f.name, side: f.side, state: f.state, x: f.x, y: f.y, hits: f.hits, revenge: f.revenge, head: f.j?.head })) }),
+          // Czy śnieżka trafiła ludzika (własnej drużyny nie trafia; leżących też nie).
+          hit(p) {
+            if (p.toward) return false;
+            for (const f of fighters) {
+              if (!f.j || f.gone || f.state === 'down' || f.state === 'leave') continue;
+              if (p.owner && p.owner.side === f.side) continue;
+              const j = f.j;
+              const rr = p.r * 0.75;
+              if (Math.hypot(p.x - j.head[0], p.y - j.head[1]) < j.R + rr || seg(p.x, p.y, j.hip, j.neck) < 4 * f.s + rr || seg(p.x, p.y, j.hip, j.f1) < 3 * f.s + rr || seg(p.x, p.y, j.hip, j.f2) < 3 * f.s + rr) {
+                struck(f, p);
+                return true;
+              }
+            }
+            return false;
+          },
+        };
+      }
+
       function frame(t) {
         raf = 0;
         if (dead) return;
@@ -5876,6 +7009,7 @@
         if (held) rollBall(dt);
         themeTick(dt);
         if (pointer.on && piles) interact();
+        if (fight) fight.tick(dt);
         stepping = true;
         list = list.filter((p) => step(p, dt));
         stepping = false;
@@ -5926,6 +7060,7 @@
         umbrella *= 0.94;
         if (gesture?.kind === 'magnet' && pointer.on) drawMagnet();
         if (blowing) drawWand();
+        if (fight) fight.draw();
         if (held) drawBall(held.x, held.y, held.r, held.rot, 1);
         ctx.globalAlpha = 1;
         for (const tl of tools) {
@@ -5963,6 +7098,10 @@
       listen(document, 'visibilitychange', onVisible);
       fit();
       if (caps || bubbly) collect();
+      if (snowy && !EMBED) {
+        fight = makeFight();
+        if (QS.get('fxdebug') === '1') window.__fxFight = fight;
+      }
       spawnNear(true);
       if (bubbly) for (let i = 2 + Math.round(kk * 3); i > 0; i--) fish.push(spawnFish(true));
       if (snowy) makeTool('shovel');
