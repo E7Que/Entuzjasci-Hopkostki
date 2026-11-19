@@ -270,7 +270,8 @@ export const DEFAULT_CONFIG = {
     antiFarm: { dailyCap: 0, ignoreRepeats: true, minChars: 0 },
     // Wydarzenia XP: od startsAt do endsAt XP (wybranych rodzajów: message/voice/reaction) mnożone przez multiplier
     // (dowolny od 1,1 do 10); gdy kilka się nakłada — liczy się największy mnożnik. theme — efekt na stronie rankingu
-    // (XP_EVENT_THEMES w configSchema.js), intensity — none/low/medium/high, accent — własny kolor #rrggbb albo null.
+    // (XP_EVENT_THEMES w configSchema.js), intensity — none/low/medium/high, accent — własny kolor #rrggbb albo null,
+    // floor — efekt przy dole ekranu (płomienie przy „Ogniu”), false wyłącza.
     // Ogłoszenie początku i końca (z najlepszymi osobami) na eventsAnnounce.channelId (puste = kanał awansów),
     // rola roleId dostaje ping przy starcie.
     events: [],

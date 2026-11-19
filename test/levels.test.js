@@ -307,7 +307,7 @@ test('wydarzenia XP: wybór wydarzenia dla strony, nakładające się wydarzenia
   assert.equal(multiplierText(2), '×2');
 });
 
-test('wydarzenia XP: własny mnożnik, efekt, intensywność i własny kolor (zapis, publiczne API, ogłoszenie)', async () => {
+test('wydarzenia XP: własny mnożnik, efekt, intensywność, własny kolor i płomienie na dole (zapis, publiczne API, ogłoszenie)', async () => {
   const now = Date.now();
   const EVENT_CH = '100000000000000069';
   const iso = (ms) => new Date(ms).toISOString();
@@ -316,7 +316,7 @@ test('wydarzenia XP: własny mnożnik, efekt, intensywność i własny kolor (za
     publicLeaderboard: true,
     message: { min: 10, max: 10, cooldown: 0 },
     events: [
-      { ...base, id: 'evstorm1', multiplier: 1.257, theme: 'storm', intensity: 'high', accent: '#3B82F6' },
+      { ...base, id: 'evstorm1', multiplier: 1.257, theme: 'storm', intensity: 'high', accent: '#3B82F6', floor: false },
       { ...base, id: 'evlow001', multiplier: 1.05, theme: 'storm' },
       { ...base, id: 'evhigh01', multiplier: 10.5, theme: 'storm' },
       { ...base, id: 'evodd001', multiplier: 3, theme: 'disco', intensity: 'max', accent: 'red', startsAt: iso(now + 86_400_000), endsAt: iso(now + 90_000_000) },
@@ -324,9 +324,9 @@ test('wydarzenia XP: własny mnożnik, efekt, intensywność i własny kolor (za
     eventsAnnounce: { enabled: true, channelId: EVENT_CH },
   });
   // Mnożnik dowolny od ×1,1 do ×10 (2 miejsca po przecinku); nieznany efekt/intensywność/kolor → domyślne.
-  assert.deepEqual((await s.store.getConfig()).levels.events.map((e) => [e.id, e.multiplier, e.theme, e.intensity, e.accent]), [
-    ['evstorm1', 1.26, 'storm', 'high', '#3b82f6'],
-    ['evodd001', 3, 'confetti', 'medium', null],
+  assert.deepEqual((await s.store.getConfig()).levels.events.map((e) => [e.id, e.multiplier, e.theme, e.intensity, e.accent, e.floor]), [
+    ['evstorm1', 1.26, 'storm', 'high', '#3b82f6', false],
+    ['evodd001', 3, 'confetti', 'medium', null, true],
   ]);
   await onMessageLevels(s.bot, message('target', { content: 'hej' }));
   assert.equal((await s.store.getLevel('target')).xp, 13, '10 XP × 1,26 = 12,6 → 13');
@@ -334,10 +334,10 @@ test('wydarzenia XP: własny mnożnik, efekt, intensywność i własny kolor (za
   const handle = createHandler(s.bot);
   const body = await (await handle(new Request('https://x.supabase.co/functions/v1/hopkostki-bot/panel/public/leaderboard'))).json();
   assert.deepEqual(
-    [body.events.current.theme, body.events.current.intensity, body.events.current.accent, body.events.current.multiplier],
-    ['storm', 'high', '#3b82f6', 1.26],
+    [body.events.current.theme, body.events.current.intensity, body.events.current.accent, body.events.current.multiplier, body.events.current.floor],
+    ['storm', 'high', '#3b82f6', 1.26, false],
   );
-  assert.deepEqual([body.events.next.theme, body.events.next.intensity, body.events.next.accent], ['confetti', 'medium', null]);
+  assert.deepEqual([body.events.next.theme, body.events.next.intensity, body.events.next.accent, body.events.next.floor], ['confetti', 'medium', null, true]);
 
   // Ogłoszenie: emoji efektu, kolor z własnego koloru wydarzenia, mnożnik z przecinkiem.
   await xpEventsTick(s.bot, { now });

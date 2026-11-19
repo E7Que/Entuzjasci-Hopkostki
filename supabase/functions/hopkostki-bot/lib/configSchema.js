@@ -63,8 +63,9 @@ export const XP_EVENT_KINDS = ['message', 'voice', 'reaction'];
 const XP_EVENT_MAX_MS = 31 * 24 * 60 * 60_000;
 
 // Wydarzenia XP z panelu: poprawne daty (koniec po początku, najwyżej 31 dni), dowolny mnożnik 1,1–10 (do dwóch
-// miejsc po przecinku), co najmniej jeden rodzaj XP; styl: motyw, intensywność efektów i opcjonalny własny kolor
-// (#rrggbb). Najwyżej 50, posortowane po początku.
+// miejsc po przecinku), co najmniej jeden rodzaj XP; styl: motyw, intensywność efektów, opcjonalny własny kolor
+// (#rrggbb) i floor — efekt przy dole ekranu (płomienie przy „Ogniu”; domyślnie włączony). Najwyżej 50, posortowane
+// po początku.
 function cleanXpEvents(input, current) {
   if (!Array.isArray(input)) return current;
   const seen = new Set();
@@ -89,6 +90,7 @@ function cleanXpEvents(input, current) {
       theme: XP_EVENT_THEMES.includes(e?.theme) ? e.theme : 'confetti',
       intensity: XP_EVENT_INTENSITY.includes(e?.intensity) ? e.intensity : 'medium',
       accent: /^#[0-9a-f]{6}$/i.test(String(e?.accent ?? '')) ? String(e.accent).toLowerCase() : null,
+      floor: e?.floor !== false,
     });
   }
   return out.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)).slice(-50);

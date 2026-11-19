@@ -596,6 +596,7 @@ export const publicXpEvent = (e) =>
         theme: e.theme,
         intensity: e.intensity ?? 'medium',
         accent: e.accent ?? null,
+        floor: e.floor !== false,
       }
     : null;
 
