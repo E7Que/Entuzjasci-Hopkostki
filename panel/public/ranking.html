@@ -750,7 +750,9 @@
     html.embed .ev-deco.top { left: 14px; right: 14px; top: 16px; }
 
     /* Konfetti: girlanda z chorągiewkami */
-    .dc-bunting { position: absolute; left: 0; top: 0; display: block; opacity: calc(0.55 + var(--evk) * 0.45); filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.35)); transform-origin: 50% 0; animation: dc-bob 4.5s ease-in-out infinite alternate; }
+    .dc-bunting { position: absolute; left: -10px; right: -10px; top: -8px; width: calc(100% + 20px); height: clamp(44px, 5.6vw, 76px); display: block; opacity: calc(0.6 + var(--evk) * 0.4); transform-origin: 50% 0; animation: dc-bob 4.5s ease-in-out infinite alternate; }
+    .dc-bunting .fl { transform-box: fill-box; transform-origin: 50% 0; animation: dc-flag 2.6s ease-in-out infinite alternate; }
+    @keyframes dc-flag { from { transform: rotate(-5deg) skewX(2deg); } to { transform: rotate(5deg) skewX(-2deg); } }
     @keyframes dc-bob { from { transform: translateY(-2px); } to { transform: translateY(2px); } }
 
 
@@ -819,10 +821,11 @@
     .dc-web svg { display: block; width: 100%; height: auto; }
     .dc-web.l { left: 0; }
     .dc-web.r { right: 0; transform: scaleX(-1); }
-    .dc-spider { position: absolute; top: 0; right: 16%; width: 30px; height: 230px; overflow: hidden; }
-    .dc-drop { position: absolute; left: 0; bottom: 0; width: 30px; animation: dc-spider 11s ease-in-out infinite; }
-    .dc-drop i { position: absolute; left: 50%; bottom: 26px; width: 1px; height: 400px; background: rgba(230, 225, 255, 0.45); }
-    .dc-drop svg { display: block; width: 30px; height: 30px; filter: drop-shadow(0 0 3px rgba(255, 140, 60, 0.6)); }
+    .dc-spider { position: absolute; top: 0; right: 16%; width: 44px; height: 240px; overflow: hidden; }
+    .dc-drop { position: absolute; left: 0; bottom: 0; width: 44px; animation: dc-spider 11s ease-in-out infinite; }
+    .dc-drop i { position: absolute; left: 50%; bottom: 38px; width: 1px; height: 400px; background: linear-gradient(rgba(230, 225, 255, 0.2), rgba(230, 225, 255, 0.6)); }
+    .dc-drop svg { display: block; width: 44px; height: 47px; transform-origin: 50% 0; animation: dc-spin 3.4s ease-in-out infinite alternate; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 4px rgba(255, 120, 40, 0.35)); }
+    @keyframes dc-spin { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
     @keyframes dc-spider { 0%, 100% { transform: translateY(-150px); } 45%, 60% { transform: translateY(-12px); } }
     body.ev-page[data-ev="halloween"] .card { position: relative; }
     body.ev-page[data-ev="halloween"] .card::after {
@@ -858,21 +861,39 @@
     body.ev-page[data-ev="coins"] .num.xp { color: color-mix(in srgb, var(--evc) 72%, #fff); }
 
     /* Burza: chmury u góry, przyciemnienie, błysk pioruna rozświetla karty */
-    .dc-clouds { position: absolute; left: -5%; top: -14px; width: 110%; height: clamp(36px, 9vw, 110px); filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45)); opacity: calc(0.6 + var(--evk) * 0.4); transition: filter 0.15s; animation: dc-drift 40s ease-in-out infinite alternate; }
+    /* Chmury: obraz SVG (rozmyte pasma + turbulencja), na całą szerokość u góry strony; przy piorunie świecą od środka */
+    .ev-deco.sky { position: absolute; left: 0; right: 0; top: 0; height: 0; z-index: 2; overflow: visible; }
+    .dc-sky { position: absolute; left: 0; right: 0; top: 0; height: clamp(110px, 14vw, 205px); overflow: hidden; opacity: calc(0.7 + var(--evk) * 0.3); -webkit-mask-image: linear-gradient(#000 56%, transparent); mask-image: linear-gradient(#000 56%, transparent); }
+    .dc-sky > div { position: absolute; top: 0; bottom: 0; left: -70px; right: -70px; will-change: transform; animation: dc-sky 60s ease-in-out infinite alternate; }
+    @keyframes dc-sky { from { transform: translateX(-50px); } to { transform: translateX(50px); } }
+    .dc-sky i, .dc-sky b { position: absolute; inset: 0; }
+    .dc-sky i { background: var(--dc-cloud) center top / cover no-repeat; transition: filter 0.3s; }
+    .dc-sky b {
+      background: radial-gradient(closest-side, rgba(226, 234, 255, 0.95), rgba(170, 190, 255, 0.4) 45%, transparent) var(--lx, 50%) 30% / clamp(240px, 36vw, 560px) 120% no-repeat;
+      -webkit-mask: var(--dc-cloud) center top / cover no-repeat; mask: var(--dc-cloud) center top / cover no-repeat;
+      opacity: 0; transition: opacity 0.35s;
+    }
+    body.ev-page[data-ev="storm"].ev-flash .dc-sky b { opacity: 1; transition: none; }
+    body.ev-page[data-ev="storm"].ev-flash .dc-sky i { filter: brightness(1.45); transition: none; }
     @keyframes dc-drift { from { transform: translateX(-2.5%); } to { transform: translateX(2.5%); } }
     body.ev-page[data-ev="storm"] .bg::before { content: ''; position: absolute; inset: 0; z-index: 1; background: rgba(4, 6, 16, calc(var(--evk) * 0.35)); }
     body.ev-page[data-ev="storm"] :is(.toolbar, .table, .card, .event) { transition: border-color 0.25s, box-shadow 0.25s; }
     body.ev-page[data-ev="storm"].ev-flash :is(.toolbar, .table, .card, .event) { border-color: rgba(214, 224, 255, 0.85); box-shadow: 0 0 34px -6px rgba(200, 214, 255, 0.55); }
-    body.ev-page[data-ev="storm"].ev-flash .dc-clouds { filter: brightness(2.2) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45)); }
 
     /* Bąbelki: tafla wody u góry, promienie światła, refleksy wody (kaustyka) */
     .dc-caustic { position: absolute; inset: 0; overflow: hidden; opacity: calc(0.07 + var(--evk) * 0.18); }
     .dc-caustic::before { content: ''; position: absolute; inset: -360px; background: var(--dc-caustic) 0 0 / 360px 360px repeat; will-change: transform; animation: dc-caus 34s linear infinite; }
     @keyframes dc-caus { to { transform: translate(360px, 360px); } }
-    .dc-water { position: absolute; left: 0; top: 0; width: 100%; height: clamp(22px, 3.5vw, 40px); border-radius: 12px 12px 0 0; opacity: calc(0.5 + var(--evk) * 0.5); animation: dc-drift 9s ease-in-out infinite alternate; }
-    .dc-water stop:first-child { stop-color: var(--evc2); stop-opacity: 0.38; }
-    .dc-water stop:last-child { stop-color: var(--evc2); stop-opacity: 0.06; }
-    .dc-water .line { fill: none; stroke: color-mix(in srgb, #ffffff 60%, var(--evc2)); stroke-width: 1.6; vector-effect: non-scaling-stroke; opacity: 0.85; }
+    .dc-surf {
+      position: absolute; left: 0; right: 0; top: 0; --sh: clamp(54px, 6.5vw, 92px); height: calc(var(--sh) * 1.35); overflow: hidden; opacity: calc(0.6 + var(--evk) * 0.4);
+      background: linear-gradient(color-mix(in srgb, var(--evc2) 36%, transparent), color-mix(in srgb, var(--evc2) 10%, transparent) 50%, transparent);
+      -webkit-mask-image: linear-gradient(#000 52%, transparent); mask-image: linear-gradient(#000 52%, transparent);
+    }
+    .dc-surf i { position: absolute; left: 0; top: 0; height: var(--sh); width: calc(100% + var(--sh) * 6); background: var(--dc-wave-a) 0 0 / calc(var(--sh) * 6) 100% repeat-x; will-change: transform; animation: dc-surf 16s linear infinite; }
+    .dc-surf i:nth-child(2) { background-image: var(--dc-wave-b); animation-duration: 11s; animation-direction: reverse; opacity: 0.65; }
+    .dc-surf i:nth-child(3) { width: auto; right: 0; height: 100%; background: var(--dc-caustic) 0 0 / 240px 240px; opacity: 0.55; -webkit-mask-image: linear-gradient(#000, transparent 75%); mask-image: linear-gradient(#000, transparent 75%); animation: dc-shim 24s linear infinite; }
+    @keyframes dc-surf { to { transform: translateX(calc(var(--sh) * -6)); } }
+    @keyframes dc-shim { to { background-position: 240px 120px; } }
     .dc-rays { position: absolute; inset: 0; overflow: hidden; -webkit-mask-image: linear-gradient(#000, transparent 75%); mask-image: linear-gradient(#000, transparent 75%); opacity: calc(0.25 + var(--evk) * 0.6); }
     .dc-rays i { position: absolute; top: -10%; width: 12vw; height: 120%; background: linear-gradient(color-mix(in srgb, var(--evc2) 30%, transparent), transparent); transform-origin: 50% 0; animation: dc-ray 9s ease-in-out infinite alternate; }
     .dc-rays i:nth-child(1) { left: 8%; }
@@ -2099,65 +2120,231 @@
     };
     const svgUrl = (svg) => `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
     const f1 = (v) => v.toFixed(1);
-    // Tafla wody oglądana od spodu: jasne wypełnienie nad falą i sama linia fali.
-    function waveTop(w, n, minY, maxY) {
-      const pts = Array.from({ length: n + 1 }, (_, i) => [(i * w) / n, rnd(minY, maxY)]);
-      let line = `M0 ${f1(pts[0][1])}`;
-      for (let i = 1; i <= n; i++) {
-        const mx = f1((pts[i - 1][0] + pts[i][0]) / 2);
-        line += ` C${mx} ${f1(pts[i - 1][1])} ${mx} ${f1(pts[i][1])} ${f1(pts[i][0])} ${f1(pts[i][1])}`;
-      }
-      return { line, fill: `M0 0 L${line.slice(1)} L${w} 0 Z` };
+    // Tafla wody oglądana od spodu: powtarzalny kafel fali (całkowita liczba okresów — przesuwany bez szwu):
+    // srebrzysta powierzchnia nad linią fali, jasny grzbiet z poświatą i drobne zmarszczki.
+    function surfSvg(base, amp, seed) {
+      const W = 480;
+      const ph = [seed * 1.7, seed * 2.9, seed * 4.3];
+      const y = (x, k = 1, d = 0) => base + d + amp * k * (Math.sin((x / W) * TAU * 2 + ph[0]) + 0.42 * Math.sin((x / W) * TAU * 5 + ph[1]) + 0.2 * Math.sin((x / W) * TAU * 9 + ph[2]));
+      const line = (k, d) => {
+        let p = `M0 ${f1(y(0, k, d))}`;
+        for (let x = 8; x <= W; x += 8) p += ` L${x} ${f1(y(x, k, d))}`;
+        return p;
+      };
+      const crest = line(1, 0);
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} 80" preserveAspectRatio="none"><defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.34"/><stop offset="1" stop-color="#fff" stop-opacity="0.08"/></linearGradient></defs>`
+        + `<path d="M0 0 L${crest.slice(1)} L${W} 0 Z" fill="url(#s)"/>`
+        + `<path d="${crest}" fill="none" stroke="#fff" stroke-width="6" opacity="0.14"/>`
+        + `<path d="${crest}" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.85"/>`
+        + `<path d="${line(0.7, -7)}" fill="none" stroke="#fff" stroke-width="0.9" opacity="0.32"/>`
+        + `<path d="${line(0.5, -13)}" fill="none" stroke="#fff" stroke-width="0.7" opacity="0.2"/></svg>`;
     }
     // Pajęczyna w rogu (od punktu 0,0): nitki promieniste i obwisłe łuki.
     function webSvg(size) {
-      const n = 7;
-      const ang = (i) => (i / (n - 1)) * (Math.PI / 2);
-      let d = '';
-      for (let i = 0; i < n; i++) d += `M0 0 L${f1(Math.cos(ang(i)) * size)} ${f1(Math.sin(ang(i)) * size)} `;
-      for (const r of [0.22, 0.4, 0.58, 0.76, 0.94]) {
-        const R = r * size;
+      // Nici promieniste pod nieregularnymi kątami, spirala z łukami obwisłymi ku środkowi, krople rosy i zerwana nić.
+      const n = 8;
+      const angs = Array.from({ length: n }, (_, i) => (i / (n - 1)) * (Math.PI / 2) * 0.94 + 0.03 + (i && i < n - 1 ? rnd(-0.07, 0.07) : 0));
+      const lens = angs.map(() => size * rnd(0.9, 1));
+      const pt = (a, r) => [Math.cos(a) * r, Math.sin(a) * r];
+      let radial = '';
+      for (let i = 0; i < n; i++) {
+        const [x, y] = pt(angs[i], lens[i]);
+        const [mx, my] = pt(angs[i] + rnd(-0.02, 0.02), lens[i] * 0.5);
+        radial += `M0 0 Q${f1(mx)} ${f1(my)} ${f1(x)} ${f1(y)} `;
+      }
+      let spiral = '';
+      const drops = [];
+      let r = size * 0.1;
+      let broke = false;
+      while (r < size * 0.93) {
         for (let i = 0; i < n - 1; i++) {
-          const am = (ang(i) + ang(i + 1)) / 2;
-          d += `M${f1(Math.cos(ang(i)) * R)} ${f1(Math.sin(ang(i)) * R)} Q${f1(Math.cos(am) * R * 0.84)} ${f1(Math.sin(am) * R * 0.84)} ${f1(Math.cos(ang(i + 1)) * R)} ${f1(Math.sin(ang(i + 1)) * R)} `;
+          const r0 = r * rnd(0.95, 1.05);
+          const r1 = (r + size * 0.012) * rnd(0.95, 1.05);
+          r += size * 0.0115;
+          if (r0 > lens[i] * 0.97 || r1 > lens[i + 1] * 0.97) continue;
+          const [x0, y0] = pt(angs[i], r0);
+          const [x1, y1] = pt(angs[i + 1], r1);
+          const am = (angs[i] + angs[i + 1]) / 2;
+          const [cx, cy] = pt(am, ((r0 + r1) / 2) * rnd(0.8, 0.88));
+          // Jedna nić zerwana: zwisa luźno w dół.
+          if (!broke && r > size * 0.55 && i === 3 && Math.random() < 0.5) {
+            broke = true;
+            spiral += `M${f1(x0)} ${f1(y0)} q${f1(rnd(-4, 4))} ${f1(size * 0.08)} ${f1(rnd(-2, 2))} ${f1(size * 0.16)} `;
+            continue;
+          }
+          spiral += `M${f1(x0)} ${f1(y0)} Q${f1(cx)} ${f1(cy)} ${f1(x1)} ${f1(y1)} `;
+          if (Math.random() < 0.09) {
+            const t = rnd(0.3, 0.7);
+            drops.push([(1 - t) * (1 - t) * x0 + 2 * t * (1 - t) * cx + t * t * x1, (1 - t) * (1 - t) * y0 + 2 * t * (1 - t) * cy + t * t * y1]);
+          }
+        }
+        r += size * 0.045;
+      }
+      const dew = drops.map(([x, y]) => { const d = rnd(0.9, 1.7); return `<circle cx="${f1(x)}" cy="${f1(y + d * 0.6)}" r="${f1(d)}" fill="rgba(225,235,255,0.75)"/><circle cx="${f1(x - d * 0.3)}" cy="${f1(y + d * 0.3)}" r="${f1(d * 0.35)}" fill="#fff"/>`; }).join('');
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}"><path d="${radial}" fill="none" stroke="rgba(236,232,255,0.7)" stroke-width="1.15"/><path d="${spiral}" fill="none" stroke="rgba(232,228,255,0.55)" stroke-width="0.8"/>${dew}</svg>`;
+    }
+    // Pająk (widziany z góry, zwisa na nici): przegubowe odnóża, odwłok z pomarańczowym wzorem, świecące oczy.
+    const SPIDER = (() => {
+      const legs = [];
+      // Na każdą stronę 4 odnoża: [kąt wyjścia, długość uda, długość goleni, zgięcie].
+      const L = [[-60, 11, 13, 40], [-25, 12, 14, 32], [20, 11, 13, -30], [52, 12, 15, -40]];
+      for (const side of [-1, 1]) {
+        for (const [a, l1, l2, bend] of L) {
+          const ax = 30 + side * 4;
+          const ay = 37 + a / 30;
+          const r1 = ((side > 0 ? -a : 180 + a) * Math.PI) / 180;
+          const kx = ax + Math.cos(r1) * l1;
+          const ky = ay - Math.sin(r1) * l1 - 4;
+          const r2 = r1 + (side * bend * Math.PI) / 180;
+          const fx = kx + Math.cos(r2) * l2;
+          const fy = ky - Math.sin(r2) * l2 + 6;
+          legs.push(`<path d="M${f1(ax)} ${f1(ay)} L${f1(kx)} ${f1(ky)}" stroke-width="2.3"/><path d="M${f1(kx)} ${f1(ky)} L${f1(fx)} ${f1(fy)}" stroke-width="1.4"/>`);
         }
       }
-      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}"><path d="${d}" fill="none" stroke="rgba(232,226,255,0.55)" stroke-width="1"/></svg>`;
+      return `<svg viewBox="0 0 60 64" aria-hidden="true"><defs><radialGradient id="spa" cx="0.38" cy="0.32" r="0.75"><stop offset="0" stop-color="#5a4470"/><stop offset="0.45" stop-color="#22142e"/><stop offset="1" stop-color="#0b0610"/></radialGradient><radialGradient id="spc" cx="0.4" cy="0.35" r="0.7"><stop offset="0" stop-color="#4a3a5c"/><stop offset="1" stop-color="#0e0814"/></radialGradient></defs>`
+        + `<g fill="none" stroke="#120a1a" stroke-linecap="round" stroke-linejoin="round">${legs.join('')}</g>`
+        + '<ellipse cx="30" cy="22" rx="10.5" ry="13" fill="url(#spa)"/>'
+        + '<path d="M30 12 l3.2 4 -3.2 3.2 -3.2 -3.2 z M30 21 l3.6 4.4 -3.6 3.6 -3.6 -3.6 z" fill="#ff7a18" opacity="0.9"/>'
+        + '<g fill="#ffb347" opacity="0.8"><circle cx="24.5" cy="20" r="1.2"/><circle cx="35.5" cy="20" r="1.2"/><circle cx="25.5" cy="27" r="1"/><circle cx="34.5" cy="27" r="1"/></g>'
+        + '<ellipse cx="27" cy="16" rx="3" ry="4.5" fill="#fff" opacity="0.13" transform="rotate(-20 27 16)"/>'
+        + '<ellipse cx="30" cy="38.5" rx="7" ry="6.5" fill="url(#spc)"/>'
+        + '<g fill="#ff3b1f"><circle cx="27.6" cy="42.6" r="1.25"/><circle cx="32.4" cy="42.6" r="1.25"/><circle cx="29" cy="40.8" r="0.8"/><circle cx="31" cy="40.8" r="0.8"/></g>'
+        + '<g fill="#ffd0a0"><circle cx="27.3" cy="42.2" r="0.4"/><circle cx="32.1" cy="42.2" r="0.4"/></g>'
+        + '<path d="M28 44.5 q-1 2.4 -2.6 3 M32 44.5 q1 2.4 2.6 3" fill="none" stroke="#120a1a" stroke-width="1.4" stroke-linecap="round"/></svg>';
+    })();
+    // Girlanda: sznurek zwisa łukami między szpilkami, chorągiewki z materiału (cieniowanie, obszycie, fałda,
+    // cień) idą za nachyleniem sznurka i kołyszą się każda osobno.
+    function buntingSvg(colors) {
+      const W = 1400;
+      const SEG = 350;
+      const SAG = 24;
+      const pinY = [7, 4, 8, 5, 7];
+      const yAt = (x) => {
+        const k = Math.min(3, Math.floor(x / SEG));
+        const t = (x - k * SEG) / SEG;
+        return pinY[k] + (pinY[k + 1] - pinY[k]) * t + SAG * 4 * t * (1 - t);
+      };
+      let rope = '';
+      for (let k = 0; k < 4; k++) {
+        const x0 = k * SEG;
+        rope += `${k ? '' : `M0 ${pinY[0]}`} Q${x0 + SEG / 2} ${f1((pinY[k] + pinY[k + 1]) / 2 + SAG * 2)} ${x0 + SEG} ${pinY[k + 1]}`;
+      }
+      const grads = colors.map((col, i) => `<linearGradient id="bg${i}" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="${hexMix(col, '#ffffff', 0.35)}"/><stop offset="0.45" stop-color="${col}"/><stop offset="1" stop-color="${hexMix(col, '#000000', 0.32)}"/></linearGradient>`).join('');
+      let flags = '';
+      let i = 0;
+      for (let x = 18; x < W - 8; x += 34) {
+        if ([350, 700, 1050].some((p) => Math.abs(x - p) < 11)) continue;
+        const y = yAt(x);
+        const ang = (Math.atan2(yAt(x + 1) - yAt(x - 1), 2) * 180) / Math.PI;
+        const ci = i % colors.length;
+        const dark = hexMix(colors[ci], '#000000', 0.45);
+        const len = 28 + (i % 3) * 2;
+        const tip = f1(rnd(-1.5, 1.5));
+        const shape = `M-11.5 0 L11.5 0 Q7 ${f1(len * 0.5)} ${tip} ${len} Q-7 ${f1(len * 0.5)} -11.5 0 Z`;
+        flags += `<g transform="translate(${x} ${f1(y)}) rotate(${f1(ang)})"><g class="fl" style="animation-delay:${f1(-rnd(0, 2.6))}s;animation-duration:${f1(rnd(2.2, 3.2))}s">`
+          + `<path d="${shape}" fill="#000" opacity="0.28" transform="translate(1.6 2.6)"/>`
+          + `<path d="${shape}" fill="url(#bg${ci})"/>`
+          + `<path d="M-11.5 0 L11.5 0 L11 3.6 L-11 3.6 Z" fill="${dark}" opacity="0.55"/>`
+          + `<path d="M-3.5 4 Q-1.8 ${f1(len * 0.45)} ${f1(tip * 0.6)} ${f1(len * 0.86)}" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity="0.22"/>`
+          + `<path d="M4.5 4 Q3 ${f1(len * 0.4)} 1.5 ${f1(len * 0.7)}" fill="none" stroke="${dark}" stroke-width="1.2" stroke-linecap="round" opacity="0.35"/></g></g>`;
+        i += 1;
+      }
+      const pins = [0, 350, 700, 1050, 1400].map((x, k) => `<circle cx="${x}" cy="${pinY[k]}" r="3.4" fill="#d9dde6" stroke="#5b6170" stroke-width="1.2"/>`).join('');
+      return `<svg class="dc-bunting" viewBox="0 0 ${W} 72" preserveAspectRatio="xMidYMin slice" aria-hidden="true"><defs>${grads}</defs><path d="${rope}" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="2.2" transform="translate(1 2)"/><path d="${rope}" fill="none" stroke="#e9e4d8" stroke-width="1.6"/>${flags}${pins}</svg>`;
     }
-    const SPIDER = '<svg viewBox="0 0 40 40" aria-hidden="true"><g stroke="#1a0f24" stroke-width="2" fill="none" stroke-linecap="round"><path d="M20 20 L8 12 L4 4"/><path d="M20 20 L6 18 L1 14"/><path d="M20 22 L6 26 L2 32"/><path d="M20 24 L9 32 L7 39"/><path d="M20 20 L32 12 L36 4"/><path d="M20 20 L34 18 L39 14"/><path d="M20 22 L34 26 L38 32"/><path d="M20 24 L31 32 L33 39"/></g><ellipse cx="20" cy="25" rx="7" ry="8.5" fill="#1a0f24"/><circle cx="20" cy="15" r="4.6" fill="#1a0f24"/><circle cx="18.3" cy="14.4" r="1.1" fill="#ff7a18"/><circle cx="21.7" cy="14.4" r="1.1" fill="#ff7a18"/></svg>';
+    // Chmury burzowe (obraz SVG): rozmyte pasma i plamy przepuszczone przez turbulencję i przemieszczenie — puszyste,
+    // postrzępione brzegi. Od tyłu: dalekie smugi, masa chmury, jaśniejsze kłęby, ciemne spody i ciemna góra.
+    function stormSvg(seed) {
+      let s = seed;
+      const rand = (a, b) => a + ((s = (s * 16807) % 2147483647) / 2147483647) * (b - a);
+      const W = 2400;
+      const f0 = (v) => v.toFixed(0);
+      const band = (y0, amp, step) => {
+        let d = `M-200 -200 H${W + 200} V${y0}`;
+        for (let x = W + 200; x > -200; x -= step) {
+          const y = y0 + rand(-amp, amp);
+          d += ` Q${f0(x - step / 2)} ${f0(y + amp * rand(0.4, 1.1))} ${f0(x - step)} ${f0(y)}`;
+        }
+        return `${d} Z`;
+      };
+      const blobs = (n, y0, y1, rx0, rx1, ry0, ry1) => Array.from({ length: n }, (_, i) => `<ellipse cx="${f0((i + rand(0.1, 0.9)) * (W / n))}" cy="${f0(rand(y0, y1))}" rx="${f0(rand(rx0, rx1))}" ry="${f0(rand(ry0, ry1))}"/>`).join('');
+      const filt = (id, freq, oct, scale, blur, sd) => `<filter id="${id}" x="-10%" y="-60%" width="120%" height="220%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceGraphic" stdDeviation="${blur}" result="b"/><feTurbulence type="fractalNoise" baseFrequency="${freq}" numOctaves="${oct}" seed="${sd}" result="n"/><feDisplacementMap in="b" in2="n" scale="${scale}" xChannelSelector="R" yChannelSelector="G"/></filter>`;
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} 240" preserveAspectRatio="xMidYMin slice"><defs>${filt('w', '0.006 0.02', 4, 160, 16, seed + 3)}${filt('a', '0.008 0.016', 5, 150, 14, seed)}${filt('l', '0.011 0.02', 4, 120, 13, seed + 21)}${filt('c', '0.012 0.024', 4, 90, 9, seed + 13)}</defs>`
+        + `<g filter="url(#w)" fill="#3c4560" opacity="0.75">${blobs(12, 138, 160, 110, 190, 14, 22)}</g>`
+        + `<path d="${band(118, 24, 170)}" fill="#252c43" filter="url(#a)"/>`
+        + `<g filter="url(#l)" fill="#77819f" opacity="0.6">${blobs(17, 66, 112, 50, 110, 20, 34)}</g>`
+        + `<g filter="url(#c)" fill="#0d111f">${blobs(16, 122, 144, 50, 95, 12, 20)}</g>`
+        + `<path d="${band(44, 16, 140)}" fill="#0e1221" filter="url(#c)" opacity="0.92"/></svg>`;
+    }
     // Gałąź od lewej krawędzi (jesień: liście, sakura: kwiaty — w CSS lustrzane odbicie dla prawego rogu).
     function branchSvg(kind, colors) {
       const c = (i) => colors[i % colors.length];
-      const wood = kind === 'leaves' ? '#4a2e1f' : '#3d2622';
-      const twigs = '<path d="M-6 10 C40 18 90 26 150 52 C180 66 205 80 232 104" stroke-width="6"/><path d="M90 26 C104 44 112 58 116 78" stroke-width="3.5"/><path d="M150 52 C170 46 190 44 212 46" stroke-width="3"/><path d="M40 17 C50 30 54 40 56 52" stroke-width="2.5"/>';
+      const autumn = kind === 'leaves';
+      const wood = autumn ? '#5a3a26' : '#4a2c2a';
+      // Konary: zwężające się (odcinki z coraz cieńszą kreską), obrys, jaśniejszy grzbiet i spękania kory.
+      const bez = (p, t) => {
+        const u = 1 - t;
+        return [0, 1].map((k) => u * u * u * p[0][k] + 3 * u * u * t * p[1][k] + 3 * u * t * t * p[2][k] + t * t * t * p[3][k]);
+      };
+      const limbs = [
+        [[[-6, 10], [40, 18], [90, 26], [150, 52]], 8, 4.6],
+        [[[150, 52], [180, 66], [205, 80], [232, 104]], 4.6, 1.8],
+        [[[90, 26], [104, 44], [112, 58], [116, 78]], 3.6, 1.4],
+        [[[150, 52], [170, 46], [190, 44], [212, 46]], 3.2, 1.3],
+        [[[40, 17], [50, 30], [54, 40], [56, 52]], 2.8, 1.1],
+      ];
+      const pass = (dw, col, dy, kw, op) => limbs.map(([p, w0, w1]) => {
+        let d = '';
+        const N = 14;
+        for (let k = 0; k < N; k++) {
+          const a = bez(p, k / N);
+          const b = bez(p, (k + 1) / N);
+          const w = (w0 + (w1 - w0) * (k / N)) * kw + dw;
+          d += `<path d="M${f1(a[0])} ${f1(a[1] + dy * w)} L${f1(b[0])} ${f1(b[1] + dy * w)}" stroke-width="${f1(w)}"/>`;
+        }
+        return d;
+      }).join('');
+      const bark = `<g fill="none" stroke-linecap="round"><g stroke="#1c110b">${pass(1.6, '', 0, 1, 1)}</g><g stroke="${wood}">${pass(0, '', 0, 1, 1)}</g><g stroke="${hexMix(wood, '#ffffff', 0.28)}" opacity="0.55">${pass(0, '', -0.2, 0.32, 1)}</g></g>`;
+      const cracks = Array.from({ length: 9 }, (_, i) => {
+        const [x, y] = bez(limbs[0][0], 0.08 + i * 0.1);
+        return autumn ? `<path d="M${f1(x)} ${f1(y - 1.5)} l${f1(rnd(3, 6))} ${f1(rnd(0.5, 1.5))}" stroke="#2a1a10" stroke-width="0.8" opacity="0.6"/>` : `<path d="M${f1(x)} ${f1(y)} h${f1(rnd(2, 3.5))}" stroke="#b08a80" stroke-width="0.9" stroke-linecap="round" opacity="0.55"/>`;
+      }).join('');
       const spots = [[24, 14, 40], [44, 30, 110], [56, 52, 70], [70, 22, 60], [96, 34, 130], [112, 58, 80], [116, 80, 100], [138, 46, 20], [158, 60, 140], [176, 48, -20], [198, 44, 30], [214, 48, 70], [208, 84, 120], [230, 104, 70], [128, 52, 160]];
+      // Liść klonu: pięć klap z ząbkami, żyłki od ogonka; ogonek w (0, 0), liść skierowany w górę (−y).
+      const MAPLE = 'M0 -9 L-6 -10 L-7 -13 L-13 -11 L-17 -14 L-19 -16 L-15 -18 L-16 -21 L-12 -22 L-14 -26 L-18 -30 L-15 -31 L-12 -30 L-9 -29 L-8 -32 L-6 -31 L-5 -35 L-2 -36 L0 -40 L2 -36 L5 -35 L6 -31 L8 -32 L9 -29 L12 -30 L15 -31 L18 -30 L14 -26 L12 -22 L16 -21 L15 -18 L19 -16 L17 -14 L13 -11 L7 -13 L6 -10 Z';
+      const VEINS = 'M0 0 L0 -37 M0 -9 L-15 -30 M0 -9 L15 -30 M0 -8 L-18 -16 M0 -8 L18 -16';
+      const grads = [];
       const leaf = (x, y, r, i) => {
         const col = c(i);
-        return `<path d="M0 0 C5 -6 15 -6 20 0 C15 6 5 6 0 0 Z M0 0 L20 0" transform="translate(${x} ${y}) rotate(${r}) scale(${(0.9 + (i % 4) * 0.14).toFixed(2)})" fill="${col}" stroke="${hexMix(col, '#000000', 0.45)}" stroke-width="0.8"/>`;
+        grads.push(`<linearGradient id="lf${i}" x1="0" y1="1" x2="0.2" y2="0"><stop offset="0" stop-color="${hexMix(col, '#000000', 0.28)}"/><stop offset="0.55" stop-color="${col}"/><stop offset="1" stop-color="${hexMix(col, '#ffd27a', 0.35)}"/></linearGradient>`);
+        return `<g transform="translate(${x} ${y}) rotate(${r + 90}) scale(${(0.52 + (i % 4) * 0.06).toFixed(2)})"><path d="M0 0 L0 -9" stroke="${hexMix(col, '#000000', 0.4)}" stroke-width="1.6"/><path d="${MAPLE}" fill="url(#lf${i})" stroke="${hexMix(col, '#000000', 0.45)}" stroke-width="0.9" stroke-linejoin="round"/><path d="${VEINS}" fill="none" stroke="${hexMix(col, '#fff2c8', 0.45)}" stroke-width="0.9" opacity="0.7"/></g>`;
       };
+      // Kwiat wiśni: pięć płatków z wcięciem na końcu, różowiejących ku brzegom, pręciki z pylnikami.
+      const PETAL = 'M0 0 C-4 -2 -6.2 -7 -4.6 -10.6 C-3.6 -12.2 -1.4 -12.2 0 -10.2 C1.4 -12.2 3.6 -12.2 4.6 -10.6 C6.2 -7 4 -2 0 0 Z';
       const flower = (x, y, r, i) => {
         const col = c(i);
-        const s = 6 + (i % 3) * 1.6;
-        const petals = [0, 72, 144, 216, 288].map((a) => `<ellipse cx="0" cy="${f1(-s * 0.55)}" rx="${f1(s * 0.44)}" ry="${f1(s * 0.6)}" transform="rotate(${a + r})" fill="${col}"/>`).join('');
-        return `<g transform="translate(${x} ${y})">${petals}<circle r="${f1(s * 0.24)}" fill="#ffe08a"/></g>`;
+        grads.push(`<radialGradient id="pf${i}" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="12"><stop offset="0" stop-color="#fff6fa"/><stop offset="0.45" stop-color="${hexMix(col, '#ffffff', 0.55)}"/><stop offset="1" stop-color="${hexMix(col, '#ff6f9f', 0.25)}"/></radialGradient>`);
+        const k = (0.7 + (i % 3) * 0.12).toFixed(2);
+        const petals = [0, 72, 144, 216, 288].map((a) => `<path d="${PETAL}" transform="rotate(${a + r})" fill="url(#pf${i})" stroke="${hexMix(col, '#c2386b', 0.4)}" stroke-width="0.5"/>`).join('');
+        const stamens = Array.from({ length: 9 }, (_, j) => {
+          const a = ((j / 9) * 360 + r) * (Math.PI / 180);
+          const l = 4.2 + (j % 2) * 1.1;
+          return `<path d="M0 0 L${f1(Math.cos(a) * l)} ${f1(Math.sin(a) * l)}" stroke="#f3a6c4" stroke-width="0.5"/><circle cx="${f1(Math.cos(a) * l)}" cy="${f1(Math.sin(a) * l)}" r="0.75" fill="#ffcf5a"/>`;
+        }).join('');
+        return `<g transform="translate(${x} ${y}) scale(${k})">${petals}<circle r="2" fill="#e85d8f" opacity="0.7"/>${stamens}<circle r="0.9" fill="#b5e08a"/></g>`;
       };
-      const items = spots.map(([x, y, r], i) => (kind === 'leaves' ? leaf(x, y, r, i) : i % 4 === 3 ? `<circle cx="${x}" cy="${y}" r="3" fill="${hexMix(c(i), '#ffffff', 0.3)}"/>` : flower(x, y, r, i))).join('');
-      return `<svg viewBox="-6 0 252 130" aria-hidden="true"><g fill="none" stroke="${wood}" stroke-linecap="round">${twigs}</g>${items}</svg>`;
+      const bud = (x, y, r, i) => `<g transform="translate(${x} ${y}) rotate(${r + 90}) scale(0.8)"><path d="M0 0 L0 -4" stroke="#6b3a2a" stroke-width="1.2"/><path d="M0 -3 C-3.4 -6 -3.6 -11 0 -14 C3.6 -11 3.4 -6 0 -3 Z" fill="${hexMix(c(i), '#ff5c93', 0.3)}" stroke="#b8336a" stroke-width="0.5"/><path d="M-2.4 -4 Q0 -8 2.4 -4 L0 -2.6 Z" fill="#7a3a2a"/></g>`;
+      const sprig = (x, y, r) => `<g transform="translate(${x} ${y}) rotate(${r})"><path d="M0 0 C3 -4 9 -5 13 -1 C9 3 3 3 0 0 Z" fill="#8cbf5a" stroke="#4f7a2c" stroke-width="0.5"/><path d="M0 0 L12 -1" stroke="#4f7a2c" stroke-width="0.5"/></g>`;
+      const items = spots.map(([x, y, r], i) => (autumn ? leaf(x, y, r, i) : i % 4 === 3 ? bud(x, y, r, i) : i % 5 === 1 ? sprig(x, y, r) + flower(x + 3, y + 2, r, i) : flower(x, y, r, i))).join('');
+      return `<svg viewBox="-6 0 252 130" aria-hidden="true"><defs>${grads.join('')}</defs>${bark}${cracks}${items}</svg>`;
     }
     function decoHtml(theme, colors) {
       const c = (i) => colors[i % colors.length];
       const byLum = [...colors].sort((a, b) => lum(a) - lum(b));
       switch (theme) {
-        case 'confetti': {
-          // Girlanda z chorągiewkami u góry strony (baloniki lecą w tle jako cząsteczki).
-          const flags = Array.from({ length: 6 }, (_, i) => {
-            const x = 20 + i * 40;
-            const t = x / 240;
-            const y = 3 + 80 * t * (1 - t);
-            return `<path d="M${x - 12} ${f1(y - 1)} L${x + 12} ${f1(y + 1)} L${x + 1} ${f1(y + 22)} Z" fill="${c(i)}"/>`;
-          }).join('');
-          return { top: `<svg class="dc-bunting" width="100%" height="50"><defs><pattern id="dcb" width="240" height="50" patternUnits="userSpaceOnUse"><path d="M0 3 Q120 43 240 3" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.4"/>${flags}</pattern></defs><rect width="100%" height="50" fill="url(#dcb)"/></svg>` };
-        }
+        case 'confetti':
+          // Girlanda z materiałowych chorągiewek u góry strony (baloniki lecą w tle jako cząsteczki).
+          return { top: buntingSvg(colors) };
         case 'snow':
           // Szron w rogach ekranu (śnieg na kartach i zaspa na dole zbierają się w świecie nad stroną).
           return { front: '<div class="dc-frost"></div>' };
@@ -2195,17 +2382,14 @@
           // Kwitnąca gałąź wiśni w prawym rogu strony i różowe światło z góry.
           return { top: `<div class="dc-branch r">${branchSvg('sakura', colors)}</div>`, back: '<div class="dc-glow"></div>' };
         case 'storm': {
-          // Ciemne chmury u góry strony; błyskawica rozświetla karty i chmury (klasa ev-flash).
-          const cloud = (x, y, s) => `<g transform="translate(${f1(x)} ${f1(y)}) scale(${s.toFixed(2)})"><ellipse rx="62" ry="22"/><ellipse cx="-32" cy="-8" rx="32" ry="20"/><ellipse cx="22" cy="-15" rx="36" ry="25"/><ellipse cx="52" cy="-2" rx="27" ry="16"/></g>`;
-          const row = (dx, dy) => Array.from({ length: 10 }, (_, i) => cloud(i * 140 + dx + rnd(-25, 25), dy + rnd(0, 18), rnd(0.8, 1.25))).join('');
-          return { top: `<svg class="dc-clouds" viewBox="0 0 1400 90" preserveAspectRatio="xMidYMin slice"><g fill="#262d45" stroke="rgba(150, 170, 225, 0.28)" stroke-width="1.2" opacity="0.94">${row(70, 18)}</g><g fill="#141927" opacity="0.96">${row(0, 4)}</g></svg>` };
+          // Ciężkie chmury na całą szerokość u góry strony; piorun rozświetla karty, a chmury świecą od środka (ev-flash).
+          return { vars: { '--dc-cloud': svgUrl(stormSvg(1 + Math.floor(rnd(1, 9000)))) }, sky: '<div class="dc-sky"><div><i></i><b></b></div></div>' };
         }
         case 'bubbles': {
-          // Tafla wody u góry strony (widziana od spodu), promienie światła i refleksy wody w tle.
-          const wave = waveTop(1200, 14, 12, 30);
+          // Tafla wody na całą szerokość u góry strony (widziana od spodu), promienie światła i refleksy wody w tle.
           return {
-            vars: { '--dc-caustic': `url("${causticUrl()}")` },
-            top: `<svg class="dc-water" viewBox="0 0 1200 36" preserveAspectRatio="none"><defs><linearGradient id="dcw" x1="0" y1="0" x2="0" y2="1"><stop offset="0"/><stop offset="1"/></linearGradient></defs><path class="fill" d="${wave.fill}" fill="url(#dcw)"/><path class="line" d="${wave.line}"/></svg>`,
+            vars: { '--dc-caustic': `url("${causticUrl()}")`, '--dc-wave-a': svgUrl(surfSvg(28, 5.5, rnd(0, 9))), '--dc-wave-b': svgUrl(surfSvg(36, 3.6, rnd(0, 9))) },
+            sky: '<div class="dc-surf"><i></i><i></i><i></i></div>',
             back: '<div class="dc-rays"><i></i><i></i><i></i><i></i></div><div class="dc-caustic"></div>',
           };
         }
@@ -2236,7 +2420,7 @@
     };
     function pageFx(fx) {
       document.querySelectorAll('.ev-deco').forEach((node) => node.remove());
-      for (const v of ['--evk', '--dc-cap', '--dc-web', '--dc-stars', '--dc-caustic', '--dc-hat', '--hw', '--ht', '--hx', '--hr', '--ha', '--hat-anim', '--hat-pad']) document.body.style.removeProperty(v);
+      for (const v of ['--evk', '--dc-cap', '--dc-web', '--dc-stars', '--dc-caustic', '--dc-cloud', '--dc-hat', '--hw', '--ht', '--hx', '--hr', '--ha', '--hat-anim', '--hat-pad']) document.body.style.removeProperty(v);
       document.body.classList.toggle('ev-page', Boolean(fx));
       document.body.classList.remove('has-hat');
       if (!fx) return;
@@ -2253,11 +2437,14 @@
       const layer = (where, html) => `<div class="ev-deco ${where} d-${fx.theme}" aria-hidden="true">${html}</div>`;
       if (parts.back) $('.bg').insertAdjacentHTML('afterend', layer('back', parts.back));
       if (parts.top) $('main').insertAdjacentHTML('afterbegin', layer('top', parts.top));
+      if (parts.sky) document.body.insertAdjacentHTML('afterbegin', layer('sky', parts.sky));
       if (parts.front) document.body.insertAdjacentHTML('beforeend', layer('front', parts.front));
     }
     // Burza: błysk pioruna w tle na chwilę rozświetla karty i chmury.
     let flashTimer = 0;
     function flashPage() {
+      // Rozbłysk w chmurach w losowym miejscu.
+      document.querySelector('.dc-sky')?.style.setProperty('--lx', `${Math.round(rnd(8, 92))}%`);
       document.body.classList.add('ev-flash');
       clearTimeout(flashTimer);
       flashTimer = setTimeout(() => document.body.classList.remove('ev-flash'), 170);
