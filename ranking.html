@@ -696,7 +696,7 @@
 
     /* Pasek podglądu (ranking.html?preview=… z panelu) */
     .pv-bar {
-      position: fixed; left: 50%; bottom: 14px; z-index: 60; transform: translateX(-50%);
+      position: fixed; left: 50%; top: 14px; z-index: 60; transform: translateX(-50%);
       display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px;
       width: max-content; max-width: calc(100vw - 24px); padding: 8px 10px; border-radius: 12px;
       border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 90%, transparent);
@@ -710,7 +710,6 @@
     .pv-color { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
     .pv-color input[type="checkbox"] { width: 16px; height: 16px; margin: 0; accent-color: var(--evc); }
     .pv-color input[type="color"] { width: 32px; height: 32px; padding: 2px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); cursor: pointer; }
-    body:has(.pv-bar) footer { padding-bottom: 64px; }
 
     /* ---------- Siła efektu na całej stronie (gdy wydarzenie trwa, klasa ev-page) ----------
        --evk: 0,32 subtelne · 0,65 normalne · 1 mocne. „Bez efektów” = sam baner, strona bez zmian. */
@@ -2092,6 +2091,9 @@
     const fxReady = () => Boolean(ev.pick && ev.pick.status === 'active' && !reduceMotion.matches && ev.fx?.level && !ev.paused && ev.world);
     function burst() {
       if (fxReady()) ev.world.burst();
+    }
+    function happen() {
+      if (fxReady()) ev.world.happen?.();
     }
     // Wciśnięcie przycisku na stronie: lepienie śnieżki z leżącego śniegu, klikanie w dynie, dmuchanie bańki, magnes
     // na monety, a przy normalnej i mocnej intensywności — efekt kliknięcia (piorun, wir liści, armatka konfetti…).
@@ -6337,7 +6339,7 @@
         const scaleNow = () => clamp(h / 900, 0.75, 1.05) * (w < 640 ? 1 : 1.2);
         const right = () => (tools.length ? w - 100 * toolScale : w * 0.95);
         const footAt = (x) => (caps && ground.w ? surfTop(ground, clamp(x, 0, Math.max(1, ground.w - 1))) : h) + hopOffset(ground);
-        const onScreen = (o) => !o.gone && o.x > 0 && o.x < w;
+        const onScreen = (o) => !o.gone && !o.hide && o.x > 0 && o.x < w;
         const others = (f) => ppl.filter((o) => o !== f && onScreen(o) && o.state !== 'leave');
         const beat = () => clock * 0.2;
         const dark = (c, k = 0.42) => hexMix(c, '#000000', k);
@@ -6393,6 +6395,7 @@
         function say(f, text, t) {
           f.say = text;
           f.sayT = t ?? 55 + text.length * 3.2;
+          f.sayAt = now;
         }
         // Podstawienia: {n} — nick kogoś obok (w odpowiedzi: nick pytającego), {lvl} — własny poziom,
         // {mult} — mnożnik wydarzenia, {c} — licznik motywu (np. zebrane monety).
@@ -6409,24 +6412,165 @@
           });
           return [out, to];
         }
-        // Bez powtórek: ostatnio użyte kwestie czekają, aż padną inne.
+        // Bez powtórek: ostatnio użyte kwestie i dialogi czekają, aż padną inne.
         const recent = [];
         function fresh(lines) {
           const pool = lines.filter((l) => !recent.includes(l));
           const pick = pickOne(pool.length ? pool : lines);
           recent.push(pick);
-          if (recent.length > 16) recent.shift();
+          if (recent.length > 18) recent.shift();
           return pick;
         }
+        // Pojedyncza kwestia; para [kwestia, odpowiedź] albo zaczepka po nicku — krótka wymiana zdań twarzą w twarz.
         function talk(f, lines, t) {
           const pick = fresh(lines);
           const [lineText, back] = Array.isArray(pick) ? pick : [pick, null];
           const [text, to] = fill(lineText, f);
+          const who = to ?? (back ? pickOne(others(f).filter((o) => Math.abs(o.x - f.x) < 360 && canTalk(o))) : null);
+          if (who && !who.convo && !f.convo && canTalk(who) && (back || Math.random() < 0.6)) {
+            startTalk(f, who, [[0, text], [1, back ?? pickOne(S.reply ?? REPLY)]], true);
+            return;
+          }
           say(f, text, t);
-          const who = to ?? (back ? pickOne(others(f).filter((o) => Math.abs(o.x - f.x) < 360 && o.sayT <= 0)) : null);
-          if (!who || who.replyT > 0 || (!back && Math.random() > 0.6)) return;
-          who.replyT = rnd(55, 95);
-          who.reply = fill(back ?? pickOne(S.reply ?? REPLY), who, f)[0];
+        }
+
+        // ---- Rozmowy: dwie osoby podchodzą do siebie (siedzący rozmawiają w miejscu), odwracają się twarzą
+        // i mówią na zmianę, z gestami. Linia dialogu: [kto (0 — A, 1 — B), tekst, gest?, akcja?]. ----
+        const convos = [];
+        const SEATED = ['picnic', 'roast', 'sit', 'lie', 'scope'];
+        const CHATTY = ['idle', 'walk', 'dance', 'disco', 'rake', 'hunt', 'gaze', 'hold', 'wait', 'chat'];
+        const canTalk = (o) => onScreen(o) && o.x > 30 && o.x < w - 30 && !o.convo && !o.event && !o.hide && o.sayT <= 0 && (CHATTY.includes(o.state) || SEATED.includes(o.state)) && !S.busy?.(o);
+        const fillLine = (text, A, B) => text.replace(/\{(A|B|lvlA|lvlB|mult|cA|cB)\}/g, (_, k) => ({ A: A.short, B: B.short, lvlA: String(A.lvl || '?'), lvlB: String(B.lvl || '?'), mult, cA: String(A.count ?? 0), cB: String(B.count ?? 0) })[k]);
+        function startTalk(A, B, lines, shout = false) {
+          if (!lines?.length || A === B || A.gone || B.gone) return false;
+          for (const o of [A, B]) if (o.convo) endTalk(o.convo);
+          const c = { A, B, lines, i: 0, wait: 8, t: 0, phase: 'talk', shout };
+          A.convo = c;
+          B.convo = c;
+          // Pływający przestają płynąć i rozmawiają w miejscu.
+          for (const o of [A, B]) {
+            if (o.float && o.state === 'walk' && !o.event) {
+              set(o, 'idle');
+              o.wait = Infinity;
+            }
+          }
+          const seatA = SEATED.includes(A.state) || A.float;
+          const seatB = SEATED.includes(B.state) || B.float;
+          if (!shout && !(seatA && seatB)) {
+            const gap = 21 * A.s;
+            if (seatA || seatB) {
+              const fixed = seatA ? A : B;
+              const mover = seatA ? B : A;
+              const side = Math.sign(mover.x - fixed.x) || 1;
+              mover.tx = clamp(fixed.x + side * (gap + 6 * A.s), 30, right());
+              set(mover, 'meet');
+            } else {
+              const mid = clamp((A.x + B.x) / 2, 40, right() - 40);
+              const left = A.x < B.x;
+              A.tx = mid + (left ? -gap : gap);
+              B.tx = mid + (left ? gap : -gap);
+              set(A, 'meet');
+              set(B, 'meet');
+            }
+            c.phase = 'meet';
+          }
+          convos.push(c);
+          return true;
+        }
+        function endTalk(c) {
+          const i = convos.indexOf(c);
+          if (i >= 0) convos.splice(i, 1);
+          for (const o of [c.A, c.B]) {
+            if (o.convo !== c) continue;
+            o.convo = null;
+            if (o.gest === 'listen') o.gestT = 0;
+            if (o.state === 'meet' || o.state === 'chat' || (o.float && o.state === 'idle' && o.wait === Infinity && !o.event)) {
+              set(o, 'idle');
+              o.wait = o.event ? Infinity : rnd(40, 120);
+            }
+          }
+        }
+        const CUT = ['hit', 'down', 'zap', 'leave', 'wave', 'scared', 'leap', 'sprint', 'dodge'];
+        function talkTick(c, dt) {
+          const { A, B } = c;
+          if ([A, B].some((o) => o.gone || o.hide || o.convo !== c || CUT.includes(o.state) || (o.event && !c.shout))) return endTalk(c);
+          c.t += dt;
+          if (c.phase === 'meet') {
+            if (A.state !== 'meet' && B.state !== 'meet') {
+              c.phase = 'talk';
+              c.wait = 6;
+            } else if (c.t > 420) endTalk(c);
+            return;
+          }
+          // Twarzą do siebie (chyba że ktoś jest w trakcie innej czynności — wtedy tylko mówi).
+          for (const [o, p] of [[A, B], [B, A]]) if (o.state === 'chat' || o.state === 'idle' || SEATED.includes(o.state)) o.dir = Math.sign(p.x - o.x) || o.dir;
+          c.wait -= dt;
+          if (c.wait > 0) return;
+          if (c.i >= c.lines.length) return endTalk(c);
+          const [who, text, gest, act] = c.lines[c.i++];
+          const sp = who ? B : A;
+          const ls = who ? A : B;
+          ls.sayT = 0;
+          say(sp, fillLine(text, A, B));
+          sp.gest = gest || pickOne(['talk', 'talk', 'talk', 'point', 'shrug']);
+          sp.gestT = Math.min(90, sp.sayT);
+          if (!(ls.gestT > 0) || ls.gest === 'listen' || ls.gest === 'talk') {
+            ls.gest = 'listen';
+            ls.gestT = sp.sayT;
+          }
+          act?.(A, B);
+          c.wait = sp.sayT * 0.85 + 12;
+        }
+        // Gesty w trakcie mówienia (nakładane na pozę czynności; ręka zajęta parasolem czy wężem zostaje w spokoju).
+        function gesture(f, q, t) {
+          if (!(f.gestT > 0)) return;
+          const k = S.gestArm?.(f) ?? 1;
+          const s = `s${k}`;
+          const e = `e${k}`;
+          switch (f.gest) {
+            case 'talk':
+              q[s] = 0.85 + 0.35 * Math.sin(t * 0.22);
+              q[e] = 1.05 + 0.35 * Math.sin(t * 0.31);
+              break;
+            case 'point':
+              q[s] = 1.5;
+              q[e] = 0.05;
+              break;
+            case 'shrug':
+              q.s1 = 0.35;
+              q.e1 = 1.5;
+              q.s2 = 0.3;
+              q.e2 = 1.5;
+              q.tilt = 0.2;
+              break;
+            case 'facepalm':
+              q[s] = 0.75;
+              q[e] = 2.45;
+              q.tilt = 0.35;
+              q.lean += 0.1;
+              break;
+            case 'laugh':
+              q.lean = -0.2 + 0.07 * Math.sin(t * 0.8);
+              q.tilt = -0.3;
+              break;
+            case 'listen':
+              q.tilt = 0.09 * Math.sin(t * 0.09);
+              break;
+            case 'clap': {
+              const c = Math.sin(t * 0.55);
+              q.s1 = 1.3 + 0.15 * c;
+              q.s2 = 1.2 - 0.15 * c;
+              q.e1 = 0.7 + 0.25 * c;
+              q.e2 = 0.7 - 0.25 * c;
+              break;
+            }
+            case 'up':
+              q.s1 = 2.7;
+              q.e1 = 0.2;
+              q.s2 = 2.6;
+              q.e2 = 0.2;
+              break;
+          }
         }
         function spot(f, zone) {
           const [a, b] = zone ?? S.zone?.(f) ?? [Math.max(w * 0.05, 30), right()];
@@ -6508,6 +6652,8 @@
         }
         function finish() {
           ending = true;
+          stopEvent();
+          for (const c of [...convos]) endTalk(c);
           if (S.finish) return S.finish();
           for (const f of ppl) {
             if (f.state === 'leave' || f.gone) continue;
@@ -6525,9 +6671,10 @@
           switch (f.state) {
             case 'walk':
             case 'leave':
-            case 'run': {
+            case 'run':
+            case 'meet': {
               const sw = Math.sin(f.phase);
-              const r = f.state === 'run' ? 1.45 : 1;
+              const r = f.state === 'run' || f.hurry ? 1.45 : 1;
               q.a1 = 0.5 * sw * r;
               q.a2 = -0.5 * sw * r;
               q.k1 = 0.12 + 0.8 * r * Math.max(0, Math.cos(f.phase));
@@ -6626,6 +6773,8 @@
             q.k2 = 0.5;
           }
           S.pose?.(f, q, t);
+          f.event?.def.pose?.(f, q, t, f.event);
+          gesture(f, q, t);
           return q;
         }
         // Kinematyka: z kątów — punkty stawów w układzie strony (lustrzane odbicie dla patrzących w lewo, obrót).
@@ -6694,19 +6843,26 @@
 
         function think(f, dt) {
           const t = f.t;
-          if (S.think?.(f, dt, t)) return;
+          if (f.event) {
+            if (f.event.def.think?.(f, dt, t, f.event)) return;
+          } else if (S.think?.(f, dt, t)) return;
           switch (f.state) {
             case 'walk':
             case 'leave':
-            case 'run': {
+            case 'run':
+            case 'meet': {
               const dx = f.tx - f.x;
-              const sp = (f.state === 'run' ? 2.1 : f.state === 'leave' ? 1.25 : 0.95) * f.s * (S.speed?.(f) ?? 1);
+              const sp = (f.state === 'run' ? 2.1 : f.state === 'leave' ? (f.hurry ? 2.3 : 1.25) : 0.95) * f.s * (S.speed?.(f) ?? 1);
               if (Math.abs(dx) > 2) {
                 f.dir = Math.sign(dx);
                 f.x += Math.sign(dx) * Math.min(Math.abs(dx), sp * dt);
                 f.phase += (f.state === 'run' ? 0.3 : 0.19) * dt;
               } else if (f.state === 'leave') f.gone = true;
-              else if (S.arrive) S.arrive(f);
+              else if (f.state === 'meet') set(f, 'chat');
+              else if (f.event) {
+                set(f, 'idle');
+                f.wait = Infinity;
+              } else if (S.arrive) S.arrive(f);
               else {
                 set(f, 'idle');
                 f.wait = rnd(80, 220);
@@ -6718,6 +6874,12 @@
               if (t > f.wait) {
                 if (S.next) S.next(f);
                 else walkTo(f, spot(f));
+              }
+              break;
+            case 'chat':
+              if (!f.convo) {
+                set(f, 'idle');
+                f.wait = rnd(30, 80);
               }
               break;
             case 'jump':
@@ -6752,12 +6914,15 @@
           if (ctx.roundRect) ctx.roundRect(x, y, ww, hh, r);
           else ctx.rect(x, y, ww, hh);
         }
-        function speech(x, y, text, s) {
+        function bubbleBox(x, y, text, s) {
           ctx.font = `700 ${Math.round(11 * s + 1)}px Rubik, system-ui, sans-serif`;
           const pw = ctx.measureText(text).width + 12 * s;
           const ph = 18 * s;
-          const bx = clamp(x - pw / 2, 4, w - pw - 4);
-          const by = Math.max(4, y - ph - 6 * s);
+          return [clamp(x - pw / 2, 4, w - pw - 4), Math.max(4, y - ph - 6 * s), pw, ph];
+        }
+        function speech(x, y, text, s, top = null) {
+          const [bx, natural, pw, ph] = bubbleBox(x, y, text, s);
+          const by = top ?? natural;
           ctx.globalAlpha = 1;
           ctx.fillStyle = 'rgba(255, 255, 255, 0.96)';
           rrect(bx, by, pw, ph, 7 * s);
@@ -6896,6 +7061,7 @@
           }
           S.neck?.(f, j);
           S.hand?.(f, j);
+          f.event?.def.hand?.(f, j, f.event);
           ctx.save();
           ctx.translate(j.head[0], j.head[1]);
           ctx.rotate(j.ang);
@@ -6910,18 +7076,62 @@
           S.front?.(f, j);
           ctx.lineCap = 'round';
           const top = j.head[1] - R * 1.75 - 3 * s - (S.tall?.(f) ?? 0) * R;
-          const flat = Math.abs(f.pose.rot) > 0.8;
-          if (!flat) {
-            ctx.font = `600 ${Math.round(10 * s + 1)}px Rubik, system-ui, sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'bottom';
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = 'rgba(5, 10, 22, 0.75)';
-            ctx.strokeText(f.name, j.head[0], top);
-            ctx.fillStyle = 'rgba(236, 242, 252, 0.95)';
-            ctx.fillText(f.name, j.head[0], top);
+          tags.push({ f, x: j.head[0], y: top, s, flat: Math.abs(f.pose.rot) > 0.8 });
+        }
+        // Imiona i dymki rysowane po wszystkich ludzikach: nachodzące na siebie podpisy piętrzą się,
+        // a dymek nie chowa się za inną postacią ani pod cudzym dymkiem (nowszy wchodzi nad starszy).
+        const tags = [];
+        const overlap = (a, b) => a.x < b.x + b.w + 6 && b.x < a.x + a.w + 6 && a.y < b.y + b.h && b.y < a.y + a.h;
+        function stackUp(boxes, gap) {
+          const placed = [];
+          for (const b of boxes) {
+            for (let k = 0; k < 8; k++) {
+              const hit = placed.find((p) => overlap(b, p));
+              if (!hit) break;
+              b.y = hit.y - b.h - gap;
+            }
+            placed.push(b);
           }
-          if (f.sayT > 0) speech(j.head[0], top - (flat ? 0 : 13 * s), f.say, s);
+        }
+        function drawNames() {
+          const boxes = [];
+          for (const g of tags) {
+            if (g.flat) continue;
+            g.font = `600 ${Math.round(10 * g.s + 1)}px Rubik, system-ui, sans-serif`;
+            ctx.font = g.font;
+            const tw = ctx.measureText(g.f.name).width;
+            const th = 10 * g.s + 3;
+            g.nx = clamp(g.x, tw / 2 + 3, w - tw / 2 - 3);
+            boxes.push({ g, x: g.nx - tw / 2, y: g.y - th, w: tw, h: th });
+          }
+          boxes.sort((u, v) => u.x - v.x);
+          stackUp(boxes, 1);
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.lineWidth = 3;
+          for (const b of boxes) {
+            const g = b.g;
+            g.y = b.y + b.h;
+            ctx.font = g.font;
+            ctx.strokeStyle = 'rgba(5, 10, 22, 0.75)';
+            ctx.strokeText(g.f.name, g.nx, g.y);
+            ctx.fillStyle = 'rgba(236, 242, 252, 0.95)';
+            ctx.fillText(g.f.name, g.nx, g.y);
+          }
+        }
+        function drawBubbles() {
+          const boxes = [];
+          for (const g of tags) {
+            const f = g.f;
+            if (!(f.sayT > 0)) continue;
+            const ay = g.y - (g.flat ? 0 : 13 * g.s);
+            const [x, y, bw, bh] = bubbleBox(g.x, ay, f.say, g.s);
+            boxes.push({ g, ay, x, y, w: bw, h: bh, at: f.sayAt ?? 0 });
+          }
+          boxes.sort((u, v) => u.at - v.at);
+          stackUp(boxes, 3);
+          for (const b of boxes) speech(b.g.x, b.ay, b.g.f.say, b.g.s, b.y);
+          tags.length = 0;
         }
 
         // ---- Motywy ----
@@ -6958,6 +7168,7 @@
         }
         function struck(f, p) {
           f.hits += 1;
+          if (p.owner) f.grudge = p.owner;
           if (p.owner) p.owner.side === 0 ? (TEAMS[0].score += 1) : (TEAMS[1].score += 1);
           const from = Math.sign(p.vx) || -f.dir;
           f.vx = from * 2.2 * f.s;
@@ -7066,7 +7277,12 @@
                     else if (f.hits >= 3) {
                       set(f, 'down');
                       say(f, pickOne(['Leżę i nie wstaję', 'Zostawcie mnie tu', 'W śniegu jest wygodnie', 'Wygraliście. Na razie']), 90);
-                    } else walkTo(f, spot(f));
+                    } else {
+                      walkTo(f, spot(f));
+                      const g = f.grudge;
+                      f.grudge = null;
+                      if (g && !g.gone && onScreen(g) && Math.random() < 0.45) startTalk(f, g, [[0, `${g.short}, za co?`, 'point'], [1, pickOne(['Za wczoraj', 'Z sympatii', 'Bo było blisko', 'Odruch'])], [0, pickOne(['Zapamiętam to', 'Dobra, wojna', 'Rozumiem'])]], true);
+                    }
                   }
                   return true;
                 case 'down':
@@ -7182,8 +7398,19 @@
             },
             hit(p) {
               if (p.toward) return false;
+              for (let i = snowmen.length - 1; i >= 0; i--) {
+                const sm = snowmen[i];
+                const s = scaleNow();
+                const gy = footAt(sm.x);
+                if (Math.abs(p.x - sm.x) > 15 * s || p.y < gy - 62 * s || p.y > gy) continue;
+                snowmen.splice(i, 1);
+                poof(sm.x, gy - 30 * s, 16, 0, -1, 1.3);
+                for (let k = 0; k < 24; k++) add({ t: 'clump', x: sm.x + rnd(-14, 14) * s, y: gy - rnd(0, 55) * s, vx: rnd(-2.5, 2.5), vy: -rnd(1, 4), g: 0.2, drag: 0.99, r: rnd(1.2, 2.6), vol: 6, z: 0, wall: true });
+                crowdSay(['Nieee, bałwan!', 'Kto to zrobił?!', 'Bałwan nie żyje'], p.owner);
+                return true;
+              }
               for (const f of ppl) {
-                if (!f.j || f.gone || f.state === 'down' || f.state === 'leave') continue;
+                if (!f.j || f.gone || f.hide || f.state === 'down' || f.state === 'leave') continue;
                 if (p.owner && p.owner.side === f.side) continue;
                 if (touches(f, p.x, p.y, p.r * 0.75)) {
                   struck(f, p);
@@ -7359,6 +7586,7 @@
           fire: fire
             ? {
                 n: () => clamp(Math.floor(w / 300) + 1, 2, 6),
+                gestArm: (f) => (f.role === 'hose' ? 2 : 1),
                 setup(f, i) {
                   f.role = i % 3 === 2 ? 'bucket' : 'hose';
                   f.color = '#f5c518';
@@ -7522,6 +7750,7 @@
                   set(f, 'roast');
                   f.wait = rnd(500, 900);
                 },
+                next: (f) => walkTo(f, f.seat ?? spot(f)),
                 busy: () => false,
                 chat: [
                   ['{n}, twoja pianka się pali', 'Tak lubię'],
@@ -7680,7 +7909,9 @@
               }
               if (f.state === 'boo') {
                 if (t > 50) {
-                  say(f, pickOne(['Hehe', 'Ta mina', 'Mwahaha']));
+                  const v = f.victim;
+                  if (v && !v.gone && onScreen(v) && Math.random() < 0.6) startTalk(v, f, [[0, 'Nie rób tak więcej', 'point'], [1, 'Obiecuję', 'laugh'], [0, 'Kłamiesz'], [1, 'Trochę', 'shrug']], true);
+                  else say(f, pickOne(['Hehe', 'Ta mina', 'Mwahaha']));
                   set(f, 'idle');
                   f.wait = rnd(60, 140);
                 }
@@ -8041,11 +8272,18 @@
                 if (a.age >= a.life) {
                   for (let k = 0; k < 12; k++) add(fxPop('hearts', a.x + rnd(-10, 10), a.y + rnd(-6, 6)));
                   add({ t: 'ring', x: a.x, y: a.y, vx: 0, vy: 0, r: 6, grow: 3, lw: 2, c: '#ff5c8a', a: 0.9, life: 18, noLand: true });
-                  for (const o of [a.to, a.to?.mate]) {
-                    if (!o || o.gone) continue;
-                    hop(o, 3);
-                    say(o, pickOne(['Ała', 'To było celne', 'Coś czuję. To strzała', 'Hm, romantycznie', '<3']));
-                  }
+                  for (const o of [a.to, a.to?.mate]) if (o && !o.gone) hop(o, 3);
+                  if (a.to && a.to.mate && !a.to.gone && !a.to.mate.gone) {
+                    // Pierwsza strzała to odkrycie; kolejne w tę samą parę — już tylko zmęczenie Kupidynem.
+                    const again = [
+                      [[0, 'Znowu?'], [1, 'Chyba ma za dużo strzał']],
+                      [[0, 'Już jesteśmy razem, wystarczy', 'shrug'], [1, 'Powiedz to jemu', 'point']],
+                      [[0, 'Ile można'], [1, 'Do skutku, widocznie']],
+                    ];
+                    startTalk(a.to, a.to.mate, a.to.struck ? pickOne(again) : [[0, 'Coś mnie trafiło'], [1, 'Mnie też'], [0, 'To chyba miłość', 'shrug'], [1, 'To chyba Kupidyn', 'point']], true);
+                    a.to.struck = true;
+                    a.to.mate.struck = true;
+                  } else if (a.to && !a.to.gone) say(a.to, pickOne(['Ała', 'To było celne', '<3']));
                   arrows.splice(i, 1);
                 }
               }
@@ -8088,6 +8326,7 @@
                 if (f.role === 'astro') f.tx = scope.x - 14 * f.s;
               });
             },
+            next: (f) => walkTo(f, f.role === 'astro' ? scope.x - 14 * f.s : spot(f)),
             arrive(f) {
               if (f.role === 'astro') {
                 f.dir = 1;
@@ -8385,6 +8624,8 @@
                 for (let k = 0; k < 10; k++) add(fxPop('leaves', f.x + rnd(-20, 20), f.y - 8));
                 say(f, pickOne(['Juhu', 'Warto było', 'Liście wszędzie']));
                 set(f, 'lie');
+                const r = ppl.find((o) => o !== f && o.role === 'rake' && onScreen(o) && Math.abs(o.x - f.x) < 280 && !o.event);
+                if (r && Math.random() < 0.6) startTalk(r, f, [[0, 'Moja kupka…', 'facepalm'], [1, 'Była idealna do skakania', 'shrug'], [0, 'Grabisz od nowa', 'point']], true);
               } else if (f.state === 'jump') set(f, 'idle');
             },
             pose(f, q, t) {
@@ -8401,7 +8642,7 @@
             hat: (f, R) => beanie(f, R, f.role === 'jumper' ? '#d9822b' : '#a3361b', '#f2c14e'),
             neck: (f, j) => scarf(f, j, '#e8b04a'),
             hand(f, j) {
-              if (f.state !== 'rake' && f.state !== 'idle' && f.state !== 'walk') return;
+              if (f.noRake || (f.state !== 'rake' && f.state !== 'idle' && f.state !== 'walk')) return;
               if (f.role === 'jumper' && f.state !== 'rake') return;
               // Grabie: trzonek przez obie dłonie aż do ziemi, na końcu wachlarz zębów.
               const s = f.s;
@@ -8435,6 +8676,7 @@
                 f.role = 'sit';
                 f.cup = Math.random() < 0.6;
                 f.tx = blanket.x - blanket.w / 2 + ((i + 0.5) * blanket.w) / sitters.length;
+                f.seat = f.tx;
               });
               for (const f of ppl) if (!f.role) f.role = 'photo';
             },
@@ -8448,7 +8690,7 @@
                 set(f, 'photo');
               }
             },
-            next: (f) => walkTo(f, spot(f, [Math.max(30, blanket.x - blanket.w), Math.min(right(), blanket.x + blanket.w)])),
+            next: (f) => walkTo(f, f.role === 'sit' && f.seat != null ? f.seat : spot(f, [Math.max(30, blanket.x - blanket.w), Math.min(right(), blanket.x + blanket.w)])),
             busy: () => false,
             chat: [
               ['{n}, podasz herbatę?', 'Jest zimna, ostrzegam'],
@@ -8768,6 +9010,7 @@
               f.lie = 90;
             },
             speed: (f) => (Math.sign(wind.x) === -f.dir ? 0.7 : 1.1),
+            gestArm: (f) => (f.umb ? 2 : 1),
             busy: (f) => f.state === 'zap' || f.state === 'down',
             chat: [
               ['{n}, wejdziesz pod parasol?', 'Za mały na dwoje'],
@@ -8790,8 +9033,10 @@
               }
               if (f.state === 'down') {
                 if (t >= f.lie + 24) {
-                  say(f, pickOne(['Żyję. Chyba', 'Teraz świecę w ciemności', 'Ale kopnęło']));
                   walkTo(f, spot(f));
+                  const o = pickOne(others(f).filter(canTalk));
+                  if (o && Math.random() < 0.6) startTalk(o, f, [[0, 'Żyjesz?'], [1, 'Chyba'], [0, 'Trochę świecisz', 'point'], [1, 'Wiem', 'facepalm']], true);
+                  else say(f, pickOne(['Żyję. Chyba', 'Teraz świecę w ciemności', 'Ale kopnęło']));
                 }
                 return true;
               }
@@ -8803,7 +9048,7 @@
                 const f = pickOne(ppl.filter((o) => o.umb && o.flip <= 0 && onScreen(o) && o.state !== 'zap' && o.state !== 'down'));
                 if (f) {
                   f.flip = 110;
-                  say(f, pickOne(['Mój parasol!', 'No nie', 'Na drugą stronę, super']));
+                  say(f, fresh(['Mój parasol!', 'No nie', 'Na drugą stronę, super', 'Parasol odwołany']));
                 }
               }
               // Krople rozbijają się na parasolach.
@@ -8967,7 +9212,7 @@
             },
             pose(f, q, t) {
               const sw = Math.sin(f.phase * 1.6);
-              if (f.state === 'walk' || f.state === 'leave') {
+              if (['walk', 'leave', 'run', 'meet'].includes(f.state)) {
                 Object.assign(q, { rot: f.dir * 1.42, lean: 0, tilt: -0.5, a1: 0.32 * sw, a2: -0.32 * sw, k1: 0.25, k2: 0.25, s1: 2.95 + 0.3 * Math.sin(f.phase), e1: 0.1, s2: 2.95 - 0.3 * Math.sin(f.phase), e2: 0.1 });
               } else {
                 const k = Math.sin(t * 0.08);
@@ -9092,7 +9337,7 @@
               }
               event -= dt;
               if (event > 0 || ending) return;
-              const calm = (o) => onScreen(o) && o.x > 40 && o.x < w - 40 && (o.state === 'idle' || o.state === 'walk');
+              const calm = (o) => onScreen(o) && o.x > 40 && o.x < w - 40 && !o.event && !o.convo && (o.state === 'idle' || o.state === 'walk');
               const neo = ppl.find((o) => o.role === 'neo' && calm(o));
               const ag = pickOne(ppl.filter((o) => o.role === 'agent' && calm(o)));
               if (!neo || !ag) {
@@ -9156,6 +9401,1314 @@
         };
         const S = SCRIPTS[theme];
         if (!S) return null;
+
+        // ---- Dialogi: wspólne i dla motywu. Tablica linii albo funkcja (A, B) → linie (null, gdy nie pasuje). ----
+        const throwAt = (A, B) => {
+          if (!A.j) return;
+          A.aim = B;
+          release(A);
+        };
+        const DIALOGS = [
+          [[0, '{B}, masz chwilę?'], [1, 'Zależy na co'], [0, 'Ile masz XP?', 'point'], [1, 'Więcej niż ty', 'shrug'], [0, 'To nie mam pytań', 'facepalm']],
+          [[0, 'Sprawdzał ktoś dziś ranking?'], [1, 'Co pięć minut'], [0, 'I jak?'], [1, 'Bez zmian. Jak moje życie', 'shrug']],
+          [[0, '{B}, wbijasz na voice?'], [1, 'A kto jest?'], [0, 'Nikt'], [1, 'Idealnie, wbijam', 'laugh']],
+          (A, B) => (A.lvl && B.lvl && A.lvl !== B.lvl ? [[0, 'Mam {lvlA} level. A ty?'], [1, '{lvlB}'], A.lvl > B.lvl ? [0, 'Czyli rządzę', 'laugh'] : [0, 'Dobra, nie było pytania', 'facepalm'], A.lvl > B.lvl ? [1, 'Na razie', 'point'] : [1, 'Hehe', 'laugh']] : null),
+          [[0, 'Kto tyle pisze na ogólnym?'], [1, 'Bot liczy każdą wiadomość'], [0, 'To dlatego masz tyle XP?', 'point'], [1, 'To się nazywa pracowitość', 'shrug']],
+          [[0, 'Wydarzenie {mult}. Co robisz?'], [1, 'Piszę'], [0, 'Co piszesz?'], [1, 'Cokolwiek. Liczy się {mult}', 'shrug']],
+          [[0, '{B}, pożyczysz trochę XP?'], [1, 'XP się nie pożycza'], [0, 'A szkoda', 'shrug']],
+          [[0, 'Podobno top 1 w ogóle nie śpi'], [1, 'Śpi. Na voice'], [0, 'To się liczy?'], [1, 'Liczy się wszystko', 'point']],
+          () => [[0, '{B}, ile ci brakuje do awansu?'], [1, `${Math.floor(rnd(1, 10)) * 100} XP`], [0, 'Sporo'], [1, 'Wiem. Nie przypominaj', 'facepalm']],
+          [[0, 'Co tu robicie?'], [1, 'Stoimy'], [0, 'Mogę postać z wami?'], [1, 'Jasne, miejsca jest dużo']],
+          [[0, 'Kto wczoraj siedział do czwartej na voice?'], [1, 'Nikt'], [0, 'Było cię słychać', 'point'], [1, 'To był ktoś inny', 'shrug']],
+          [[0, '{B}, czemu masz tyle wiadomości?'], [1, 'Odpisuję wszystkim'], [0, 'Na wszystko?'], [1, 'Nawet na „ok”', 'shrug']],
+        ];
+        const TALKS = {
+          snow: [
+            [[0, '{B}, rozejm?'], [1, 'Dobra, rozejm'], [0, 'Na pewno?'], [1, 'Na pewno'], [0, 'Psikus', 'laugh', throwAt]],
+            [[0, 'Ile masz śnieżek?'], [1, 'Trzy'], [0, 'Ja dziesięć'], [1, 'Kłamiesz'], [0, 'Sprawdź', 'point', throwAt]],
+            [[0, '{B}, przejdziesz do nas?'], [1, 'A co macie?'], [0, 'Ciepłą herbatę'], [1, 'Kuszące. Ale nie', 'shrug']],
+            [[0, 'Mam lodowate ręce'], [1, 'Trzeba było wziąć rękawiczki'], [0, 'Mam rękawiczki'], [1, 'To czemu…'], [0, 'Są mokre', 'facepalm']],
+          ],
+          confetti: [
+            [[0, 'Kto robi tę imprezę?'], [1, 'Nikt nie wie'], [0, 'A kto płaci?'], [1, 'Też nikt nie wie', 'shrug']],
+            [[0, 'Tańczysz?'], [1, 'Nie umiem'], [0, 'Nikt tu nie umie'], [1, 'No to tańczę', 'laugh', (A, B) => hop(B, 3)]],
+            [[0, '{B}, gdzie jest tort?'], [1, 'Jaki tort?'], [0, 'Miał być tort'], [1, 'Miał', 'shrug']],
+          ],
+          fire: fire
+            ? [
+                [[0, 'Skąd ten ogień?'], [1, 'Ktoś napisał „gorąca dyskusja”'], [0, 'I się zapaliło?'], [1, 'Dosłownie', 'shrug']],
+                [[0, '{B}, ile jeszcze wody?'], [1, 'Pół wiadra'], [0, 'A ognia?'], [1, 'Cały ekran', 'facepalm']],
+              ]
+            : [
+                [[0, 'Opowiem coś strasznego'], [1, 'Dawaj'], [0, 'Jutro reset rankingu', 'point'], [1, 'AAA', 'laugh']],
+                [[0, '{B}, twoja pianka się pali'], [1, 'Wiem'], [0, 'I nic nie robisz?'], [1, 'Lubię chrupiące', 'shrug']],
+              ],
+          halloween: [
+            [[0, 'Kim ty dziś jesteś?'], [1, 'Sobą'], [0, 'Strasznie'], [1, 'Dziękuję']],
+            [[0, 'Ile masz cukierków?'], [1, 'Zero'], [0, 'Zjedzone?'], [1, 'Wszystkie', 'shrug']],
+            [[0, 'Słyszysz to?'], [1, 'Co?'], [0, 'Nic. I to jest straszne', 'point']],
+          ],
+          hearts: [
+            [[0, 'Kupidyn znowu tu lata'], [1, 'Udawaj, że go nie ma'], [0, 'Za późno, celuje', 'point']],
+            [[0, 'Lubisz mnie?'], [1, 'W rankingu tak'], [0, 'A poza rankingiem?'], [1, 'Jest coś poza rankingiem?', 'shrug']],
+            [[0, '{B}, idziemy na randkę?'], [1, 'Gdzie?'], [0, 'Na voice'], [1, 'Romantyczne', 'laugh']],
+          ],
+          stars: [
+            [[0, 'Widzisz tę gwiazdę?'], [1, 'Którą?'], [0, 'Tę najjaśniejszą', 'point'], [1, 'To samolot'], [0, 'Znowu?', 'facepalm']],
+            [[0, 'Myślisz, że tam ktoś jest?'], [1, 'Na pewno'], [0, 'I też nabija XP?'], [1, 'Kosmiczne XP', 'point']],
+          ],
+          neon: [
+            [[0, 'Nauczysz mnie tańczyć?'], [1, 'Patrz i powtarzaj', 'point', (A, B) => hop(B, 2.6)], [0, 'Tak?', 'up', (A) => hop(A, 2.6)], [1, 'Prawie', 'shrug']],
+            [[0, 'Głośniej się nie da?'], [1, 'Da się'], [0, 'To czemu nie jest?'], [1, 'Sąsiedzi', 'shrug']],
+          ],
+          leaves: [
+            [[0, 'Po co grabimy?'], [1, 'Żeby było gdzie skakać'], [0, 'Logiczne', 'point']],
+            [[0, '{B}, to moje grabie'], [1, 'Były wolne'], [0, 'Stały pod drzewem'], [1, 'No właśnie, wolne', 'shrug']],
+          ],
+          sakura: [
+            [[0, 'Herbaty?'], [1, 'Poproszę'], [0, 'Skończyła się'], [1, 'To po co pytasz?', 'facepalm']],
+            [[0, 'Ładnie tu'], [1, 'Mhm'], [0, 'I cicho'], [1, 'Było cicho', 'shrug']],
+          ],
+          coins: [
+            [[0, 'Dzielimy się?'], [1, 'Pół na pół?'], [0, 'Ja pół, ty pół mojej połowy'], [1, 'Nie umiem liczyć, ale to brzmi źle', 'facepalm']],
+            (A, B) => [[0, 'Ile masz?'], [1, '{cB}'], A.count > B.count ? [0, 'Ja {cA}. Przykro mi', 'laugh'] : A.count < B.count ? [0, 'Ja tylko {cA}…', 'facepalm'] : [0, 'Ja też {cA}. Remis', 'shrug']],
+          ],
+          storm: [
+            [[0, 'Masz parasol?'], [1, 'Mam'], [0, 'To czemu ociekasz?'], [1, 'Przecieka od środka', 'shrug']],
+            [[0, 'Liczysz do grzmotu?'], [1, 'Raz… dwa…'], [0, 'I?'], [1, 'Za blisko. Chowamy się', 'point']],
+          ],
+          bubbles: [
+            [[0, 'Są tu rekiny?'], [1, 'Nie'], [0, 'Na pewno?'], [1, '…Płyńmy szybciej', 'point']],
+            [[0, 'Gdzie jest skarb?'], [1, 'Mapa zamokła'], [0, 'Była wodoodporna'], [1, 'Była', 'shrug']],
+          ],
+          matrix: [
+            [[0, 'Czerwona czy niebieska?'], [1, 'A jest zielona?'], [0, 'To nie tak działa', 'facepalm'], [1, 'Szkoda']],
+            [[0, 'Masz déjà vu?'], [1, 'Masz déjà vu?'], [0, 'Przestań', 'facepalm']],
+            [[0, '{B}, to tylko kod'], [1, 'To czemu boli?'], [0, 'Kod też boli', 'shrug']],
+          ],
+        };
+
+        // ---- Rzadkie wydarzenia w scenie (raz na kilka minut; w podglądzie można je wymusić) ----
+        let happening = null;
+        let evClock = rnd(2400, 4200);
+        let forced = false;
+        const snowmen = [];
+        const go = (E, step) => {
+          E.step = step;
+          E.t = 0;
+        };
+        const evFree = (o) => onScreen(o) && o.x > 40 && o.x < w - 40 && !o.event && !o.hide && !S.busy?.(o) && !['leave', 'wave', 'down', 'hit', 'zap', 'leap', 'sprint', 'dodge', 'scared', 'run'].includes(o.state);
+        function cast(E, f) {
+          if (f.convo) endTalk(f.convo);
+          f.event = E;
+          E.cast.push(f);
+        }
+        function uncast(E) {
+          for (const f of E.cast) {
+            if (f.event !== E) continue;
+            f.event = null;
+            f.hide = false;
+            f.noRake = false;
+            if (!f.gone && !['leave', 'run', 'walk'].includes(f.state)) {
+              set(f, 'idle');
+              f.wait = rnd(30, 90);
+            }
+          }
+        }
+        function look(x, except) {
+          for (const o of ppl) {
+            if (o === except || o.event || !onScreen(o)) continue;
+            o.look = x;
+            o.lookT = 150;
+          }
+        }
+        function crowdSay(lines, except) {
+          const o = pickOne(ppl.filter((x) => onScreen(x) && x !== except && !x.hide));
+          if (o) say(o, pickOne(lines));
+          return o;
+        }
+        function applaud(t = 110) {
+          for (const o of ppl) {
+            if (!onScreen(o) || o.hide) continue;
+            o.gest = 'clap';
+            o.gestT = t;
+          }
+        }
+        function trigger() {
+          const defs = EVENTS[theme];
+          if (!defs || happening || ending) return false;
+          for (const def of [...defs].sort(() => Math.random() - 0.5)) {
+            const E = def.start();
+            if (!E) continue;
+            E.def = def;
+            E.step ??= 0;
+            E.t = 0;
+            E.cast ??= [];
+            happening = E;
+            return true;
+          }
+          return false;
+        }
+        function stopEvent() {
+          if (!happening) return;
+          happening.def.stop?.(happening);
+          uncast(happening);
+          happening = null;
+        }
+        // Matrix: „włamanie” — teksty strony rozsypują się w znaki, ekran szarpie, zielony błysk.
+        function hackPage() {
+          glitch();
+          let n = 0;
+          for (const el of document.querySelectorAll(MX_SEL)) {
+            if (n > 70) break;
+            const r = el.getBoundingClientRect();
+            if (!r.width || r.bottom < 0 || r.top > h) continue;
+            decode(el);
+            n += 1;
+          }
+          document.querySelector('main')?.animate?.(
+            [{ transform: 'none' }, { transform: 'translate(-6px, 2px) skewX(-2deg)' }, { transform: 'translate(5px, -2px) skewX(2deg)' }, { transform: 'translate(-3px, 1px)' }, { transform: 'none' }],
+            { duration: 420, easing: 'steps(5)' },
+          );
+          add({ t: 'tint', x: 0, y: 0, vx: 0, vy: 0, life: 22, c: '#00ff66', instant: true, noLand: true });
+        }
+        function table(x, y, s, k) {
+          ctx.globalAlpha = k;
+          ctx.fillStyle = '#3b3f45';
+          ctx.fillRect(x - 18 * s, y - 26 * s, 36 * s, 3 * s);
+          stroke([[x - 15 * s, y - 23 * s], [x - 15 * s, y]], 2.2 * s, '#2a2d31');
+          stroke([[x + 15 * s, y - 23 * s], [x + 15 * s, y]], 2.2 * s, '#2a2d31');
+          ctx.globalAlpha = 1;
+        }
+        function drawSnowman(x, y, k, s, alpha = 1) {
+          const r1 = 15 * s * clamp(k * 3, 0, 1);
+          const r2 = 11 * s * clamp(k * 3 - 1, 0, 1);
+          const r3 = 8 * s * clamp(k * 3 - 2, 0, 1);
+          const y1 = y - r1 * 0.95;
+          const y2 = y1 - r1 * 0.8 - r2 * 0.75;
+          const y3 = y2 - r2 * 0.8 - r3 * 0.75;
+          if (r1 > 0.5) drawBall(x, y1, r1, 0.4, alpha);
+          if (r2 > 0.5) drawBall(x, y2, r2, 1.3, alpha);
+          if (r3 > 0.5) drawBall(x, y3, r3, 2.1, alpha);
+          ctx.globalAlpha = alpha;
+          if (k >= 1) {
+            stroke([[x - r2 * 0.8, y2], [x - r2 * 2.1, y2 - r2 * 0.9]], 1.6 * s, '#6b4226');
+            stroke([[x + r2 * 0.8, y2], [x + r2 * 2.1, y2 - r2 * 0.6]], 1.6 * s, '#6b4226');
+            dot(x - r3 * 0.35, y3 - r3 * 0.2, 1.2 * s, '#1a1a1a');
+            dot(x + r3 * 0.35, y3 - r3 * 0.2, 1.2 * s, '#1a1a1a');
+            ctx.fillStyle = '#ff8a1f';
+            ctx.beginPath();
+            ctx.moveTo(x, y3);
+            ctx.lineTo(x + r3 * 1.1, y3 + r3 * 0.18);
+            ctx.lineTo(x, y3 + r3 * 0.3);
+            ctx.fill();
+            for (let i = 0; i < 3; i++) dot(x, y2 - r2 * 0.4 + i * r2 * 0.4, 1.1 * s, '#1a1a1a');
+            ctx.fillStyle = '#16171b';
+            ctx.fillRect(x - r3 * 0.95, y3 - r3 * 0.95, r3 * 1.9, r3 * 0.22);
+            ctx.fillRect(x - r3 * 0.6, y3 - r3 * 1.75, r3 * 1.2, r3 * 0.85);
+          }
+          ctx.globalAlpha = 1;
+        }
+
+        const EVENTS = {
+          // Haker rozkłada stolik z laptopem, wpisuje komendy (terminal na ekranie) i „hakuje” stronę; agenci ruszają.
+          matrix: [
+            {
+              start() {
+                const hk = ppl.find((o) => o.role === 'neo' && evFree(o)) ?? pickOne(ppl.filter(evFree));
+                if (!hk) return null;
+                const E = { hk, x: clamp(w * rnd(0.3, 0.6), 160, right() - 160), tab: 0, lid: 0, type: 0, cast: [] };
+                cast(E, hk);
+                walkTo(hk, E.x);
+                say(hk, pickOne(['Dajcie mi minutę', 'Mam pomysł', 'Potrzymajcie kawę']));
+                return E;
+              },
+              tick(E, dt) {
+                const f = E.hk;
+                if (f.gone) return false;
+                if (E.step === 0) {
+                  if (f.state !== 'walk') {
+                    f.dir = 1;
+                    set(f, 'hackSet');
+                    go(E, 1);
+                  } else if (E.t > 900) return false;
+                } else if (E.step === 1) {
+                  E.tab = Math.min(1, E.t / 26);
+                  E.lid = clamp((E.t - 26) / 18, 0, 1);
+                  if (E.t > 56) {
+                    set(f, 'hack');
+                    say(f, 'Wchodzę do systemu');
+                    go(E, 2);
+                  }
+                } else if (E.step === 2) {
+                  E.type += dt;
+                  if (E.t > 80 && !E.asked) {
+                    E.asked = true;
+                    const o = pickOne(others(f).filter((x) => !x.event));
+                    if (o) startTalk(o, f, [[0, 'Co ty robisz?'], [1, 'Hakuję ranking', 'talk'], [0, 'To w ogóle legalne?', 'shrug'], [1, 'Nie pytaj']], true);
+                  }
+                  if (E.t > 290 && !f.convo) {
+                    hackPage();
+                    say(f, 'Jestem w środku', 90);
+                    go(E, 3);
+                  }
+                } else if (E.step === 3) {
+                  E.type += dt;
+                  if (E.t > 140 && !E.oops) {
+                    E.oops = true;
+                    say(f, pickOne(['Ups. Chyba za mocno', 'Dobra, cofam', 'To nie ten serwer']));
+                    for (const o of ppl) {
+                      if (o === f || o.role !== 'agent' || !onScreen(o) || o.event) continue;
+                      cast(E, o);
+                      walkTo(o, clamp(f.x + (o.x < f.x ? -70 : 70) * o.s, 20, w - 20), 'run');
+                      say(o, pickOne(['Mamy intruza', 'Stój!', 'Panie Anderson…']));
+                    }
+                  }
+                  if (E.t > 210) {
+                    set(f, 'idle');
+                    f.wait = Infinity;
+                    go(E, 4);
+                  }
+                } else {
+                  E.lid = Math.max(0, 1 - E.t / 14);
+                  E.tab = Math.max(0, 1 - (E.t - 14) / 18);
+                  if (E.t > 34) {
+                    say(f, 'Nie było mnie tu');
+                    f.event = null;
+                    f.hurry = true;
+                    leave(f);
+                    return false;
+                  }
+                }
+                return true;
+              },
+              think: (f, dt, t, E) => f === E.hk && (f.state === 'hackSet' || f.state === 'hack'),
+              pose(f, q, t) {
+                if (f.state === 'hack') Object.assign(q, { lean: 0.32, tilt: 0.25, s1: 1.25 + 0.14 * Math.sin(t * 1.7), e1: 0.55, s2: 1.15 + 0.14 * Math.sin(t * 1.9 + 1), e2: 0.62, k1: 0.15, k2: 0.15 });
+                else if (f.state === 'hackSet') Object.assign(q, { lean: 0.35, s1: 1.4, e1: 0.2, s2: 1.3, e2: 0.25 });
+              },
+              under(E) {
+                if (E.tab <= 0) return;
+                const s = E.hk.s;
+                const x = E.hk.x + 24 * s;
+                const y = footAt(x);
+                table(x, y, s, E.tab);
+                // Laptop: podstawa i klapa, która otwiera się od płasko do pionu; ekran świeci na zielono.
+                ctx.globalAlpha = E.tab;
+                ctx.fillStyle = '#1b1f23';
+                ctx.fillRect(x - 11 * s, y - 28.5 * s, 22 * s, 2.5 * s);
+                const a = Math.PI - (Math.PI + 1.35) * E.lid;
+                const hx = x + 10 * s;
+                const hy = y - 28 * s;
+                const L = 16 * s;
+                stroke([[hx, hy], [hx + Math.cos(a) * L, hy + Math.sin(a) * L]], 2.4 * s, '#1b1f23');
+                if (E.lid > 0.6) stroke([[hx - 1.6 * s, hy - 1 * s], [hx - 1.6 * s + Math.cos(a) * L * 0.9, hy - 1 * s + Math.sin(a) * L * 0.9]], 1.2 * s, Math.floor(now / 120) % 2 ? '#39ff88' : '#7dffb0');
+                ctx.globalAlpha = 1;
+              },
+              over(E) {
+                if (E.step < 2 || E.step > 3) return;
+                // Terminal na środku ekranu: komendy pisane znak po znaku.
+                const lines = ['$ ssh admin@entuzjasci', 'hasło: ********', 'ACCESS GRANTED', `$ ranking --top1 "${E.hk.short}"`, '[##########] 100%', 'GOTOWE. ZHAKOWANO'];
+                const shown = Math.floor(E.type * 0.5);
+                const sc = clamp(w / 900, 0.62, 1);
+                const bw = 360 * sc;
+                const bh = 150 * sc;
+                const bx = w / 2 - bw / 2;
+                const by = h * 0.26;
+                ctx.globalAlpha = 0.94;
+                ctx.fillStyle = 'rgba(2, 10, 4, 0.92)';
+                rrect(bx, by, bw, bh, 8 * sc);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(80, 255, 140, 0.65)';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                ctx.font = `600 ${Math.round(12 * sc + 1)}px ui-monospace, Menlo, Consolas, monospace`;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top';
+                let left = shown;
+                lines.forEach((ln, i) => {
+                  if (left <= 0) return;
+                  const part = ln.slice(0, left);
+                  left -= ln.length;
+                  ctx.fillStyle = i === 2 || i === 5 ? '#b6ffd0' : '#39ff88';
+                  ctx.fillText(part + (left < 0 && Math.floor(now / 300) % 2 ? '▋' : ''), bx + 12 * sc, by + 12 * sc + i * 21 * sc);
+                });
+                if (E.step === 3 && Math.floor(now / 180) % 2) {
+                  ctx.font = `800 ${Math.round(34 * sc)}px ui-monospace, Menlo, Consolas, monospace`;
+                  ctx.textAlign = 'center';
+                  ctx.fillStyle = '#39ff88';
+                  ctx.fillText('ZHAKOWANO', w / 2, by - 46 * sc);
+                }
+                ctx.globalAlpha = 1;
+              },
+            },
+          ],
+          // Lepienie bałwana; zostaje do końca sceny — można go zestrzelić śnieżką.
+          snow: [
+            {
+              start() {
+                const b = ppl.filter(evFree).sort((u, v) => Math.abs(u.x - w / 2) - Math.abs(v.x - w / 2)).slice(0, 3);
+                if (b.length < 2) return null;
+                const E = { x: clamp(w * rnd(0.4, 0.6), 120, right() - 120), size: 0, cast: [] };
+                b.forEach((f, i) => {
+                  cast(E, f);
+                  f.ball = false;
+                  walkTo(f, E.x + (i % 2 ? 1 : -1) * (26 + 16 * Math.floor(i / 2)) * f.s);
+                });
+                startTalk(b[0], b[1], [[0, 'Przerwa. Lepimy bałwana?'], [1, 'Dawaj']], true);
+                return E;
+              },
+              tick(E, dt) {
+                const b = E.cast.filter((f) => f.event === E && !f.gone);
+                if (!b.length) return false;
+                if (E.step === 0) {
+                  if (b.every((f) => f.state !== 'walk')) {
+                    b.forEach((f) => {
+                      f.dir = Math.sign(E.x - f.x) || 1;
+                      set(f, 'build');
+                    });
+                    go(E, 1);
+                  } else if (E.t > 900) return false;
+                } else if (E.step === 1) {
+                  E.size = Math.min(1, E.t / 280);
+                  if (Math.floor(E.t / 30) !== Math.floor((E.t - dt) / 30)) flakes(E.x, footAt(E.x), 3);
+                  if (E.size >= 1) {
+                    snowmen.push({ x: E.x });
+                    b.forEach((f) => {
+                      set(f, 'idle');
+                      f.wait = Infinity;
+                      f.gest = 'clap';
+                      f.gestT = 80;
+                    });
+                    say(pickOne(b), pickOne(['Arcydzieło', 'Piękny', `Wygląda jak ${pickOne(ppl).short}`]));
+                    go(E, 2);
+                  }
+                } else if (E.t > 110) return false;
+                return true;
+              },
+              think: (f, dt, t, E) => f.state === 'build',
+              pose(f, q, t) {
+                if (f.state !== 'build') return;
+                const r = Math.sin(t * 0.3);
+                Object.assign(q, { lean: 0.8, a1: 0.9, a2: 0.35, k1: 1.4, k2: 0.9, s1: 1.1 + 0.3 * r, e1: 0.3, s2: 1.0 - 0.3 * r, e2: 0.35 });
+              },
+              under(E) {
+                if (E.step === 1) drawSnowman(E.x, footAt(E.x) + 1, E.size, scaleNow());
+              },
+            },
+          ],
+          // Tort ze świeczkami: „Sto lat”, zdmuchiwanie, wybuch konfetti.
+          confetti: [
+            {
+              start() {
+                const x = clamp(w * rnd(0.4, 0.6), 140, right() - 140);
+                const free = ppl.filter(evFree).sort((u, v) => Math.abs(u.x - x) - Math.abs(v.x - x));
+                if (free.length < 3) return null;
+                const [host, star, ...rest] = free;
+                const E = { x, host, star, cast: [], candles: true, lyric: 0 };
+                cast(E, host);
+                cast(E, star);
+                host.cake = true;
+                walkTo(host, E.x - 24 * host.s);
+                walkTo(star, E.x + 26 * star.s);
+                rest.slice(0, 4).forEach((o, i) => {
+                  cast(E, o);
+                  walkTo(o, clamp(E.x + (i % 2 ? 1 : -1) * (58 + Math.floor(i / 2) * 26) * o.s, 30, right()));
+                });
+                say(host, `${star.short}, mamy coś dla ciebie`);
+                return E;
+              },
+              tick(E, dt) {
+                const { host, star } = E;
+                if (host.gone || star.gone) return false;
+                if (E.step === 0) {
+                  if (host.state !== 'walk' && star.state !== 'walk') {
+                    host.cake = false;
+                    E.placed = true;
+                    E.cast.forEach((o) => {
+                      o.dir = Math.sign(E.x - o.x) || 1;
+                      o.gest = 'clap';
+                      o.gestT = 260;
+                    });
+                    go(E, 1);
+                  } else if (E.t > 900) return false;
+                } else if (E.step === 1) {
+                  const L = ['Sto lat, sto lat', 'Niech żyje, żyje nam', 'Jeszcze raz, jeszcze raz', 'Niech żyje nam!'];
+                  const k = Math.floor(E.t / 60);
+                  if (k < L.length && k >= E.lyric) {
+                    E.lyric = k + 1;
+                    say(pickOne(E.cast.filter((o) => o !== star)) ?? host, L[k], 70);
+                  }
+                  if (E.t > 260) {
+                    set(star, 'blow');
+                    go(E, 2);
+                  }
+                } else if (E.step === 2) {
+                  if (E.t > 24 && E.candles) {
+                    E.candles = false;
+                    for (let i = 0; i < 4; i++) add({ t: 'smoke', x: E.x + rnd(-6, 6), y: footAt(E.x) - 40 * star.s, vx: rnd(-0.3, 0.3), vy: -rnd(0.4, 1), r: rnd(5, 9), grow: 0.4, life: rnd(40, 70), a: 0.25, c: '#e6eef6', sway: rnd(0, TAU), noLand: true });
+                  }
+                  if (E.t > 40) {
+                    cannon(E.x, footAt(E.x) - 36 * star.s);
+                    E.cast.forEach((o) => hop(o, 3));
+                    set(star, 'idle');
+                    star.wait = Infinity;
+                    startTalk(star, host, [[0, 'Dzięki!', 'up'], [1, 'Tort jest z kartonu', 'shrug'], [0, 'Co?', 'facepalm']], true);
+                    go(E, 3);
+                  }
+                } else if (E.t > 220) return false;
+                return true;
+              },
+              think: (f, dt, t, E) => f === E.star && f.state === 'blow',
+              pose(f, q, t, E) {
+                if (f.state === 'blow') Object.assign(q, { lean: 0.55, tilt: 0.3, s1: 0.3, e1: 0.3, s2: 0.2, e2: 0.3 });
+                else if (f.cake) Object.assign(q, { s1: 1.35, e1: 0.4, s2: 1.25, e2: 0.45 });
+              },
+              hand(f, j) {
+                if (!f.cake) return;
+                const [x, y] = j.h1;
+                cakeAt(x + f.dir * 4 * f.s, y - 2 * f.s, f.s * 0.8, true);
+              },
+              under(E) {
+                if (!E.placed || E.step > 3) return;
+                const s = scaleNow();
+                const y = footAt(E.x);
+                table(E.x, y, s, 1);
+                cakeAt(E.x, y - 26 * s, s, E.candles);
+              },
+            },
+          ],
+          // Z płomieniami: wjeżdża wóz strażacki i gasi działkiem. Przy ognisku: ktoś gra na gitarze.
+          fire: fire
+            ? [
+                {
+                  start() {
+                    return { x: -260, cast: [] };
+                  },
+                  tick(E, dt) {
+                    const stop = clamp(w * 0.26, 210, w - 320);
+                    if (E.step === 0) {
+                      E.x += Math.max(1.4, (stop - E.x) * 0.045) * dt;
+                      if (stop - E.x < 2) {
+                        E.x = stop;
+                        go(E, 1);
+                        crowdSay(['Wreszcie posiłki', 'Wóz przyjechał!', 'Teraz się zacznie']);
+                      }
+                    } else if (E.step === 1) {
+                      const s = scaleNow();
+                      const nx = E.x + 70 * s;
+                      const ny = h - 64 * s;
+                      for (let k = 0; k < Math.max(1, Math.round(5 * dt)); k++) {
+                        const a = -rnd(0.1, 0.32);
+                        const v = rnd(9, 15);
+                        add({ t: 'foam', x: nx, y: ny, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 0.14, drag: 0.985, r: rnd(2, 3.4), grow: rnd(0.2, 0.4), life: rnd(50, 80), c: pickOne(['#e8f4ff', '#cfe6ff', '#ffffff', '#b8dcff']), a: 0.9, z: 0, noLand: true, wall: true });
+                      }
+                      if (E.t > 380) {
+                        go(E, 2);
+                        applaud(90);
+                        crowdSay(['Ugaszone', 'Brawo, wóz', 'Dzięki, szefie']);
+                      }
+                    } else {
+                      E.x -= (1.5 + E.t * 0.05) * dt;
+                      if (E.x < -320) return false;
+                    }
+                    return true;
+                  },
+                  over(E) {
+                    // Wóz strażacki z drabiną, kogutem i działkiem wodnym; „IUU IUU” przy wjeździe.
+                    const s = scaleNow();
+                    const x = E.x;
+                    const y = h;
+                    ctx.fillStyle = '#c81e1e';
+                    rrect(x - 70 * s, y - 50 * s, 112 * s, 38 * s, 4 * s);
+                    ctx.fill();
+                    rrect(x + 40 * s, y - 44 * s, 32 * s, 32 * s, 6 * s);
+                    ctx.fill();
+                    ctx.fillStyle = '#9fd3ff';
+                    rrect(x + 48 * s, y - 40 * s, 18 * s, 12 * s, 3 * s);
+                    ctx.fill();
+                    ctx.fillStyle = '#f2f2f2';
+                    ctx.fillRect(x - 66 * s, y - 30 * s, 104 * s, 3 * s);
+                    ctx.font = `800 ${Math.round(10 * s + 1)}px Rubik, system-ui, sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('STRAŻ', x - 14 * s, y - 20 * s);
+                    stroke([[x - 64 * s, y - 56 * s], [x + 30 * s, y - 56 * s]], 2 * s, '#c9ccd3');
+                    for (let i = 0; i < 9; i++) stroke([[x - 60 * s + i * 10 * s, y - 56 * s], [x - 60 * s + i * 10 * s, y - 51 * s]], 1.2 * s, '#c9ccd3');
+                    const blink = Math.floor(now / 160) % 2;
+                    dot(x + 50 * s, y - 47 * s, 3 * s, blink ? '#ff3b3b' : '#5b1010');
+                    dot(x + 60 * s, y - 47 * s, 3 * s, blink ? '#1d3b8a' : '#3d8bff');
+                    stroke([[x + 24 * s, y - 52 * s], [x + 70 * s, y - 64 * s]], 3 * s, '#4a4f58');
+                    for (const wx of [x - 44 * s, x + 50 * s]) {
+                      dot(wx, y - 10 * s, 9 * s, '#16171b');
+                      dot(wx, y - 10 * s, 4 * s, '#8a8f99');
+                    }
+                    if (E.step === 0) speech(x + 56 * s, y - 70 * s, Math.floor(now / 300) % 2 ? 'IUU IUU' : 'IIUU IIUU', s);
+                  },
+                },
+              ]
+            : [
+                {
+                  start() {
+                    const g = pickOne(ppl.filter((o) => o.state === 'roast' && !o.event && !o.convo)) ?? pickOne(ppl.filter((o) => evFree(o) && o.seat != null));
+                    if (!g) return null;
+                    const E = { g, cast: [], notes: [] };
+                    cast(E, g);
+                    if (g.state === 'roast') {
+                      set(g, 'strum');
+                      say(g, 'Mam gitarę');
+                      E.step = 1;
+                    } else {
+                      walkTo(g, g.seat);
+                      say(g, 'Czekajcie, przyniosłem gitarę');
+                    }
+                    return E;
+                  },
+                  tick(E, dt) {
+                    const g = E.g;
+                    if (g.gone) return false;
+                    if (E.step === 0) {
+                      if (g.state === 'walk') return E.t < 900;
+                      g.dir = Math.sign(camp.x - g.x) || 1;
+                      set(g, 'strum');
+                      say(g, 'Mam gitarę');
+                      go(E, 1);
+                    }
+                    if (Math.floor(E.t / 16) !== Math.floor((E.t - dt) / 16) && g.j) E.notes.push({ x: g.j.h1[0], y: g.j.h1[1] - 6, vx: rnd(-0.3, 0.3), a: 1, ch: pickOne(['♪', '♫', '♩']) });
+                    for (const n of E.notes) {
+                      n.y -= 0.7 * dt;
+                      n.x += n.vx * dt;
+                      n.a -= 0.008 * dt;
+                    }
+                    E.notes = E.notes.filter((n) => n.a > 0);
+                    if (E.t > 90 && !E.l1) {
+                      E.l1 = true;
+                      const o = pickOne(others(g));
+                      if (o) startTalk(g, o, [[0, 'Znam tylko jeden akord'], [1, 'Wystarczy', 'shrug'], [0, 'To jedziemy']], true);
+                    }
+                    if (E.t > 300 && !E.l2) {
+                      E.l2 = true;
+                      for (const o of others(g).slice(0, 3)) {
+                        o.replyT = rnd(10, 60);
+                        o.reply = pickOne(['La la la', 'Laaa', 'Na na na']);
+                      }
+                    }
+                    if (E.t > 560) {
+                      g.event = null;
+                      set(g, 'roast');
+                      say(g, 'Dziękuję, będę tu do końca');
+                      return false;
+                    }
+                    return true;
+                  },
+                  think: (f, dt, t, E) => f === E.g && f.state === 'strum',
+                  pose(f, q, t) {
+                    if (f.state !== 'strum') return;
+                    Object.assign(q, { a1: 1.45, a2: 1.32, k1: 0.3, k2: 0.55, lean: 0.04, s1: 0.95 + 0.22 * Math.sin(t * 0.9), e1: 1.35, s2: 1.35, e2: 0.25 });
+                  },
+                  hand(f, j) {
+                    if (f.state !== 'strum') return;
+                    // Gitara na kolanach: pudło przy biodrze, gryf do lewej dłoni.
+                    const s = f.s;
+                    const bx = j.hip[0] + f.dir * 7 * s;
+                    const by = j.hip[1] - 5 * s;
+                    stroke([[bx, by], j.h2], 2.2 * s, '#5a361f');
+                    ctx.fillStyle = '#c47a3a';
+                    ctx.beginPath();
+                    ctx.ellipse(bx, by, 7 * s, 5 * s, -f.dir * 0.5, 0, TAU);
+                    ctx.fill();
+                    dot(bx, by, 1.8 * s, '#3a2412');
+                  },
+                  over(E) {
+                    ctx.font = `700 ${Math.round(14 * scaleNow())}px system-ui, sans-serif`;
+                    ctx.textAlign = 'center';
+                    for (const n of E.notes) {
+                      ctx.globalAlpha = Math.max(0, n.a);
+                      ctx.fillStyle = '#ffe2a8';
+                      ctx.fillText(n.ch, n.x, n.y);
+                    }
+                    ctx.globalAlpha = 1;
+                  },
+                },
+              ],
+          // Duch w prześcieradle: wszyscy uciekają z krzykiem, duch znika w chmurze nietoperzy.
+          halloween: [
+            {
+              start() {
+                const side = Math.random() < 0.5 ? -1 : 1;
+                return { x: side < 0 ? -70 : w + 70, dir: -side, a: 0, cast: [] };
+              },
+              tick(E, dt) {
+                if (E.step === 0) {
+                  E.x += E.dir * 1.7 * dt;
+                  E.a = Math.min(0.9, E.a + 0.02 * dt);
+                  if (E.t > 30 && !E.boo) {
+                    E.boo = true;
+                    for (const o of ppl) {
+                      if (!onScreen(o) || o.event) continue;
+                      if (o.convo) endTalk(o.convo);
+                      walkTo(o, E.dir > 0 ? Math.min(right(), w - 40) - rnd(0, 120) : 40 + rnd(0, 120), 'run');
+                      if (Math.random() < 0.6) say(o, pickOne(['AAA', 'Duch!', 'Uciekamy', 'Mamo']));
+                    }
+                  }
+                  if ((E.dir > 0 && E.x > w * 0.55) || (E.dir < 0 && E.x < w * 0.45)) go(E, 1);
+                } else {
+                  if (E.t < 2) spook(E.x, h - 90 * scaleNow());
+                  E.a -= 0.03 * dt;
+                  if (E.a <= 0) {
+                    const o = pickOne(ppl.filter(onScreen));
+                    const x = o && pickOne(ppl.filter((p) => p !== o));
+                    if (o && x) say(o, `To tylko ${x.short} w prześcieradle`);
+                    return false;
+                  }
+                }
+                return true;
+              },
+              over(E) {
+                const s = scaleNow();
+                const x = E.x;
+                const y = h - 66 * s + Math.sin(now * 0.004) * 6 * s;
+                ctx.globalAlpha = Math.max(0, E.a);
+                ctx.fillStyle = '#f4f2ff';
+                ctx.beginPath();
+                ctx.moveTo(x - 22 * s, y + 28 * s);
+                ctx.quadraticCurveTo(x - 24 * s, y - 34 * s, x, y - 36 * s);
+                ctx.quadraticCurveTo(x + 24 * s, y - 34 * s, x + 22 * s, y + 28 * s);
+                for (let i = 4; i >= 0; i--) ctx.quadraticCurveTo(x - 22 * s + (i + 0.5) * 8.8 * s, y + (i % 2 ? 22 : 34) * s + Math.sin(now * 0.01 + i) * 3 * s, x - 22 * s + i * 8.8 * s, y + 28 * s);
+                ctx.fill();
+                ctx.fillStyle = '#15121c';
+                ctx.beginPath();
+                ctx.ellipse(x - 8 * s + E.dir * 3 * s, y - 14 * s, 3.4 * s, 5 * s, 0, 0, TAU);
+                ctx.ellipse(x + 8 * s + E.dir * 3 * s, y - 14 * s, 3.4 * s, 5 * s, 0, 0, TAU);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(x + E.dir * 3 * s, y - 2 * s, 4 * s, 5.5 * s, 0, 0, TAU);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                if (E.step === 0 && E.t > 20) speech(x, y - 44 * s, 'BUUUU', s);
+              },
+            },
+          ],
+          // Oświadczyny (na duo w rankingu): klęka z pierścionkiem, „TAK”, serca i brawa.
+          hearts: [
+            {
+              start() {
+                const pool = ppl.filter((o) => evFree(o) && o.role !== 'cupid');
+                const a = pool.sort((u, v) => Math.abs(u.x - w / 2) - Math.abs(v.x - w / 2))[0];
+                const near = (o) => Math.abs(o.x - a.x);
+                const b = a ? (a.mate && evFree(a.mate) && near(a.mate) < 420 ? a.mate : pool.filter((o) => o !== a).sort((u, v) => near(u) - near(v))[0]) : null;
+                if (!a || !b || near(b) > 480) return null;
+                const E = { a, b, cast: [] };
+                cast(E, a);
+                cast(E, b);
+                set(b, 'idle');
+                b.wait = Infinity;
+                walkTo(a, clamp(b.x + (a.x < b.x ? -24 : 24) * a.s, 30, right()));
+                return E;
+              },
+              tick(E, dt) {
+                const { a, b } = E;
+                if (a.gone || b.gone) return false;
+                if (E.step === 0) {
+                  if (a.state !== 'walk') {
+                    a.dir = Math.sign(b.x - a.x) || 1;
+                    b.dir = -a.dir;
+                    set(a, 'kneel');
+                    look(a.x, a);
+                    go(E, 1);
+                  } else if (E.t > 900) return false;
+                } else if (E.step === 1) {
+                  if (E.t > 30 && !E.q) {
+                    E.q = true;
+                    say(a, `${b.short}, będziemy duo w rankingu?`, 120);
+                  }
+                  if (E.t > 160) {
+                    say(b, '…', 40);
+                    go(E, 2);
+                  }
+                } else if (E.step === 2) {
+                  if (E.t > 50) {
+                    say(b, pickOne(['TAK', 'No pewnie', 'Tak, tak, tak']), 90);
+                    for (let k = 0; k < 26; k++) add(fxPop('hearts', (a.x + b.x) / 2 + rnd(-24, 24), b.y - rnd(30, 60) * b.s));
+                    add({ t: 'ring', x: (a.x + b.x) / 2, y: b.y - 40 * b.s, vx: 0, vy: 0, r: 8, grow: 4, lw: 2, c: '#ff5c8a', a: 0.9, life: 22, noLand: true });
+                    hop(b, 3.5);
+                    applaud(130);
+                    crowdSay(['Brawo', 'Aww', 'Gorzko, gorzko!'], a);
+                    go(E, 3);
+                  }
+                } else if (E.step === 3) {
+                  if (E.t > 40 && a.state === 'kneel') {
+                    set(a, 'idle');
+                    a.wait = Infinity;
+                  }
+                  if (E.t > 170) {
+                    say(a, pickOne(['To co, wspólny voice?', 'Chodź, nabijemy razem XP', 'Idziemy po wspólną rolę']), 100);
+                    go(E, 4);
+                  }
+                } else if (E.step === 4) {
+                  if (E.t > 95) {
+                    // Odchodzą razem w stronę bliższej krawędzi (zakochani wracają później, jak wszyscy).
+                    say(b, pickOne(['Prowadź', 'Chodź', 'Tylko bez AFK']), 70);
+                    const side = (a.x + b.x) / 2 < w / 2 ? -1 : 1;
+                    const back = side * (a.x - b.x) > 0 ? b : a;
+                    for (const o of [a, b]) {
+                      o.tx = side < 0 ? -70 - (o === back ? 26 * o.s : 0) : w + 70 + (o === back ? 26 * o.s : 0);
+                      set(o, 'leave');
+                    }
+                    return false;
+                  }
+                }
+                return true;
+              },
+              think: (f, dt, t, E) => f === E.a && f.state === 'kneel',
+              pose(f, q) {
+                if (f.state === 'kneel') Object.assign(q, { a1: 1.5, k1: 1.5, a2: -0.1, k2: 1.5, lean: 0.02, tilt: -0.25, s1: 1.4, e1: 0.3, s2: 0.35, e2: 0.4 });
+              },
+              hand(f, j) {
+                if (f.state !== 'kneel') return;
+                const s = f.s;
+                const [x, y] = j.h1;
+                ctx.fillStyle = '#8a1030';
+                ctx.fillRect(x - 3 * s, y - 2 * s, 6 * s, 4 * s);
+                ctx.fillRect(x - 3 * s, y - 5 * s, 6 * s, 1.6 * s);
+                ctx.strokeStyle = '#ffd34d';
+                ctx.lineWidth = 1.2 * s;
+                ctx.beginPath();
+                ctx.arc(x, y - 3.5 * s, 1.8 * s, 0, TAU);
+                ctx.stroke();
+                if (Math.floor(now / 250) % 2) dot(x + 1.4 * s, y - 5.2 * s, 0.9 * s, '#ffffff');
+              },
+            },
+          ],
+          // UFO porywa kogoś promieniem, odlatuje i po chwili odstawia (z czymś na czole).
+          stars: [
+            {
+              start() {
+                const v = pickOne(ppl.filter((o) => evFree(o) && o.role !== 'astro'));
+                if (!v) return null;
+                const E = { v, x: -90, y: h - 320, beam: 0, cast: [] };
+                cast(E, v);
+                set(v, 'idle');
+                v.wait = Infinity;
+                return E;
+              },
+              tick(E, dt) {
+                const v = E.v;
+                const s = scaleNow();
+                if (v.gone) return false;
+                const ty = footAt(v.x) - 210 * s;
+                if (E.step === 0) {
+                  E.x += clamp((v.x - E.x) * 0.04, -6, 6) * dt;
+                  E.y += (ty - E.y) * 0.04 * dt;
+                  if (Math.abs(E.x - v.x) < 6) {
+                    look(v.x, v);
+                    crowdSay(['UFO!', 'Co to jest?!', 'Patrzcie w górę'], v);
+                    go(E, 1);
+                  }
+                } else if (E.step === 1) {
+                  E.beam = Math.min(1, E.t / 20);
+                  if (E.t > 30) {
+                    v.float = true;
+                    v.y -= 0.9 * s * dt;
+                    if (!E.s1) {
+                      E.s1 = true;
+                      say(v, 'Eee… pomocy?');
+                    }
+                    if (v.y < E.y + 24 * s) {
+                      v.hide = true;
+                      go(E, 2);
+                    }
+                  }
+                } else if (E.step === 2) {
+                  E.beam = Math.max(0, E.beam - 0.05 * dt);
+                  E.x += 3.6 * dt;
+                  E.y -= 1.2 * dt;
+                  if (E.t > 50 && !E.r) {
+                    E.r = true;
+                    crowdSay([`Gdzie jest ${v.short}?`, 'Ktoś to nagrał?', 'Wróci?'], v);
+                  }
+                  if (E.t > 280) {
+                    E.x = w + 120;
+                    E.y = ty;
+                    go(E, 3);
+                  }
+                } else if (E.step === 3) {
+                  E.x += clamp((v.x - E.x) * 0.05, -7, 7) * dt;
+                  if (Math.abs(E.x - v.x) < 6) {
+                    v.hide = false;
+                    v.y = E.y + 24 * s;
+                    go(E, 4);
+                  }
+                } else if (E.step === 4) {
+                  E.beam = 1;
+                  v.y += 1.3 * s * dt;
+                  const gy = footAt(v.x) + 1.5 * s;
+                  if (v.y >= gy) {
+                    v.y = gy;
+                    v.float = false;
+                    E.beam = 0;
+                    const o = pickOne(others(v));
+                    if (o) startTalk(o, v, [[0, 'Gdzie cię zabrali?'], [1, 'Nie mogę powiedzieć'], [0, 'Masz coś na czole', 'point'], [1, 'Co?!', 'facepalm']], true);
+                    go(E, 5);
+                  }
+                } else {
+                  E.x += 4 * dt;
+                  E.y -= 2 * dt;
+                  if (E.t > 160) return false;
+                }
+                return true;
+              },
+              think: (f, dt, t, E) => f === E.v && (f.float || f.hide),
+              pose(f, q, t) {
+                if (!f.float) return;
+                Object.assign(q, { s1: 2.6 + 0.3 * Math.sin(t * 0.2), s2: 2.4 - 0.3 * Math.sin(t * 0.2), e1: 0.4, e2: 0.4, a1: 0.3 * Math.sin(t * 0.15), a2: -0.3 * Math.sin(t * 0.15), k1: 0.4, k2: 0.4 });
+              },
+              over(E) {
+                const s = scaleNow();
+                const { x, y } = E;
+                if (E.beam > 0) {
+                  const gy = footAt(E.v.x);
+                  const g = ctx.createLinearGradient(0, y, 0, gy);
+                  g.addColorStop(0, `rgba(170, 255, 200, ${0.45 * E.beam})`);
+                  g.addColorStop(1, `rgba(170, 255, 200, ${0.08 * E.beam})`);
+                  ctx.fillStyle = g;
+                  ctx.beginPath();
+                  ctx.moveTo(x - 10 * s, y + 6 * s);
+                  ctx.lineTo(x + 10 * s, y + 6 * s);
+                  ctx.lineTo(x + 34 * s, gy);
+                  ctx.lineTo(x - 34 * s, gy);
+                  ctx.fill();
+                }
+                ctx.fillStyle = 'rgba(160, 220, 255, 0.55)';
+                ctx.beginPath();
+                ctx.ellipse(x, y - 7 * s, 13 * s, 11 * s, 0, Math.PI, TAU);
+                ctx.fill();
+                const body = ctx.createLinearGradient(0, y - 8 * s, 0, y + 8 * s);
+                body.addColorStop(0, '#d9dee8');
+                body.addColorStop(1, '#6b7280');
+                ctx.fillStyle = body;
+                ctx.beginPath();
+                ctx.ellipse(x, y, 34 * s, 9 * s, 0, 0, TAU);
+                ctx.fill();
+                for (let i = 0; i < 5; i++) dot(x - 24 * s + i * 12 * s, y + 1 * s, 2 * s, (Math.floor(now / 140) + i) % 3 === 0 ? '#ffe14d' : '#7dffb0');
+              },
+            },
+          ],
+          // Awaria prądu: ciemność (świecą tylko pałeczki i okulary), potem „drop” i fala.
+          neon: [
+            {
+              start() {
+                return { dark: 0, cast: [] };
+              },
+              tick(E, dt) {
+                if (E.step === 0) {
+                  E.dark = Math.min(0.88, E.dark + 0.12 * dt);
+                  if (E.t > 10 && !E.l1) {
+                    E.l1 = true;
+                    crowdSay(['Kto wyłączył prąd?', 'Ej, światło!', 'Halo?']);
+                  }
+                  if (E.t > 80 && !E.l2) {
+                    E.l2 = true;
+                    crowdSay(['Nic nie widzę', 'Ała, moja noga', 'To część imprezy?']);
+                  }
+                  if (E.t > 160) {
+                    E.dark = 0;
+                    shockwave(w / 2, h * 0.75);
+                    for (const o of ppl) {
+                      if (!onScreen(o)) continue;
+                      hop(o, 3.4);
+                      o.gest = 'up';
+                      o.gestT = 70;
+                    }
+                    crowdSay(['DROP', 'Jest prąd!', 'Ale wejście']);
+                    go(E, 1);
+                  }
+                } else if (E.t > 100) return false;
+                return true;
+              },
+              over(E) {
+                if (E.dark <= 0) return;
+                ctx.globalAlpha = E.dark;
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, w, h);
+                ctx.globalAlpha = 1;
+                for (const f of ppl) if (f.j && !f.hide) S.hand?.(f, f.j);
+              },
+            },
+          ],
+          // Dmuchawa do liści: wszystkie kupki fruwają, grabiący nie są zachwyceni.
+          leaves: [
+            {
+              start() {
+                const f = pickOne(ppl.filter(evFree));
+                if (!f) return null;
+                const E = { f, dir: f.x < w / 2 ? 1 : -1, cast: [] };
+                cast(E, f);
+                f.noRake = true;
+                walkTo(f, E.dir > 0 ? Math.max(60, w * 0.12) : Math.min(right(), w * 0.88));
+                say(f, 'Mam lepszy sposób');
+                return E;
+              },
+              tick(E, dt) {
+                const f = E.f;
+                if (f.gone) return false;
+                if (E.step === 0) {
+                  if (f.state !== 'walk') {
+                    f.dir = E.dir;
+                    set(f, 'blow');
+                    go(E, 1);
+                  }
+                } else if (E.step === 1) {
+                  wind.target = E.dir * 5;
+                  wind.until = 30;
+                  if (Math.floor(E.t / 5) !== Math.floor((E.t - dt) / 5)) {
+                    let n = 0;
+                    for (let k = ground.rest.length - 1; k >= 0 && n < 6; k--) {
+                      const it = ground.rest[k];
+                      const d = (ground.x + it.x - f.x) * E.dir;
+                      if (d < 10 || d > 340) continue;
+                      takeRest(ground, k);
+                      fling(ground, it, E.dir * rnd(3, 7), -rnd(1.5, 4.5));
+                      n += 1;
+                    }
+                    if (f.j) add({ t: 'smoke', x: f.j.h1[0] + E.dir * 30 * f.s, y: f.y - 4, vx: E.dir * rnd(2, 4), vy: -rnd(0, 0.5), r: rnd(4, 8), grow: 0.5, life: rnd(20, 34), a: 0.12, c: '#e9ecef', sway: rnd(0, TAU), noLand: true });
+                  }
+                  if (E.t > 40 && !E.l) {
+                    E.l = true;
+                    const o = pickOne(ppl.filter((x) => onScreen(x) && x !== f));
+                    if (o) startTalk(o, f, [[0, 'Moja kupka!'], [1, 'Co? Nie słyszę!', 'shrug'], [0, 'MOJA KUPKA!', 'point'], [1, 'NIE SŁYSZĘ']], true);
+                  }
+                  if (E.t > 320) {
+                    set(f, 'idle');
+                    return false;
+                  }
+                }
+                return true;
+              },
+              think: (f, dt, t, E) => f === E.f && f.state === 'blow',
+              pose(f, q, t, E) {
+                if (f === E.f) Object.assign(q, { s1: 1.35, e1: 0.2, s2: 1.1, e2: 0.5, lean: 0.15 + 0.03 * Math.sin(t * 0.8), a1: 0.35, a2: -0.35, k1: 0.3 });
+              },
+              hand(f, j, E) {
+                if (f !== E.f) return;
+                const s = f.s;
+                ctx.fillStyle = '#f97316';
+                rrect(j.hip[0] - f.dir * 9 * s, j.hip[1] - 12 * s, 10 * s, 12 * s, 2 * s);
+                ctx.fill();
+                const tip = [j.h1[0] + f.dir * 26 * s, f.y - 6 * s];
+                stroke([j.h2, j.h1, tip], 3 * s, '#3a3f48');
+              },
+            },
+          ],
+          // Wspólne zdjęcie z samowyzwalaczem: 3, 2, 1, błysk — i oczywiście ktoś ma zamknięte oczy.
+          sakura: [
+            {
+              start() {
+                const ph = ppl.find((o) => o.role === 'photo' && evFree(o)) ?? pickOne(ppl.filter(evFree));
+                const group = ppl.filter((o) => o !== ph && onScreen(o) && !o.event && !o.hide);
+                if (!ph || group.length < 2) return null;
+                const E = { ph, group, cam: clamp(blanket.x - (blanket.w / 2 + 70), 40, right()), tripod: false, cast: [] };
+                cast(E, ph);
+                group.forEach((o) => cast(E, o));
+                walkTo(ph, E.cam);
+                say(ph, 'Wspólne zdjęcie!');
+                return E;
+              },
+              tick(E, dt) {
+                const { ph } = E;
+                if (ph.gone) return false;
+                if (E.step === 0) {
+                  if (ph.state !== 'walk') {
+                    E.tripod = true;
+                    ph.dir = Math.sign(blanket.x - ph.x) || 1;
+                    say(ph, 'Ustawiam samowyzwalacz');
+                    go(E, 1);
+                  } else if (E.t > 900) return false;
+                } else if (E.step === 1) {
+                  if (E.t > 70) {
+                    walkTo(ph, blanket.x + blanket.w / 2 + 14 * ph.s, 'run');
+                    go(E, 2);
+                  }
+                } else if (E.step === 2) {
+                  if (ph.state !== 'run') {
+                    for (const o of [ph, ...E.group]) {
+                      if (o.gone) continue;
+                      o.dir = o.x < E.cam ? 1 : -1;
+                      o.dir = -Math.sign(o.x - E.cam) || -1;
+                      set(o, 'pose');
+                    }
+                    go(E, 3);
+                  }
+                } else if (E.step === 3) {
+                  for (const [t0, txt] of [[10, '3'], [50, '2'], [90, '1']]) if (E.t >= t0 && E.t - dt < t0) say(ph, txt, 34);
+                  if (E.t > 130) {
+                    add({ t: 'tint', x: 0, y: 0, vx: 0, vy: 0, life: 14, c: '#ffffff', instant: true, noLand: true });
+                    crowdSay(['Cheese', 'Uśmiech', 'Siii']);
+                    go(E, 4);
+                  }
+                } else if (E.step === 4) {
+                  if (E.t > 60 && !E.c) {
+                    E.c = true;
+                    const o = pickOne(E.group.filter((x) => !x.gone));
+                    if (o) startTalk(o, ph, [[0, 'Pokaż!'], [1, 'Proszę', 'point'], [0, 'Mam zamknięte oczy', 'facepalm'], [1, 'Wszyscy mają', 'shrug']], true);
+                  }
+                  if (E.t > 300) {
+                    E.tripod = false;
+                    for (const o of E.group) {
+                      if (o.gone || o.event !== E) continue;
+                      o.event = null;
+                      if (o.role === 'sit') set(o, 'picnic');
+                    }
+                    return false;
+                  }
+                }
+                return true;
+              },
+              think: (f) => f.state === 'pose',
+              pose(f, q) {
+                if (f.state !== 'pose') return;
+                if (f.role === 'sit') Object.assign(q, { a1: 1.45, a2: 1.32, k1: 0.3, k2: 0.55, lean: -0.06 });
+                Object.assign(q, { s1: 2.55, e1: 0.35, tilt: -0.1 });
+              },
+              under(E) {
+                if (!E.tripod) return;
+                const s = scaleNow();
+                const x = E.cam + (blanket.x > E.cam ? 18 : -18) * s;
+                const y = footAt(x);
+                for (const dx of [-7, 0, 7]) stroke([[x, y - 22 * s], [x + dx * s, y]], 1.4 * s, '#8a93a3');
+                ctx.fillStyle = '#1d2230';
+                ctx.fillRect(x - 6 * s, y - 30 * s, 12 * s, 8 * s);
+                dot(x + Math.sign(blanket.x - x) * 6 * s, y - 26 * s, 2.6 * s, '#5b6b8c');
+                if (Math.floor(now / 200) % 2) dot(x - 4 * s, y - 29 * s, 1 * s, '#ff3b3b');
+              },
+            },
+          ],
+          // Skrzynia skarbów spada z nieba; kto pierwszy, ten otwiera — fontanna monet.
+          coins: [
+            {
+              start() {
+                return { x: clamp(w * rnd(0.3, 0.7), 100, right() - 100), y: -60, vy: 0, open: 0, cast: [] };
+              },
+              tick(E, dt) {
+                const gy = footAt(E.x) - 1;
+                if (E.step === 0) {
+                  E.vy += 0.5 * dt;
+                  E.y += E.vy * dt;
+                  if (E.y >= gy) {
+                    E.y = gy;
+                    for (let k = 0; k < 6; k++) add({ t: 'smoke', x: E.x + rnd(-14, 14), y: gy - 2, vx: rnd(-1, 1), vy: -rnd(0.2, 0.8), r: rnd(5, 9), grow: 0.5, life: rnd(30, 50), a: 0.2, c: '#c9b28a', sway: rnd(0, TAU), noLand: true });
+                    for (const o of ppl) {
+                      if (!onScreen(o) || o.event || o.hide) continue;
+                      cast(E, o);
+                      walkTo(o, clamp(E.x + (o.x < E.x ? -1 : 1) * rnd(22, 46) * o.s, 20, right()), 'run');
+                    }
+                    crowdSay(['Skrzynia!', 'Moja!', 'Co to?']);
+                    go(E, 1);
+                  }
+                } else if (E.step === 1) {
+                  if (E.t > 70) E.open = Math.min(1, (E.t - 70) / 18);
+                  if (E.t > 90 && !E.burst) {
+                    E.burst = true;
+                    for (let k = 0; k < 46; k++) add({ t: 'coin', x: E.x + rnd(-8, 8), y: E.y - 16, vx: rnd(-4, 4), vy: -rnd(6, 12), g: 0.3, drag: 0.99, s: rnd(4.5, 7), spin: rnd(0.1, 0.3), sway: rnd(0, TAU), rot: 0 });
+                    for (const c of E.cast) {
+                      c.gest = 'up';
+                      c.gestT = 60;
+                    }
+                    crowdSay(['SKARB', 'Bogactwo!', 'Dzielimy się?']);
+                  }
+                  if (E.t > 150) {
+                    for (const c of E.cast) {
+                      if (c.event !== E) continue;
+                      c.event = null;
+                      set(c, 'hunt');
+                    }
+                    go(E, 2);
+                  }
+                } else if (E.t > 420) return false;
+                return true;
+              },
+              under(E) {
+                const s = scaleNow();
+                const { x, y } = E;
+                ctx.globalAlpha = E.step === 2 ? Math.max(0, 1 - E.t / 420) : 1;
+                ctx.fillStyle = '#7a4a24';
+                rrect(x - 16 * s, y - 16 * s, 32 * s, 16 * s, 2 * s);
+                ctx.fill();
+                ctx.fillStyle = '#d6a12a';
+                ctx.fillRect(x - 16 * s, y - 9 * s, 32 * s, 2 * s);
+                ctx.save();
+                ctx.translate(x - 16 * s, y - 16 * s);
+                ctx.rotate(-E.open * 1.9);
+                ctx.fillStyle = '#8a5a2e';
+                rrect(0, -8 * s, 32 * s, 8 * s, 3 * s);
+                ctx.fill();
+                ctx.restore();
+                if (E.open > 0) {
+                  const g = ctx.createRadialGradient(x, y - 18 * s, 1, x, y - 18 * s, 30 * s);
+                  g.addColorStop(0, `rgba(255, 226, 120, ${0.6 * E.open})`);
+                  g.addColorStop(1, 'rgba(255, 226, 120, 0)');
+                  ctx.fillStyle = g;
+                  ctx.fillRect(x - 30 * s, y - 48 * s, 60 * s, 40 * s);
+                }
+                dot(x, y - 9 * s, 2 * s, '#ffe08a');
+                ctx.globalAlpha = 1;
+              },
+            },
+          ],
+          // Podmuch porywa kogoś z parasolem; po chwili wraca, opadając jak z filmu.
+          storm: [
+            {
+              start() {
+                const f = pickOne(ppl.filter((o) => evFree(o) && o.umb));
+                if (!f) return null;
+                const E = { f, dir: Math.sign(wind.x) || (f.x < w / 2 ? 1 : -1), cast: [] };
+                cast(E, f);
+                return E;
+              },
+              tick(E, dt) {
+                const f = E.f;
+                if (f.gone) return false;
+                if (E.step === 0) {
+                  wind.target = E.dir * 6;
+                  wind.until = 60;
+                  f.float = true;
+                  set(f, 'fly');
+                  say(f, pickOne(['Ojej, lecę', 'Trzymajcie mnie!', 'Parasol mnie porywa']));
+                  go(E, 1);
+                } else if (E.step === 1) {
+                  f.y -= (1.3 + E.t * 0.01) * dt;
+                  f.x += E.dir * 1.8 * dt;
+                  if (E.t > 40 && !E.r) {
+                    E.r = true;
+                    crowdSay(['Wracaj!', 'Puść parasol!', 'Leci jak latawiec'], f);
+                  }
+                  if (f.y < -90 || f.x < -90 || f.x > w + 90) {
+                    f.hide = true;
+                    go(E, 2);
+                  }
+                } else if (E.step === 2) {
+                  if (E.t > 220) {
+                    f.hide = false;
+                    f.x = E.dir > 0 ? -40 : w + 40;
+                    f.y = h - 280;
+                    E.tx = clamp(w * 0.5 + rnd(-120, 120), 60, right() - 60);
+                    go(E, 3);
+                  }
+                } else if (E.step === 3) {
+                  f.x += (E.tx - f.x) * 0.02 * dt;
+                  f.y += 0.8 * dt;
+                  const gy = footAt(f.x) + 1.5 * f.s;
+                  if (f.y >= gy) {
+                    f.y = gy;
+                    f.float = false;
+                    set(f, 'idle');
+                    f.wait = Infinity;
+                    say(f, pickOne(['Polecam', 'Nigdy więcej', 'Widok był super']));
+                    go(E, 4);
+                  }
+                } else if (E.t > 80) return false;
+                return true;
+              },
+              think: (f, dt, t, E) => f === E.f && (f.state === 'fly' || f.hide),
+              pose(f, q, t) {
+                if (f.state === 'fly') Object.assign(q, { s1: 2.95, e1: 0.05, s2: 1.4 + 0.6 * Math.sin(t * 0.2), e2: 0.4, a1: 0.25 * Math.sin(t * 0.12), a2: -0.25 * Math.sin(t * 0.12), k1: 0.35, k2: 0.35, lean: 0 });
+              },
+            },
+          ],
+          // Rekin przepływa przez ekran — nurkowie uciekają, a potem spór, czy to był delfin.
+          bubbles: [
+            {
+              start() {
+                const side = Math.random() < 0.5 ? -1 : 1;
+                return { x: side < 0 ? -220 : w + 220, dir: -side, y: h - rnd(100, 150), cast: [] };
+              },
+              tick(E, dt) {
+                E.x += E.dir * 2.6 * dt;
+                if (!E.p && ((E.dir > 0 && E.x > -60) || (E.dir < 0 && E.x < w + 60))) {
+                  E.p = true;
+                  for (const o of ppl) {
+                    if (!onScreen(o) || o.event) continue;
+                    if (o.convo) endTalk(o.convo);
+                    walkTo(o, E.dir > 0 ? w + 90 : -90, 'run');
+                    if (Math.random() < 0.6) say(o, pickOne(['REKIN', 'Płyń!', 'Uciekamy']));
+                  }
+                }
+                if ((E.dir > 0 && E.x > w + 240) || (E.dir < 0 && E.x < -240)) {
+                  const a = pickOne(ppl);
+                  const b = a && pickOne(ppl.filter((o) => o !== a));
+                  if (a && b) startTalk(a, b, [[0, 'To był delfin'], [1, 'Delfiny nie mają takich zębów', 'point'], [0, 'Duży delfin', 'shrug']], true);
+                  return false;
+                }
+                return true;
+              },
+              over(E) {
+                const s = scaleNow() * 1.3;
+                const { x, y, dir } = E;
+                const wag = Math.sin(now * 0.012) * 6 * s;
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.scale(dir, 1);
+                const g = ctx.createLinearGradient(0, -14 * s, 0, 12 * s);
+                g.addColorStop(0, '#4b5d70');
+                g.addColorStop(1, '#a9b6c4');
+                ctx.fillStyle = g;
+                ctx.beginPath();
+                ctx.moveTo(46 * s, 2 * s);
+                ctx.quadraticCurveTo(30 * s, -14 * s, -10 * s, -12 * s);
+                ctx.quadraticCurveTo(-36 * s, -8 * s, -48 * s, 0);
+                ctx.lineTo(-62 * s, -14 * s + wag);
+                ctx.lineTo(-58 * s, 2 * s);
+                ctx.lineTo(-64 * s, 14 * s + wag);
+                ctx.lineTo(-48 * s, 4 * s);
+                ctx.quadraticCurveTo(-20 * s, 12 * s, 14 * s, 10 * s);
+                ctx.quadraticCurveTo(36 * s, 9 * s, 46 * s, 2 * s);
+                ctx.fill();
+                ctx.fillStyle = '#4b5d70';
+                ctx.beginPath();
+                ctx.moveTo(-4 * s, -12 * s);
+                ctx.lineTo(4 * s, -30 * s);
+                ctx.lineTo(14 * s, -12 * s);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(8 * s, 6 * s);
+                ctx.lineTo(0, 18 * s);
+                ctx.lineTo(18 * s, 8 * s);
+                ctx.fill();
+                dot(32 * s, -3 * s, 1.6 * s, '#0b0f14');
+                ctx.strokeStyle = '#2c3a48';
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.moveTo(30 * s, 5 * s);
+                ctx.quadraticCurveTo(38 * s, 7 * s, 44 * s, 3 * s);
+                for (const gx of [18, 21, 24]) {
+                  ctx.moveTo(gx * s, -4 * s);
+                  ctx.lineTo((gx - 1) * s, 3 * s);
+                }
+                ctx.stroke();
+                ctx.restore();
+              },
+            },
+          ],
+        };
+        function cakeAt(x, y, s, lit) {
+          ctx.fillStyle = '#f7f2ea';
+          rrect(x - 12 * s, y - 12 * s, 24 * s, 12 * s, 2 * s);
+          ctx.fill();
+          ctx.fillStyle = '#ff8fb1';
+          ctx.fillRect(x - 12 * s, y - 12 * s, 24 * s, 3 * s);
+          ctx.fillStyle = '#e2669f';
+          ctx.fillRect(x - 12 * s, y - 5 * s, 24 * s, 1.6 * s);
+          for (const dx of [-6, 0, 6]) {
+            ctx.fillStyle = '#9ad1ff';
+            ctx.fillRect(x + dx * s - 0.8 * s, y - 18 * s, 1.6 * s, 6 * s);
+            if (lit) {
+              ctx.fillStyle = Math.floor(now / 90 + dx) % 2 ? '#ffd34d' : '#ff9d2e';
+              ctx.beginPath();
+              ctx.ellipse(x + dx * s, y - 20 * s, 1.4 * s, 2.4 * s, 0, 0, TAU);
+              ctx.fill();
+            }
+          }
+        }
         function rake(f) {
           let moved = 0;
           for (let k = ground.rest.length - 1; k >= 0 && moved < 10; k--) {
@@ -9173,12 +10726,16 @@
             moved += 1;
           }
         }
+        // Komentarze do zebranych monet co najmniej co ~2 s (przy deszczu monet ze skrzyni nie zagadują się nawzajem).
+        let quipAt = -1e9;
         function gain(f, caught) {
           f.count += 1;
           const [x, y] = f.j.h1;
           add({ t: 'glint', x, y, vx: 0, vy: 0, s: rnd(5, 8), life: 14, c: '#fff1b8', noLand: true });
           add({ t: 'plus', x: x + rnd(-6, 6), y: y - 14, vx: 0, vy: -0.9, life: 40, noLand: true, instant: true });
-          if (Math.random() < (caught ? 0.5 : 0.25)) talk(f, caught ? ['Prosto z nieba', 'Złapane', 'Mam'] : ['Moje', '+1', 'Ładna', 'Mam {c}']);
+          if (now - quipAt < 2000 || f.sayT > 0 || f.convo || Math.random() > (caught ? 0.5 : 0.25)) return;
+          quipAt = now;
+          talk(f, caught ? ['Prosto z nieba', 'Złapane', 'Mam'] : ['Moje', '+1', 'Ładna', 'Mam {c}']);
         }
         const JUMPY = ['idle', 'walk', 'dance', 'disco', 'hold', 'wait', 'rake', 'gaze', 'hunt'];
         return {
@@ -9191,9 +10748,31 @@
             clock += dt;
             if (!ending && clock > len) finish();
             S.tick?.(dt);
+            if (happening) {
+              happening.t += dt;
+              if (happening.def.tick(happening, dt) === false) {
+                uncast(happening);
+                happening = null;
+                evClock = rnd(3600, 7200);
+              }
+            } else if (!ending) {
+              evClock -= dt;
+              const ready = ppl.filter(evFree).length >= (forced ? 1 : 2) && clock > (forced ? 200 : 300);
+              if (forced && ready) {
+                if (trigger()) forced = false;
+              } else if (evClock <= 0) {
+                evClock = rnd(3600, 7200);
+                if (ready && Math.random() < 0.35) trigger();
+              }
+            }
             for (const f of ppl) {
               f.t += dt;
               if (f.sayT > 0) f.sayT -= dt;
+              if (f.gestT > 0) f.gestT -= dt;
+              if (f.lookT > 0) {
+                f.lookT -= dt;
+                if (!f.convo && ['idle', 'chat', 'dance', 'disco', 'rake', 'hunt', 'gaze', 'hold', 'wait'].includes(f.state)) f.dir = Math.sign(f.look - f.x) || f.dir;
+              }
               if (f.replyT > 0) {
                 f.replyT -= dt;
                 if (f.replyT <= 0 && f.reply && !f.gone && f.state !== 'leave') say(f, f.reply);
@@ -9233,37 +10812,64 @@
               for (const key in q) f.pose[key] += (q[key] - f.pose[key]) * k;
               solve(f);
             }
+            for (const c of [...convos]) talkTick(c, dt);
             for (let i = ppl.length - 1; i >= 0; i--) if (ppl[i].gone) ppl.splice(i, 1);
             if (!ppl.length) {
               // Krótka przerwa i przychodzą następni.
-              next = rnd(420, 840);
+              next = forced ? 0 : rnd(420, 840);
               arrows.length = 0;
               bullets.length = 0;
+              convos.length = 0;
+              snowmen.length = 0;
+              happening = null;
               return;
             }
+            // Gadanie: zwykle rozmowa dwóch osób (podchodzą do siebie), czasem pojedyncza kwestia albo zaczepka.
             chatT -= dt;
             if (chatT <= 0 && !ending) {
               chatT = rnd(150, 280) * (ppl.length > 4 ? 0.8 : 1);
-              const free = ppl.filter((o) => onScreen(o) && o.sayT <= 0 && o.replyT <= 0 && !['leave', 'down', 'hit', 'wave', 'zap'].includes(o.state) && !S.busy?.(o));
-              if (free.length) {
-                const f = pickOne(free);
-                talk(f, Math.random() < 0.6 ? [...(S.chat ?? CHAT), ...(S.chatFor?.(f) ?? [])] : CHAT);
+              const free = ppl.filter(canTalk);
+              if (free.length && !happening) {
+                const A = pickOne(free);
+                const reach = SEATED.includes(A.state) || A.float ? 240 : 520;
+                const B = free.filter((o) => o !== A && Math.abs(o.x - A.x) < reach).sort((u, v) => Math.abs(u.x - A.x) - Math.abs(v.x - A.x))[0];
+                let done = false;
+                if (B && Math.random() < 0.65) {
+                  const pool = [...(TALKS[theme] ?? []), ...(TALKS[theme] ?? []), ...DIALOGS];
+                  for (let k = 0; k < 4 && !done; k++) {
+                    const d = fresh(pool);
+                    const lines = typeof d === 'function' ? d(A, B) : d;
+                    done = Boolean(lines) && startTalk(A, B, lines);
+                  }
+                }
+                if (!done) talk(A, Math.random() < 0.6 ? [...(S.chat ?? CHAT), ...(S.chatFor?.(A) ?? [])] : CHAT);
               }
             }
           },
           draw() {
             if (!ppl.length) return;
             S.under?.();
-            for (const f of ppl) if (f.j) drawOne(f);
+            for (const sm of snowmen) drawSnowman(sm.x, footAt(sm.x) + 1, 1, scaleNow());
+            happening?.def.under?.(happening);
+            for (const f of ppl) if (f.j && !f.hide) drawOne(f);
+            drawNames();
             S.over?.();
+            happening?.def.over?.(happening);
+            drawBubbles();
             ctx.globalAlpha = 1;
+          },
+          // Podgląd: wymusza rzadkie wydarzenie (jak nikogo nie ma — scena zaczyna się od razu).
+          force() {
+            if (happening) return;
+            forced = true;
+            if (!ppl.length) next = 0;
           },
           // Śnieżka (motyw śniegu) trafiła ludzika?
           hit: (p) => (S.hit ? S.hit(p) : false),
           // Kliknięcie w ludzika: podskakuje i coś mówi.
           poke(x, y) {
             for (const f of ppl) {
-              if (f.gone || !touches(f, x, y, 6)) continue;
+              if (f.gone || f.hide || !touches(f, x, y, 6)) continue;
               say(f, fresh(S.pokes ?? POKE), 60);
               if (!f.float && !f.air && JUMPY.includes(f.state)) {
                 set(f, 'jump');
@@ -9282,7 +10888,7 @@
             }
           },
           end: () => ending || finish(),
-          peek: () => ({ held: Boolean(held), balls: list.filter((p) => p.t === 'ball').map((p) => [Math.round(p.x), Math.round(p.y), p.owner ? p.owner.name : 'user']), fighters: ppl.map((f) => ({ name: f.name, side: f.side, state: f.state, role: f.role, x: f.x, y: f.y, hits: f.hits, count: f.count, revenge: f.revenge, say: f.sayT > 0 ? f.say : '', head: f.j?.head })) }),
+          peek: () => ({ event: happening ? `${theme}:${happening.step}` : null, forced, held: Boolean(held), balls: list.filter((p) => p.t === 'ball').map((p) => [Math.round(p.x), Math.round(p.y), p.owner ? p.owner.name : 'user']), fighters: ppl.map((f) => ({ name: f.name, side: f.side, state: f.state, role: f.role, x: f.x, y: f.y, hits: f.hits, count: f.count, revenge: f.revenge, say: f.sayT > 0 ? f.say : '', head: f.j?.head })) }),
         };
       }
 
@@ -9447,6 +11053,10 @@
           );
           if (theme === 'matrix') glitch();
         },
+        // Podgląd: wymuś rzadkie wydarzenie ludzików (np. hakowanie w Matrixie).
+        happen() {
+          crowd?.force();
+        },
         // Wciśnięcie przycisku gdzieś na stronie: śnieżka, dynia, bańka, magnes albo efekt kliknięcia.
         press(event) {
           if (tool || dead) return;
@@ -9545,7 +11155,8 @@
         <select data-pv="preview" aria-label="Efekt">${opts(names, e.theme)}</select>
         <select data-pv="intensity" aria-label="Intensywność">${opts(levels, e.intensity)}</select>
         <label class="pv-color" title="Własny kolor"><input type="checkbox" data-pv="accent-on"${e.accent ? ' checked' : ''}><input type="color" data-pv="accent" value="${e.accent ?? '#ff4fa3'}" aria-label="Własny kolor"></label>
-        <button type="button" data-pv="burst">Wybuch</button>`;
+        <button type="button" data-pv="burst">Wybuch</button>
+        <button type="button" data-pv="happen" title="Rzadkie wydarzenie ludzików, np. hakowanie w Matrixie">Losowy event</button>`;
       const sync = () => {
         QS.set('preview', bar.querySelector('[data-pv="preview"]').value);
         QS.set('intensity', bar.querySelector('[data-pv="intensity"]').value);
@@ -9560,6 +11171,7 @@
         sync();
       });
       bar.querySelector('[data-pv="burst"]').addEventListener('click', burst);
+      bar.querySelector('[data-pv="happen"]').addEventListener('click', happen);
       document.body.append(bar);
     }
 
