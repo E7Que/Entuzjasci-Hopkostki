@@ -6296,12 +6296,36 @@
       // i odpowiadają sobie). Sceny: wchodzą z boków, bawią się dłuższą chwilę, żegnają się i wychodzą, a po krótkiej
       // przerwie przychodzą następni. Motyw (S) dokłada: co robią, co mają na głowie i w rękach, co mówią.
       function makeCrowd() {
-        const CHAT = ['Elo!', 'Siema, {n}!', 'Ile masz XP?', 'Mam {lvl} poziom!', 'Kto tu jest top 1?', '{n}, gonię cię w rankingu!', 'Jeszcze trochę do awansu…', 'Wbijam na podium!', 'Ale tu tłoczno!', 'Grind XP trwa', 'Kto na głosowy?', 'GG wszystkim!', 'Nie śpimy, farmimy XP', '{n}, wbijasz na kanał?', 'Wydarzenie {mult}, lecimy!', 'Kto pisze najwięcej?', '{n}, ile ci brakuje do awansu?', 'Ranking się grzeje!', 'Dzisiaj nabiję poziom', 'Co tam, {n}?', 'Widzieliście top 3?', 'Ja tu tylko na chwilę', 'Ale klimat!'];
-        const REPLY = ['No hej!', 'Siema!', 'Co tam?', 'Haha', 'Nie dam się!', 'Zobaczymy!', 'Trzymaj się!', 'Jasne!', 'Później!', 'XD', 'Serio?', 'No pewnie!', 'Ja też!', 'Spokojnie', 'Hehe', 'Może…', 'Dawaj!', 'Elo!'];
-        const HELLO = ['Siema!', 'Jestem!', 'Hej wszystkim!', 'Co tu się dzieje?', 'Elo!', 'Cześć!', 'O, impreza?', 'Już jestem!', 'Hejka!'];
-        const BYE = ['Pa!', 'Na razie!', 'Do jutra!', 'Lecę!', 'Było super!', 'Spadam farmić XP', 'Do zobaczenia!', 'Narka!', 'Muszę iść', 'Papa!'];
-        const POKE = ['Hej!', 'Ej, nie klikaj!', 'Łaskocze!', 'Co jest?', 'Halo?', 'Hihi', 'Uważaj!', 'Ała!', 'Kto to?', 'Nie szturchaj!', 'Hop!', 'Hej, to ja!'];
-        const WOW = ['Wow!', 'Ooo!', 'Co to było?!', 'Łał!', 'Ale efekt!', 'Jeszcze raz!', 'Super!'];
+        // Teksty: kwestia albo para [kwestia, odpowiedź] — wtedy zaczepiona osoba (albo ktoś obok) odpowiada właśnie tym.
+        const CHAT = [
+          ['{n}, ile masz już XP?', 'Więcej niż ty, spokojnie'],
+          ['Kto tyle pisze na ogólnym?', 'Nie patrz tak na mnie'],
+          'Mam {lvl} level i dalej zero szacunku',
+          ['{n}, wbijasz na voice?', 'Za pięć minut. Czyli za godzinę'],
+          ['Bot liczy XP za „xd”?', 'Mam nadzieję, inaczej jestem nikim'],
+          ['{n}, skąd ty masz tyle XP?', 'Nie mam życia, to proste'],
+          ['Top 1 to na pewno człowiek?', 'Człowiek bez snu'],
+          ['Wydarzenie {mult}, a ja w pracy', 'Klasyka'],
+          ['{n}, przestań mnie gonić w rankingu', 'Nie mogę, to silniejsze ode mnie'],
+          'Jeszcze 200 XP do awansu. Od tygodnia',
+          'Siedzę na voice dla XP. Nic nie mówię',
+          ['{n}, zostaw trochę XP innym', 'Nie'],
+          'Kiedyś będę w top 3. Kiedyś',
+          ['Za stanie tutaj też jest XP?', 'Marzenie'],
+          ['{n}, co ty robisz całymi dniami?', 'Nabijam level, a co'],
+          'Level rośnie, oceny spadają',
+          ['{n}, masz chwilę?', 'Nie'],
+          ['Ktoś wie, co tu się dzieje?', 'Nikt nie wie'],
+          'Mój największy sukces to ten ranking',
+          ['{n}, ile ci brakuje do awansu?', 'Nie pytaj, boli'],
+          'Odświeżam ranking co pięć minut. Normalne',
+          ['Kto wczoraj siedział do 4 na voice?', 'Nikt. Nic nie wiem'],
+        ];
+        const REPLY = ['Hah', 'No', 'Mhm', 'Serio?', 'Bywa', 'Spoko', 'Nie wiem', 'Później', 'Zobaczymy', 'Weź', 'Prawda', 'Ta, jasne', 'No dobra', 'Nie gadaj', 'Też tak mam', 'Idź'];
+        const HELLO = ['Siema', 'O, ludzie', 'Co tu się dzieje?', 'Hej', 'Elo', 'Jestem, nie pytajcie', 'Dzień dobry', 'Co jest grane?'];
+        const BYE = ['Dobra, spadam', 'Obiad wzywa', 'Narka', 'Idę na voice', 'Pa', 'Lecę nabijać level', 'Zaraz wracam. Raczej', 'Muszę lecieć', 'Do jutra'];
+        const POKE = ['Nie klikaj mnie', 'Co?', 'Ej', 'Łapy przy sobie', 'No i po co?', 'Klikasz jak w bota', 'Ja tu tylko stoję', 'Weź', 'Auć', 'Jeszcze raz i wołam moda', 'Halo?', 'Nie jestem przyciskiem'];
+        const WOW = ['Co to było?', 'Ładne', 'Kto to zrobił?', 'O kurczę', 'Spokojnie z tym', 'Jeszcze raz', 'Mocne'];
         const PAL = ['#e5484d', '#3d8bf2', '#2fbf71', '#f5a524', '#a35cf2', '#ec4899', '#14b8a6', '#f97316'];
         const mult = ((document.querySelector('#event .ev-mult')?.textContent ?? '').match(/×\s*[\d.,]+/)?.[0] ?? '×2').replace(/\s+/g, '');
         const ppl = [];
@@ -6370,11 +6394,11 @@
           f.say = text;
           f.sayT = t ?? 55 + text.length * 3.2;
         }
-        // Tekst z podstawieniami: {n} — nick kogoś obok (ta osoba zwykle odpowiada), {lvl} — własny poziom,
+        // Podstawienia: {n} — nick kogoś obok (w odpowiedzi: nick pytającego), {lvl} — własny poziom,
         // {mult} — mnożnik wydarzenia, {c} — licznik motywu (np. zebrane monety).
-        function talk(f, lines, t) {
-          let to = null;
-          const text = pickOne(lines).replace(/\{(n|lvl|mult|c)\}/g, (_, k) => {
+        function fill(text, f, other = null) {
+          let to = other;
+          const out = text.replace(/\{(n|lvl|mult|c)\}/g, (_, k) => {
             if (k === 'n') {
               to = to ?? pickOne(others(f)) ?? null;
               return to ? to.short : 'ty';
@@ -6383,11 +6407,26 @@
             if (k === 'c') return String(f.count ?? 0);
             return mult;
           });
+          return [out, to];
+        }
+        // Bez powtórek: ostatnio użyte kwestie czekają, aż padną inne.
+        const recent = [];
+        function fresh(lines) {
+          const pool = lines.filter((l) => !recent.includes(l));
+          const pick = pickOne(pool.length ? pool : lines);
+          recent.push(pick);
+          if (recent.length > 16) recent.shift();
+          return pick;
+        }
+        function talk(f, lines, t) {
+          const pick = fresh(lines);
+          const [lineText, back] = Array.isArray(pick) ? pick : [pick, null];
+          const [text, to] = fill(lineText, f);
           say(f, text, t);
-          if (to && to.replyT <= 0 && Math.random() < 0.8) {
-            to.replyT = rnd(45, 85);
-            to.reply = pickOne(S.reply ?? REPLY);
-          }
+          const who = to ?? (back ? pickOne(others(f).filter((o) => Math.abs(o.x - f.x) < 360 && o.sayT <= 0)) : null);
+          if (!who || who.replyT > 0 || (!back && Math.random() > 0.6)) return;
+          who.replyT = rnd(55, 95);
+          who.reply = fill(back ?? pickOne(S.reply ?? REPLY), who, f)[0];
         }
         function spot(f, zone) {
           const [a, b] = zone ?? S.zone?.(f) ?? [Math.max(w * 0.05, 30), right()];
@@ -6472,7 +6511,7 @@
           if (S.finish) return S.finish();
           for (const f of ppl) {
             if (f.state === 'leave' || f.gone) continue;
-            say(f, pickOne(BYE), 90);
+            say(f, fresh(BYE), 90);
             f.float = S.swim ? f.float : false;
             set(f, 'wave');
           }
@@ -6905,7 +6944,7 @@
             f.revenge = false;
             const T = clamp(Math.hypot(pointer.x - sx, pointer.y - sy) / 9, 22, 46);
             add({ t: 'ball', x: sx, y: sy, vx: (pointer.x - sx) / T, vy: (pointer.y - sy) / T - (g * (T + 1)) / 2, r: 3.6 * f.s, vol: 90, rot: 0, vr: 0.1, g, drag: 1, flight: T, toward: true, owner: f, z: 0, noLand: true, instant: true });
-            say(f, pickOne(['Odwet!', 'Masz za swoje!', 'Teraz ty!', 'Łap, klikaczu!']), 60);
+            say(f, pickOne(['Zwrot do nadawcy', 'Oddaję', 'Teraz ty', 'Masz z powrotem']), 60);
             return;
           }
           const o = f.aim && onScreen(f.aim) && f.aim.state !== 'down' ? f.aim : foeOf(f);
@@ -6915,7 +6954,7 @@
           const dx = tx - sx;
           const T = clamp(Math.abs(dx) / (6.5 * f.s), 26, 72);
           add({ t: 'ball', x: sx, y: sy, vx: dx / T, vy: (ty - sy) / T - (g * (T + 1)) / 2, r: 3.6 * f.s, vol: 110, rot: 0, vr: (dx / T) * 0.05, g, drag: 1, flight: Infinity, owner: f, z: 0, noLand: true, instant: true });
-          if (Math.random() < 0.35) talk(f, ['Łap!', 'Masz!', 'Leci!', '{n}, łap!', 'Prezent!', 'Uwaga!']);
+          if (Math.random() < 0.35) talk(f, ['Masz', 'Łap', 'Od Mikołaja', 'Uwaga, głowa', '{n}, łap', 'Prezent']);
         }
         function struck(f, p) {
           f.hits += 1;
@@ -6930,8 +6969,8 @@
           set(f, 'hit');
           if (!p.owner) {
             f.revenge = true;
-            say(f, pickOne(['Hej!', 'Kto to?!', 'Ej, ty!', 'To ty, klikaczu?!', 'Zaraz oddam!']), 80);
-          } else say(f, pickOne(['Auć!', 'Ała!', 'Oj!', 'Ej!', 'Uff!', 'Śnieg w oku!', 'Trafiony!', `${p.owner.short}, za co?!`]), 60);
+            say(f, pickOne(['Ej, ty z myszką!', 'Mam cię na oku', 'Kto to rzucił?', 'Dobra, ty też dostaniesz']), 80);
+          } else say(f, pickOne(['Auć', 'No weź', 'W ucho, serio?', 'Za kołnierz…', 'Oberwało mi się', 'Dobra, teraz wojna', `${p.owner.short}, zapamiętam to`]), 60);
           poof(p.x, p.y, p.r * 1.3, -from * 0.6, -0.7, 0.8);
           for (let k = 0; k < 8; k++) add({ t: 'clump', x: p.x, y: p.y, vx: rnd(-1.6, 1.6) - from * 0.6, vy: rnd(-2.2, 0.2), g: 0.2, drag: 0.99, r: rnd(0.9, 1.7), vol: 3, z: 0, wall: true });
         }
@@ -6969,8 +7008,21 @@
             arrive: (f) => set(f, f.ball ? 'aim' : 'scoop'),
             next: (f) => set(f, f.ball ? 'aim' : 'scoop'),
             busy: (f) => f.state === 'throw' || f.state === 'aim',
-            chat: ['Bitwa!', 'Nie trafisz mnie!', '{n}, poddaj się!', 'Zimno w ręce!', 'Śnieg za kołnierzem!', 'Kto ulepi największą?', 'Atak!', 'Osłaniaj mnie!', 'Za mną, drużyno!', '{n}, ty następny!', 'Mam zapas śnieżek', 'Brr, zimno', 'Ulepimy bałwana?', 'Mam mokre rękawiczki', '{n}, rozejm?', 'Nigdy!'],
-            chatFor: (f) => [f.side ? 'Niebiescy górą!' : 'Czerwoni górą!', `${f.side ? 'Czerwoni' : 'Niebiescy'} nie mają szans!`],
+            chat: [
+              ['{n}, rozejm?', 'Po tej śnieżce'],
+              'Mam śnieg w rękawie',
+              'Kto rzuca w twarz, ten nie ma serca',
+              ['{n}, to było celowo?', 'Absolutnie tak'],
+              'Nie czuję palców',
+              'Lepię jedną, ale porządną',
+              'Ostatnia śnieżka i idę. Kłamię',
+              'Nie celujcie w głowę. Dobra, celujcie',
+              ['{n}, masz mokre rękawiczki?', 'Mam mokre wszystko'],
+              'Za kołnierz mi wpadło. Teraz wojna',
+              ['Kto ulepi większą?', 'To nie są zawody. Ale ja'],
+              'Kryć się, idzie seria',
+            ],
+            chatFor: (f) => [f.side ? 'Niebiescy, do ataku' : 'Czerwoni, do ataku', [`${f.side ? 'Czerwoni' : 'Niebiescy'}, poddajcie się`, 'Nigdy']],
             think(f, dt, t) {
               if (ending && ['idle', 'aim', 'scoop', 'throw', 'walk'].includes(f.state)) {
                 leave(f);
@@ -7013,7 +7065,7 @@
                     if (ending) leave(f);
                     else if (f.hits >= 3) {
                       set(f, 'down');
-                      say(f, pickOne(['Poddaję się…', 'Leżę…', 'Dobra, wygraliście…', 'Śnieg w uszach!', 'Potrzebuję przerwy']), 90);
+                      say(f, pickOne(['Leżę i nie wstaję', 'Zostawcie mnie tu', 'W śniegu jest wygodnie', 'Wygraliście. Na razie']), 90);
                     } else walkTo(f, spot(f));
                   }
                   return true;
@@ -7023,7 +7075,7 @@
                     if (ending) leave(f);
                     else {
                       walkTo(f, spot(f));
-                      if (Math.random() < 0.5) say(f, pickOne(['Wracam do gry!', 'Jeszcze nie koniec!', 'Teraz się zemszczę']));
+                      if (Math.random() < 0.5) say(f, pickOne(['Dobra, wracam', 'Druga runda', 'Teraz na poważnie']));
                     }
                   }
                   return true;
@@ -7036,7 +7088,7 @@
               if (f.state === 'dodge') {
                 set(f, 'idle');
                 f.wait = 20;
-                if (Math.random() < 0.5) say(f, pickOne(['Pudło!', 'Nie trafisz!', 'Hehe, obok!', 'Za wolno!']));
+                if (Math.random() < 0.5) say(f, pickOne(['Obok', 'Pudło', 'Za wolno', 'Hehe']));
               } else if (f.state === 'jump') {
                 set(f, 'idle');
                 f.wait = 30;
@@ -7146,13 +7198,13 @@
                 if (f.state === 'down' || f.gone) continue;
                 f.ball = false;
                 if (a.score === b.score) {
-                  say(f, pickOne(['Remis!', 'Remis, rewanż jutro!', 'Nikt nie wygrał!']), 90);
+                  say(f, pickOne(['Remis. Nikt nie wygrał', 'Remis, idziemy na herbatę']), 90);
                   leave(f);
                 } else if ((a.score > b.score) === (f.side === 0)) {
-                  say(f, pickOne(['GG!', 'Wygrana!', 'Hehe!', 'Mistrzowie śniegu!', `${a.score}:${b.score}!`]), 100);
+                  say(f, pickOne(['GG', 'Łatwe', 'Wygrana', `${a.score}:${b.score}`, 'Dziękujemy, dobranoc']), 100);
                   set(f, 'cheer');
                 } else {
-                  say(f, pickOne(['Rewanż!', 'Jeszcze raz!', 'Następnym razem…', 'Mieliście szczęście']), 100);
+                  say(f, pickOne(['Rewanż jutro', 'Mieliście farta', 'To była rozgrzewka', 'Śnieg był mokry, nie liczy się']), 100);
                   set(f, 'sulk');
                 }
               }
@@ -7174,7 +7226,19 @@
               f.wait = rnd(300, 600);
             },
             busy: (f) => f.state === 'popper',
-            chat: ['Impreza!', 'Juhu!', 'Tańczymy!', 'Ale bit!', '{n}, chodź tańczyć!', 'Konfetti!', 'Najlepsza impreza!', 'DJ, głośniej!', 'Woo!', 'Kto przyniósł tort?', 'Sto lat!', 'Gdzie są balony?', 'Ręce w górę!', '{n}, ale ruchy!', 'Ta piosenka!', 'Nie przestawajcie!', 'Imprezka do rana!', 'Kto ma jeszcze konfetti?'],
+            chat: [
+              ['{n}, ty tańczysz czy masz skurcz?', 'Jedno i drugie'],
+              'Nie umiem tańczyć, ale się nie wstydzę',
+              ['Kto puścił tę piosenkę?', 'DJ ma gorszy dzień'],
+              'Konfetti będę wydłubywać do jutra',
+              ['{n}, gdzie tort?', 'Jaki tort?'],
+              'Impreza, a jutro rano do roboty',
+              ['{n}, podaj konfetti', 'Skończyło się'],
+              'Tańczę tylko, jak nikt nie patrzy. Wszyscy patrzą',
+              'Mam konfetti w uchu',
+              ['Kto zaprosił tyle ludzi?', 'Bot'],
+              'Ten bit jest dla mnie za szybki',
+            ],
             think(f, dt, t) {
               if (f.state === 'dance') {
                 if (f.style === 2) {
@@ -7192,7 +7256,7 @@
                 if (t > 24 && !f.popped) {
                   f.popped = true;
                   popper(f);
-                  talk(f, ['Juhu!', 'Sto lat!', 'Bum!', 'Niespodzianka!', 'Konfetti dla {n}!', 'Pif-paf!']);
+                  talk(f, ['Bum', 'Niespodzianka', 'Uwaga na oczy', 'Konfetti dla wszystkich', '{n}, to dla ciebie']);
                 }
                 if (t > 56) {
                   f.popped = false;
@@ -7307,7 +7371,18 @@
                 },
                 next: (f) => walkTo(f, spot(f)),
                 busy: () => false,
-                chat: ['Gasimy!', 'Woda!', 'Gorąco!', 'Tu się pali!', 'Trzymaj wąż!', '{n}, pomóż!', 'Uwaga, para!', 'Prawie ugaszone!', 'Kto tu podpalił?!', 'Straż na miejscu!', 'Więcej wody!', 'Pali się!', '{n}, tam też się pali!', 'Ciśnienie w normie', 'Nie damy się!', 'Ale żar!'],
+                chat: [
+                  ['Kto zostawił żelazko?', 'Nie ja'],
+                  'Gaszę i gaszę, a ono dalej się pali',
+                  ['{n}, trzymaj wąż mocniej', 'Trzymam, on się wierci'],
+                  'Tu jeszcze się tli',
+                  'Mam wodę w butach',
+                  ['{n}, to twoje ognisko?', 'Było małe, słowo'],
+                  'Ciepło tu, nie powiem',
+                  'Kolejny dzień, kolejny pożar',
+                  ['Ktoś dzwonił po straż?', 'Bot dzwonił'],
+                  'Ten ogień ma więcej XP niż ja',
+                ],
                 think(f, dt, t) {
                   if (f.state === 'spray') {
                     const [nx, ny] = beyond(f.j.e1, f.j.h1, 7 * f.s);
@@ -7331,7 +7406,7 @@
                         const v = rnd(3, 7.5);
                         add({ t: 'foam', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 0.16, drag: 0.97, r: rnd(2, 3.6), grow: rnd(0.2, 0.4), life: rnd(40, 64), c: pickOne(['#e8f4ff', '#cfe6ff', '#b8dcff']), a: 0.9, z: 0, noLand: true, wall: true });
                       }
-                      if (Math.random() < 0.5) say(f, pickOne(['Chlust!', 'Masz, ogniu!', 'Wiadro wody!']));
+                      if (Math.random() < 0.5) say(f, pickOne(['Chlust', 'Masz, ogniu', 'Woda idzie']));
                     }
                     if (t > 50) {
                       f.full = true;
@@ -7448,7 +7523,16 @@
                   f.wait = rnd(500, 900);
                 },
                 busy: () => false,
-                chat: ['Pianki!', 'Ale ciepło…', 'Opowiedz coś strasznego', 'Ktoś ma kiełbaskę?', '{n}, podaj patyk', 'Mmm, chrupiące', 'Iskry lecą!', 'Ognisko!', 'Zaśpiewajmy coś', 'Dorzućcie drewna', '{n}, twoja się przypala!', 'Najlepsze są złote', 'Gwiazdy widać', 'Pachnie dymem'],
+                chat: [
+                  ['{n}, twoja pianka się pali', 'Tak lubię'],
+                  'Opowiedzcie coś strasznego. Albo nie',
+                  ['Kto przyniósł kiełbaski?', 'Miały być od ciebie'],
+                  'Dym zawsze leci na mnie',
+                  'Pianka idealna, nie dzielę się',
+                  'Jeszcze jedna i koniec. Jeszcze jedna',
+                  ['Zaśpiewamy coś?', 'Lepiej nie'],
+                  'Ognisko lepsze niż kaloryfer',
+                ],
                 think(f, dt, t) {
                   if (f.state !== 'roast') return false;
                   if (f.burn) {
@@ -7456,18 +7540,18 @@
                     if (f.burn > 80) {
                       f.burn = 0;
                       f.mallow = 1.35;
-                      say(f, pickOne(['Węgielek…', 'Chrupiąca!', 'Ups…']));
+                      say(f, pickOne(['Węgielek', 'Chrupiąca. Tak miało być', 'No trudno']));
                     }
                   } else if (f.mallow < 1.35) {
                     f.mallow += dt * 0.0026;
                     if (f.mallow > 0.95 && Math.random() < 0.0016 * dt) {
                       f.burn = 1;
-                      talk(f, ['Ups! Pali się!', 'Moja pianka!', 'Ogień!', '{n}, ratuj!', 'Dmuchaj!']);
+                      talk(f, ['Ups', 'Pali się', 'No nie', '{n}, dmuchaj']);
                     }
                   }
                   if (t > f.wait && !f.burn) {
                     f.eat = 40;
-                    say(f, pickOne(['Mniam!', 'Pyszne!', 'Następna!', 'Gorące!']));
+                    say(f, pickOne(['Mniam', 'Gorące', 'Dobre', 'Następna']));
                     f.mallow = 0;
                     f.t = 0;
                     f.wait = rnd(500, 900);
@@ -7558,7 +7642,18 @@
               } else walkTo(f, spot(f));
             },
             busy: (f) => ['sneak', 'boo', 'scared'].includes(f.state),
-            chat: ['Cukierek albo psikus!', 'Ale strój!', 'Boisz się?', '{n}, masz cukierka?', 'Dynie świecą…', 'Słyszałeś to?', 'Hehehe', 'Nietoperze!', 'Mam pełne wiadro!', 'Uuu, straszno', 'Kto tam?', '{n}, zamienimy się cukierkami?', 'Pajęczyny wszędzie', 'Duchy tu są…', 'Wesołego Halloween!', 'Nie ma psikusa bez cukierka'],
+            chat: [
+              ['{n}, za kogo ty jesteś?', 'To moja normalna twarz'],
+              'Cukierki są, ale nie dla was',
+              ['Wymienisz batonika na lizaka?', 'Kurs: dwa do jednego'],
+              'Strój z ostatniej chwili. Widać',
+              'Nietoperze znowu nad głową',
+              ['{n}, słyszysz to?', 'Nie i nie chcę'],
+              'Najstraszniejszy jest jutrzejszy poniedziałek',
+              'Dynia ma więcej charakteru niż ja',
+              ['Cukierek albo psikus?', 'Psikus, cukierki zjedzone'],
+              'Ta pajęczyna wisi tu od zeszłego roku',
+            ],
             think(f, dt, t) {
               if (f.state === 'sneak') {
                 const v = f.victim;
@@ -7575,17 +7670,17 @@
                   f.phase += 0.12 * dt;
                 } else {
                   set(f, 'boo');
-                  say(f, pickOne(['Buu!', 'BUUU!', 'Psikus!', 'Mam cię!']), 60);
+                  say(f, pickOne(['Buu!', 'BUU', 'Psikus!', 'Mam cię']), 60);
                   set(v, 'scared');
                   hop(v, 4.6);
-                  talk(v, ['Aaa!', 'Ratunku!', 'Ojej!', 'Ale strach!', '{n}, przestań!', 'Serce mi stanęło!']);
+                  talk(v, ['AAA', 'Serce mi stanęło', 'Nie rób tak', '{n}, przestań']);
                   spook(v.x, v.y - 44 * v.s);
                 }
                 return true;
               }
               if (f.state === 'boo') {
                 if (t > 50) {
-                  say(f, pickOne(['Hehehe', 'Mwahaha!', 'Hihi, mam cię']));
+                  say(f, pickOne(['Hehe', 'Ta mina', 'Mwahaha']));
                   set(f, 'idle');
                   f.wait = rnd(60, 140);
                 }
@@ -7777,7 +7872,18 @@
               set(f, 'wait');
             },
             busy: (f) => f.state === 'cupidAim',
-            chat: ['Kocham cię!', '<3', 'Jesteś super!', 'Buziaki!', '{n}, będziesz moją walentynką?', 'Aww', 'Serduszko dla ciebie', 'Zakochani!', 'Słodko!', 'Trzymaj mnie za rękę', '{n}, jesteś najlepszy!', 'Randka!', 'Motylki w brzuchu', 'Kupidyn tu lata!', 'Ile serduszek!'],
+            chat: [
+              ['{n}, możemy już puścić ręce?', 'Nie'],
+              'Kupidyn strzela na oślep',
+              ['Kto zamówił Kupidyna?', 'Sam przyleciał'],
+              'Spocone dłonie, piękna sprawa',
+              ['{n}, idziemy na randkę?', 'Voice się liczy?'],
+              'Ten Kupidyn ma pozwolenie na broń?',
+              'Walentynki to święto czekolady',
+              'Serduszka latają, a ja dalej solo',
+              ['{n}, czemu się czerwienisz?', 'Zimno mi'],
+              'Romantyzm to jednak nie dla mnie',
+            ],
             each(f, dt) {
               if (f.role === 'cupid') f.y += (footAt(f.x) - 64 * f.s + Math.sin(now * 0.004 + f.phase) * 6 * f.s - f.y) * 0.08 * dt;
             },
@@ -7806,7 +7912,7 @@
                   const left = f.x < m.x;
                   walkTo(f, mid + (left ? -17 : 17) * f.s);
                   walkTo(m, mid + (left ? 17 : -17) * m.s);
-                  if (Math.random() < 0.5) talk(f, ['Chodź, {n}!', 'Idziemy na spacer', 'Tam jest ładniej']);
+                  if (Math.random() < 0.5) talk(f, ['Chodź, tam jest ładniej', 'Spacerek', 'Zmieniamy miejsce']);
                 }
                 return true;
               }
@@ -7825,7 +7931,7 @@
                   const ty = a.y - 34 * a.s;
                   const T = clamp(Math.abs(tx - sx) / 7, 18, 60);
                   arrows.push({ x: sx, y: sy, vx: (tx - sx) / T, vy: (ty - sy) / T - (0.1 * (T + 1)) / 2, g: 0.1, age: 0, life: T + 4, to: a });
-                  say(f, pickOne(['Strzała miłości!', 'Pif!', 'Celuję…', 'Trafię!']));
+                  say(f, pickOne(['Ten jest mój', 'Bez celownika', 'Pif', 'Trafię. Chyba']));
                 }
                 if (t > 60) {
                   f.shot = false;
@@ -7938,7 +8044,7 @@
                   for (const o of [a.to, a.to?.mate]) {
                     if (!o || o.gone) continue;
                     hop(o, 3);
-                    say(o, pickOne(['<3', 'Kocham!', 'Ojej, strzała!', 'Aww!', 'Zakochałem się!', 'Serduszko!']));
+                    say(o, pickOne(['Ała', 'To było celne', 'Coś czuję. To strzała', 'Hm, romantycznie', '<3']));
                   }
                   arrows.splice(i, 1);
                 }
@@ -7997,14 +8103,24 @@
             },
             next: (f) => walkTo(f, spot(f)),
             busy: () => false,
-            chat: ['Ale niebo!', 'Widzę Wielki Wóz', 'Tam jest Mars!', 'Pomyśl życzenie', '{n}, patrz w górę!', 'Gwiazdy są piękne', 'Ile ich jest?', 'Kosmos…', 'Księżyc świeci', 'Czy tam ktoś jest?', 'Widzę satelitę!', '{n}, widzisz Orion?', 'Ale cisza', 'Chcę lecieć w kosmos', 'To chyba kometa'],
+            chat: [
+              ['{n}, to gwiazda czy samolot?', 'Samolot. Zawsze samolot'],
+              'Widzę Wielki Wóz. Chyba',
+              'Zimno, ale ładnie',
+              ['Masz jakieś życzenie?', 'Top 1, a co'],
+              'Tam jest Mars. Albo latarnia',
+              'Gdzieś tam jest serwer bez spamu',
+              'Leżę i myślę o swoim levelu',
+              ['{n}, widzisz Oriona?', 'Widzę ciemność'],
+              'Tyle gwiazd, a ja nie mam żadnej',
+            ],
             think(f, dt, t) {
               if (f.state === 'scope' || f.state === 'lie' || f.state === 'gaze') {
                 if (f.point > 0) f.point -= dt;
                 if (t > f.wait) {
                   if (f.role === 'astro') {
                     f.wait = t + rnd(500, 900);
-                    talk(f, ['Widzę pierścienie Saturna!', '{n}, chodź zobaczyć!', 'Ale krater na Księżycu!', 'Jest Jowisz!']);
+                    talk(f, ['Saturn! A nie, kurz na soczewce', ['{n}, chodź zobaczyć Księżyc', 'Widzę go stąd'], 'Teleskop był w promocji', 'Widzę Jowisza. Chyba']);
                   } else {
                     f.role = f.role === 'lie' ? 'gaze' : 'lie';
                     walkTo(f, spot(f));
@@ -8057,11 +8173,11 @@
                 const lookers = ppl.filter((o) => onScreen(o) && o.role !== 'astro');
                 for (const o of lookers) o.point = 90;
                 const who = pickOne(lookers);
-                if (who) talk(who, ['Spadająca gwiazda!', 'Pomyśl życzenie!', 'Widziałeś?!', 'Kometa!', '{n}, patrz!', 'Szybko, życzenie!']);
+                if (who) talk(who, ['Spadająca! Szybko, życzenie', 'Widzieliście?', 'Życzę sobie +1 level', ['{n}, patrz!', 'Za późno']]);
               }
             },
             near(f) {
-              if (Math.random() < 0.5) say(f, pickOne(['Nowa gwiazda!', 'Gwiazdozbiór!', 'Ładna!', 'Kto ją tam dał?']));
+              if (Math.random() < 0.5) say(f, pickOne(['Nowa gwiazda?', 'Ktoś rysuje po niebie', 'Ładna']));
               f.point = 80;
             },
           },
@@ -8081,7 +8197,16 @@
               f.wait = rnd(500, 900);
             },
             busy: (f) => f.state === 'solo',
-            chat: ['Dyskoteka!', 'Ale bit!', 'Taniec!', '{n}, pokaż ruchy!', 'Woo!', 'Neon świeci!', 'Robot dance!', 'Ooo!', 'DJ, jeszcze raz!', 'Ręce w górę!', 'Ten kawałek!', 'Ale światła!', '{n}, tańczysz jak robot', 'Bas siedzi!', 'Do rana!'],
+            chat: [
+              ['{n}, to taniec czy awaria?', 'Taniec. Chyba'],
+              'Te okulary nic nie widzą, ale wyglądam',
+              'Bas mam w zębach',
+              ['Kto tu tańczy robota?', 'Każdy, kto nie umie tańczyć'],
+              'Jeszcze jeden kawałek. Albo pięć',
+              'Świecę się jak nowy RGB',
+              'Ruszam się jak lagujący stream',
+              ['{n}, nauczysz mnie tego ruchu?', 'Tego się nie da nauczyć'],
+            ],
             think(f, dt, t) {
               if (f.state === 'disco') {
                 if (t > f.wait && Math.random() < 0.004 * dt) walkTo(f, spot(f));
@@ -8114,16 +8239,16 @@
               set(b, 'clap');
               a.off = 260;
               b.off = 260;
-              say(a, pickOne(['Dance-off!', 'Patrz na to!', 'Pojedynek!']));
+              say(a, pickOne(['Dance-off. Teraz', 'Patrz i się ucz', 'Pojedynek']));
               setTimeout(() => {
                 if (dead || a.gone || b.gone || a.state !== 'solo') return;
                 set(b, 'solo');
                 set(a, 'clap');
                 a.off = 220;
                 b.off = 220;
-                say(b, pickOne(['Moja kolej!', 'Teraz ja!', 'Łap rytm!']));
+                say(b, pickOne(['Moja kolej', 'Teraz ja', 'Trzymaj się']));
                 const fan = pickOne(ppl.filter((o) => o !== a && o !== b && onScreen(o)));
-                if (fan) say(fan, pickOne(['Ooo!', 'Brawo!', 'Ale ruchy!']));
+                if (fan) say(fan, pickOne(['Ooo', 'Mocne', 'Dobra, wygrana']));
               }, 4400);
             },
             pose(f, q, t) {
@@ -8197,13 +8322,22 @@
               if (f.runup) {
                 f.runup = false;
                 set(f, 'sprint');
-                say(f, pickOne(['Uwaga, skaczę!', 'Rozbieg!', 'Patrzcie!']));
+                say(f, pickOne(['Rozbieg', 'Patrzcie', 'Nie zatrzymujcie mnie']));
                 return;
               }
               walkTo(f, spot(f));
             },
             busy: (f) => f.state === 'sprint' || f.state === 'leap',
-            chat: ['Grabimy!', 'Ale kupa liści!', 'Hop do liści!', 'Jesień!', '{n}, pomóż grabić', 'Szur, szur', 'Kasztany!', 'Liście wszędzie!', 'Nie skacz w moją kupkę!', 'Ale szeleści', '{n}, to moje grabie', 'Złote liście', 'Kto zrobi największą kupkę?', 'Herbatka po grabieniu?'],
+            chat: [
+              ['{n}, po co grabić, jak spadną nowe?', 'Taki sport'],
+              'Kto skoczy w moją kupkę, ten grabi od nowa',
+              'Szur, szur. Terapia',
+              ['{n}, to moje grabie', 'Były wolne'],
+              'Jesień, czyli liście w butach',
+              'Ten kasztan wygląda jak ja rano',
+              'Grabienie to cardio',
+              ['Kto zrobi największą kupkę?', 'To źle brzmi'],
+            ],
             think(f, dt, t) {
               if (f.state === 'rake') {
                 f.dir = Math.sign(pileX - f.x) || f.dir;
@@ -8231,7 +8365,7 @@
               if (f.state === 'leap') return true;
               if (f.state === 'lie') {
                 if (t > 170) {
-                  say(f, pickOne(['Jeszcze raz!', 'Ale frajda!', 'Mam liście we włosach']));
+                  say(f, pickOne(['Jeszcze raz', 'Zostaję tu', 'Mam liście we włosach']));
                   walkTo(f, spot(f));
                 }
                 return true;
@@ -8249,7 +8383,7 @@
                   n += 1;
                 }
                 for (let k = 0; k < 10; k++) add(fxPop('leaves', f.x + rnd(-20, 20), f.y - 8));
-                say(f, pickOne(['Juhuu!', 'Hop!', 'Plusk w liście!', 'Wow!']));
+                say(f, pickOne(['Juhu', 'Warto było', 'Liście wszędzie']));
                 set(f, 'lie');
               } else if (f.state === 'jump') set(f, 'idle');
             },
@@ -8316,7 +8450,16 @@
             },
             next: (f) => walkTo(f, spot(f, [Math.max(30, blanket.x - blanket.w), Math.min(right(), blanket.x + blanket.w)])),
             busy: () => false,
-            chat: ['Hanami!', 'Piękne kwiaty', 'Herbatki?', 'Płatek wpadł mi do herbaty', '{n}, zrób zdjęcie!', 'Wiosna!', 'Pachnie wiśnią', 'Jak różowo', 'Uśmiech!', 'Smaczne onigiri', '{n}, podasz herbatę?', 'Tu jest pięknie', 'Ale płatki lecą', 'Zostańmy do wieczora'],
+            chat: [
+              ['{n}, podasz herbatę?', 'Jest zimna, ostrzegam'],
+              'Płatek wpadł do herbaty. Herbata premium',
+              'Siedzimy, patrzymy, nic nie robimy. Idealnie',
+              ['Gdzie są onigiri?', 'Zniknęły. Przypadek'],
+              'Pyłki mnie wykańczają',
+              'Wiosna, a ja dalej w bluzie',
+              ['{n}, zrobisz mi zdjęcie?', 'Tylko jedno'],
+              'Można tu siedzieć cały dzień',
+            ],
             think(f, dt, t) {
               if (f.state === 'picnic') {
                 f.act -= dt;
@@ -8324,7 +8467,7 @@
                   f.do = f.cup && Math.random() < 0.5 ? 'sip' : 'catch';
                   f.doT = f.do === 'sip' ? 45 : 90;
                   f.act = rnd(220, 420);
-                  if (f.do === 'sip' && Math.random() < 0.4) say(f, pickOne(['Mmm, herbata', 'Pycha', 'Gorąca!']));
+                  if (f.do === 'sip' && Math.random() < 0.4) say(f, pickOne(['Dobra herbata', 'Gorąca', 'Mmm']));
                 }
                 if (f.doT > 0) {
                   f.doT -= dt;
@@ -8335,7 +8478,7 @@
                       p.dead = true;
                       f.count += 1;
                       add({ t: 'glint', x: f.j.h1[0], y: f.j.h1[1], vx: 0, vy: 0, s: 5, life: 14, c: '#ffd6e6', noLand: true });
-                      say(f, pickOne(['Mam płatek!', 'Złapane!', 'Mam {c}!'.replace('{c}', String(f.count))]));
+                      say(f, pickOne(['Złapane', 'Mam płatek', `Mam już ${f.count}`]));
                       break;
                     }
                   }
@@ -8347,7 +8490,7 @@
                   f.snap = true;
                   const [x, y] = f.j.h1;
                   add({ t: 'flash', x: x + f.dir * 4 * f.s, y, vx: 0, vy: 0, r: 7, grow: 3, life: 8, z: 0, noLand: true, instant: true });
-                  talk(f, ['Cyk!', 'Uśmiech!', 'Super zdjęcie!', '{n}, wyszłaś pięknie!', 'Jeszcze jedno!']);
+                  talk(f, ['Cyk', 'Uśmiech', 'Jeszcze jedno', ['{n}, oczy zamknięte, powtórka', 'Mrugnęło mi się']]);
                 }
                 if (t > 90) {
                   f.snap = false;
@@ -8456,7 +8599,16 @@
             arrive: (f) => set(f, 'hunt'),
             next: (f) => set(f, 'hunt'),
             busy: (f) => f.state === 'pick',
-            chat: ['Złoto!', 'Moje!', 'Bogactwo!', 'Ile masz?', '{n}, oddaj monetę!', 'Kasa, kasa!', 'Błyszczy!', 'Jeszcze jedna!', 'Na lody starczy', 'Mam już {c}!', '{n}, nie podbieraj!', 'Gorączka złota!', 'Deszcz monet!', 'Kupię sobie zamek', 'Liczę: {c}…'],
+            chat: [
+              ['{n}, to moja moneta', 'Leżała na ziemi, czyli niczyja'],
+              'Zbieram na lepszy komputer',
+              ['Ile już masz?', 'Nie powiem, bo ukradniecie'],
+              'Mam {c}. Prawie bogactwo',
+              'Worek ciąży. Dobry ciężar',
+              'Spadnie mi na głowę, to i tak biorę',
+              ['{n}, pożyczysz monetę?', 'Na jaki procent?'],
+              'Kapitalizm w czystej postaci',
+            ],
             think(f, dt, t) {
               if (f.state === 'hunt') {
                 let best = null;
@@ -8472,7 +8624,7 @@
                   }
                 }
                 if (best === null) {
-                  if (t > 120 && Math.random() < 0.01) talk(f, ['Gdzie te monety?', 'Pusto…', 'Niech pada złoto!']);
+                  if (t > 120 && Math.random() < 0.01) talk(f, ['Gdzie te monety?', 'Pusto', 'Niech coś spadnie']);
                   if (t > 240) {
                     walkTo(f, spot(f));
                   }
@@ -8597,10 +8749,10 @@
               for (const f of ppl) {
                 if (f.gone || f.state === 'leave') continue;
                 if (best > 0 && f.count === best) {
-                  say(f, pickOne(['Jestem bogaty!', `${f.count} monet!`, 'Najbogatszy!', 'Złoto moje!']), 100);
+                  say(f, pickOne(['Bogactwo moje', `${f.count} monet, kto da więcej?`, 'Nie pożyczam']), 100);
                   set(f, 'cheer');
                 } else {
-                  say(f, pickOne(['Następnym razem…', 'Eh…', `Tylko ${f.count}…`, 'Podziel się!']), 100);
+                  say(f, pickOne(['Następnym razem', `Tylko ${f.count}?`, 'Podzielisz się? Nie?']), 100);
                   set(f, 'sulk');
                 }
               }
@@ -8617,7 +8769,16 @@
             },
             speed: (f) => (Math.sign(wind.x) === -f.dir ? 0.7 : 1.1),
             busy: (f) => f.state === 'zap' || f.state === 'down',
-            chat: ['Ale leje!', 'Burza!', 'Mój parasol!', 'Piorun!', '{n}, chodź pod parasol', 'Mokro…', 'Wieje!', 'Chowajmy się!', 'Grzmi!', 'Liczę do pioruna…', '{n}, masz płaszcz?', 'Kałuże wszędzie', 'Buty mam mokre', 'Ale błyska!', 'Lubię burzę'],
+            chat: [
+              ['{n}, wejdziesz pod parasol?', 'Za mały na dwoje'],
+              'Mokro mi nawet w myślach',
+              'Od błysku do grzmotu: pięć sekund',
+              ['Kto zostawił okno otwarte?', 'Ja. Sorry'],
+              'Parasol za 20 zł i to widać',
+              'Burza, a ja w białych butach',
+              ['{n}, idziemy się schować?', 'Już nie ma po co'],
+              'Kałuża była głębsza, niż wyglądała',
+            ],
             think(f, dt, t) {
               if (f.flip > 0) f.flip -= dt;
               if (f.state === 'zap') {
@@ -8629,7 +8790,7 @@
               }
               if (f.state === 'down') {
                 if (t >= f.lie + 24) {
-                  say(f, pickOne(['Włosy mi stoją!', 'Żyję!', 'Ale kopnęło!', 'Uff…']));
+                  say(f, pickOne(['Żyję. Chyba', 'Teraz świecę w ciemności', 'Ale kopnęło']));
                   walkTo(f, spot(f));
                 }
                 return true;
@@ -8642,7 +8803,7 @@
                 const f = pickOne(ppl.filter((o) => o.umb && o.flip <= 0 && onScreen(o) && o.state !== 'zap' && o.state !== 'down'));
                 if (f) {
                   f.flip = 110;
-                  say(f, pickOne(['Mój parasol!', 'Ojej!', 'Wieje!', 'Parasol na lewą stronę!']));
+                  say(f, pickOne(['Mój parasol!', 'No nie', 'Na drugą stronę, super']));
                 }
               }
               // Krople rozbijają się na parasolach.
@@ -8663,7 +8824,7 @@
             near(f, x) {
               if (Math.abs(x - f.x) > 110 * f.s || f.state === 'zap' || f.state === 'down') return;
               set(f, 'zap');
-              say(f, pickOne(['Bzzt!', 'Auć, prąd!', 'Aaa!', 'Trafiło mnie!']));
+              say(f, pickOne(['Bzzt', 'Auć, prąd', 'Mam nowe włosy']));
             },
             pose(f, q, t) {
               if (f.state === 'zap') {
@@ -8776,7 +8937,16 @@
               walkTo(f, spot(f));
             },
             busy: () => false,
-            chat: ['Blub blub', 'Rybka!', 'Ale głęboko', 'Gdzie skarb?', '{n}, płyń tutaj!', 'Bąbelki!', 'Widzę rafę!', 'Uwaga, meduza!', 'Pływamy!', '{n}, ścigamy się?', 'Muszelka!', 'Tlen w normie', 'Ciekawe, co tam na dnie', 'Ośmiornica?!'],
+            chat: [
+              ['{n}, ścigamy się do rafy?', 'Daj mi złapać oddech'],
+              'Blub.',
+              'Widzę rybę. Ryba widzi mnie',
+              ['Gdzie ten skarb?', 'Mapa zamokła'],
+              'Fajka mi się zalała',
+              'Tu jest ciszej niż na ogólnym',
+              ['{n}, widzisz tę meduzę?', 'Nie i dobrze'],
+              'Pływam jak zawodowiec. Prawie',
+            ],
             each(f, dt) {
               if (f.state === 'wave' || f.state === 'leave' || !f.float) f.float = true;
               f.y += (h - f.depth + Math.sin(now * 0.002 + f.phase) * 7 - f.y) * 0.04 * dt;
@@ -8791,7 +8961,7 @@
                 const fi = fish.find((o) => Math.abs(o.x - f.x) < 220);
                 if (fi) {
                   f.fishT = 1;
-                  say(f, pickOne(['Rybka!', 'Patrz, rybka!', 'Ale kolorowa!', 'Hej, rybko!']));
+                  say(f, pickOne(['Rybka', 'Hej, rybko', 'Ta ryba ma więcej XP ode mnie']));
                 }
               }
             },
@@ -8857,7 +9027,16 @@
               f.color = '#7dffb0';
             },
             busy: (f) => ['bullet', 'shoot', 'spar'].includes(f.state),
-            chat: ['Whoa.', 'Pan Anderson…', 'Nie ma łyżki.', 'Witaj w Matrixie', 'Czerwona czy niebieska?', '{n}, obudź się', 'Déjà vu…', 'Znam kung-fu', 'Unikaj kul!', 'System nas widzi', 'Wybór należy do ciebie', '{n}, idź za białym królikiem', 'To tylko kod', 'Jestem wybrańcem?'],
+            chat: [
+              ['Czerwona czy niebieska?', 'Mam uczulenie na obie'],
+              'Déjà vu. Znowu ten sam kot',
+              ['{n}, to tylko kod', 'Wszystko jest kodem'],
+              'Nie ma łyżki. Jest widelec',
+              'Znam kung-fu. Z YouTube’a',
+              ['Kto tu jest Wybrańcem?', 'Na pewno nie ty'],
+              'Ładowanie… 3%',
+              ['{n}, idź za białym królikiem', 'Mam uczulenie na sierść'],
+            ],
             think(f, dt, t) {
               if (f.state === 'shoot') {
                 const neo = f.aim;
@@ -8873,7 +9052,7 @@
                   bullets.push({ x, y: y + rnd(-3, 3), vx: f.dir * 1.6, age: 0, by: f });
                   if (f.shots === 1 && neo.state !== 'bullet') {
                     set(neo, 'bullet');
-                    say(f, pickOne(['Pan Anderson…', 'Koniec gry.', 'Żegnaj.']));
+                    say(f, pickOne(['Panie Anderson…', 'Koniec gry', 'Żegnam']));
                   }
                 }
                 if (t > 130) {
@@ -8885,7 +9064,7 @@
               }
               if (f.state === 'bullet') {
                 if (t > 150 && !bullets.some((b) => Math.abs(b.x - f.x) < 60)) {
-                  say(f, pickOne(['Whoa.', 'Nie ma łyżki.', 'Za wolno.', 'Hm.']));
+                  say(f, pickOne(['Whoa', 'Za wolno', 'Hm']));
                   set(f, 'idle');
                   f.wait = rnd(100, 200);
                 }
@@ -8899,7 +9078,7 @@
                   return true;
                 }
                 f.dir = Math.sign(o.x - f.x) || f.dir;
-                if (Math.floor(t / 26) !== Math.floor((t - dt) / 26) && Math.random() < 0.5) say(f, pickOne(['Hia!', 'Hm!', 'Ha!', 'Szybciej!']), 30);
+                if (Math.floor(t / 26) !== Math.floor((t - dt) / 26) && Math.random() < 0.5) say(f, pickOne(['Hia', 'Ha', 'Dawaj', 'Szybciej']), 30);
                 return true;
               }
               return false;
@@ -8932,7 +9111,7 @@
                 set(ag, 'spar');
                 set(neo, 'spar');
                 ag.x = ag.x + (ag.tx - ag.x) * 0.6;
-                say(neo, pickOne(['Znam kung-fu.', 'Pokaż mi.', 'Dawaj.']));
+                say(neo, pickOne(['Znam kung-fu', 'Pokaż, co umiesz', 'Dawaj']));
               }
             },
             pose(f, q, t) {
@@ -8999,7 +9178,7 @@
           const [x, y] = f.j.h1;
           add({ t: 'glint', x, y, vx: 0, vy: 0, s: rnd(5, 8), life: 14, c: '#fff1b8', noLand: true });
           add({ t: 'plus', x: x + rnd(-6, 6), y: y - 14, vx: 0, vy: -0.9, life: 40, noLand: true, instant: true });
-          if (Math.random() < (caught ? 0.5 : 0.25)) talk(f, caught ? ['Złapane!', 'Prosto z nieba!', 'Mam!'] : ['Moje!', 'Złoto!', '+1!', 'Mam {c}!', 'Błyszczy!']);
+          if (Math.random() < (caught ? 0.5 : 0.25)) talk(f, caught ? ['Prosto z nieba', 'Złapane', 'Mam'] : ['Moje', '+1', 'Ładna', 'Mam {c}']);
         }
         const JUMPY = ['idle', 'walk', 'dance', 'disco', 'hold', 'wait', 'rake', 'gaze', 'hunt'];
         return {
@@ -9022,7 +9201,7 @@
               f.s = scaleNow();
               if (!f.hello && f.x > 24 && f.x < w - 24) {
                 f.hello = true;
-                if (Math.random() < 0.55) say(f, pickOne(S.hello ?? HELLO), 70);
+                if (Math.random() < 0.4) say(f, fresh(S.hello ?? HELLO), 70);
               }
               S.each?.(f, dt);
               f.x += f.vx * dt;
@@ -9064,7 +9243,7 @@
             }
             chatT -= dt;
             if (chatT <= 0 && !ending) {
-              chatT = rnd(100, 210) * (ppl.length > 4 ? 0.75 : 1);
+              chatT = rnd(150, 280) * (ppl.length > 4 ? 0.8 : 1);
               const free = ppl.filter((o) => onScreen(o) && o.sayT <= 0 && o.replyT <= 0 && !['leave', 'down', 'hit', 'wave', 'zap'].includes(o.state) && !S.busy?.(o));
               if (free.length) {
                 const f = pickOne(free);
@@ -9085,7 +9264,7 @@
           poke(x, y) {
             for (const f of ppl) {
               if (f.gone || !touches(f, x, y, 6)) continue;
-              say(f, pickOne(S.pokes ?? POKE), 60);
+              say(f, fresh(S.pokes ?? POKE), 60);
               if (!f.float && !f.air && JUMPY.includes(f.state)) {
                 set(f, 'jump');
                 hop(f, 3.2);
@@ -9099,7 +9278,7 @@
             for (const f of ppl) {
               if (f.gone || !onScreen(f) || Math.abs(f.x - x) > 160 * f.s) continue;
               if (S.near) S.near(f, x, y);
-              else if (Math.random() < 0.4 && f.sayT <= 0) say(f, pickOne(WOW));
+              else if (Math.random() < 0.35 && f.sayT <= 0) say(f, fresh(WOW));
             }
           },
           end: () => ending || finish(),
