@@ -223,6 +223,20 @@
     .crown { position: absolute; z-index: 3; left: 50%; top: -22px; width: 36px; margin-left: -18px; line-height: 0; pointer-events: none; }
     .crown svg { width: 100%; fill: var(--gold); filter: drop-shadow(0 2px 5px rgba(227, 179, 65, 0.55)); animation: crown-float 3.2s ease-in-out infinite; }
     body.ev-page[data-ev="snow"] .crown svg { animation: none; }
+    /* Zwycięzca w czasie wydarzenia: nakrycie głowy w stylu efektu (HATS) zamiast korony */
+    body.has-hat .top.t1 .crown {
+      top: calc(var(--avs) * var(--ht)); width: calc(var(--avs) * var(--hw)); margin-left: calc(var(--avs) * var(--hw) / -2 + var(--avs) * var(--hx));
+      aspect-ratio: var(--ha); background: var(--dc-hat) center / 100% 100% no-repeat; transform: rotate(var(--hr)); transform-origin: 50% 100%;
+      filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.45)); animation: var(--hat-anim);
+    }
+    body.has-hat .top.t1 .crown svg { display: none; }
+    body.has-hat .top3 { --pad: var(--hat-pad, 40px); }
+    @keyframes hat-wobble { 0%, 100% { rotate: -3deg; } 50% { rotate: 3deg; } }
+    @keyframes hat-flicker { from { scale: 1 1; } to { scale: 1.03 1.09; } }
+    @keyframes hat-beat { 0%, 30%, 60%, 100% { scale: 1; } 15% { scale: 1.08; } 45% { scale: 1.05; } }
+    @keyframes hat-twinkle { 0%, 100% { filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.45)) brightness(1); } 50% { filter: drop-shadow(0 0 8px rgba(255, 224, 102, 0.55)) brightness(1.2); } }
+    @keyframes hat-neon { 0%, 44%, 50%, 68%, 74%, 100% { opacity: 1; } 46% { opacity: 0.45; } 70% { opacity: 0.75; } }
+    @keyframes hat-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -4px; } }
     .crown circle, .arch-crown circle { fill: #ffe9a6; }
     @keyframes crown-float { 50% { transform: translateY(-3px) rotate(-3deg); } }
     .spark {
@@ -974,6 +988,7 @@
       .ev-deco *, body.ev-page h1, body.ev-page .event .ev-mult, body.ev-page .top.t1 .pod-av::after { animation: none !important; }
       body.ev-page[data-ev="coins"] :is(.table, .top3)::after { display: none; }
       .beam, .top.t1 .pod-av::before, .crown svg, .spark, .top.flash .pod-col { animation: none; }
+      body.has-hat .top.t1 .crown { animation: none; }
       .pod-av, .pod-col { transition: none; }
     }
   </style>
@@ -2201,12 +2216,38 @@
           return {};
       }
     }
+    // Zwycięzca (1. miejsce) w czasie wydarzenia: nakrycie głowy w stylu efektu zamiast korony. w — szerokość, top — górna
+    // krawędź, x — przesunięcie w bok (wszystko × rozmiar awatara), r — obrót (deg), a — proporcje, anim — animacja,
+    // prof — kontur czapki (u, v od 0 do 1), na którym zbiera się śnieg.
+    const HATS = {
+      snow: { w: 1.1, top: -0.46, x: 0.05, r: -7, a: "120 / 92", prof: [[0.06, 0.69], [0.14, 0.44], [0.3, 0.18], [0.5, 0.09], [0.66, 0.07], [0.8, 0.12], [0.9, 0.27], [0.93, 0.44], [0.96, 0.63], [0.98, 0.69]], svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 92'><defs><linearGradient id='r' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#ff4d4d'/><stop offset='1' stop-color='#b0121a'/></linearGradient><radialGradient id='f' cx='.4' cy='.3' r='.8'><stop offset='0' stop-color='#ffffff'/><stop offset='1' stop-color='#dbe6f2'/></radialGradient></defs><path d='M14 68 C15 42 33 15 63 9 C86 5 103 15 109 32 C110 39 107 46 101 49 C97 40 91 33 83 32 C86 44 93 56 106 68 Z' fill='url(#r)' stroke='#8a0e14' stroke-width='2.2' stroke-linejoin='round'/><path d='M30 54 C34 36 47 21 66 15' fill='none' stroke='#ff9a9a' stroke-width='3.4' stroke-linecap='round' opacity='.5'/><path d='M7 63 Q60 52 113 63 Q118 72 113 81 Q60 70 7 83 Q2 73 7 63 Z' fill='url(#f)' stroke='#c3d1e1' stroke-width='1.4'/><g fill='#ffffff'><circle cx='14' cy='66' r='4.6'/><circle cx='27' cy='62.5' r='4.8'/><circle cx='41' cy='60.5' r='4.6'/><circle cx='55' cy='59.5' r='4.8'/><circle cx='69' cy='59.5' r='4.6'/><circle cx='83' cy='60.5' r='4.8'/><circle cx='97' cy='62' r='4.6'/><circle cx='109' cy='65' r='4.2'/></g><circle cx='102' cy='52' r='11.5' fill='url(#f)' stroke='#c3d1e1' stroke-width='1.4'/><g fill='#ffffff'><circle cx='97' cy='47' r='4'/><circle cx='105' cy='45.5' r='3.6'/><circle cx='109' cy='52' r='3.4'/><circle cx='95' cy='55' r='3.4'/></g></svg>" },
+      confetti: { w: 0.7, top: -0.74, x: 0.06, r: 14, a: "70 / 92", anim: "hat-wobble 2.6s ease-in-out infinite", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 70 92'><defs><clipPath id='c'><path d='M35 12 L64 84 Q35 92 6 84 Z'/></clipPath></defs><g clip-path='url(#c)'><rect width='70' height='92' fill='#8a5cff'/><path d='M-10 30 L80 0 L80 14 L-10 44 Z M-10 58 L80 28 L80 42 L-10 72 Z M-10 86 L80 56 L80 70 L-10 100 Z' fill='#ffd23f'/><path d='M-10 44 L80 14 L80 21 L-10 51 Z M-10 72 L80 42 L80 49 L-10 79 Z' fill='#ff4fa3'/></g><path d='M35 12 L64 84 Q35 92 6 84 Z' fill='none' stroke='#3d2a7a' stroke-width='2' stroke-linejoin='round'/><path d='M27 30 L14 74' stroke='#ffffff' stroke-width='3' stroke-linecap='round' opacity='.4'/><g fill='#2ec5ff'><circle cx='30' cy='10' r='6'/></g><g fill='#ff4fa3'><circle cx='38' cy='7' r='5.5'/></g><g fill='#ffd23f'><circle cx='35' cy='14' r='5'/></g><g fill='#5dffb0'><circle cx='41' cy='13' r='4.5'/></g><circle cx='34' cy='9' r='3' fill='#ffffff' opacity='.8'/></svg>" },
+      fire: { w: 0.92, top: -0.5, x: 0, r: 0, a: "110 / 74", anim: "hat-flicker 0.9s ease-in-out infinite alternate", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 110 74'><defs><linearGradient id='g' x1='0' y1='1' x2='0' y2='0'><stop offset='0' stop-color='#d81e05'/><stop offset='.45' stop-color='#ff7a1a'/><stop offset='.8' stop-color='#ffc93d'/><stop offset='1' stop-color='#fff2a8'/></linearGradient><linearGradient id='b' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#ffd66b'/><stop offset='1' stop-color='#b5650d'/></linearGradient></defs><path d='M10 62 C2 44 14 36 16 22 C24 32 26 40 30 46 C30 30 38 18 42 6 C50 22 54 32 55 44 C58 32 64 18 70 8 C74 24 78 34 80 46 C84 38 88 30 94 22 C98 38 108 46 100 62 Z' fill='url(#g)' stroke='#9c1c04' stroke-width='1.6' stroke-linejoin='round'/><path d='M24 58 C20 48 26 42 28 36 C32 44 36 50 38 56 Z M48 58 C44 44 50 34 54 24 C58 36 62 46 60 58 Z M72 58 C70 46 74 38 78 32 C82 42 86 50 84 58 Z' fill='#fff3b0' opacity='.8'/><rect x='8' y='58' width='94' height='12' rx='4' fill='url(#b)' stroke='#7a3d05' stroke-width='1.4'/><g fill='#ff3b1f'><circle cx='30' cy='64' r='2.6'/><circle cx='55' cy='64' r='3.2'/><circle cx='80' cy='64' r='2.6'/></g></svg>" },
+      halloween: { w: 1.12, top: -0.82, x: 0.03, r: -6, a: "120 / 104", anim: "hat-wobble 3.4s ease-in-out infinite", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 104'><defs><linearGradient id='h' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#4a2a6e'/><stop offset='1' stop-color='#1a0f24'/></linearGradient></defs><path d='M34 84 C40 62 46 44 52 30 C58 16 70 6 86 4 C92 4 98 8 100 14 C92 12 84 14 78 22 C72 32 72 52 80 84 Z' fill='url(#h)' stroke='#0d0614' stroke-width='2' stroke-linejoin='round'/><path d='M50 66 C54 48 60 34 70 22' fill='none' stroke='#8c63c4' stroke-width='3' stroke-linecap='round' opacity='.5'/><path d='M38 70 Q58 76 80 70 L81 82 Q58 88 36 82 Z' fill='#ff7a18' stroke='#7a3205' stroke-width='1.4'/><rect x='51' y='70' width='13' height='12' rx='2' fill='none' stroke='#ffd66b' stroke-width='2.6'/><ellipse cx='60' cy='88' rx='56' ry='12' fill='url(#h)' stroke='#0d0614' stroke-width='2'/><path d='M14 86 Q60 78 106 86' fill='none' stroke='#8c63c4' stroke-width='1.6' opacity='.5'/></svg>" },
+      hearts: { w: 0.96, top: -0.42, x: 0, r: 0, a: "110 / 58", anim: "hat-beat 1.4s ease-in-out infinite", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 110 58'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#fff1b8'/><stop offset='1' stop-color='#d99a1e'/></linearGradient><radialGradient id='p' cx='.35' cy='.3' r='.8'><stop offset='0' stop-color='#ffc2d4'/><stop offset='.5' stop-color='#ff4f86'/><stop offset='1' stop-color='#c41d55'/></radialGradient></defs><path d='M6 50 Q55 30 104 50 L104 56 Q55 38 6 56 Z' fill='url(#g)' stroke='#8a5a0e' stroke-width='1.2'/><path d='M55 46 C38 34 32 24 36 15 C40 7 51 7 55 16 C59 7 70 7 74 15 C78 24 72 34 55 46 Z' fill='url(#p)' stroke='#8a0f3a' stroke-width='1.6'/><path d='M44 16 Q46 12 50 13' fill='none' stroke='#ffffff' stroke-width='2.4' stroke-linecap='round' opacity='.8'/><path d='M26 46 C18 40 15 34 17 30 C19 26 24 26 26 30 C28 26 33 26 35 30 C37 34 34 40 26 46 Z' fill='url(#p)' stroke='#8a0f3a' stroke-width='1.2'/><path d='M84 46 C76 40 73 34 75 30 C77 26 82 26 84 30 C86 26 91 26 93 30 C95 34 92 40 84 46 Z' fill='url(#p)' stroke='#8a0f3a' stroke-width='1.2'/><g fill='#ffffff'><circle cx='12' cy='48' r='2'/><circle cx='98' cy='48' r='2'/><circle cx='40' cy='44' r='1.6'/><circle cx='70' cy='44' r='1.6'/></g></svg>" },
+      stars: { w: 1.08, top: -0.9, x: -0.02, r: 5, a: "120 / 106", anim: "hat-twinkle 2.4s ease-in-out infinite", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 106'><defs><linearGradient id='h' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#3a4fd6'/><stop offset='1' stop-color='#141a5c'/></linearGradient></defs><path d='M30 86 C40 64 48 42 56 26 C62 14 72 6 84 4 C80 10 76 16 76 26 C76 46 82 66 90 86 Z' fill='url(#h)' stroke='#0a0e33' stroke-width='2' stroke-linejoin='round'/><path d='M46 70 C52 50 58 36 66 22' fill='none' stroke='#8fa2ff' stroke-width='3' stroke-linecap='round' opacity='.45'/><g fill='#ffe066'><path d='M62 44 l2.4 5 5.4.6-4 3.7 1.1 5.3-4.9-2.7-4.9 2.7 1.1-5.3-4-3.7 5.4-.6z'/><path d='M72 66 l1.6 3.4 3.7.4-2.7 2.5.8 3.6-3.4-1.9-3.3 1.9.8-3.6-2.8-2.5 3.7-.4z'/><path d='M50 72 l1.2 2.6 2.8.3-2.1 1.9.6 2.8-2.5-1.4-2.5 1.4.6-2.8-2.1-1.9 2.8-.3z'/></g><path d='M72 30 a7 7 0 1 0 7 9 a5.5 5.5 0 1 1 -7 -9 z' fill='#fff2a8'/><ellipse cx='60' cy='90' rx='56' ry='13' fill='url(#h)' stroke='#0a0e33' stroke-width='2'/><path d='M12 89 Q60 80 108 89' fill='none' stroke='#8fa2ff' stroke-width='1.6' opacity='.5'/><g fill='#ffe066'><circle cx='26' cy='92' r='1.6'/><circle cx='94' cy='93' r='1.6'/><circle cx='60' cy='97' r='1.4'/></g></svg>" },
+      neon: { w: 0.86, top: -0.42, x: 0, r: 0, a: "100 / 66", anim: "hat-neon 2.2s steps(1) infinite", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 66'><defs><filter id='b' x='-30%' y='-30%' width='160%' height='160%'><feGaussianBlur stdDeviation='3'/></filter></defs><g fill='none' stroke-linejoin='round' stroke-linecap='round'><path d='M12 56 L8 18 L30 34 L50 8 L70 34 L92 18 L88 56 Z' stroke='#ff3fd6' stroke-width='6' filter='url(#b)' opacity='.9'/><path d='M12 56 L8 18 L30 34 L50 8 L70 34 L92 18 L88 56 Z' stroke='#ffd6f6' stroke-width='2.4'/><path d='M14 48 H86' stroke='#22e5c8' stroke-width='6' filter='url(#b)'/><path d='M14 48 H86' stroke='#d6fff8' stroke-width='2.2'/></g><g fill='#22e5c8'><circle cx='8' cy='16' r='3.4'/><circle cx='50' cy='6' r='3.8'/><circle cx='92' cy='16' r='3.4'/></g></svg>" },
+      leaves: { w: 1.22, top: -0.3, x: 0, r: 0, a: "130 / 58", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 130 58'><path d='M8 50 Q65 6 122 50' fill='none' stroke='#5a3a22' stroke-width='3.4' stroke-linecap='round'/><g stroke-width='1' stroke-linejoin='round'><path d='M10 46 C2 38 4 26 14 22 C16 32 18 40 10 46 Z' fill='#c2410c' stroke='#6b2007'/><path d='M22 34 C16 22 24 12 34 12 C32 22 30 30 22 34 Z' fill='#e8b04a' stroke='#7a5410'/><path d='M38 24 C36 12 46 4 56 6 C52 16 48 22 38 24 Z' fill='#d9822b' stroke='#7a3d10'/><path d='M56 18 C58 6 70 2 78 8 C72 16 64 20 56 18 Z' fill='#a3361b' stroke='#5a1a0b'/><path d='M74 20 C82 10 94 12 98 20 C90 26 82 26 74 20 Z' fill='#f2c14e' stroke='#7a5a10'/><path d='M92 30 C102 22 114 26 116 36 C106 38 98 38 92 30 Z' fill='#d9822b' stroke='#7a3d10'/><path d='M108 44 C120 42 128 50 124 58 C116 56 110 52 108 44 Z' fill='#c2410c' stroke='#6b2007'/><path d='M30 26 C22 30 18 38 22 44 C28 38 30 32 30 26 Z' fill='#b5651d' stroke='#5a3008'/><path d='M100 28 C108 30 112 38 108 44 C102 38 100 34 100 28 Z' fill='#e8b04a' stroke='#7a5410'/></g><g fill='#a3361b'><circle cx='64' cy='26' r='4'/><circle cx='58' cy='29' r='3.4'/><circle cx='70' cy='29' r='3.4'/></g></svg>" },
+      sakura: { w: 1.22, top: -0.28, x: 0, r: 0, a: "130 / 52", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 130 52'><defs><g id='f'><path d='M0 -9 C4 -9 5 -5 2 -3 L0 -4 L-2 -3 C-5 -5 -4 -9 0 -9 Z'/><path d='M0 -9 C4 -9 5 -5 2 -3 L0 -4 L-2 -3 C-5 -5 -4 -9 0 -9 Z' transform='rotate(72)'/><path d='M0 -9 C4 -9 5 -5 2 -3 L0 -4 L-2 -3 C-5 -5 -4 -9 0 -9 Z' transform='rotate(144)'/><path d='M0 -9 C4 -9 5 -5 2 -3 L0 -4 L-2 -3 C-5 -5 -4 -9 0 -9 Z' transform='rotate(216)'/><path d='M0 -9 C4 -9 5 -5 2 -3 L0 -4 L-2 -3 C-5 -5 -4 -9 0 -9 Z' transform='rotate(288)'/></g></defs><path d='M8 46 Q65 4 122 46' fill='none' stroke='#5b3a33' stroke-width='3' stroke-linecap='round'/><g fill='#6fae4a'><path d='M20 34 C14 28 16 22 22 22 C24 28 24 30 20 34 Z'/><path d='M46 18 C42 12 46 8 52 10 C52 14 50 16 46 18 Z'/><path d='M84 18 C88 12 84 8 78 10 C78 14 80 16 84 18 Z'/><path d='M110 34 C116 28 114 22 108 22 C106 28 106 30 110 34 Z'/></g><g fill='#ffb3cf' stroke='#e2669f' stroke-width='.8'><use href='#f' x='12' y='42'/><use href='#f' x='30' y='26'/><use href='#f' x='50' y='16' transform='scale(1)'/><use href='#f' x='65' y='12'/><use href='#f' x='80' y='16'/><use href='#f' x='100' y='26'/><use href='#f' x='118' y='42'/></g><g fill='#ffe08a'><circle cx='12' cy='42' r='2'/><circle cx='30' cy='26' r='2'/><circle cx='50' cy='16' r='2'/><circle cx='65' cy='12' r='2.2'/><circle cx='80' cy='16' r='2'/><circle cx='100' cy='26' r='2'/><circle cx='118' cy='42' r='2'/></g></svg>" },
+      coins: { w: 0.82, top: -0.72, x: 0.06, r: -9, a: "100 / 94", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 94'><defs><linearGradient id='h' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='#3a3d44'/><stop offset='.35' stop-color='#1a1c20'/><stop offset='1' stop-color='#0b0c0e'/></linearGradient><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#ffe08a'/><stop offset='1' stop-color='#c8901d'/></linearGradient></defs><path d='M24 72 L26 12 Q50 4 74 12 L76 72 Z' fill='url(#h)' stroke='#000000' stroke-width='2' stroke-linejoin='round'/><ellipse cx='50' cy='12' rx='24' ry='6' fill='#2a2d33' stroke='#000000' stroke-width='1.6'/><path d='M25 58 L75 58 L75.5 70 L24.5 70 Z' fill='url(#g)' stroke='#7a5410' stroke-width='1.2'/><ellipse cx='50' cy='80' rx='46' ry='10' fill='url(#h)' stroke='#000000' stroke-width='2'/><path d='M10 80 Q50 72 90 80' fill='none' stroke='#5a5e68' stroke-width='1.6'/><circle cx='64' cy='64' r='9' fill='url(#g)' stroke='#7a5410' stroke-width='1.4'/><text x='64' y='68.5' font-family='Arial, sans-serif' font-size='12' font-weight='700' text-anchor='middle' fill='#7a5410'>$</text><path d='M32 18 L31 54' stroke='#ffffff' stroke-width='3' stroke-linecap='round' opacity='.18'/></svg>" },
+      storm: { w: 1.08, top: -0.86, x: 0, r: 0, a: "120 / 86", anim: "hat-float 3s ease-in-out infinite", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 86'><defs><linearGradient id='c' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#6b7591'/><stop offset='1' stop-color='#2a3047'/></linearGradient></defs><g stroke='#c9d6ff' stroke-width='2' stroke-linecap='round' opacity='.75'><path d='M30 58 l-4 10'/><path d='M46 62 l-4 10'/><path d='M78 62 l-4 10'/><path d='M94 58 l-4 10'/></g><path d='M64 46 L50 66 H60 L54 84 L74 58 H63 L70 46 Z' fill='#ffe066' stroke='#b88a0a' stroke-width='1.4' stroke-linejoin='round'/><g fill='url(#c)' stroke='#1a1f30' stroke-width='1.6'><path d='M22 52 C10 52 6 40 14 34 C12 22 26 16 34 22 C38 10 56 6 64 16 C72 6 92 10 92 24 C104 22 112 34 104 42 C110 50 102 56 94 52 Z'/></g><path d='M24 30 C28 24 36 24 40 28 M62 20 C66 16 72 16 76 20' fill='none' stroke='#aab4d4' stroke-width='2' stroke-linecap='round' opacity='.6'/></svg>" },
+      bubbles: { w: 1.06, top: -0.54, x: 0.02, r: -6, a: "120 / 74", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 74'><defs><linearGradient id='w' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#ffffff'/><stop offset='1' stop-color='#d6e2ee'/></linearGradient></defs><path d='M14 40 C12 18 36 6 62 6 C90 6 110 18 106 40 Z' fill='url(#w)' stroke='#8aa0b8' stroke-width='1.8' stroke-linejoin='round'/><rect x='14' y='38' width='92' height='14' rx='4' fill='#1d2b44' stroke='#0c1424' stroke-width='1.6'/><path d='M18 50 Q60 74 104 50 Q60 64 18 50 Z' fill='#0f1a2c' stroke='#060b14' stroke-width='1.4'/><path d='M18 40 H102' stroke='#e2b33a' stroke-width='2.2'/><g transform='translate(60 24)' fill='none' stroke='#d6a12a' stroke-width='2.4' stroke-linecap='round'><circle cx='0' cy='-8' r='3'/><path d='M0 -5 V9 M-6 0 H6 M-9 4 Q-8 10 0 10 Q8 10 9 4'/></g><path d='M24 30 C26 18 40 12 54 11' fill='none' stroke='#ffffff' stroke-width='3' stroke-linecap='round' opacity='.8'/></svg>" },
+      matrix: { w: 0.98, top: 0.3, x: 0, r: 0, a: "120 / 38", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 38'><defs><linearGradient id='l' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#1b2a22'/><stop offset='.6' stop-color='#050806'/><stop offset='1' stop-color='#0c1a12'/></linearGradient></defs><path d='M2 12 Q8 8 16 10 M118 12 Q112 8 104 10' fill='none' stroke='#0a0c0b' stroke-width='3' stroke-linecap='round'/><path d='M14 10 Q36 6 54 12 Q56 26 44 32 Q24 36 16 28 Q10 20 14 10 Z' fill='url(#l)' stroke='#000000' stroke-width='2'/><path d='M106 10 Q84 6 66 12 Q64 26 76 32 Q96 36 104 28 Q110 20 106 10 Z' fill='url(#l)' stroke='#000000' stroke-width='2'/><path d='M54 14 Q60 10 66 14' fill='none' stroke='#000000' stroke-width='3'/><g stroke='#5dff9e' stroke-width='1.6' stroke-linecap='round' opacity='.85'><path d='M22 14 L30 12'/><path d='M74 14 L84 12'/><path d='M24 20 L28 19'/></g></svg>" },
+    };
     function pageFx(fx) {
       document.querySelectorAll('.ev-deco').forEach((node) => node.remove());
-      for (const v of ['--evk', '--dc-cap', '--dc-web', '--dc-stars', '--dc-caustic']) document.body.style.removeProperty(v);
+      for (const v of ['--evk', '--dc-cap', '--dc-web', '--dc-stars', '--dc-caustic', '--dc-hat', '--hw', '--ht', '--hx', '--hr', '--ha', '--hat-anim', '--hat-pad']) document.body.style.removeProperty(v);
       document.body.classList.toggle('ev-page', Boolean(fx));
+      document.body.classList.remove('has-hat');
       if (!fx) return;
       document.body.style.setProperty('--evk', String(FX_PAGE[fx.intensity] ?? 0.65));
+      const hat = HATS[fx.theme];
+      if (hat) {
+        // --hat-pad: tyle miejsca nad podium, żeby wysoka czapka się nie ucinała.
+        const vars = { '--dc-hat': svgUrl(hat.svg), '--hw': hat.w, '--ht': hat.top, '--hx': hat.x, '--hr': `${hat.r}deg`, '--ha': hat.a, '--hat-anim': hat.anim ?? 'none', '--hat-pad': `${Math.max(40, Math.round(-hat.top * 96 + 12))}px` };
+        for (const [k, v] of Object.entries(vars)) document.body.style.setProperty(k, String(v));
+        document.body.classList.add('has-hat');
+      }
       const parts = decoHtml(fx.theme, fx.colors);
       for (const [k, v] of Object.entries(parts.vars ?? {})) document.body.style.setProperty(k, v);
       const layer = (where, html) => `<div class="ev-deco ${where} d-${fx.theme}" aria-hidden="true">${html}</div>`;
@@ -3096,7 +3137,7 @@
     // Elementy, w które się klika — na nich przytrzymanie nie dmucha baniek i nie włącza magnesu.
     const INTERACTIVE = 'a, button, input, select, textarea, label, summary, [role="button"], [role="tab"], [tabindex]';
     // Kontur korony zwycięzcy (viewBox 32×24): śnieg leży też na koronie.
-    const CROWN_TOP = [[0.6, 6.5], [2.3, 4.1], [4, 7.6], [9.5, 12.1], [14.4, 5.6], [16, 0.4], [17.6, 5.6], [22.5, 12.1], [28, 7.6], [29.7, 4.1], [31.4, 6.5]];
+    const CROWN_TOP = [[0.6, 6.5], [2.3, 4.1], [4, 7.6], [9.5, 12.1], [14.4, 5.6], [16, 0.4], [17.6, 5.6], [22.5, 12.1], [28, 7.6], [29.7, 4.1], [31.4, 6.5]].map(([x, y]) => [x / 32, y / 24]);
     // Matrix: teksty, które „dekodują się” po najechaniu i same z siebie.
     const MX_SEL = 'h1, .ev-name, .ev-sub, .dn, .pod-col b, .rank, .num, dd, dt, .pod-lvl, .meta, .cmds code, .found';
     // Kliknięcia w Matrixie — deszcz znaków w tle rusza od tego miejsca.
@@ -3486,15 +3527,16 @@
         }
         const cr = st.crown;
         if (cr) {
+          const prof = cr.prof;
           for (let i = 0; i < n; i++) {
-            const u = ((i * st.bin - cr.l) / cr.w) * 32;
-            if (u < CROWN_TOP[0][0] || u > CROWN_TOP[CROWN_TOP.length - 1][0]) continue;
+            const u = (i * st.bin - cr.l) / cr.w;
+            if (u < prof[0][0] || u > prof[prof.length - 1][0]) continue;
             let k = 0;
-            while (k < CROWN_TOP.length - 2 && u > CROWN_TOP[k + 1][0]) k += 1;
-            const [u0, y0] = CROWN_TOP[k];
-            const [u1, y1] = CROWN_TOP[k + 1];
+            while (k < prof.length - 2 && u > prof[k + 1][0]) k += 1;
+            const [u0, y0] = prof[k];
+            const [u1, y1] = prof[k + 1];
             const yy = y0 + ((y1 - y0) * (u - u0)) / (u1 - u0 || 1);
-            const top = cr.top - (yy / 24) * cr.h;
+            const top = cr.top - yy * cr.h;
             if (top > b[i]) b[i] = top;
           }
         }
@@ -3665,11 +3707,13 @@
             const cy = r.top + r.height / 2;
             st.x = r.left + r.width / 2 - width / 2;
             st.y = cy;
-            const crownEl = el.querySelector('.crown svg');
+            // Korona albo czapka zwycięzcy (w czasie wydarzenia) — śnieg leży też na niej.
+            const hatProf = document.body.classList.contains('has-hat') ? HATS[theme]?.prof : null;
+            const crownEl = el.querySelector(hatProf ? '.crown' : '.crown svg');
             let crown = null;
             if (crownEl) {
               const cr = crownEl.getBoundingClientRect();
-              if (cr.width > 4) crown = { l: cr.left - st.x, w: cr.width, top: cy - cr.top, h: cr.height };
+              if (cr.width > 4) crown = { l: cr.left - st.x, w: cr.width, top: cy - cr.top, h: cr.height, prof: hatProf ?? CROWN_TOP };
             }
             const sig = crown ? `${crown.l.toFixed(0)}:${crown.top.toFixed(0)}:${crown.w.toFixed(0)}` : '';
             st.crown = crown;
@@ -4026,7 +4070,7 @@
       const ballR = (vol) => clamp(Math.sqrt(vol / Math.PI), 4.5, 34);
       function startBall(hit) {
         const vol = scoop(hit.st, hit.lx, 24, 1100);
-        held = { x: pointer.x, y: pointer.y, vol: Math.max(vol, 380), r: 0, rot: 0 };
+        held = { x: pointer.x, y: pointer.y, vol: Math.max(vol, 380), r: 0, rot: 0, trail: [{ t: performance.now(), x: pointer.x, y: pointer.y }] };
         held.r = ballR(held.vol);
         startGesture('ball');
         for (let k = 0; k < 6; k++) add({ t: 'flake', x: pointer.x + rnd(-8, 8), y: pointer.y - rnd(0, 6), vx: rnd(-1, 1), vy: -rnd(0.5, 1.8), g: 0.05, r: rnd(0.8, 1.6), a: 0.9, vol: 3, sway: rnd(0, TAU), amp: 0.2, wk: 0.3, tk: 1, z: 0 });
@@ -4035,6 +4079,9 @@
         const b = held;
         b.x = pointer.x;
         b.y = pointer.y;
+        // Ślad ręki z ostatnich ~0,2 s — z niego siła rzutu (zdarzenia myszy bywają łączone).
+        b.trail.push({ t: now, x: b.x, y: b.y });
+        while (b.trail.length > 2 && now - b.trail[0].t > 200) b.trail.shift();
         b.rot += (pointer.vx / Math.max(4, b.r)) * dt;
         if (pointer.speed < 0.3 || b.r >= 34) return;
         for (const st of surfs) {
@@ -4054,16 +4101,34 @@
       function throwBall() {
         const b = held;
         held = null;
-        const speed = Math.hypot(pointer.vx, pointer.vy);
-        const ball = { t: 'ball', x: b.x, y: b.y, r: b.r, vol: b.vol, rot: b.rot, z: 0, noLand: true, instant: true };
+        // Siła rzutu: najszybszy ruch ręki z ostatnich ~0,22 s (ludzie puszczają przycisk chwilę po wymachu).
+        const t = performance.now();
+        // Próbki z klatek i ze zdarzeń myszy (przy wolnych klatkach te drugie łapią sam wymach).
+        const t0 = b.trail[0].t;
+        const pts = [...b.trail, ...pointer.trail].filter((q) => q.t >= t0 && t - q.t <= 220).sort((a, c) => a.t - c.t);
+        pts.push({ t, x: pointer.x, y: pointer.y });
+        let hvx = 0;
+        let hvy = 0;
+        let speed = 0;
+        for (let i = 1; i < pts.length; i++) {
+          const span = Math.max(16, pts[i].t - pts[i - 1].t);
+          const vx = ((pts[i].x - pts[i - 1].x) / span) * 16.67;
+          const vy = ((pts[i].y - pts[i - 1].y) / span) * 16.67;
+          if (Math.hypot(vx, vy) > speed) {
+            speed = Math.hypot(vx, vy);
+            hvx = vx;
+            hvy = vy;
+          }
+        }
+        const ball = { t: 'ball', x: pointer.x, y: pointer.y, r: b.r, vol: b.vol, rot: b.rot, z: 0, noLand: true, instant: true };
         if (speed < 1.5) {
           add({ ...ball, vx: 0, vy: 0.4, vr: 0, g: 0.34, drag: 0.998, flight: Infinity });
           return;
         }
         // Rzucona leci w stronę strony (maleje) i po chwili na nią plaska — im szybciej, tym krócej leci.
         const k = Math.min(1, 20 / speed);
-        const vx = pointer.vx * k;
-        const vy = pointer.vy * k;
+        const vx = hvx * k;
+        const vy = hvy * k;
         add({ ...ball, vx, vy, vr: vx * 0.012, g: 0.26, drag: 0.995, flight: clamp(12 + 220 / (Math.hypot(vx, vy) + 6), 12, 34) });
       }
       function stepBall(p, dt) {
@@ -4079,7 +4144,7 @@
           p.y += (p.vy * dt) / n;
           // Krawędzie ekranu to ściany — śnieżka plaska o nie.
           if (p.x < p.r * 0.6 || p.x > w - p.r * 0.6 || p.y < p.r * 0.6) {
-            splatAt(clamp(p.x, p.r * 0.7, w - p.r * 0.7), Math.max(p.y, p.r * 0.7), p.r);
+            splatAt(clamp(p.x, p.r * 0.7, w - p.r * 0.7), Math.max(p.y, p.r * 0.7), p.r * 1.3, p.vx, p.vy);
             return false;
           }
           for (const st of surfs) {
@@ -4105,7 +4170,7 @@
           }
         }
         if (p.age > p.flight) {
-          splatAt(p.x, p.y, p.r);
+          splatAt(p.x, p.y, p.r * 1.3, p.vx, p.vy);
           return false;
         }
         return p.y - p.r < h + 40 && p.x > -80 && p.x < w + 80 && p.y > -600;
@@ -4129,7 +4194,29 @@
         }
         addSnow(st, lx, p.vol * 0.5, p.r * 1.7);
         debris(p, p.x, top - 2, p.vol * 0.5, Math.min(28, 8 + Math.round(p.vol / 22)), -Math.PI / 2, 1.3);
-        add({ t: 'ring', x: p.x, y: top, vx: 0, vy: 0, r: p.r * 0.8, grow: 2.2, lw: 1.4, c: '#f4f9ff', a: 0.8, life: 14, noLand: true });
+        poof(p.x, top - 1, p.r * 1.2, Math.sign(p.vx) * 0.4, -1, 1.3);
+        // Karta lekko „przyjmuje” uderzenie.
+        st.el?.animate?.([{ transform: 'none' }, { transform: 'translateY(2px)', offset: 0.3 }, { transform: 'none' }], { duration: 200, easing: 'ease-out' });
+      }
+      // Uderzenie śnieżki: obłok śnieżnego pyłu (od powierzchni, w stronę nx, ny), błysk, rozpłaszczona kulka i iskierki.
+      function poof(x, y, r, nx = 0, ny = -1, k = 1) {
+        const dir = Math.atan2(ny, nx);
+        // Pył: drobne, szybko hamujące obłoczki, rozchodzące się wachlarzem od powierzchni.
+        const n = Math.round((12 + r * 0.9) * k);
+        for (let i = 0; i < n; i++) {
+          const a = dir + rnd(-1.4, 1.4);
+          const v = rnd(1, 3 + r * 0.1) * k;
+          add({ t: 'powder', x: x + rnd(-r, r) * 0.25, y: y + rnd(-r, r) * 0.25, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 0.025, drag: 0.86, r: rnd(r * 0.18, r * 0.42), grow: rnd(0.25, 0.55), life: rnd(22, 40), a: rnd(0.35, 0.75), z: 0, noLand: true, instant: true });
+        }
+        // Okruchy: ostre smużki lecące szybciej niż pył.
+        for (let i = 0; i < Math.round((8 + r * 0.6) * k); i++) {
+          const a = dir + rnd(-1.25, 1.25);
+          const v = rnd(2.4, 5.2) * k;
+          add({ t: 'drop', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 0.16, drag: 0.94, life: rnd(12, 22), c: '#f2f8ff', a: 0.9, z: 0, noLand: true, wall: true });
+        }
+        add({ t: 'flash', x, y, vx: 0, vy: 0, r: r * 0.8, grow: 2.6, life: 7, z: 0, noLand: true, instant: true });
+        add({ t: 'squash', x, y, vx: 0, vy: 0, r, ang: dir, life: 7, z: 0, noLand: true, instant: true });
+        for (let i = 0; i < Math.round(3 * k); i++) add(radial(x, y, [1.2, 3.2], { t: 'glint', s: rnd(3, 5), life: rnd(10, 16), c: '#eaf6ff', noLand: true }));
       }
       // Trafienie w awatar: z góry śnieg zostaje na czapie, w „twarz” — plaśnięcie, a awatar się chwieje.
       function hitRound(p, st, cx, d) {
@@ -4141,7 +4228,8 @@
         const speed = Math.hypot(p.vx, p.vy);
         const upper = ny < -0.35;
         if (upper) addSnow(st, clamp(ix - st.x, 0, st.w), p.vol * (speed < 6 ? 0.9 : 0.45), p.r);
-        else splatAt(ix - nx * 2, iy - ny * 2, p.r * 0.95);
+        else splatAt(ix - nx * 2, iy - ny * 2, p.r * 0.95, p.vx, p.vy);
+        if (upper || speed >= 3) poof(ix, iy, p.r, nx, ny, speed < 6 ? 0.5 : 1);
         debris(p, ix, iy, p.vol * (upper ? (speed < 6 ? 0.1 : 0.55) : 0.7), Math.min(26, 6 + Math.round(p.vol / 24)), Math.atan2(ny, nx), 1.1);
         if (speed > 3) {
           st.el.animate?.(
@@ -4150,12 +4238,141 @@
           );
         }
       }
-      // Plaśnięcie na stronie: śnieg przykleja się do strony (przewija się z nią), po chwili zsuwa i odpada.
-      function splatAt(x, y, r) {
-        const lobes = Array.from({ length: Math.floor(rnd(7, 11)) }, () => ({ a: rnd(0, TAU), d: rnd(0.55, 1.05), s: rnd(0.28, 0.55) }));
-        const dots = Array.from({ length: 6 }, () => ({ a: rnd(0, TAU), d: rnd(1.3, 2.1), s: rnd(0.08, 0.18) }));
-        add({ t: 'splat', x, y, sy: scrollY, vx: 0, vy: 0, r, lobes, dots, life: rnd(280, 400), z: 0, noLand: true, instant: true });
-        for (let k = 0; k < 10; k++) add({ t: 'clump', x: x + rnd(-r, r), y: y + rnd(-r * 0.5, r * 0.5), vx: rnd(-2.2, 2.2), vy: rnd(-2.2, 0.6), g: 0.2, drag: 0.99, r: rnd(0.9, 1.8), vol: 4, z: 0, wall: true });
+      // Plama ubitego śniegu: nieregularny placek wydłużony w stronę lotu, promienie rozbryzgu z kropelkami,
+      // okruchy dookoła, ziarnista faktura, wypukła krawędź i cień. Rysowana raz do osobnego płótna.
+      function splatImage(r, dir, stretch) {
+        const dpr = Math.min(2, devicePixelRatio || 1);
+        const half = Math.ceil(r * 3.4);
+        const S = half * 2;
+        const layer = () => {
+          const c = document.createElement('canvas');
+          c.width = c.height = Math.ceil(S * dpr);
+          const g = c.getContext('2d');
+          g.setTransform(dpr, 0, 0, dpr, half * dpr, half * dpr);
+          return [c, g];
+        };
+        const ph = [rnd(0, TAU), rnd(0, TAU), rnd(0, TAU), rnd(0, TAU)];
+        const rad = (a) => {
+          const along = Math.max(0, Math.cos(a - dir));
+          return r * (1.02 + 0.1 * Math.sin(3 * a + ph[0]) + 0.07 * Math.sin(5 * a + ph[1]) + 0.04 * Math.sin(8 * a + ph[2])) * (1 + stretch * 0.6 * along * along);
+        };
+        const [m, mg] = layer();
+        mg.fillStyle = '#ffffff';
+        // Placek: brzeg z drobnym „ziarnem”.
+        mg.beginPath();
+        const N = 96;
+        for (let i = 0; i <= N; i++) {
+          const a = (i / N) * TAU;
+          const R = rad(a) * (i % 2 ? rnd(0.94, 1.03) : rnd(0.98, 1.06));
+          if (i) mg.lineTo(Math.cos(a) * R, Math.sin(a) * R);
+          else mg.moveTo(Math.cos(a) * R, Math.sin(a) * R);
+        }
+        mg.fill();
+        // Języki rozbryzgu: krótkie, zaokrąglone i zwężające się (głównie w stronę lotu), z kropelkami za końcem.
+        const lim = half - 3;
+        const rays = Math.round(rnd(6, 9) + stretch * 6);
+        for (let k = 0; k < rays; k++) {
+          const fwd = Math.random() < 0.45 + stretch * 0.4;
+          const a = fwd ? dir + rnd(-0.8, 0.8) : rnd(0, TAU);
+          const along = Math.max(0, Math.cos(a - dir));
+          const r0 = rad(a) * 0.8;
+          const L = Math.min(lim - r0 - 4, r * rnd(0.25, 0.65) * (1 + stretch * along * 1.3));
+          if (L < 2) continue;
+          const w = r * rnd(0.16, 0.28) * (1 - along * stretch * 0.2);
+          const ca = Math.cos(a);
+          const sa = Math.sin(a);
+          const bend = rnd(-0.12, 0.12);
+          for (let q = 0; q <= 10; q++) {
+            const f = q / 10;
+            const d = r0 + L * f;
+            const aa = a + bend * f * f;
+            mg.beginPath();
+            mg.arc(Math.cos(aa) * d, Math.sin(aa) * d, w * (1 - 0.6 * f), 0, TAU);
+            mg.fill();
+          }
+          let d = r0 + L + w * 0.4;
+          const drops = Math.random() < 0.7 ? 1 + (Math.random() < 0.4) : 0;
+          for (let j = 0; j < drops; j++) {
+            const dr = w * rnd(0.3, 0.5);
+            d += dr * 2 + rnd(1, 3);
+            if (d + dr > lim) break;
+            mg.beginPath();
+            mg.arc(Math.cos(a + bend) * d, Math.sin(a + bend) * d, dr, 0, TAU);
+            mg.fill();
+          }
+        }
+        // Okruchy wokół plamy (gęściej w stronę lotu).
+        const crumbs = Math.round(rnd(12, 20) + stretch * 12);
+        for (let k = 0; k < crumbs; k++) {
+          const a = Math.random() < 0.45 + stretch * 0.35 ? dir + rnd(-1, 1) : rnd(0, TAU);
+          const d = Math.min(lim, rad(a) * rnd(1.15, 2.1));
+          const cs = rnd(0.45, 1.4) * Math.max(0.8, r / 11);
+          mg.beginPath();
+          mg.ellipse(Math.cos(a) * d, Math.sin(a) * d, cs, cs * rnd(0.6, 1), rnd(0, TAU), 0, TAU);
+          mg.fill();
+        }
+        // Kolor: środek ubity i jasny, brzegi cieńsze i lekko niebieskie (światło z lewej góry).
+        mg.globalCompositeOperation = 'source-atop';
+        const grad = mg.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.05, 0, 0, r * 2.4);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.4, snowTop === '#ffffff' ? '#f5f9fe' : snowTop);
+        grad.addColorStop(1, snowBottom);
+        mg.fillStyle = grad;
+        mg.fillRect(-half, -half, S, S);
+        // Ziarno: ciemniejsze i jaśniejsze drobinki.
+        const grains = Math.round(r * r * 0.9);
+        for (let k = 0; k < grains; k++) {
+          const a = rnd(0, TAU);
+          const d = Math.sqrt(Math.random()) * rad(a) * 1.05;
+          mg.fillStyle = Math.random() < 0.55 ? `rgba(120, 150, 192, ${rnd(0.12, 0.3).toFixed(2)})` : `rgba(255, 255, 255, ${rnd(0.5, 0.95).toFixed(2)})`;
+          mg.beginPath();
+          mg.arc(Math.cos(a) * d, Math.sin(a) * d, rnd(0.35, 1.05), 0, TAU);
+          mg.fill();
+        }
+        // Lekkie wgłębienie w miejscu uderzenia.
+        const dent = mg.createRadialGradient(0, 0, 0, 0, 0, r * 0.55);
+        dent.addColorStop(0, 'rgba(150, 176, 212, 0.28)');
+        dent.addColorStop(0.7, 'rgba(150, 176, 212, 0.1)');
+        dent.addColorStop(1, 'rgba(150, 176, 212, 0)');
+        mg.fillStyle = dent;
+        mg.fillRect(-r, -r, r * 2, r * 2);
+        // Wypukłość: cień przy prawym dolnym brzegu, połysk przy lewym górnym (przesunięty „negatyw” kształtu).
+        const edge = (color, dx, dy, a) => {
+          const [inv, ig] = layer();
+          ig.setTransform(1, 0, 0, 1, 0, 0);
+          ig.fillStyle = color;
+          ig.fillRect(0, 0, inv.width, inv.height);
+          ig.globalCompositeOperation = 'destination-out';
+          ig.drawImage(m, 0, 0);
+          mg.save();
+          mg.setTransform(1, 0, 0, 1, 0, 0);
+          mg.globalAlpha = a;
+          mg.drawImage(inv, dx * dpr, dy * dpr);
+          mg.restore();
+        };
+        edge('#5d7aa6', -1.3, -1.7, 0.4);
+        edge('#ffffff', 1, 1.2, 0.75);
+        // Gotowa plama z miękkim cieniem pod spodem.
+        const [out, og] = layer();
+        og.setTransform(1, 0, 0, 1, 0, 0);
+        og.shadowColor = 'rgba(4, 14, 34, 0.5)';
+        og.shadowBlur = 4 * dpr;
+        og.shadowOffsetX = 1 * dpr;
+        og.shadowOffsetY = 2.2 * dpr;
+        og.drawImage(m, 0, 0);
+        return { c: out, half };
+      }
+      // Plaśnięcie na stronie: śnieg przykleja się do strony (przewija się z nią), chwilę trzyma,
+      // potem powoli zsuwa się, zostawiając mokry ślad, gubi grudki i topnieje.
+      function splatAt(x, y, r, vx = 0, vy = 0) {
+        const speed = Math.hypot(vx, vy);
+        const dir = Math.atan2(vy, vx);
+        const stretch = Math.min(0.9, speed / 18);
+        const img = splatImage(r, dir, stretch);
+        add({ t: 'splat', x, y, y0: y, sy: scrollY, vx: 0, vy: 0, r, img, hold: rnd(110, 170), life: rnd(320, 440), z: 0, noLand: true, instant: true });
+        poof(x, y, r * 1.1, Math.cos(dir), Math.sin(dir), 1.2);
+        add({ t: 'ring', x, y, vx: 0, vy: 0, r: r * 0.9, grow: 3.2, lw: 1.6, c: '#f1f8ff', a: 0.6, life: 12, noLand: true, instant: true });
+        for (let k = 0; k < 12; k++) add({ t: 'clump', x: x + rnd(-r, r) * 0.8, y: y + rnd(-r * 0.5, r * 0.5), vx: rnd(-2, 2) + Math.cos(dir) * stretch * 2, vy: rnd(-2, 0.6), g: 0.2, drag: 0.99, r: rnd(0.9, 1.8), vol: 4, z: 0, wall: true });
       }
 
       // ---- Przytrzymanie przycisku (śnieżka, bańka, magnes) ----
@@ -4622,10 +4839,10 @@
             if (p.hist.length > 30) p.hist.splice(0, 2);
             break;
           case 'splat':
-            // Po chwili śnieg zaczyna się zsuwać i odpadać grudkami.
-            if (p.age > 100) {
-              p.vy = Math.min(0.22, p.vy + 0.002 * dt);
-              if (Math.random() < 0.025 * dt) add({ t: 'clump', x: p.x + rnd(-p.r, p.r) * 0.6, y: p.y - (scrollY - p.sy) + p.r * 0.6, vx: rnd(-0.3, 0.3), vy: 0.5, g: 0.2, drag: 0.99, r: rnd(0.9, 1.7), vol: 3, z: 0 });
+            // Plama chwilę się trzyma, potem powoli zsuwa (coraz szybciej) i odpadają od niej grudki.
+            if (p.age > p.hold) {
+              p.vy = Math.min(0.2, p.vy + 0.0012 * dt);
+              if (Math.random() < 0.02 * dt) add({ t: 'clump', x: p.x + rnd(-p.r, p.r) * 0.6, y: p.y - (scrollY - p.sy) + p.r * 0.75, vx: rnd(-0.3, 0.3), vy: 0.4, g: 0.2, drag: 0.99, r: rnd(0.9, 1.7), vol: 3, z: 0 });
             }
             break;
           case 'ustar':
@@ -5619,7 +5836,7 @@
       }
 
       // ---- Rysowanie cząsteczek, które są tylko w świecie nad stroną ----
-      const OWN = new Set(['ball', 'splat', 'clump', 'foam', 'streamer', 'ghost', 'hring', 'glyphring', 'plus', 'tint', 'ustar']);
+      const OWN = new Set(['ball', 'splat', 'clump', 'foam', 'streamer', 'ghost', 'hring', 'glyphring', 'plus', 'tint', 'ustar', 'powder', 'flash', 'squash']);
       function drawBall(x, y, r, rot, alpha) {
         ctx.globalAlpha = alpha;
         const g = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.1, x, y, r);
@@ -5672,28 +5889,60 @@
             ctx.fill();
             break;
           case 'splat': {
-            const y = p.y - (scrollY - p.sy);
-            const blob = (x0, y0) => {
-              ctx.beginPath();
-              ctx.moveTo(x0 + p.r * 0.75, y0);
-              ctx.arc(x0, y0, p.r * 0.75, 0, TAU);
-              for (const l of [...p.lobes, ...p.dots]) {
-                const cx = x0 + Math.cos(l.a) * l.d * p.r;
-                const cy = y0 + Math.sin(l.a) * l.d * p.r;
-                ctx.moveTo(cx + l.s * p.r, cy);
-                ctx.arc(cx, cy, l.s * p.r, 0, TAU);
-              }
-              ctx.fill();
-            };
-            ctx.globalAlpha = alpha * 0.9;
-            ctx.fillStyle = 'rgba(40, 70, 120, 0.25)';
-            blob(p.x + 1, y + 1.6);
-            ctx.fillStyle = snowTop;
-            blob(p.x, y);
-            ctx.fillStyle = 'rgba(190, 210, 235, 0.5)';
+            const off = scrollY - p.sy;
+            const y = p.y - off;
+            const melt = Math.max(0, (p.age - p.life * 0.72) / (p.life * 0.28));
+            const spread = 0.62 + 0.38 * Math.min(1, (p.age + 1) / 4);
+            const slid = p.y - p.y0;
+            // Mokry ślad za zsuwającą się plamą.
+            if (slid > 1) {
+              const top = p.y0 - off;
+              const wet = ctx.createLinearGradient(0, top - p.r * 0.4, 0, y);
+              wet.addColorStop(0, 'rgba(205, 225, 250, 0)');
+              wet.addColorStop(1, 'rgba(205, 225, 250, 0.14)');
+              ctx.globalAlpha = alpha;
+              ctx.fillStyle = wet;
+              ctx.fillRect(p.x - p.r * 0.5, top - p.r * 0.4, p.r, y - top + p.r * 0.4);
+            }
+            ctx.globalAlpha = alpha * (1 - melt * 0.6);
+            const hw = p.img.half * spread * (1 - melt * 0.3);
+            const sag = Math.min(0.22, slid / 60);
+            ctx.drawImage(p.img.c, p.x - hw, y - hw, hw * 2, hw * 2 * (1 + sag));
+            break;
+          }
+          case 'powder': {
+            ctx.globalAlpha = alpha * Math.max(0, 1 - p.age / p.life);
+            const size = p.r * 2.4;
+            ctx.drawImage(sprite('puff', '#ffffff'), p.x - size / 2, p.y - size / 2, size, size);
+            break;
+          }
+          case 'flash': {
+            const k = Math.max(0, 1 - p.age / p.life);
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.globalAlpha = 0.85 * k;
+            const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+            g.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            g.addColorStop(0.45, 'rgba(225, 240, 255, 0.6)');
+            g.addColorStop(1, 'rgba(225, 240, 255, 0)');
+            ctx.fillStyle = g;
             ctx.beginPath();
-            ctx.arc(p.x + p.r * 0.2, y + p.r * 0.25, p.r * 0.45, 0, TAU);
+            ctx.arc(p.x, p.y, p.r, 0, TAU);
             ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+            break;
+          }
+          case 'squash': {
+            // Kulka rozpłaszcza się na powierzchni (dłuższa oś wzdłuż powierzchni).
+            const k = Math.min(1, p.age / p.life);
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.ang + Math.PI / 2);
+            ctx.globalAlpha = 1 - k;
+            ctx.fillStyle = snowTop;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, p.r * (1 + 0.9 * k), p.r * (1 - 0.7 * k), 0, 0, TAU);
+            ctx.fill();
+            ctx.restore();
             break;
           }
           case 'foam': {
