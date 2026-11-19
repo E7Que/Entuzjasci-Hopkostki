@@ -591,13 +591,6 @@
     .fx-count.on { opacity: 1; transform: none; }
     .fx-count.bump b { display: inline-block; animation: fx-bump 0.3s ease-out; }
     @keyframes fx-bump { 40% { transform: scale(1.35); } }
-    /* Śnieżka w awatar, piorun w kartę, podskok banera przy wybuchu */
-    .fx-hit { animation: fx-hit 0.4s ease-out; }
-    @keyframes fx-hit { 25% { transform: translate(-3px, 1px) rotate(-5deg); } 55% { transform: translate(2px, 0) rotate(3deg); } 80% { transform: rotate(-1deg); } }
-    .fx-zap { animation: fx-zap 0.45s ease-out; }
-    @keyframes fx-zap { 0% { filter: brightness(2.3) saturate(0.4); transform: translate(3px, -1px); } 20% { transform: translate(-4px, 1px); } 40% { filter: brightness(1.5); transform: translate(2px, 0); } 70% { transform: translate(-1px, 0); } 100% { filter: none; transform: none; } }
-    .event.kick, .event.active.fx-high.kick { animation: ev-kick 0.6s cubic-bezier(0.2, 1.5, 0.4, 1); }
-    @keyframes ev-kick { 0% { transform: scale(0.97); } 35% { transform: scale(1.018); } 100% { transform: none; } }
 
     .event {
       --e1: #ff4fa3; --e2: #8a5cff; --e3: #2ec5ff; --eg: #ffb3e6;
@@ -3398,6 +3391,7 @@
       const tools = [];
       let blowing = null; // bańka, którą właśnie się dmucha
       let vortex = null; // wir liści po kliknięciu
+      let shake = null; // fala po wybuchu: { id, x, y, t0, a, far }
       let chain = []; // gwiazdozbiór rysowany kliknięciami
       let coinsGot = 0;
       let counter = null;
@@ -3479,6 +3473,7 @@
         st.cv.style.height = `${st.ch}px`;
         st.pos = '';
         st.dirty = true;
+        st.fresh = true;
       }
       // Kształt pod śniegiem na awatarze: górna połowa koła (wysokość nad środkiem), a u zwycięzcy także korona.
       function buildBase(st) {
@@ -3579,9 +3574,54 @@
         restCount -= st.rest.length;
         st.rest = [];
       }
+      // Po wybuchu wszystko, co leży na kartach, dwa razy podskakuje — fala rozchodzi się od mnożnika (bliżej — wcześniej).
+      // Odległość od mnożnika do najbliższego punktu krawędzi (śnieg na banerze z mnożnikiem podskakuje od razu).
+      const hopDist = (st) => Math.hypot(Math.max(st.x - shake.x, 0, shake.x - (st.x + st.w)), st.y - shake.y);
+      function hopOffset(st) {
+        if (!shake) return 0;
+        const t = now - shake.t0 - hopDist(st) / 1.8;
+        if (t < 0 || t >= 480) return 0;
+        return t < 280 ? -shake.a * Math.sin((Math.PI * t) / 280) : -shake.a * 0.42 * Math.sin((Math.PI * (t - 280)) / 200);
+      }
+      // Przy każdym lądowaniu z czapy wzbija się trochę śniegu, a leżące liście i monety podrzuca.
+      function shakeTick() {
+        const t = now - shake.t0;
+        if (t > shake.far / 1.8 + 520) {
+          shake = null;
+          return;
+        }
+        for (const st of surfs) {
+          const lt = t - hopDist(st) / 1.8;
+          const phase = lt >= 480 ? 2 : lt >= 280 ? 1 : 0;
+          if (st.hopId !== shake.id) {
+            st.hopId = shake.id;
+            st.hopSeen = 0;
+          }
+          if (phase <= st.hopSeen) continue;
+          st.hopSeen = phase;
+          const k = phase === 1 ? 1 : 0.5;
+          if (st.snow) {
+            const n = Math.round((2 + st.w / 90) * k);
+            for (let j = 0; j < n; j++) {
+              const i = Math.floor(rnd(0, st.snow.length));
+              if (st.snow[i] < 1.5) continue;
+              st.snow[i] -= 2 / st.bin;
+              add({ t: 'flake', x: st.x + i * st.bin, y: st.y - st.snow[i] - (st.base ? st.base[i] : 0) - 1, vx: rnd(-0.8, 0.8), vy: -rnd(0.8, 2.4) * k, g: 0.05, r: rnd(0.8, 1.7), a: 0.95, vol: 2, sway: rnd(0, TAU), amp: 0.2, wk: 0.3, tk: 1, z: 0 });
+            }
+            st.hot = 45;
+            st.dirty = true;
+          }
+          for (let j = st.rest.length - 1, n = 0; j >= 0 && n < Math.round(3 * k); j--) {
+            if (Math.random() > 0.08) continue;
+            const it = takeRest(st, j);
+            fling(st, it, rnd(-0.8, 0.8), -rnd(1.5, 3.2) * k);
+            n += 1;
+          }
+        }
+      }
       function place(st, ar) {
         const left = st.x - ar.left - st.anchor.clientLeft - PAD;
-        const top = st.y - ar.top - st.anchor.clientTop - st.ch + 3;
+        const top = st.y - ar.top - st.anchor.clientTop - st.ch + 3 + hopOffset(st);
         const pos = `translate(${left.toFixed(1)}px, ${top.toFixed(1)}px)`;
         if (pos !== st.pos) {
           st.cv.style.transform = pos;
@@ -3648,9 +3688,10 @@
               if (st.cv.style.display !== 'none') st.cv.style.display = 'none';
               continue;
             }
-            const width = Math.round(r.width - INSET * 2);
+            // Szerokość z układu strony (bez przekształceń): animacja karty (np. drganie po piorunie) nie zmienia śniegu.
+            const width = Math.round((el.offsetWidth || r.width) - INSET * 2);
             if (width !== st.w) sizeSurface(st, width);
-            st.x = r.left + INSET;
+            st.x = r.left + r.width / 2 - width / 2;
             st.y = r.top;
           }
           if (st.cv.style.display === 'none') st.cv.style.display = '';
@@ -3680,6 +3721,12 @@
         ground.x = 0;
         ground.y = h;
         ground.reach = 1;
+        const hop = hopOffset(ground);
+        const gt = hop ? `translateY(${hop.toFixed(1)}px)` : '';
+        if (gt !== ground.pos) {
+          ground.cv.style.transform = gt;
+          ground.pos = gt;
+        }
         surfs.push(ground);
       }
 
@@ -3871,6 +3918,7 @@
         if (st.snow) paintSnow(c, st, base);
         for (const it of st.rest) drawRest(c, it, PAD + it.x, base - it.y);
         st.dirty = false;
+        st.fresh = false;
       }
       // Czapa śniegu: gładki obrys przez środki słupków, gradient od bieli do błękitnego cienia i jasna krawędź.
       // Rysowana tylko tam, gdzie śnieg leży; na awatarze między konturem koła (i korony) a wierzchem śniegu.
@@ -4096,11 +4144,10 @@
         else splatAt(ix - nx * 2, iy - ny * 2, p.r * 0.95);
         debris(p, ix, iy, p.vol * (upper ? (speed < 6 ? 0.1 : 0.55) : 0.7), Math.min(26, 6 + Math.round(p.vol / 24)), Math.atan2(ny, nx), 1.1);
         if (speed > 3) {
-          const el = st.el;
-          el.classList.remove('fx-hit');
-          void el.offsetWidth;
-          el.classList.add('fx-hit');
-          setTimeout(() => el.classList.remove('fx-hit'), 420);
+          st.el.animate?.(
+            [{ transform: 'none' }, { transform: 'translate(-3px, 1px) rotate(-5deg)', offset: 0.25 }, { transform: 'translate(2px, 0) rotate(3deg)', offset: 0.55 }, { transform: 'rotate(-1deg)', offset: 0.8 }, { transform: 'none' }],
+            { duration: 400, easing: 'ease-out' },
+          );
         }
       }
       // Plaśnięcie na stronie: śnieg przykleja się do strony (przewija się z nią), po chwili zsuwa i odpada.
@@ -5355,11 +5402,16 @@
       // Burza: piorun trzęsie trafioną kartą.
       function zap(x, y) {
         const el = document.elementFromPoint(x, y)?.closest?.('.card, .table, .event, .banner, .pod-col, .toolbar, .pod-av');
-        if (!el) return;
-        el.classList.remove('fx-zap');
-        void el.offsetWidth;
-        el.classList.add('fx-zap');
-        setTimeout(() => el.classList.remove('fx-zap'), 480);
+        el?.animate?.(
+          [
+            { filter: 'brightness(2.3) saturate(0.4)', transform: 'translate(3px, -1px)' },
+            { filter: 'brightness(1.8) saturate(0.6)', transform: 'translate(-4px, 1px)', offset: 0.2 },
+            { filter: 'brightness(1.5)', transform: 'translate(2px, 0)', offset: 0.4 },
+            { filter: 'brightness(1.15)', transform: 'translate(-1px, 0)', offset: 0.7 },
+            { filter: 'none', transform: 'none' },
+          ],
+          { duration: 450, easing: 'ease-out' },
+        );
       }
       function click(x, y) {
         for (const p of list) {
@@ -5804,6 +5856,7 @@
         frameNo += 1;
         if ((caps || bubbly) && frameNo % 20 === 1) collect();
         measure();
+        if (shake) shakeTick();
         if (t - pointer.t > 60) {
           pointer.vx *= 0.8;
           pointer.vy *= 0.8;
@@ -5884,9 +5937,9 @@
         let k = 0;
         for (const st of surfMap.values()) {
           k += 1;
-          if (st.dirty && st.w && (frameNo + k) % 3 === 0) paint(st);
+          if (st.dirty && st.w && (st.fresh || (frameNo + k) % 3 === 0)) paint(st);
         }
-        if (ground.dirty && ground.w && frameNo % 2 === 0) paint(ground);
+        if (ground.dirty && ground.w && (ground.fresh || frameNo % 2 === 0)) paint(ground);
         raf = requestAnimationFrame(frame);
       }
       function fit() {
@@ -5932,8 +5985,9 @@
             wind.target = wind.base + (snowy ? 3 : 4);
             wind.until = 100;
           }
-          // Fala z mnożnika, błysk w kolorze efektu i podskok banera.
+          // Fala z mnożnika, błysk w kolorze efektu, podskok banera i wszystkiego, co leży na kartach.
           const r = document.querySelector('#event .ev-mult')?.getBoundingClientRect();
+          shake = { id: (shake?.id ?? 0) + 1, x: r?.width ? r.left + r.width / 2 : w / 2, y: r?.width ? r.top + r.height / 2 : h * 0.3, t0: now, a: 4 + 4 * kk, far: Math.hypot(w, h) };
           if (r?.width) {
             const x = r.left + r.width / 2;
             const y = r.top + r.height / 2;
@@ -5942,13 +5996,10 @@
             if (theme === 'matrix') MX.pulses.push({ x, y, t: performance.now() });
           }
           add({ t: 'tint', x: 0, y: 0, vx: 0, vy: 0, life: 26, c: colors[0], instant: true, noLand: true });
-          const box = document.getElementById('event');
-          if (box) {
-            box.classList.remove('kick');
-            void box.offsetWidth;
-            box.classList.add('kick');
-            setTimeout(() => box.classList.remove('kick'), 650);
-          }
+          document.getElementById('event')?.animate?.(
+            [{ transform: 'none' }, { transform: 'translateY(-6px)', offset: 0.25 }, { transform: 'none', offset: 0.5 }, { transform: 'translateY(-2.5px)', offset: 0.72 }, { transform: 'none' }],
+            { duration: 640, easing: 'ease-out' },
+          );
           if (theme === 'matrix') glitch();
         },
         // Wciśnięcie przycisku gdzieś na stronie: śnieżka, dynia, bańka, magnes albo efekt kliknięcia.
