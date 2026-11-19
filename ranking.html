@@ -222,6 +222,7 @@
     /* Korona i iskierki zwycięzcy */
     .crown { position: absolute; z-index: 3; left: 50%; top: -22px; width: 36px; margin-left: -18px; line-height: 0; pointer-events: none; }
     .crown svg { width: 100%; fill: var(--gold); filter: drop-shadow(0 2px 5px rgba(227, 179, 65, 0.55)); animation: crown-float 3.2s ease-in-out infinite; }
+    body.ev-page[data-ev="snow"] .crown svg { animation: none; }
     .crown circle, .arch-crown circle { fill: #ffe9a6; }
     @keyframes crown-float { 50% { transform: translateY(-3px) rotate(-3deg); } }
     .spark {
@@ -572,6 +573,31 @@
     .fx-caps { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 3; overflow: visible; pointer-events: none; }
     .fx-cap { position: absolute; left: 0; top: 0; pointer-events: none; }
     .fx-ground { position: fixed; bottom: 0; z-index: 39; pointer-events: none; }
+    /* Matrix: deszcz znaków odbity w poziomie, jak w filmie */
+    canvas.mx { transform: scaleX(-1); }
+    /* Narzędzia (łopata, gaśnica) są rysowane na płótnie nad stroną — tu tylko przezroczyste pole do chwytania */
+    .fx-tool { position: fixed; z-index: 45; left: 0; top: 0; width: 0; height: 0; padding: 0; border: 0; border-radius: 10px; background: none; cursor: grab; touch-action: none; -webkit-tap-highlight-color: transparent; }
+    .fx-tool:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    html.fx-holding, html.fx-holding * { -webkit-user-select: none !important; user-select: none !important; }
+    html.fx-grab, html.fx-grab * { cursor: grabbing !important; }
+    html.fx-aim, html.fx-aim * { cursor: grabbing !important; }
+    /* Licznik zebranych monet (magnes) */
+    .fx-count {
+      position: fixed; z-index: 45; left: 16px; bottom: 16px; display: flex; align-items: center; gap: 7px; padding: 6px 13px 6px 8px; border-radius: 999px; pointer-events: none;
+      background: color-mix(in srgb, var(--surface) 82%, transparent); border: 1px solid color-mix(in srgb, #f2c14e 55%, var(--border)); color: #ffe08a; font-weight: 700; font-variant-numeric: tabular-nums;
+      box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.6); opacity: 0; transform: translateY(10px); transition: opacity 0.25s, transform 0.25s;
+    }
+    .fx-count i { width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff1b8, #f2c14e 55%, #b8860b); box-shadow: inset 0 0 0 2px rgba(120, 80, 0, 0.35); }
+    .fx-count.on { opacity: 1; transform: none; }
+    .fx-count.bump b { display: inline-block; animation: fx-bump 0.3s ease-out; }
+    @keyframes fx-bump { 40% { transform: scale(1.35); } }
+    /* Śnieżka w awatar, piorun w kartę, podskok banera przy wybuchu */
+    .fx-hit { animation: fx-hit 0.4s ease-out; }
+    @keyframes fx-hit { 25% { transform: translate(-3px, 1px) rotate(-5deg); } 55% { transform: translate(2px, 0) rotate(3deg); } 80% { transform: rotate(-1deg); } }
+    .fx-zap { animation: fx-zap 0.45s ease-out; }
+    @keyframes fx-zap { 0% { filter: brightness(2.3) saturate(0.4); transform: translate(3px, -1px); } 20% { transform: translate(-4px, 1px); } 40% { filter: brightness(1.5); transform: translate(2px, 0); } 70% { transform: translate(-1px, 0); } 100% { filter: none; transform: none; } }
+    .event.kick, .event.active.fx-high.kick { animation: ev-kick 0.6s cubic-bezier(0.2, 1.5, 0.4, 1); }
+    @keyframes ev-kick { 0% { transform: scale(0.97); } 35% { transform: scale(1.018); } 100% { transform: none; } }
 
     .event {
       --e1: #ff4fa3; --e2: #8a5cff; --e3: #2ec5ff; --eg: #ffb3e6;
@@ -832,7 +858,10 @@
     body.ev-page[data-ev="storm"].ev-flash :is(.toolbar, .table, .card, .event) { border-color: rgba(214, 224, 255, 0.85); box-shadow: 0 0 34px -6px rgba(200, 214, 255, 0.55); }
     body.ev-page[data-ev="storm"].ev-flash .dc-clouds { filter: brightness(2.2) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45)); }
 
-    /* Bąbelki: tafla wody u góry, promienie światła */
+    /* Bąbelki: tafla wody u góry, promienie światła, refleksy wody (kaustyka) */
+    .dc-caustic { position: absolute; inset: 0; overflow: hidden; opacity: calc(0.07 + var(--evk) * 0.18); }
+    .dc-caustic::before { content: ''; position: absolute; inset: -360px; background: var(--dc-caustic) 0 0 / 360px 360px repeat; will-change: transform; animation: dc-caus 34s linear infinite; }
+    @keyframes dc-caus { to { transform: translate(360px, 360px); } }
     .dc-water { position: absolute; left: 0; top: 0; width: 100%; height: clamp(22px, 3.5vw, 40px); border-radius: 12px 12px 0 0; opacity: calc(0.5 + var(--evk) * 0.5); animation: dc-drift 9s ease-in-out infinite alternate; }
     .dc-water stop:first-child { stop-color: var(--evc2); stop-opacity: 0.38; }
     .dc-water stop:last-child { stop-color: var(--evc2); stop-opacity: 0.06; }
@@ -860,6 +889,10 @@
       93% { transform: translateX(-1px); text-shadow: 1px 0 #22e5c8; }
     }
     body.ev-page[data-ev="matrix"] :is(.num, .rank) { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+    /* Matrix: co jakiś czas cała strona „glitchuje” (przesunięcia i rozszczepienie kolorów) */
+    body.mx-glitch :is(header, .event, .toolbar, .board, .info) { animation: mx-glitch 0.26s steps(2, end); }
+    body.mx-glitch :is(h1, .dn, .ev-name, .num.xp, .pod-col b) { text-shadow: 2px 0 rgba(255, 40, 120, 0.75), -2px 0 rgba(0, 255, 200, 0.75) !important; }
+    @keyframes mx-glitch { 0% { transform: translate(3px, 0); } 25% { transform: translate(-4px, 1px) skewX(-2deg); } 50% { transform: translate(2px, -1px); } 75% { transform: translate(-1px, 0) skewX(1deg); } 100% { transform: none; } }
     body.ev-page[data-ev="matrix"] .num.xp { color: color-mix(in srgb, var(--evc) 60%, #fff); text-shadow: 0 0 8px color-mix(in srgb, var(--evc) 50%, transparent); }
 
     /* Tryb osadzony (ranking.html?embed=1) — podgląd efektu w panelu: sam baner wydarzenia i efekty w tle */
@@ -1961,7 +1994,7 @@
       const pick = pickEvent(ev.events);
       ev.pick = pick;
       const e = pick?.e;
-      const key = pick ? [e.id, pick.status, pick.ranked?.id ?? '', pick.next?.id ?? '', e.endsAt, e.name, e.multiplier, e.theme, e.intensity, e.accent].join(':') : '';
+      const key = pick ? [e.id, pick.status, pick.ranked?.id ?? '', pick.next?.id ?? '', e.endsAt, e.name, e.multiplier, e.theme, e.intensity, e.accent, e.floor !== false].join(':') : '';
       const tab = $('.tab[data-period="event"]');
       tab.hidden = !pick?.ranked || Boolean(PREVIEW);
       if (tab.hidden && state.period === 'event') selectPeriod('all');
@@ -1983,7 +2016,9 @@
       const intensity = evIntensity(e);
       const accent = evAccent(e);
       const level = FX_LEVEL[intensity];
-      const fxKey = [theme, intensity, accent, pick.status].join(':');
+      // floor — efekt przy dole ekranu (płomienie przy „Ogniu”); można go wyłączyć w panelu.
+      const floor = e.floor !== false;
+      const fxKey = [theme, intensity, accent, floor, pick.status].join(':');
       const keepFx = fxKey === ev.fxKey && Boolean(box.querySelector(':scope > .ev-canvas'));
       if (!keepFx) stopFx();
       box.className = `event t-${theme} ${pick.status} fx-${intensity}`;
@@ -2014,7 +2049,7 @@
       $('.bg').append(back);
       ev.back = particles(back, theme, { ambient: Math.max(1, Math.round(inBack * level)), colors: ev.fx.colors, onFlash: flashPage });
       // Nad stroną: cząsteczki, które spadają na karty, zbierają się i reagują na kursor (ogień, śnieg, liście…).
-      ev.world = world(theme, { level, kk: FX_PAGE[intensity], colors: ev.fx.colors });
+      ev.world = world(theme, { level, kk: FX_PAGE[intensity], colors: ev.fx.colors, floor });
       const seenKey = `ev-burst-${e.id}`;
       const fresh = PREVIEW ? fxKey !== ev.burstFx : intensity === 'high' || saved.get(seenKey) !== '1' || (ev.started && !wasActive);
       if (fresh) {
@@ -2029,11 +2064,11 @@
     function burst() {
       if (fxReady()) ev.world.burst();
     }
-    // Przy normalnej i mocnej intensywności kliknięcie w dowolnym miejscu strony robi coś z efektem: rozdmuchuje śnieg,
-    // podpala, ściąga piorun, przebija bańki i baloniki, sypie liśćmi, monetami…
+    // Wciśnięcie przycisku na stronie: lepienie śnieżki z leżącego śniegu, klikanie w dynie, dmuchanie bańki, magnes
+    // na monety, a przy normalnej i mocnej intensywności — efekt kliknięcia (piorun, wir liści, armatka konfetti…).
     document.addEventListener('pointerdown', (event) => {
-      if (event.button !== 0 || !fxReady() || ev.fx.level < 1 || event.target.closest?.('.ev-mult, .pv-bar')) return;
-      ev.world.click(event.clientX, event.clientY);
+      if (event.button !== 0 || !fxReady() || event.target.closest?.('.ev-mult, .pv-bar, .fx-tool')) return;
+      ev.world.press(event);
     });
 
     function stopFx() {
@@ -2042,7 +2077,7 @@
         ev[k]?.destroy();
         ev[k] = null;
       }
-      document.querySelectorAll('.bg .fx, .fx-world, .fx-ground, .fx-caps').forEach((c) => c.remove());
+      document.querySelectorAll('.bg .fx, .fx-world, .fx-ground, .fx-caps, .fx-tool, .fx-count').forEach((c) => c.remove());
     }
 
     // ---------- Cała strona: siła efektu i dekoracje, które ma tylko dany efekt ----------
@@ -2158,11 +2193,12 @@
           return { top: `<svg class="dc-clouds" viewBox="0 0 1400 90" preserveAspectRatio="xMidYMin slice"><g fill="#262d45" stroke="rgba(150, 170, 225, 0.28)" stroke-width="1.2" opacity="0.94">${row(70, 18)}</g><g fill="#141927" opacity="0.96">${row(0, 4)}</g></svg>` };
         }
         case 'bubbles': {
-          // Tafla wody u góry strony (widziana od spodu) i promienie światła w tle.
+          // Tafla wody u góry strony (widziana od spodu), promienie światła i refleksy wody w tle.
           const wave = waveTop(1200, 14, 12, 30);
           return {
+            vars: { '--dc-caustic': `url("${causticUrl()}")` },
             top: `<svg class="dc-water" viewBox="0 0 1200 36" preserveAspectRatio="none"><defs><linearGradient id="dcw" x1="0" y1="0" x2="0" y2="1"><stop offset="0"/><stop offset="1"/></linearGradient></defs><path class="fill" d="${wave.fill}" fill="url(#dcw)"/><path class="line" d="${wave.line}"/></svg>`,
-            back: '<div class="dc-rays"><i></i><i></i><i></i><i></i></div>',
+            back: '<div class="dc-rays"><i></i><i></i><i></i><i></i></div><div class="dc-caustic"></div>',
           };
         }
         case 'matrix':
@@ -2174,7 +2210,7 @@
     }
     function pageFx(fx) {
       document.querySelectorAll('.ev-deco').forEach((node) => node.remove());
-      for (const v of ['--evk', '--dc-cap', '--dc-web', '--dc-stars']) document.body.style.removeProperty(v);
+      for (const v of ['--evk', '--dc-cap', '--dc-web', '--dc-stars', '--dc-caustic']) document.body.style.removeProperty(v);
       document.body.classList.toggle('ev-page', Boolean(fx));
       if (!fx) return;
       document.body.style.setProperty('--evk', String(FX_PAGE[fx.intensity] ?? 0.65));
@@ -2215,7 +2251,7 @@
       leaves: [12, 20], sakura: [20, 34], coins: [14, 26], storm: [40, 80], bubbles: [14, 24], matrix: [12, 22],
     };
     const FX_BURST = { confetti: 150, fire: 140, snow: 170, stars: 110, neon: 100, hearts: 90, halloween: 80, leaves: 120, sakura: 140, coins: 90, storm: 90, bubbles: 110, matrix: 120 };
-    const GLYPHS = '0123456789ABCDEFXP+=*<>#$%&';
+    const GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
     const rnd = (a, b) => a + Math.random() * (b - a);
     const pickOne = (list) => list[Math.floor(Math.random() * list.length)];
     const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -2252,8 +2288,10 @@
       const id = `${kind}:${color}`;
       if (spriteCache.has(id)) return spriteCache.get(id);
       const c = document.createElement('canvas');
-      c.width = c.height = 64;
+      const big = kind === 'bubble' || kind === 'bubble-hi';
+      c.width = c.height = big ? 128 : 64;
       const g = c.getContext('2d');
+      if (big) g.scale(2, 2);
       const light = hexMix(color, '#ffffff', 0.55);
       const dark = hexMix(color, '#000000', 0.35);
       const petal = (s) => {
@@ -2345,18 +2383,24 @@
         g.strokeStyle = 'rgba(255, 255, 255, 0.6)';
         g.lineWidth = 2.5;
         g.beginPath(); g.arc(32, 32, 26.5, Math.PI * 1.1, Math.PI * 1.45); g.stroke();
-      } else if (kind === 'pumpkin') {
+      } else if (kind === 'pumpkin' || kind === 'pumpkin-lit') {
+        // Zapalona dynia (po kliknięciu): jaśniejsza, oczy i usta świecą.
+        const lit = kind === 'pumpkin-lit';
         g.fillStyle = '#3f7f2a';
         g.fillRect(29, 6, 6, 12);
         const body = g.createRadialGradient(26, 28, 4, 32, 36, 28);
-        body.addColorStop(0, light);
-        body.addColorStop(0.5, color);
+        body.addColorStop(0, lit ? hexMix(light, '#fff0b0', 0.4) : light);
+        body.addColorStop(0.5, lit ? hexMix(color, '#ffb347', 0.25) : color);
         body.addColorStop(1, dark);
         g.fillStyle = body;
         g.strokeStyle = dark;
         g.lineWidth = 1.5;
         for (const [x, rx] of [[18, 13], [46, 13], [32, 15]]) { g.beginPath(); g.ellipse(x, 37, rx, 20, 0, 0, TAU); g.fill(); g.stroke(); }
-        g.fillStyle = '#ffe27a';
+        g.fillStyle = lit ? '#fff8d2' : '#ffe27a';
+        if (lit) {
+          g.shadowColor = '#ffc83a';
+          g.shadowBlur = 9;
+        }
         g.beginPath(); g.moveTo(21, 34); g.lineTo(27, 27); g.lineTo(30, 35); g.closePath(); g.fill();
         g.beginPath(); g.moveTo(43, 34); g.lineTo(37, 27); g.lineTo(34, 35); g.closePath(); g.fill();
         g.beginPath();
@@ -2364,23 +2408,50 @@
         g.quadraticCurveTo(32, 56, 18, 42);
         g.fill();
       } else if (kind === 'bubble') {
+        // Bańka mydlana: tęczowa błona (kolory cienkiej warstwy), prawie przezroczysty środek, mocniejszy brzeg.
         const n = parseInt(color.slice(1), 16);
         const rgba = (a) => `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
-        const fill = g.createRadialGradient(32, 32, 10, 32, 32, 29);
-        fill.addColorStop(0, rgba(0.02));
-        fill.addColorStop(0.8, rgba(0.12));
-        fill.addColorStop(1, rgba(0.4));
-        g.fillStyle = fill;
-        g.beginPath(); g.arc(32, 32, 29, 0, TAU); g.fill();
-        g.strokeStyle = rgba(0.85);
-        g.lineWidth = 1.6;
-        g.stroke();
-        g.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-        g.lineWidth = 3;
+        g.save();
+        g.beginPath(); g.arc(32, 32, 30, 0, TAU); g.clip();
+        if (g.createConicGradient) {
+          const film = g.createConicGradient(0.6, 32, 32);
+          for (const [o, col] of [[0, '#ff6ad5'], [0.17, '#ffd36a'], [0.33, '#7dffb2'], [0.5, '#62d8ff'], [0.67, '#a98bff'], [0.83, '#ff7ab8'], [1, '#ff6ad5']]) film.addColorStop(o, col);
+          g.fillStyle = film;
+        } else g.fillStyle = light;
+        g.fillRect(0, 0, 64, 64);
+        g.globalCompositeOperation = 'source-atop';
+        g.fillStyle = rgba(0.38);
+        g.fillRect(0, 0, 64, 64);
+        g.globalCompositeOperation = 'destination-in';
+        const mask = g.createRadialGradient(32, 32, 0, 32, 32, 30);
+        mask.addColorStop(0, 'rgba(0, 0, 0, 0.06)');
+        mask.addColorStop(0.6, 'rgba(0, 0, 0, 0.14)');
+        mask.addColorStop(0.86, 'rgba(0, 0, 0, 0.5)');
+        mask.addColorStop(0.97, 'rgba(0, 0, 0, 0.92)');
+        mask.addColorStop(1, 'rgba(0, 0, 0, 0.45)');
+        g.fillStyle = mask;
+        g.fillRect(0, 0, 64, 64);
+        g.restore();
+        g.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+        g.lineWidth = 1;
+        g.beginPath(); g.arc(32, 32, 29.5, 0, TAU); g.stroke();
+      } else if (kind === 'bubble-hi') {
+        // Odbicia światła na bańce (stoją w miejscu, gdy błona się przelewa).
         g.lineCap = 'round';
-        g.beginPath(); g.arc(32, 32, 21, Math.PI * 1.08, Math.PI * 1.42); g.stroke();
-        g.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        g.beginPath(); g.arc(43, 19, 2.2, 0, TAU); g.fill();
+        g.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+        g.lineWidth = 3.6;
+        g.beginPath(); g.arc(32, 32, 22, Math.PI * 1.12, Math.PI * 1.42); g.stroke();
+        g.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+        g.lineWidth = 2;
+        g.beginPath(); g.arc(32, 32, 24, Math.PI * 1.5, Math.PI * 1.58); g.stroke();
+        g.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        g.lineWidth = 2.4;
+        g.beginPath(); g.arc(32, 32, 24, Math.PI * 0.12, Math.PI * 0.38); g.stroke();
+        const dot = g.createRadialGradient(21, 19, 0, 21, 19, 5);
+        dot.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+        dot.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        g.fillStyle = dot;
+        g.beginPath(); g.arc(21, 19, 5, 0, TAU); g.fill();
       }
       if (kind === 'crystal') {
         // Płatek śniegu: sześć ramion z odgałęzieniami, lekka poświata.
@@ -2409,6 +2480,17 @@
         const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
         grad.addColorStop(0, rgba(0.55));
         grad.addColorStop(0.5, rgba(0.25));
+        grad.addColorStop(1, rgba(0));
+        g.fillStyle = grad;
+        g.fillRect(0, 0, 64, 64);
+      } else if (kind === 'puff') {
+        // Piana z gaśnicy: gęsty, miękki kłębek.
+        const n = parseInt(color.slice(1), 16);
+        const rgba = (a) => `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+        const grad = g.createRadialGradient(28, 27, 0, 32, 32, 32);
+        grad.addColorStop(0, rgba(1));
+        grad.addColorStop(0.55, rgba(0.85));
+        grad.addColorStop(0.8, rgba(0.35));
         grad.addColorStop(1, rgba(0));
         g.fillStyle = grad;
         g.fillRect(0, 0, 64, 64);
@@ -2694,11 +2776,30 @@
           drawSpriteAt(ctx, p, 'coin', p.s * 2.4, Math.cos(p.age * (p.spin ?? 0.1) + (p.sway ?? 0)));
           break;
         case 'pumpkin':
-          drawSpriteAt(ctx, p, 'pumpkin', p.s * 2.6);
+          if (p.lit > 0) {
+            const k = Math.min(1, p.lit / 60) * (0.75 + 0.25 * Math.sin(p.age * 0.3));
+            const size = p.s * 7;
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.globalAlpha = alpha * k * 0.8;
+            ctx.drawImage(glowSprite('#ffb347'), p.x - size / 2, p.y - size / 2, size, size);
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = alpha;
+          }
+          drawSpriteAt(ctx, p, p.lit > 0 ? 'pumpkin-lit' : 'pumpkin', p.s * 2.6);
           break;
         case 'bubble': {
+          // Bańka faluje (lekko się spłaszcza i wydłuża), tęczowa błona powoli się przelewa, odbicia stoją w miejscu.
+          const wob = Math.sin(p.age * 0.1 + (p.sway ?? 0)) * 0.055;
           const size = p.r * 2;
-          ctx.drawImage(sprite('bubble', p.c), p.x - size / 2, p.y - size / 2, size, size);
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.scale(1 + wob, 1 - wob);
+          ctx.save();
+          ctx.rotate(p.age * 0.012 + (p.sway ?? 0) * 3);
+          ctx.drawImage(sprite('bubble', p.c), -size / 2, -size / 2, size, size);
+          ctx.restore();
+          ctx.drawImage(sprite('bubble-hi', '#ffffff'), -size / 2, -size / 2, size, size);
+          ctx.restore();
           break;
         }
         case 'bat': {
@@ -2860,6 +2961,7 @@
 
     // Spokojne tło (w banerze i za treścią strony): cząsteczki krążą, nie lądują i nie reagują na kursor.
     function particles(canvas, theme, { ambient = 0, colors: own = null, onFlash = null } = {}) {
+      if (theme === 'matrix') return matrixRain(canvas, { density: ambient / FX_AMBIENT.matrix[canvas.classList.contains('ev-canvas') ? 0 : 1], colors: own ?? FX_COLORS.matrix });
       const ctx = canvas.getContext('2d');
       const colors = own ?? FX_COLORS[theme] ?? FX_COLORS.confetti;
       const env = { w: 0, h: 0, onFlash, lens: null };
@@ -2942,9 +3044,9 @@
     }
 
     // ---------- Świat nad stroną: cząsteczki lądują na kartach, zbierają się i reagują na kursor ----------
-    // Kursor: pozycja i prędkość (px na klatkę) oraz krótki ślad (neon).
-    const pointer = { x: -1e4, y: -1e4, vx: 0, vy: 0, speed: 0, t: 0, on: false, trail: [] };
-    addEventListener('pointermove', (event) => {
+    // Kursor: pozycja i prędkość (px na klatkę), wciśnięty przycisk i krótki ślad (neon).
+    const pointer = { x: -1e4, y: -1e4, vx: 0, vy: 0, speed: 0, t: 0, on: false, down: false, trail: [] };
+    function pointerAt(event) {
       const t = performance.now();
       if (pointer.on && t - pointer.t < 150) {
         const k = 16.67 / Math.max(4, t - pointer.t);
@@ -2960,69 +3062,106 @@
         pointer.trail.push({ x: pointer.x, y: pointer.y, t });
         if (pointer.trail.length > 90) pointer.trail.shift();
       }
-    }, { passive: true });
+    }
     function pointerOff() {
       pointer.on = false;
+      pointer.down = false;
       pointer.x = pointer.y = -1e4;
       pointer.vx = pointer.vy = pointer.speed = 0;
       pointer.trail.length = 0;
     }
-    document.documentElement.addEventListener('pointerleave', pointerOff);
+    addEventListener('pointermove', pointerAt, { passive: true });
+    addEventListener('pointerdown', (event) => {
+      pointerAt(event);
+      if (event.button === 0) pointer.down = true;
+    }, { capture: true, passive: true });
+    addEventListener('pointerup', (event) => {
+      pointer.down = false;
+      if (event.pointerType !== 'mouse') pointerOff();
+    }, true);
+    document.documentElement.addEventListener('pointerleave', () => { if (!pointer.down) pointerOff(); });
     addEventListener('blur', pointerOff);
     addEventListener('pointercancel', pointerOff);
-    addEventListener('pointerup', (event) => { if (event.pointerType !== 'mouse') pointerOff(); });
 
     // Co się dzieje po spadnięciu: śnieg się zbiera (mapa wysokości), liście, konfetti i płatki leżą (i dają się
     // strącić kursorem), monety i dynie odbijają się i układają w kupki, deszcz się rozpryskuje.
-    const LAND = { flake: 'pile', leaf: 'rest', paper: 'rest', petal: 'rest', blossom: 'rest', coin: 'bounce', pumpkin: 'bounce', rain: 'splash' };
+    const LAND = { flake: 'pile', clump: 'pile', leaf: 'rest', paper: 'rest', petal: 'rest', blossom: 'rest', coin: 'bounce', pumpkin: 'bounce', rain: 'splash' };
     // Opór powietrza: prędkość opadania lekkich cząsteczek (px na klatkę) — płatki i liście szybują.
     const TERM = { flake: 1, leaf: 1.5, paper: 1.7, petal: 1.05, blossom: 1.2 };
     // Grubość leżącej cząsteczki (px) — z tego rośnie kupka.
     const THICK = { leaf: 2.4, paper: 1.3, petal: 1.1, blossom: 1.8, coin: 2.6 };
     const WIND = { snow: 0.15, leaves: 0.35, sakura: 0.55, confetti: 0.05, hearts: 0.05, bubbles: 0.05 };
     // Ile cząsteczek w powietrzu nad stroną (intensywność „normalne”, ekran 1366×768).
-    const NEAR = { snow: 110, leaves: 16, sakura: 26, confetti: 20, coins: 6, hearts: 12, halloween: 10, stars: 80, neon: 10, storm: 110, bubbles: 18, matrix: 9, fire: 0 };
+    const NEAR = { snow: 110, leaves: 16, sakura: 26, confetti: 20, coins: 6, hearts: 12, halloween: 10, stars: 80, neon: 10, storm: 110, bubbles: 14, matrix: 0, fire: 0 };
     const BIN = 4;
     const PILE_BIN = 8;
     const PAD = 10;
-    const SLOPE = 1.4;
+    // Kąt zsypu śniegu (px wysokości na px szerokości): na płaskiej karcie łagodna zaspa, na okrągłym awatarze czapa.
+    const SLOPE = 0.35;
+    const SLOPE_ROUND = 1;
     const KERNEL = [0.06, 0.12, 0.18, 0.28, 0.18, 0.12, 0.06];
+    // Elementy, w które się klika — na nich przytrzymanie nie dmucha baniek i nie włącza magnesu.
+    const INTERACTIVE = 'a, button, input, select, textarea, label, summary, [role="button"], [role="tab"], [tabindex]';
+    // Kontur korony zwycięzcy (viewBox 32×24): śnieg leży też na koronie.
+    const CROWN_TOP = [[0.6, 6.5], [2.3, 4.1], [4, 7.6], [9.5, 12.1], [14.4, 5.6], [16, 0.4], [17.6, 5.6], [22.5, 12.1], [28, 7.6], [29.7, 4.1], [31.4, 6.5]];
+    // Matrix: teksty, które „dekodują się” po najechaniu i same z siebie.
+    const MX_SEL = 'h1, .ev-name, .ev-sub, .dn, .pod-col b, .rank, .num, dd, dt, .pod-lvl, .meta, .cmds code, .found';
+    // Kliknięcia w Matrixie — deszcz znaków w tle rusza od tego miejsca.
+    const MX = { pulses: [] };
+    // Narzędzia: łopata (śnieg) i gaśnica (ogień). ax, ay — środek dolnej krawędzi szufli / wylot dyszy (w viewBox);
+    // restA — przechylenie, gdy stoi oparte o krawędź ekranu; hull — punkty obrysu (do ustawienia i pola do chwytania).
+    const TOOL = {
+      shovel: {
+        title: 'Łopata — chwyć i odśnieżaj (szybki ruch w górę wyrzuca śnieg)', vw: 100, vh: 240, ax: 50, ay: 234, size: 58, restA: 0.12,
+        hull: [[5, 226], [95, 226], [13, 234], [87, 234], [8, 166], [92, 166], [29, 6], [71, 6]],
+        svg: '<svg viewBox="0 0 100 240" aria-hidden="true"><path fill-rule="evenodd" d="M35 5 H65 Q72 5 70.3 12 L61.5 41 H38.5 L29.7 12 Q28 5 35 5 Z M40.5 13 H59.5 Q61.6 13 61 15.2 L56 33 H44 L39 15.2 Q38.4 13 40.5 13 Z" fill="#e3262b" stroke="#a3151a" stroke-width="1.6" stroke-linejoin="round"/><path d="M33.2 9.6 Q34.4 7.6 37 7.6 H52" fill="none" stroke="#ff7b7e" stroke-width="1.6" stroke-linecap="round"/><rect x="40.5" y="38.5" width="19" height="12" rx="2.6" fill="#d11f25" stroke="#a3151a" stroke-width="1.3"/><rect x="45" y="50" width="10" height="112" fill="#8d9299"/><rect x="46.2" y="50" width="2.6" height="112" fill="#c2c7cd"/><rect x="52.2" y="50" width="2.8" height="112" fill="#686d74"/><path d="M41.5 157 H58.5 L61 171 H39 Z" fill="#d11f25" stroke="#a3151a" stroke-width="1.3" stroke-linejoin="round"/><path d="M12 166 H88 Q92.2 166 92.5 170.2 L95.2 225.5 Q95.6 234 87 234 H13 Q4.4 234 4.8 225.5 L7.5 170.2 Q7.8 166 12 166 Z" fill="#e3262b" stroke="#a3151a" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 166 H88 Q92.2 166 92.5 170.2 L92.8 176 H7.2 L7.5 170.2 Q7.8 166 12 166 Z" fill="#c21b21"/><path d="M7.4 176 H92.6" stroke="#ff6d70" stroke-width="1.2"/><path d="M21.6 179 V214.5 M31.6 179 V211 M41.6 179 V207.5 M61.6 179 V207.5 M71.6 179 V211 M81.6 179 V214.5" stroke="#b5171d" stroke-width="1.6" stroke-linecap="round"/><path d="M20 179 V214 M30 179 V210.6 M40 179 V207.2 M60 179 V207.2 M70 179 V210.6 M80 179 V214" stroke="#ff6d70" stroke-width="2.2" stroke-linecap="round"/><path d="M50 176 V219" stroke="#b5171d" stroke-width="4.2" stroke-linecap="round"/><path d="M49 176 V218" stroke="#ff6d70" stroke-width="1.4" stroke-linecap="round"/><path d="M8.5 229.6 L50 215.6 L91.5 229.6" fill="none" stroke="#b5171d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M8.5 227.4 L50 213.4 L91.5 227.4" fill="none" stroke="#ff6d70" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/><path d="M5.6 229.4 Q5.6 234 13 234 H87 Q94.4 234 94.4 229.4" fill="none" stroke="#8a1015" stroke-width="2.6" stroke-linecap="round"/><path d="M11.6 181 Q10.6 202 11.8 221" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="2.4" stroke-linecap="round"/></svg>',
+      },
+      ext: {
+        title: 'Gaśnica — chwyć i gaś ogień', vw: 64, vh: 64, ax: 8.6, ay: 50, size: 78, restA: 0.04,
+        hull: [[26, 17.5], [46, 17.5], [46, 61.5], [26, 61.5], [5.6, 49], [13.2, 38.8], [53, 4.5], [53, 13.5], [31.5, 9.5]],
+        svg: '<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="fxex-r" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8e1209"/><stop offset="0.38" stop-color="#e2412b"/><stop offset="0.62" stop-color="#ff7258"/><stop offset="1" stop-color="#9c160c"/></linearGradient></defs><path d="M31 14 C21 12.5 13.5 18 11.5 28 L10.2 38.5" fill="none" stroke="#1d1f24" stroke-width="3.4" stroke-linecap="round"/><path d="M7.2 37.6 L13.2 38.8 L11.6 50.2 L5.6 49 Z" fill="#33363d"/><rect x="26" y="17.5" width="20" height="44" rx="8" fill="url(#fxex-r)" stroke="#6c0c06" stroke-width="1.2"/><rect x="26.6" y="30" width="18.8" height="11" fill="#fff4e8"/><path d="M30 34 H42 M30 37.4 H38" stroke="#c62a1a" stroke-width="1.5" stroke-linecap="round"/><path d="M30.5 21 V58" stroke="#ffffff" stroke-opacity="0.35" stroke-width="2.4" stroke-linecap="round"/><rect x="31.5" y="9.5" width="9" height="9" rx="2" fill="#a7b0ba" stroke="#5a626d" stroke-width="1"/><path d="M36 9.5 L53 4.5" stroke="#202227" stroke-width="3.2" stroke-linecap="round"/><path d="M38.5 13.5 L53 13.5" stroke="#202227" stroke-width="3.2" stroke-linecap="round"/><circle cx="40.5" cy="24.5" r="3.6" fill="#f6f6f6" stroke="#3a3d44" stroke-width="1"/><path d="M40.5 24.5 L42.6 22.8" stroke="#1aa34a" stroke-width="1.3" stroke-linecap="round"/></svg>',
+      },
+    };
 
-    // Wygładzanie śniegu: różnica wysokości sąsiednich słupków najwyżej SLOPE (zsypuje się na boki). edges — przy
-    // brzegach karty śnieg się nie utrzyma i zsuwa w dół (spill: [lewy, prawy] w px²); nad max — nadmiar też spada.
-    function relaxSnow(s, max, edges, spill) {
+    // Śnieg na powierzchni: różnica wysokości sąsiednich słupków (razem z kształtem pod spodem — awatar, korona)
+    // najwyżej tyle, ile pozwala kąt zsypu; nadmiar zsuwa się na boki, a przy brzegach karty spada (spill: [lewy,
+    // prawy] w px²). Bez górnego limitu — zaspa rośnie, dopóki ktoś jej nie odśnieży.
+    function relaxSnow(st, spill = st.spill) {
+      const s = st.snow;
+      const b = st.base;
       const n = s.length;
+      const lim = (st.round ? SLOPE_ROUND : SLOPE) * st.bin;
       for (let pass = 0; pass < 2; pass++) {
         for (let i = 0; i < n - 1; i++) {
-          const d = s[i] - s[i + 1];
-          if (d > SLOPE) {
-            const m = (d - SLOPE) * 0.5;
+          const d = s[i] - s[i + 1] + (b ? b[i] - b[i + 1] : 0);
+          if (d > lim) {
+            const m = Math.min(s[i], (d - lim) * 0.5);
             s[i] -= m;
             s[i + 1] += m;
-          } else if (d < -SLOPE) {
-            const m = (-d - SLOPE) * 0.5;
+          } else if (d < -lim) {
+            const m = Math.min(s[i + 1], (-d - lim) * 0.5);
             s[i + 1] -= m;
             s[i] += m;
           }
         }
       }
-      // Osiadanie: każdy słupek trochę wyrównuje się z sąsiadami (ilość śniegu bez zmian).
-      let prev = s[0];
-      for (let i = 1; i < n - 1; i++) {
-        const cur = s[i];
-        const m = (prev + s[i + 1]) * 0.5 - cur;
-        s[i] = cur + m * 0.08;
-        prev = cur;
+      // Osiadanie: śnieg powoli wyrównuje się z sąsiednimi słupkami (ilość bez zmian).
+      for (let i = 0; i < n - 1; i++) {
+        const f = (s[i] - s[i + 1] + (b ? b[i] - b[i + 1] : 0)) * 0.04;
+        if (f > 0) {
+          const m = Math.min(f, s[i]);
+          s[i] -= m;
+          s[i + 1] += m;
+        } else if (f < 0) {
+          const m = Math.min(-f, s[i + 1]);
+          s[i + 1] -= m;
+          s[i] += m;
+        }
       }
-      if (edges) {
-        const edge = SLOPE * 0.8;
-        if (s[0] > edge) { if (spill) spill[0] += (s[0] - edge) * BIN; s[0] = edge; }
-        if (s[n - 1] > edge) { if (spill) spill[1] += (s[n - 1] - edge) * BIN; s[n - 1] = edge; }
-      }
-      for (let i = 0; i < n; i++) {
-        if (s[i] <= max) continue;
-        if (spill && edges) spill[i < n / 2 ? 0 : 1] += (s[i] - max) * BIN * 0.5;
-        s[i] = max;
+      if (st.el) {
+        const edge = st.round ? 0 : lim * 0.8;
+        if (s[0] > edge) { if (spill) spill[0] += (s[0] - edge) * st.bin; s[0] = edge; }
+        if (s[n - 1] > edge) { if (spill) spill[1] += (s[n - 1] - edge) * st.bin; s[n - 1] = edge; }
       }
     }
     const sample = (arr, step, x) => {
@@ -3031,8 +3170,201 @@
       const b = Math.min(arr.length - 1, a + 1);
       return arr[a] + (arr[b] - arr[a]) * (i - a);
     };
+    // Najwyższy punkt czapy nad krawędzią (śnieg razem z kształtem pod nim — awatarem, koroną).
+    const crestOf = (st) => {
+      const s = st.snow;
+      const b = st.base;
+      let m = 0;
+      for (let i = 0; i < s.length; i++) {
+        const v = s[i] + (b ? b[i] : 0);
+        if (v > m) m = v;
+      }
+      return m;
+    };
 
-    function world(theme, { level = 1, kk = 0.65, colors: own = null } = {}) {
+    // Matrix: cyfrowy deszcz (w tle strony i w banerze). Każda kolumna ma „głowę” — jasny znak, za którym zostaje
+    // gasnąca zielona smuga; znaki w smugach migoczą. Płótno jest odbite w poziomie (jak w filmie). Kursor rozsuwa
+    // deszcz na boki, kliknięcie (MX.pulses) puszcza od tego miejsca falę szybkich, jasnych kolumn.
+    function matrixRain(canvas, { density = 1, colors }) {
+      const ctx = canvas.getContext('2d');
+      const banner = canvas.classList.contains('ev-canvas');
+      const size = banner ? 13 : 16;
+      const head = '#eafff2';
+      const c0 = colors[0];
+      const c1 = colors[1] ?? colors[0];
+      const c2 = colors[2] ?? colors[0];
+      const share = clamp(0.3 + density * 0.38, 0.3, 0.95);
+      let w = 0, h = 0, raf = 0, last = 0, dead = false, cols = [], seen = performance.now();
+      canvas.classList.add('mx');
+      const column = (initial) => ({ y: initial ? rnd(-h / size, h / size) : rnd(-26, -1), v: rnd(0.16, 0.5), on: Math.random() < share, cell: -1e9, hot: 0 });
+      const glyph = () => GLYPHS[(Math.random() * GLYPHS.length) | 0];
+      function fit() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        w = canvas.clientWidth;
+        h = canvas.clientHeight;
+        canvas.width = Math.max(1, Math.round(w * dpr));
+        canvas.height = Math.max(1, Math.round(h * dpr));
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const n = Math.ceil(w / size);
+        const next = [];
+        for (let i = 0; i < n; i++) next.push(cols[i] ? { ...cols[i], cell: -1e9 } : column(true));
+        cols = next;
+      }
+      function cell(x, y, color, alpha) {
+        ctx.clearRect(x - size / 2, y - size / 2, size, size);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = color;
+        ctx.fillText(glyph(), x, y);
+      }
+      function frame(t) {
+        raf = 0;
+        if (dead) return;
+        const dt = last ? Math.min((t - last) / 16.67, 3) : 1;
+        last = t;
+        // Smugi gasną: każda klatka zdejmuje trochę z całego płótna.
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.fillStyle = `rgba(0, 0, 0, ${Math.min(0.5, 0.07 * dt)})`;
+        ctx.fillRect(0, 0, w, h);
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.font = fxFont(size);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const rect = canvas.getBoundingClientRect();
+        const lx = pointer.on ? rect.right - pointer.x : -1e4;
+        const ly = pointer.on ? pointer.y - rect.top : -1e4;
+        const R = banner ? 40 : 66;
+        for (const pu of MX.pulses) {
+          if (pu.t <= seen) continue;
+          seen = pu.t;
+          const px = rect.right - pu.x;
+          const py = pu.y - rect.top;
+          if (px < -240 || px > w + 240 || py < -240 || py > h + 240) continue;
+          for (let i = 0; i < cols.length; i++) {
+            const dx = Math.abs(i * size + size / 2 - px);
+            if (dx > 240) continue;
+            Object.assign(cols[i], { on: true, y: py / size - (dx / size) * 0.55, v: rnd(0.7, 1.3), cell: -1e9, hot: 60 });
+          }
+        }
+        for (let i = 0; i < cols.length; i++) {
+          const c = cols[i];
+          if (!c.on) {
+            if (Math.random() < 0.006 * dt) Object.assign(c, column(false), { on: true });
+            continue;
+          }
+          c.y += c.v * dt;
+          const cy = Math.floor(c.y);
+          if (cy === c.cell) continue;
+          const x = i * size + size / 2;
+          // Poprzednia głowa gaśnie do zieleni (po kliknięciu — jaśniejszej).
+          if (c.cell >= 0) cell(x, c.cell * size + size / 2, c.hot > 0 ? c1 : c0, 0.92);
+          c.cell = cy;
+          if (c.hot > 0) c.hot -= 1;
+          const y = cy * size + size / 2;
+          if (y > h + size) {
+            Object.assign(c, column(false));
+            continue;
+          }
+          if (y < -size) continue;
+          const dx = x - lx;
+          const dy = y - ly;
+          if (dx * dx + dy * dy < R * R) {
+            // Pod kursorem deszcz się rozstępuje: znak ląduje na brzegu koła.
+            const ex = lx + (dx >= 0 ? 1 : -1) * Math.sqrt(Math.max(0, R * R - dy * dy));
+            ctx.globalAlpha = 0.95;
+            ctx.fillStyle = head;
+            ctx.fillText(glyph(), ex, y);
+            continue;
+          }
+          cell(x, y, head, 1);
+        }
+        // Migotanie: losowe znaki w smugach zmieniają się.
+        const flick = Math.round(cols.length * 0.12 * dt);
+        for (let k = 0; k < flick; k++) {
+          const i = (Math.random() * cols.length) | 0;
+          const c = cols[i];
+          if (!c.on || c.cell < 2) continue;
+          const back = 1 + ((Math.random() * 14) | 0);
+          if (c.cell - back < 0) continue;
+          cell(i * size + size / 2, (c.cell - back) * size + size / 2, c2, 0.6 * (1 - back / 16));
+        }
+        ctx.globalAlpha = 1;
+        raf = requestAnimationFrame(frame);
+      }
+      const run = () => {
+        if (!raf && !dead && !document.hidden) {
+          last = 0;
+          raf = requestAnimationFrame(frame);
+        }
+      };
+      const onVisible = () => (document.hidden ? (cancelAnimationFrame(raf), (raf = 0)) : run());
+      const ro = new ResizeObserver(() => fit());
+      fit();
+      ro.observe(canvas);
+      document.addEventListener('visibilitychange', onVisible);
+      run();
+      return {
+        destroy() {
+          dead = true;
+          cancelAnimationFrame(raf);
+          raf = 0;
+          ro.disconnect();
+          document.removeEventListener('visibilitychange', onVisible);
+          canvas.classList.remove('mx');
+        },
+      };
+    }
+
+    // Bąbelki: tekstura świetlnych refleksów wody (kaustyka) — sieć jasnych linii na granicach komórek (szum Worleya),
+    // powtarzalna, liczona raz.
+    let causticCache = '';
+    function causticUrl() {
+      if (causticCache) return causticCache;
+      const N = 192;
+      const pts = Array.from({ length: 14 }, () => [Math.random(), Math.random()]);
+      const c = document.createElement('canvas');
+      c.width = c.height = N;
+      const g = c.getContext('2d');
+      const img = g.createImageData(N, N);
+      const T = TAU;
+      for (let y = 0; y < N; y++) {
+        for (let x = 0; x < N; x++) {
+          // Zniekształcenie (całkowite częstotliwości — tekstura dalej się powtarza bez szwu): komórki falują jak w wodzie.
+          const u0 = x / N;
+          const v0 = y / N;
+          const u = (u0 + 0.05 * Math.sin(T * (2 * v0 + 0.3)) + 0.022 * Math.sin(T * (5 * u0 + 3 * v0)) + 1) % 1;
+          const v = (v0 + 0.05 * Math.sin(T * (2 * u0 + 0.7)) + 0.022 * Math.sin(T * (4 * v0 - 3 * u0)) + 1) % 1;
+          let f1 = 9;
+          let f2 = 9;
+          for (const [px, py] of pts) {
+            let dx = Math.abs(u - px);
+            let dy = Math.abs(v - py);
+            if (dx > 0.5) dx = 1 - dx;
+            if (dy > 0.5) dy = 1 - dy;
+            const d = Math.sqrt(dx * dx + dy * dy);
+            if (d < f1) {
+              f2 = f1;
+              f1 = d;
+            } else if (d < f2) f2 = d;
+          }
+          const e = f2 - f1;
+          const line = Math.exp(-((e / 0.018) ** 2));
+          const glow = Math.exp(-((e / 0.06) ** 2));
+          // Linie nierówno jasne: jaśniejsze i ciemniejsze odcinki.
+          const shade = 0.55 + 0.45 * Math.sin(T * (3 * u0 + 2 * v0)) * Math.sin(T * (2 * u0 - 3 * v0));
+          const o = (y * N + x) * 4;
+          img.data[o] = 205;
+          img.data[o + 1] = 246;
+          img.data[o + 2] = 255;
+          img.data[o + 3] = Math.round(Math.min(1, (line * 0.9 + glow * 0.22) * shade) * 255);
+        }
+      }
+      g.putImageData(img, 0, 0);
+      causticCache = c.toDataURL();
+      return causticCache;
+    }
+
+    function world(theme, { level = 1, kk = 0.65, colors: own = null, floor = true } = {}) {
       const colors = own ?? FX_COLORS[theme] ?? FX_COLORS.confetti;
       const canvas = document.createElement('canvas');
       canvas.className = 'fx-world';
@@ -3044,10 +3376,13 @@
       let list = [];
       const pending = [];
       const snowy = theme === 'snow';
+      const bubbly = theme === 'bubbles';
       const piles = ['leaves', 'confetti', 'sakura', 'coins', 'halloween'].includes(theme);
-      const needSurfaces = snowy || piles || theme === 'storm';
-      const capMax = snowy ? 5 + 15 * kk : 8 + 12 * kk;
-      const groundMax = snowy ? 8 + 24 * kk : 14 + 20 * kk;
+      const caps = snowy || piles || theme === 'storm';
+      const capMax = snowy ? Infinity : 8 + 12 * kk;
+      const groundMax = snowy ? Infinity : 14 + 20 * kk;
+      // Śnieg na dole ekranu nie ma sztywnego limitu, ale powyżej tej wysokości powoli topnieje (zasłaniałby stronę).
+      const groundSoft = 26 + 30 * kk;
       const accent = own ? own[0] : null;
       const snowTop = accent ? hexMix('#ffffff', accent, 0.12) : '#ffffff';
       const snowBottom = accent ? hexMix('#d5e4f7', accent, 0.3) : '#d5e4f7';
@@ -3056,9 +3391,32 @@
       let restCount = 0;
       let fireWind = 0;
       let umbrella = 0; // ile kropel ostatnio uderzyło w parasol (gaśnie z czasem)
+      let held = null; // śnieżka w ręce
+      let gesture = null; // przytrzymanie przycisku: śnieżka, dmuchanie bańki, magnes na monety
+      let tool = null; // narzędzie w ręce (łopata, gaśnica)
+      let toolScale = 1;
+      const tools = [];
+      let blowing = null; // bańka, którą właśnie się dmucha
+      let vortex = null; // wir liści po kliknięciu
+      let chain = []; // gwiazdozbiór rysowany kliknięciami
+      let coinsGot = 0;
+      let counter = null;
+      let pumpkinsSet = false;
+      let glitchTimer = 0;
+      let mxNext = 90;
+      let glitchNext = rnd(360, 700);
+      let mxPool = [];
+      const mx = new Map();
+      const mxSeen = new WeakMap();
+      const fish = [];
+      const unsub = [];
+      const listen = (target, type, fn, opts) => {
+        target.addEventListener(type, fn, opts);
+        unsub.push(() => target.removeEventListener(type, fn, opts));
+      };
 
       function add(p) {
-        const q = { g: 0, drag: 1, life: Infinity, rot: rnd(0, TAU), vr: 0, c: pickOne(colors), age: 0, ...p };
+        const q = { g: 0, drag: 1, life: Infinity, rot: rnd(0, TAU), vr: 0, c: pickOne(colors), age: 0, z: Math.random(), ...p };
         if (!q.noLand && LAND[q.t] && q.land === undefined) {
           q.land = LAND[q.t];
           if (q.land !== 'splash') q.life = Infinity;
@@ -3067,15 +3425,17 @@
         return q;
       }
 
-      // ---- Powierzchnie: górne krawędzie elementów strony i dół ekranu ----
+      // ---- Powierzchnie: górne krawędzie elementów strony, okrągłe awatary podium i dół ekranu ----
       // Każda ma własne płótno przypięte do elementu (w warstwie najbliższego przodka „sticky” albo w <main>), więc
       // śnieg i liście przewijają się razem ze stroną bez opóźnienia. Rysowane tylko po zmianie.
       const SEL = EMBED ? '.event' : '.banner, .event, .toolbar, .table, .side .card, .top3 .pod-col';
+      const SEL_ROUND = '.top3 .pod-av';
       const INSET = 7;
       const surfMap = new Map();
       const layers = new Map();
       let els = [];
       const surfs = [];
+      const unders = []; // spody kart — tam zbierają się bąbelki
       function anchorOf(el) {
         if (getComputedStyle(el).position === 'sticky') return el;
         for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
@@ -3095,39 +3455,75 @@
         }
         return layer;
       }
-      function makeSurface(el) {
+      function makeSurface(el, round = false) {
         const cv = document.createElement('canvas');
         cv.className = el ? 'fx-cap' : 'fx-ground';
         cv.setAttribute('aria-hidden', 'true');
-        const st = { el, cv, cx: cv.getContext('2d'), w: 0, ch: 0, x: 0, y: 0, max: el ? capMax : groundMax, snow: null, pile: null, rest: [], dirty: true, hot: 0, spill: [0, 0], anchor: el ? anchorOf(el) : null, pos: '', dpr: 1 };
+        const st = { el, round, cv, cx: cv.getContext('2d'), w: 0, ch: 0, x: 0, y: 0, bin: round ? 2 : BIN, max: el ? capMax : groundMax, snow: null, base: null, crown: null, sig: '', pile: null, rest: [], dirty: true, hot: 0, spill: [0, 0], anchor: el ? anchorOf(el) : null, pos: '', dpr: 1, peak: 0, reach: 1 };
         if (!el) document.body.append(cv);
         return st;
       }
       const ground = makeSurface(null);
-      function sizeSurface(st, width) {
-        const old = st.w;
-        st.w = width;
-        st.ch = Math.ceil(st.max + (piles ? 20 : 10));
+      // Wysokość płótna czapy — śnieg nie ma limitu, więc płótno rośnie razem z zaspą.
+      function capHeight(st) {
+        if (!snowy) return Math.ceil(st.max + (piles ? 20 : 10));
+        const need = st.peak + 16;
+        return Math.max(24, Math.ceil(need / 24) * 24);
+      }
+      function fitCanvas(st) {
         st.dpr = Math.min(window.devicePixelRatio || 1, 2);
-        const cssW = width + PAD * 2;
+        const cssW = st.w + PAD * 2;
         st.cv.width = Math.round(cssW * st.dpr);
         st.cv.height = Math.round(st.ch * st.dpr);
         st.cv.style.width = `${cssW}px`;
         st.cv.style.height = `${st.ch}px`;
-        if (!st.el) st.cv.style.left = `${-PAD}px`;
-        if (snowy) {
-          const n = Math.max(2, Math.ceil(width / BIN) + 1);
-          const next = new Float32Array(n);
-          if (st.snow && old > 0) {
-            for (let i = 0; i < n; i++) next[i] = sample(st.snow, BIN * (old / width), i * BIN);
-          } else {
-            // Na start już trochę napadało: równa warstwa z zaokrąglonymi brzegami.
-            const base = st.max * rnd(0.4, 0.52);
-            const ph = rnd(0, TAU);
-            for (let i = 0; i < n; i++) next[i] = base * (1 + 0.12 * Math.sin((i * BIN) / 90 + ph) + 0.06 * Math.sin((i * BIN) / 37 + ph * 2));
-            for (let k = 0; k < 60; k++) relaxSnow(next, st.max, Boolean(st.el), null);
+        st.pos = '';
+        st.dirty = true;
+      }
+      // Kształt pod śniegiem na awatarze: górna połowa koła (wysokość nad środkiem), a u zwycięzcy także korona.
+      function buildBase(st) {
+        const n = st.snow.length;
+        const R = st.w / 2;
+        const b = new Float32Array(n);
+        for (let i = 0; i < n; i++) {
+          const x = Math.min(i * st.bin, st.w) - R;
+          b[i] = Math.sqrt(Math.max(0, R * R - x * x));
+        }
+        const cr = st.crown;
+        if (cr) {
+          for (let i = 0; i < n; i++) {
+            const u = ((i * st.bin - cr.l) / cr.w) * 32;
+            if (u < CROWN_TOP[0][0] || u > CROWN_TOP[CROWN_TOP.length - 1][0]) continue;
+            let k = 0;
+            while (k < CROWN_TOP.length - 2 && u > CROWN_TOP[k + 1][0]) k += 1;
+            const [u0, y0] = CROWN_TOP[k];
+            const [u1, y1] = CROWN_TOP[k + 1];
+            const yy = y0 + ((y1 - y0) * (u - u0)) / (u1 - u0 || 1);
+            const top = cr.top - (yy / 24) * cr.h;
+            if (top > b[i]) b[i] = top;
           }
-          st.snow = next;
+        }
+        st.base = b;
+      }
+      // Na start już trochę napadało: równa warstwa (na awatarach — czapa).
+      function prefill(st) {
+        const s = st.snow;
+        const depth = (4 + 8 * kk) * rnd(0.85, 1.15) * (st.round ? 0.8 : st.el ? 1 : 1.25);
+        const ph = rnd(0, TAU);
+        for (let i = 0; i < s.length; i++) s[i] = depth * (1 + 0.12 * Math.sin((i * st.bin) / 90 + ph) + 0.06 * Math.sin((i * st.bin) / 37 + ph * 2));
+        for (let k = 0; k < 90; k++) relaxSnow(st, null);
+      }
+      function sizeSurface(st, width) {
+        const old = st.w;
+        st.w = width;
+        if (snowy) {
+          const n = Math.max(2, Math.ceil(width / st.bin) + 1);
+          const prev = st.snow;
+          st.snow = new Float32Array(n);
+          if (st.round) buildBase(st);
+          if (prev && old > 0) for (let i = 0; i < n; i++) st.snow[i] = sample(prev, st.bin * (width / old), i * st.bin);
+          else prefill(st);
+          st.peak = crestOf(st);
           st.hot = 20;
         }
         if (piles) {
@@ -3138,18 +3534,35 @@
           for (const it of items) {
             it.x = Math.min(width, it.x * ratio);
             stack(st, it);
+            st.rest.push(it);
           }
         }
-        st.dirty = true;
+        st.ch = capHeight(st);
+        fitCanvas(st);
+        if (!st.el) st.cv.style.left = `${-PAD}px`;
       }
       function collect() {
         els = [...document.querySelectorAll(SEL)];
+        if (!caps) return;
         for (const el of els) if (!surfMap.has(el)) surfMap.set(el, makeSurface(el));
-        for (const [el, st] of surfMap) {
-          if (el.isConnected) continue;
+        // Awatary podium: kolumna (article.top) zostaje, a awatar w niej bywa podmieniany — śnieg zostaje z kolumną.
+        if (snowy && !EMBED) {
+          for (const el of document.querySelectorAll(SEL_ROUND)) {
+            const key = el.closest('.top') ?? el;
+            let st = surfMap.get(key);
+            if (!st) {
+              st = makeSurface(el, true);
+              st.key = key;
+              surfMap.set(key, st);
+            }
+            st.el = el;
+          }
+        }
+        for (const [key, st] of surfMap) {
+          if (key.isConnected && st.el.isConnected) continue;
           dropAll(st);
           st.cv.remove();
-          surfMap.delete(el);
+          surfMap.delete(key);
         }
       }
       // Element zniknął (np. nowe podium po zmianie zakładki): to, co na nim leżało, spada.
@@ -3159,133 +3572,196 @@
           for (let i = 0, n = 0; i < st.snow.length && n < 50; i += 4) {
             if (st.snow[i] < 1.5) continue;
             n += 1;
-            add({ t: 'flake', x: st.x + i * BIN, y: st.y - st.snow[i], vx: rnd(-0.5, 0.5), vy: rnd(0, 0.8), g: 0.05, r: rnd(1, 2), a: 0.9, vol: st.snow[i] * BIN * 4, tk: 1, wk: 0.3, sway: rnd(0, TAU), amp: 0.2 });
+            add({ t: 'flake', x: st.x + i * st.bin, y: st.y - st.snow[i] - (st.base ? st.base[i] : 0), vx: rnd(-0.5, 0.5), vy: rnd(0, 0.8), g: 0.05, r: rnd(1, 2), a: 0.9, vol: st.snow[i] * st.bin * 4, tk: 1, wk: 0.3, sway: rnd(0, TAU), amp: 0.2, z: 0 });
           }
         }
         for (const it of st.rest.slice(-40)) fling(st, it, rnd(-0.8, 0.8), rnd(-1, 0.4));
         restCount -= st.rest.length;
         st.rest = [];
       }
+      function place(st, ar) {
+        const left = st.x - ar.left - st.anchor.clientLeft - PAD;
+        const top = st.y - ar.top - st.anchor.clientTop - st.ch + 3;
+        const pos = `translate(${left.toFixed(1)}px, ${top.toFixed(1)}px)`;
+        if (pos !== st.pos) {
+          st.cv.style.transform = pos;
+          st.pos = pos;
+        }
+      }
       function measure() {
         surfs.length = 0;
-        if (!needSurfaces) return;
+        unders.length = 0;
+        if (bubbly) {
+          for (const el of els) {
+            const r = el.getBoundingClientRect();
+            if (r.width < 40 || r.bottom < -30 || r.bottom > h + 60) continue;
+            unders.push({ el, x0: r.left + 8, x1: r.right - 8, y: r.bottom });
+          }
+          return;
+        }
+        if (!caps) return;
         const rects = new Map();
+        const rectOf = (a) => {
+          let r = rects.get(a);
+          if (!r) {
+            r = a.getBoundingClientRect();
+            rects.set(a, r);
+          }
+          return r;
+        };
         const tb = EMBED ? null : document.querySelector('.toolbar');
         const tr = tb ? tb.getBoundingClientRect() : null;
-        for (const el of els) {
-          const st = surfMap.get(el);
-          if (!st) continue;
+        for (const st of surfMap.values()) {
+          if (st.round && !st.el.isConnected) st.el = st.key.querySelector('.pod-av') ?? st.el;
+          const el = st.el;
           const r = el.getBoundingClientRect();
-          if (r.width < 40 || r.height < 4) {
-            if (st.cv.style.display !== 'none') st.cv.style.display = 'none';
-            continue;
+          if (st.round) {
+            const size = el.offsetWidth;
+            if (size < 16 || r.width < 8) {
+              if (st.cv.style.display !== 'none') st.cv.style.display = 'none';
+              continue;
+            }
+            const width = Math.round(size);
+            const cy = r.top + r.height / 2;
+            st.x = r.left + r.width / 2 - width / 2;
+            st.y = cy;
+            const crownEl = el.querySelector('.crown svg');
+            let crown = null;
+            if (crownEl) {
+              const cr = crownEl.getBoundingClientRect();
+              if (cr.width > 4) crown = { l: cr.left - st.x, w: cr.width, top: cy - cr.top, h: cr.height };
+            }
+            const sig = crown ? `${crown.l.toFixed(0)}:${crown.top.toFixed(0)}:${crown.w.toFixed(0)}` : '';
+            st.crown = crown;
+            if (width !== st.w) {
+              st.sig = sig;
+              sizeSurface(st, width);
+            } else if (sig !== st.sig) {
+              st.sig = sig;
+              buildBase(st);
+              st.peak = crestOf(st);
+              st.hot = 20;
+              st.dirty = true;
+            }
+          } else {
+            if (r.width < 40 || r.height < 4) {
+              if (st.cv.style.display !== 'none') st.cv.style.display = 'none';
+              continue;
+            }
+            const width = Math.round(r.width - INSET * 2);
+            if (width !== st.w) sizeSurface(st, width);
+            st.x = r.left + INSET;
+            st.y = r.top;
           }
           if (st.cv.style.display === 'none') st.cv.style.display = '';
-          const width = Math.round(r.width - INSET * 2);
-          if (width !== st.w) sizeSurface(st, width);
+          const need = capHeight(st);
+          if (need > st.ch || need < st.ch - 48) {
+            st.ch = need;
+            fitCanvas(st);
+          }
           const layer = layerOf(st.anchor);
           if (st.cv.parentNode !== layer) layer.append(st.cv);
-          let ar = rects.get(st.anchor);
-          if (!ar) {
-            ar = st.anchor.getBoundingClientRect();
-            rects.set(st.anchor, ar);
-          }
-          const left = r.left - ar.left - st.anchor.clientLeft + INSET - PAD;
-          const top = r.top - ar.top - st.anchor.clientTop - st.ch + 3;
-          const pos = `translate(${left.toFixed(1)}px, ${top.toFixed(1)}px)`;
-          if (pos !== st.pos) {
-            st.cv.style.transform = pos;
-            st.pos = pos;
-          }
-          st.x = r.left + INSET;
-          st.y = r.top;
-          if (r.top < -60 || r.top > h + 60) continue;
+          place(st, rectOf(st.anchor));
+          if (r.bottom < -60 || r.top > h + 60) continue;
           // Pod przyklejonym paskiem nic nie widać, więc nic tam nie spada.
           if (tr && el !== tb && r.top > tr.top - 4 && r.top < tr.bottom + 2 && r.right > tr.left && r.left < tr.right) continue;
+          // Głębokość: cząsteczka spada przed stroną w pewnej odległości od niej (p.z) i zatrzymuje się na pierwszej
+          // krawędzi, która wystaje dość daleko. Im niżej na ekranie, tym dalej — więc śnieg i liście trafiają na
+          // wszystkie karty, a nie tylko na tę najwyżej.
+          st.reach = clamp(0.15 + (0.75 * (st.y - (st.round ? st.w / 2 : 0))) / Math.max(h, 1), 0.12, 0.95);
           surfs.push(st);
         }
         if (ground.w !== Math.round(w)) sizeSurface(ground, Math.round(w));
+        const need = capHeight(ground);
+        if (need > ground.ch || need < ground.ch - 48) {
+          ground.ch = need;
+          fitCanvas(ground);
+        }
         ground.x = 0;
         ground.y = h;
+        ground.reach = 1;
         surfs.push(ground);
       }
 
       // ---- Śnieg na powierzchniach ----
-      function addSnow(st, lx, vol) {
+      // spread > 0 — szeroko, jak rozbita śnieżka (kopczyk o szerokości 2·spread).
+      function addSnow(st, lx, vol, spread = 0) {
         const s = st.snow;
-        const c = Math.round(lx / BIN);
-        for (let k = -3; k <= 3; k++) {
-          const i = c + k;
-          if (i >= 0 && i < s.length) s[i] += (vol * KERNEL[k + 3]) / BIN;
-        }
-        st.hot = 45;
-        st.dirty = true;
-      }
-      // Kursor zgarnia śnieg: ubywa go pod kursorem, a płatki lecą w stronę ruchu i spadają gdzie indziej.
-      function sweepSnow(st, lx) {
-        const s = st.snow;
-        const R = 26;
-        const i0 = Math.max(0, Math.floor((lx - R) / BIN));
-        const i1 = Math.min(s.length - 1, Math.ceil((lx + R) / BIN));
-        let removed = 0;
-        let topY = st.y;
-        for (let i = i0; i <= i1; i++) {
-          if (s[i] < 0.2) continue;
-          if (pointer.y < st.y - s[i] - 10 || pointer.y > st.y + 6) continue;
-          const f = 1 - Math.abs(i * BIN - lx) / R;
-          if (f <= 0) continue;
-          const take = Math.min(s[i], f * (1.8 + pointer.speed * 0.8));
-          topY = Math.min(topY, st.y - s[i]);
-          s[i] -= take;
-          removed += take * BIN;
-        }
-        if (removed < 1) return;
-        st.hot = 45;
-        st.dirty = true;
-        const n = Math.min(20, Math.max(1, Math.round(removed / 7)));
-        for (let k = 0; k < n; k++) {
-          add({ t: 'flake', x: st.x + lx + rnd(-R * 0.6, R * 0.6), y: topY - rnd(1, 5), vx: pointer.vx * rnd(0.5, 1.2) + rnd(-0.6, 0.6), vy: Math.min(pointer.vy * 0.3, 0) - rnd(1, 3), g: 0.045, r: rnd(0.9, 2.2), a: rnd(0.75, 1), vol: removed / n, sway: rnd(0, TAU), amp: rnd(0.1, 0.4), wk: 0.4, tk: 1.1, free: 26 });
-        }
-      }
-      // Kliknięcie w śnieg: wydmuchuje dołek i rozrzuca płatki.
-      function blast(x, y) {
-        const R = 44;
-        for (const st of surfs) {
-          if (!st.snow) continue;
-          const lx = x - st.x;
-          if (lx < -R || lx > st.w + R || y < st.y - st.max - R || y > st.y + R) continue;
-          let removed = 0;
-          for (let i = 0; i < st.snow.length; i++) {
-            const d = Math.hypot(i * BIN - lx, st.y - st.snow[i] * 0.5 - y);
-            if (d >= R) continue;
-            const take = st.snow[i] * (1 - d / R);
-            st.snow[i] -= take;
-            removed += take * BIN;
+        const bin = st.bin;
+        const c = Math.round(lx / bin);
+        if (spread > bin * 3) {
+          const k0 = Math.ceil(spread / bin);
+          let sum = 0;
+          for (let k = -k0; k <= k0; k++) sum += Math.max(0, 1 - ((k * bin) / spread) ** 2);
+          for (let k = -k0; k <= k0; k++) {
+            const i = c + k;
+            if (i >= 0 && i < s.length) s[i] += (vol * Math.max(0, 1 - ((k * bin) / spread) ** 2)) / sum / bin;
           }
-          if (removed < 1) continue;
-          st.hot = 45;
-          st.dirty = true;
-          const n = Math.min(30, Math.round(removed / 6));
-          for (let k = 0; k < n; k++) add({ ...radial(x + rnd(-14, 14), Math.min(y, st.y - 3) - 3, [1.5, 4.5], {}), vy: -rnd(1.5, 4.5), t: 'flake', g: 0.05, r: rnd(0.9, 2.2), a: 0.95, vol: removed / n, sway: rnd(0, TAU), amp: 0.2, wk: 0.4, tk: 1.1, free: 30 });
+        } else {
+          for (let k = -3; k <= 3; k++) {
+            const i = c + k;
+            if (i >= 0 && i < s.length) s[i] += (vol * KERNEL[k + 3]) / bin;
+          }
         }
+        st.hot = 45;
+        st.dirty = true;
       }
       function settleSnow(st) {
-        relaxSnow(st.snow, st.max, Boolean(st.el), st.spill);
+        relaxSnow(st);
         st.hot -= 1;
         st.dirty = true;
+        const s = st.snow;
         if (!st.el) {
+          for (let i = 0; i < s.length; i++) if (s[i] > groundSoft) s[i] -= (s[i] - groundSoft) * 0.01;
           st.spill[0] = st.spill[1] = 0;
+          st.peak = crestOf(st);
           return;
         }
-        // Nadmiar zsuwa się z brzegów karty pojedynczymi płatkami.
+        st.peak = crestOf(st);
+        // Nadmiar zsuwa się z brzegów karty (i z boków awatara) pojedynczymi płatkami.
         let n = 0;
         for (const side of [0, 1]) {
           while (st.spill[side] >= 14 && n < 4) {
             st.spill[side] -= 14;
             n += 1;
-            add({ t: 'flake', x: st.x + (side ? st.w + 1 : -1), y: st.y - 1, vx: (side ? 1 : -1) * rnd(0.25, 0.8), vy: rnd(0.1, 0.5), g: 0.04, r: rnd(1, 1.7), a: 0.95, vol: 14, tk: 1.1, wk: 0.25, sway: rnd(0, TAU), amp: 0.15 });
+            add({ t: 'flake', x: st.x + (side ? st.w + 1 : -1), y: st.y - 1, vx: (side ? 1 : -1) * rnd(0.25, 0.8), vy: rnd(0.1, 0.5), g: 0.04, r: rnd(1, 1.7), a: 0.95, vol: 14, tk: 1.1, wk: 0.25, sway: rnd(0, TAU), amp: 0.15, z: 0 });
           }
         }
+      }
+      // Gdzie pod kursorem leży śnieg (do lepienia śnieżki).
+      function snowAt(x, y) {
+        for (const st of surfs) {
+          if (!st.snow) continue;
+          const lx = x - st.x;
+          if (lx < -2 || lx > st.w + 2) continue;
+          const n = st.snow.length;
+          const i = clamp(Math.round(lx / st.bin), 0, n - 1);
+          const s = Math.max(st.snow[i], st.snow[Math.max(0, i - 1)], st.snow[Math.min(n - 1, i + 1)]);
+          if (s < 2) continue;
+          const surf = st.y - (st.base ? st.base[i] : 0);
+          if (y >= surf - s - 6 && y <= surf + 4) return { st, lx: clamp(lx, 0, st.w) };
+        }
+        return null;
+      }
+      // Bierze śnieg spod ręki (zostaje dołek); zwraca, ile wzięło (px²).
+      function scoop(st, lx, R, want) {
+        const s = st.snow;
+        const bin = st.bin;
+        const i0 = Math.max(0, Math.floor((lx - R) / bin));
+        const i1 = Math.min(s.length - 1, Math.ceil((lx + R) / bin));
+        let avail = 0;
+        for (let i = i0; i <= i1; i++) avail += s[i] * Math.max(0, 1 - Math.abs(i * bin - lx) / (R + bin)) * bin;
+        if (avail < 1) return 0;
+        const k = Math.min(1, want / avail);
+        let got = 0;
+        for (let i = i0; i <= i1; i++) {
+          const t = s[i] * k * Math.max(0, 1 - Math.abs(i * bin - lx) / (R + bin));
+          s[i] -= t;
+          got += t * bin;
+        }
+        st.hot = 45;
+        st.dirty = true;
+        return got;
       }
 
       // ---- Leżące liście, konfetti, płatki, monety i dynie ----
@@ -3306,6 +3782,14 @@
         const c = Math.round(it.x / PILE_BIN);
         for (let k = -1; k <= 1; k++) if (s[c + k] !== undefined) s[c + k] = Math.max(0, s[c + k] - it.th * (k ? 0.35 : 0.85));
       }
+      function takeRest(st, j) {
+        const it = st.rest[j];
+        st.rest.splice(j, 1);
+        restCount -= 1;
+        unstack(st, it);
+        st.dirty = true;
+        return it;
+      }
       function settle(st, p, lx) {
         const th = p.t === 'pumpkin' ? p.s * 1.7 : THICK[p.t] ?? 2;
         const base = sample(st.pile, PILE_BIN, lx);
@@ -3316,7 +3800,7 @@
           p.y = st.y - base - 1;
           return false;
         }
-        const it = { t: p.t, c: p.c, s: p.s, x: lx, th, rot: restRot(p), y: 0 };
+        const it = { t: p.t, c: p.c, s: p.s, x: lx, th, rot: restRot(p), y: 0, lit: p.lit ?? 0 };
         stack(st, it);
         st.rest.push(it);
         restCount += 1;
@@ -3335,7 +3819,7 @@
       }
       function fling(st, it, vx, vy) {
         const heavy = it.t === 'coin' || it.t === 'pumpkin';
-        add({ t: it.t, c: it.c, s: it.s, x: st.x + it.x, y: st.y - it.y - 2, vx, vy, g: it.t === 'coin' ? 0.3 : it.t === 'pumpkin' ? 0.35 : 0.06, drag: 0.99, vr: rnd(-0.25, 0.25), rot: it.rot, sway: rnd(0, TAU), amp: heavy ? 0 : rnd(0.3, 0.9), wk: heavy ? 0 : 1, tk: rnd(0.9, 1.2), spin: rnd(0.1, 0.3) });
+        return add({ t: it.t, c: it.c, s: it.s, x: st.x + it.x, y: st.y - it.y - 2, vx, vy, g: it.t === 'coin' ? 0.3 : it.t === 'pumpkin' ? 0.35 : 0.06, drag: 0.99, vr: rnd(-0.25, 0.25), rot: it.rot, sway: rnd(0, TAU), amp: heavy ? 0 : rnd(0.3, 0.9), wk: heavy ? 0 : 1, tk: rnd(0.9, 1.2), spin: rnd(0.1, 0.3), lit: it.lit, z: 0, wall: true });
       }
       // Kursor strąca to, co leży (jak przejście przez kupkę liści).
       function kickRest(st) {
@@ -3346,13 +3830,10 @@
           const dx = st.x + it.x - pointer.x;
           const dy = st.y - it.y - pointer.y;
           if (dx * dx + dy * dy > R * R) continue;
-          st.rest.splice(j, 1);
-          restCount -= 1;
-          unstack(st, it);
+          takeRest(st, j);
           kicked += 1;
           fling(st, it, pointer.vx * rnd(0.35, 0.8) + rnd(-1, 1), Math.min(pointer.vy * 0.45, 0) - rnd(1.6, 4.2));
         }
-        if (kicked) st.dirty = true;
       }
       function drawRest(c, it, x, y) {
         c.save();
@@ -3371,7 +3852,7 @@
             break;
           case 'pumpkin':
             c.rotate(it.rot);
-            c.drawImage(sprite('pumpkin', it.c), -it.s * 1.3, -it.s * 1.3, it.s * 2.6, it.s * 2.6);
+            c.drawImage(sprite(it.lit > 0 ? 'pumpkin-lit' : 'pumpkin', it.c), -it.s * 1.3, -it.s * 1.3, it.s * 2.6, it.s * 2.6);
             break;
           default: {
             const size = it.s * (it.t === 'blossom' ? 3.2 : it.t === 'leaf' ? 2.6 : 2.4);
@@ -3392,29 +3873,50 @@
         st.dirty = false;
       }
       // Czapa śniegu: gładki obrys przez środki słupków, gradient od bieli do błękitnego cienia i jasna krawędź.
+      // Rysowana tylko tam, gdzie śnieg leży; na awatarze między konturem koła (i korony) a wierzchem śniegu.
       function paintSnow(c, st, base) {
         const s = st.snow;
         const n = s.length;
-        let peak = 0;
-        for (let i = 0; i < n; i++) if (s[i] > peak) peak = s[i];
-        if (peak < 0.4) return;
+        let i = 0;
+        while (i < n) {
+          while (i < n && s[i] < 0.35) i += 1;
+          if (i >= n) break;
+          let j = i;
+          while (j < n - 1 && s[j + 1] >= 0.35) j += 1;
+          paintRun(c, st, base, Math.max(0, i - 1), Math.min(n - 1, j + 1));
+          i = j + 1;
+        }
+      }
+      function paintRun(c, st, base, a, z) {
+        const s = st.snow;
+        const b = st.base;
+        const X = (k) => PAD + Math.min(k * st.bin, st.w);
+        const top = (k) => base - s[k] - (b ? b[k] : 0);
         const line = new Path2D();
-        let px = PAD;
-        let py = base - s[0];
+        let px = X(a);
+        let py = top(a);
+        let minY = py;
+        let peak = 0;
         line.moveTo(px, py);
-        for (let i = 1; i < n; i++) {
-          const x = PAD + Math.min(i * BIN, st.w);
-          const y = base - s[i];
+        for (let k = a + 1; k <= z; k++) {
+          const x = X(k);
+          const y = top(k);
           line.quadraticCurveTo(px, py, (px + x) / 2, (py + y) / 2);
           px = x;
           py = y;
+          if (y < minY) minY = y;
+          if (s[k] > peak) peak = s[k];
         }
         line.lineTo(px, py);
         const body = new Path2D(line);
-        body.lineTo(px, base + 1);
-        body.lineTo(PAD, base + 1);
+        if (b) {
+          for (let k = z; k >= a; k--) body.lineTo(X(k), base - b[k]);
+        } else {
+          body.lineTo(px, base + 1);
+          body.lineTo(X(a), base + 1);
+        }
         body.closePath();
-        const g = c.createLinearGradient(0, base - peak, 0, base);
+        const g = c.createLinearGradient(0, minY, 0, minY + peak + 2);
         g.addColorStop(0, snowTop);
         g.addColorStop(1, snowBottom);
         c.save();
@@ -3434,7 +3936,7 @@
         switch (p.land) {
           case 'pile':
             if (!st.snow) return false;
-            addSnow(st, lx, p.vol ?? 30 * (p.r / 2) ** 2);
+            addSnow(st, lx, p.vol ?? 40 * (p.r / 2) ** 2);
             return true;
           case 'rest':
             if (!st.pile) return false;
@@ -3458,20 +3960,466 @@
         }
         return false;
       }
+      function surfTop(st, lx) {
+        if (st.snow) return st.y - sample(st.snow, st.bin, lx) - (st.base ? sample(st.base, st.bin, lx) : 0);
+        return st.y - (st.pile ? sample(st.pile, PILE_BIN, lx) : 0);
+      }
       function collide(p, prevY) {
         for (const st of surfs) {
           const lx = p.x - st.x;
-          if (lx < 0 || lx > st.w) continue;
-          const top = st.y - (st.snow ? sample(st.snow, BIN, lx) : st.pile ? sample(st.pile, PILE_BIN, lx) : 0);
+          if (lx < 0 || lx > st.w || p.z > st.reach) continue;
+          const top = surfTop(st, lx);
           if (prevY <= top + 0.5 && p.y >= top) return landOn(st, p, lx, top);
         }
         return false;
       }
 
+      // ---- Śnieżki: kliknij w śnieg, przeciągnij (toczona po śniegu rośnie) i puść z rozmachem ----
+      const ballR = (vol) => clamp(Math.sqrt(vol / Math.PI), 4.5, 34);
+      function startBall(hit) {
+        const vol = scoop(hit.st, hit.lx, 24, 1100);
+        held = { x: pointer.x, y: pointer.y, vol: Math.max(vol, 380), r: 0, rot: 0 };
+        held.r = ballR(held.vol);
+        startGesture('ball');
+        for (let k = 0; k < 6; k++) add({ t: 'flake', x: pointer.x + rnd(-8, 8), y: pointer.y - rnd(0, 6), vx: rnd(-1, 1), vy: -rnd(0.5, 1.8), g: 0.05, r: rnd(0.8, 1.6), a: 0.9, vol: 3, sway: rnd(0, TAU), amp: 0.2, wk: 0.3, tk: 1, z: 0 });
+      }
+      function rollBall(dt) {
+        const b = held;
+        b.x = pointer.x;
+        b.y = pointer.y;
+        b.rot += (pointer.vx / Math.max(4, b.r)) * dt;
+        if (pointer.speed < 0.3 || b.r >= 34) return;
+        for (const st of surfs) {
+          if (!st.snow) continue;
+          const lx = b.x - st.x;
+          if (lx < -b.r || lx > st.w + b.r) continue;
+          const i = clamp(Math.round(lx / st.bin), 0, st.snow.length - 1);
+          const surf = st.y - (st.base ? st.base[i] : 0);
+          if (b.y + b.r < surf - st.snow[i] || b.y - b.r > surf + 2) continue;
+          const got = scoop(st, clamp(lx, 0, st.w), b.r, Math.min(pointer.speed, 12) * 2.4 * dt);
+          if (got > 0) {
+            b.vol += got;
+            b.r = ballR(b.vol);
+          }
+        }
+      }
+      function throwBall() {
+        const b = held;
+        held = null;
+        const speed = Math.hypot(pointer.vx, pointer.vy);
+        const ball = { t: 'ball', x: b.x, y: b.y, r: b.r, vol: b.vol, rot: b.rot, z: 0, noLand: true, instant: true };
+        if (speed < 1.5) {
+          add({ ...ball, vx: 0, vy: 0.4, vr: 0, g: 0.34, drag: 0.998, flight: Infinity });
+          return;
+        }
+        // Rzucona leci w stronę strony (maleje) i po chwili na nią plaska — im szybciej, tym krócej leci.
+        const k = Math.min(1, 20 / speed);
+        const vx = pointer.vx * k;
+        const vy = pointer.vy * k;
+        add({ ...ball, vx, vy, vr: vx * 0.012, g: 0.26, drag: 0.995, flight: clamp(12 + 220 / (Math.hypot(vx, vy) + 6), 12, 34) });
+      }
+      function stepBall(p, dt) {
+        p.age += dt;
+        const k = p.drag ** dt;
+        p.vx *= k;
+        p.vy = p.vy * k + p.g * dt;
+        p.rot += p.vr * dt;
+        const n = Math.max(1, Math.ceil((Math.hypot(p.vx, p.vy) * dt) / 6));
+        for (let j = 0; j < n; j++) {
+          const py = p.y;
+          p.x += (p.vx * dt) / n;
+          p.y += (p.vy * dt) / n;
+          // Krawędzie ekranu to ściany — śnieżka plaska o nie.
+          if (p.x < p.r * 0.6 || p.x > w - p.r * 0.6 || p.y < p.r * 0.6) {
+            splatAt(clamp(p.x, p.r * 0.7, w - p.r * 0.7), Math.max(p.y, p.r * 0.7), p.r);
+            return false;
+          }
+          for (const st of surfs) {
+            if (st.round) {
+              const R = st.w / 2;
+              const cx = st.x + R;
+              const d = Math.hypot(p.x - cx, p.y - st.y);
+              if (d < R + p.r * 0.75) {
+                hitRound(p, st, cx, d);
+                return false;
+              }
+              continue;
+            }
+            if (p.y <= py) continue;
+            const lx = p.x - st.x;
+            if (lx < 0 || lx > st.w) continue;
+            const top = surfTop(st, lx);
+            const foot = p.r * 0.6;
+            if (py + foot <= top + 0.5 && p.y + foot >= top) {
+              hitTop(p, st, lx, top);
+              return false;
+            }
+          }
+        }
+        if (p.age > p.flight) {
+          splatAt(p.x, p.y, p.r);
+          return false;
+        }
+        return p.y - p.r < h + 40 && p.x > -80 && p.x < w + 80 && p.y > -600;
+      }
+      // Grudki śniegu z rozbitej śnieżki (lecą i spadają na karty).
+      function debris(p, x, y, vol, n, dir, spread) {
+        const speed = Math.hypot(p.vx, p.vy);
+        for (let k = 0; k < n; k++) {
+          const a = dir + rnd(-spread, spread);
+          const v = rnd(1, 2.5 + speed * 0.28);
+          add({ t: 'clump', x: x + rnd(-p.r * 0.5, p.r * 0.5), y, vx: Math.cos(a) * v + p.vx * 0.25, vy: Math.sin(a) * v, g: 0.22, drag: 0.99, r: rnd(1.1, 2.4), vol: vol / n, z: 0, wall: true });
+        }
+      }
+      function hitTop(p, st, lx, top) {
+        const speed = Math.hypot(p.vx, p.vy);
+        if (speed < 6) {
+          // Upuszczona: zostaje kopczyk.
+          addSnow(st, lx, p.vol * 0.92, p.r * 1.2);
+          debris(p, p.x, top - 1, p.vol * 0.08, 5, -Math.PI / 2, 1.2);
+          return;
+        }
+        addSnow(st, lx, p.vol * 0.5, p.r * 1.7);
+        debris(p, p.x, top - 2, p.vol * 0.5, Math.min(28, 8 + Math.round(p.vol / 22)), -Math.PI / 2, 1.3);
+        add({ t: 'ring', x: p.x, y: top, vx: 0, vy: 0, r: p.r * 0.8, grow: 2.2, lw: 1.4, c: '#f4f9ff', a: 0.8, life: 14, noLand: true });
+      }
+      // Trafienie w awatar: z góry śnieg zostaje na czapie, w „twarz” — plaśnięcie, a awatar się chwieje.
+      function hitRound(p, st, cx, d) {
+        const nx = (p.x - cx) / (d || 1);
+        const ny = (p.y - st.y) / (d || 1);
+        const R = st.w / 2;
+        const ix = cx + nx * R;
+        const iy = st.y + ny * R;
+        const speed = Math.hypot(p.vx, p.vy);
+        const upper = ny < -0.35;
+        if (upper) addSnow(st, clamp(ix - st.x, 0, st.w), p.vol * (speed < 6 ? 0.9 : 0.45), p.r);
+        else splatAt(ix - nx * 2, iy - ny * 2, p.r * 0.95);
+        debris(p, ix, iy, p.vol * (upper ? (speed < 6 ? 0.1 : 0.55) : 0.7), Math.min(26, 6 + Math.round(p.vol / 24)), Math.atan2(ny, nx), 1.1);
+        if (speed > 3) {
+          const el = st.el;
+          el.classList.remove('fx-hit');
+          void el.offsetWidth;
+          el.classList.add('fx-hit');
+          setTimeout(() => el.classList.remove('fx-hit'), 420);
+        }
+      }
+      // Plaśnięcie na stronie: śnieg przykleja się do strony (przewija się z nią), po chwili zsuwa i odpada.
+      function splatAt(x, y, r) {
+        const lobes = Array.from({ length: Math.floor(rnd(7, 11)) }, () => ({ a: rnd(0, TAU), d: rnd(0.55, 1.05), s: rnd(0.28, 0.55) }));
+        const dots = Array.from({ length: 6 }, () => ({ a: rnd(0, TAU), d: rnd(1.3, 2.1), s: rnd(0.08, 0.18) }));
+        add({ t: 'splat', x, y, sy: scrollY, vx: 0, vy: 0, r, lobes, dots, life: rnd(280, 400), z: 0, noLand: true, instant: true });
+        for (let k = 0; k < 10; k++) add({ t: 'clump', x: x + rnd(-r, r), y: y + rnd(-r * 0.5, r * 0.5), vx: rnd(-2.2, 2.2), vy: rnd(-2.2, 0.6), g: 0.2, drag: 0.99, r: rnd(0.9, 1.8), vol: 4, z: 0, wall: true });
+      }
+
+      // ---- Przytrzymanie przycisku (śnieżka, bańka, magnes) ----
+      function startGesture(kind) {
+        gesture = { kind, x0: pointer.x, y0: pointer.y, t0: performance.now(), moved: false, wait: 10 };
+        document.documentElement.classList.add('fx-holding');
+        if (kind === 'ball') document.documentElement.classList.add('fx-grab');
+        getSelection()?.removeAllRanges();
+      }
+      function endGesture() {
+        if (!gesture) return;
+        const g = gesture;
+        gesture = null;
+        document.documentElement.classList.remove('fx-holding', 'fx-grab');
+        if (held) throwBall();
+        if (blowing) releaseBlow();
+        // Przeciągnięcie śnieżki to nie kliknięcie w to, co pod spodem.
+        if (g.kind === 'ball' && (g.moved || performance.now() - g.t0 > 350)) swallowClick();
+      }
+      function swallowClick() {
+        const stop = (event) => {
+          event.stopPropagation();
+          event.preventDefault();
+        };
+        addEventListener('click', stop, { capture: true, once: true });
+        setTimeout(() => removeEventListener('click', stop, { capture: true }), 400);
+      }
+      listen(window, 'pointermove', (event) => {
+        if (gesture && !gesture.moved && Math.hypot(event.clientX - gesture.x0, event.clientY - gesture.y0) > 8) gesture.moved = true;
+      }, { passive: true });
+      listen(window, 'pointerup', endGesture);
+      listen(window, 'pointercancel', endGesture);
+      listen(window, 'blur', endGesture);
+      listen(document, 'selectstart', (event) => { if (gesture || tool) event.preventDefault(); });
+      listen(document, 'dragstart', (event) => { if (gesture || tool) event.preventDefault(); });
+
+      // ---- Narzędzia: łopata (stoi na śniegu oparta o prawą krawędź ekranu) i gaśnica (stoi w prawym dolnym rogu) ----
+      // Rysowane na płótnie nad stroną; przezroczysty przycisk w tym samym miejscu pozwala je chwycić i przeciągać.
+      // Chwyta się w miejscu kliknięcia (np. łopatę za uchwyt) — narzędzie wisi na kursorze i lekko się kołysze.
+      function makeTool(kind) {
+        const def = TOOL[kind];
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `fx-tool fx-${kind}`;
+        btn.title = def.title;
+        btn.setAttribute('aria-label', def.title);
+        document.body.append(btn);
+        const img = new Image();
+        img.src = `data:image/svg+xml,${encodeURIComponent(def.svg.replace('<svg ', `<svg xmlns="http://www.w3.org/2000/svg" width="${def.vw * 3}" height="${def.vh * 3}" `))}`;
+        const t = { kind, def, btn, img, held: false, id: -1, x: 0, y: 0, a: 0, cx: 0, cy: 0, gx: 0, gy: 0, vx: 0, vy: 0, trail: [], load: 0, back: 0, from: null, flick: 0, hot: false, box: '', intro: 1, rest: null, pose: null };
+        btn.addEventListener('pointerdown', (event) => {
+          if (event.button !== 0 || t.held) return;
+          event.preventDefault();
+          event.stopPropagation();
+          try {
+            btn.setPointerCapture(event.pointerId);
+          } catch {
+            // bez przechwycenia też działa (ruch i tak dochodzi do okna)
+          }
+          // Punkt chwytu w układzie narzędzia (względem ostrza/dyszy, bez obrotu).
+          const pose = t.pose ?? t.rest;
+          const dx = event.clientX - pose.x;
+          const dy = event.clientY - pose.y;
+          const c = Math.cos(-pose.a);
+          const s = Math.sin(-pose.a);
+          t.gx = dx * c - dy * s;
+          t.gy = dx * s + dy * c;
+          t.a = pose.a;
+          t.cx = event.clientX;
+          t.cy = event.clientY;
+          t.held = true;
+          t.back = 0;
+          t.intro = 0;
+          t.trail = [];
+          t.vx = t.vy = 0;
+          t.id = event.pointerId;
+          tool = t;
+          document.documentElement.classList.add('fx-aim');
+          getSelection()?.removeAllRanges();
+        });
+        const drop = (event) => {
+          if (!t.held || event.pointerId !== t.id) return;
+          t.held = false;
+          if (tool === t) tool = null;
+          document.documentElement.classList.remove('fx-aim');
+          if (t.kind === 'shovel' && t.load > 0) dumpLoad(t, false);
+          t.from = { x: t.x, y: t.y, a: t.a };
+          t.back = 1;
+        };
+        btn.addEventListener('pointerup', drop);
+        btn.addEventListener('pointercancel', drop);
+        btn.addEventListener('lostpointercapture', drop);
+        btn.addEventListener('click', (event) => event.preventDefault());
+        btn.addEventListener('pointerenter', () => { t.hot = true; });
+        btn.addEventListener('pointerleave', () => { t.hot = false; });
+        t.rest = restPose(t);
+        t.pose = { ...t.rest };
+        placeTool(t);
+        tools.push(t);
+        return t;
+      }
+      const toolK = (t) => (t.def.size * toolScale) / t.def.vw;
+      // Gdzie narzędzie stoi, gdy nikt go nie trzyma: najniższym punktem na ziemi (na śniegu), dotyka prawej krawędzi ekranu.
+      function restPose(t) {
+        const d = t.def;
+        const k = toolK(t);
+        const a = d.restA;
+        const c = Math.cos(a);
+        const s = Math.sin(a);
+        let minX = 1e9;
+        let maxX = -1e9;
+        let minY = 1e9;
+        let maxY = -1e9;
+        let footX = 0;
+        for (const [ux, uy] of d.hull) {
+          const x = (ux - d.ax) * k;
+          const y = (uy - d.ay) * k;
+          const rx = x * c - y * s;
+          const ry = x * s + y * c;
+          if (rx < minX) minX = rx;
+          if (rx > maxX) maxX = rx;
+          if (ry < minY) minY = ry;
+          if (ry > maxY) {
+            maxY = ry;
+            footX = rx;
+          }
+        }
+        const x = w - 2 - maxX;
+        const snowH = ground.snow ? sample(ground.snow, ground.bin, clamp(x + footX, 0, ground.w || w)) : 0;
+        const y = h - Math.max(0, snowH - 3) - maxY;
+        return { x, y, a, box: [x + minX - 4, y + minY - 4, maxX - minX + 8, maxY - minY + 8] };
+      }
+      // Przezroczysty przycisk do chwytania leży dokładnie na narysowanym narzędziu.
+      function placeTool(t) {
+        const [x, y, bw, bh] = t.rest.box;
+        const box = `${Math.round(x)},${Math.round(y)},${Math.round(bw)},${Math.round(bh)}`;
+        if (box === t.box) return;
+        t.box = box;
+        Object.assign(t.btn.style, { left: `${Math.round(x)}px`, top: `${Math.round(y)}px`, width: `${Math.round(bw)}px`, height: `${Math.round(bh)}px` });
+      }
+      function toolTick(t, dt) {
+        if (pointer.on) {
+          t.cx = pointer.x;
+          t.cy = pointer.y;
+        }
+        // Prędkość ręki z ostatnich ~0,12 s (zdarzenia myszy bywają łączone, więc liczymy z klatek).
+        t.trail.push({ t: now, x: t.cx, y: t.cy });
+        while (t.trail.length > 2 && now - t.trail[0].t > 120) t.trail.shift();
+        const o = t.trail[0];
+        const span = Math.max(16, now - o.t);
+        t.vx = ((t.cx - o.x) / span) * 16.67;
+        t.vy = ((t.cy - o.y) / span) * 16.67;
+        // Kołysanie: trzymane wyżej (za uchwyt) — dół zostaje w tyle za ruchem.
+        const swing = clamp(-t.vx * 0.026, -0.5, 0.5) * (t.gy < -12 ? 1 : -0.5);
+        t.a += (swing - t.a) * Math.min(1, 0.14 * dt);
+        if (t.flick > 0) t.flick -= dt;
+        const a = t.a - (t.flick > 0 ? Math.sin((t.flick / 18) * Math.PI) * 0.35 : 0);
+        const c = Math.cos(a);
+        const s = Math.sin(a);
+        t.x = t.cx - (t.gx * c - t.gy * s);
+        t.y = t.cy - (t.gx * s + t.gy * c);
+        t.drawA = a;
+        if (t.kind === 'shovel') shovelTick(t, dt);
+        else sprayTick(t, dt);
+      }
+      const loadHeight = (t) => Math.min(28, t.load / 100) * toolScale;
+      // Łopata: dolna krawędź szufli zgarnia śnieg, który jest nad nią (aż do samej karty). Pełna łopata nie bierze więcej —
+      // z kopczyka spadają grudki, trzeba ją opróżnić (szybki ruch w górę albo puszczenie).
+      function shovelTick(t, dt) {
+        const half = 40 * toolK(t);
+        const x0 = t.x - half;
+        const x1 = t.x + half;
+        const by = t.y + 1;
+        const CAP = 3200;
+        let full = false;
+        for (const st of surfs) {
+          if (!st.snow || x1 < st.x || x0 > st.x + st.w) continue;
+          const s = st.snow;
+          const i0 = Math.max(0, Math.floor((x0 - st.x) / st.bin));
+          const i1 = Math.min(s.length - 1, Math.ceil((x1 - st.x) / st.bin));
+          const keepAt = (i) => {
+            const surf = st.y - (st.base ? st.base[i] : 0);
+            if (by < surf - s[i] || by > surf + 12) return -1;
+            return Math.max(0, surf - by);
+          };
+          let avail = 0;
+          for (let i = i0; i <= i1; i++) {
+            const keep = keepAt(i);
+            if (keep >= 0 && s[i] > keep) avail += (s[i] - keep) * st.bin;
+          }
+          if (avail <= 0) continue;
+          const f = Math.min(1, (CAP - t.load) / avail);
+          if (f <= 0.02) {
+            full = true;
+            continue;
+          }
+          let took = 0;
+          for (let i = i0; i <= i1; i++) {
+            const keep = keepAt(i);
+            if (keep < 0 || s[i] <= keep) continue;
+            const take = (s[i] - keep) * f;
+            s[i] -= take;
+            took += take * st.bin;
+          }
+          t.load += took;
+          st.hot = 45;
+          st.dirty = true;
+          if (Math.random() < 0.6) add({ t: 'flake', x: t.x + rnd(-half, half), y: by - rnd(2, 10), vx: t.vx * 0.3 + rnd(-0.8, 0.8), vy: -rnd(0.6, 2.2), g: 0.045, r: rnd(0.8, 1.8), a: 0.9, vol: 2, sway: rnd(0, TAU), amp: 0.2, wk: 0.3, tk: 1, z: 0 });
+        }
+        if ((full || t.load > CAP * 0.97) && Math.hypot(t.vx, t.vy) > 1 && Math.random() < 0.35 * dt) {
+          const v = Math.min(60, t.load * 0.03);
+          t.load -= v;
+          add({ t: 'clump', x: t.x + rnd(-half, half) * 0.7, y: t.y - loadHeight(t) * 0.8, vx: -t.vx * 0.2 + rnd(-1, 1), vy: -rnd(0.5, 1.5), g: 0.22, drag: 0.99, r: rnd(1.4, 2.6), vol: v, z: 0, wall: true });
+        }
+        // Szybki ruch w górę — śnieg z łopaty leci w powietrze.
+        if (t.load > 40 && t.vy < -6 && t.flick <= 0) {
+          dumpLoad(t, true);
+          t.flick = 18;
+        }
+      }
+      function dumpLoad(t, toss) {
+        const n = Math.min(44, 6 + Math.round(t.load / 22));
+        const hh = loadHeight(t);
+        const half = 34 * toolK(t);
+        for (let k = 0; k < n; k++) {
+          add({ t: 'clump', x: t.x + rnd(-half, half), y: t.y - rnd(3, 4 + hh), vx: toss ? clamp(t.vx, -24, 24) * rnd(0.55, 1) + rnd(-1.2, 1.2) : rnd(-0.6, 0.6), vy: toss ? clamp(t.vy, -24, 24) * rnd(0.6, 1.05) + rnd(-1.5, 0.5) : rnd(-0.5, 0.5), g: 0.24, drag: 0.992, r: rnd(1.3, 3.2), vol: t.load / n, z: 0, wall: true });
+        }
+        t.load = 0;
+      }
+      // Gaśnica: piana leci z dyszy (dysza skierowana w dół, ruch na boki ją kieruje).
+      function sprayTick(t, dt) {
+        const n = Math.max(1, Math.round(5 * dt));
+        const dir = Math.PI / 2 + (t.drawA ?? 0);
+        for (let k = 0; k < n; k++) {
+          const a = dir + clamp(-t.vx * 0.05, -0.7, 0.7) + rnd(-0.2, 0.2);
+          const v = rnd(6, 10.5);
+          add({ t: 'foam', x: t.x + rnd(-1.5, 1.5), y: t.y + 2, vx: Math.cos(a) * v + t.vx * 0.25, vy: Math.sin(a) * v + t.vy * 0.2, g: 0.07, drag: 0.94, r: rnd(2.2, 4.2), grow: rnd(0.25, 0.55), life: rnd(42, 70), c: pickOne(['#ffffff', '#f1f7ff', '#dfeaf6']), a: 0.92, z: 0, noLand: true, wall: true });
+        }
+        if (Math.random() < 0.3 * dt) add({ t: 'smoke', x: t.x + rnd(-4, 4), y: t.y + rnd(6, 16), vx: rnd(-0.5, 0.5), vy: rnd(0.2, 0.8), r: rnd(8, 14), grow: 0.6, life: rnd(30, 50), a: 0.12, c: '#e6eef6', sway: rnd(0, TAU), noLand: true });
+      }
+      function drawTool(t, dt) {
+        const rest = t.rest;
+        let x;
+        let y;
+        let a;
+        if (t.held) {
+          x = t.x;
+          y = t.y;
+          a = t.drawA ?? t.a;
+        } else if (t.back > 0) {
+          t.back = Math.max(0, t.back - 0.05 * dt);
+          const e = 1 - t.back;
+          const k = e * e * (3 - 2 * e);
+          x = t.from.x + (rest.x - t.from.x) * k;
+          y = t.from.y + (rest.y - t.from.y) * k;
+          a = t.from.a + (rest.a - t.from.a) * k;
+        } else {
+          x = rest.x;
+          y = rest.y;
+          a = rest.a;
+          // Pod kursorem narzędzie lekko się chwieje (można je chwycić); co kilka sekund samo drgnie.
+          const cyc = now % 7000;
+          if (t.hot) a += Math.sin(now * 0.018) * 0.035;
+          else if (cyc < 600) a += Math.sin(cyc * 0.03) * 0.045 * (1 - cyc / 600);
+        }
+        if (t.intro > 0) {
+          // Na start wjeżdża od dołu ekranu.
+          t.intro = Math.max(0, t.intro - 0.02 * dt);
+          y += t.intro * t.intro * 220;
+        }
+        t.pose = { x, y, a };
+        const d = t.def;
+        const k = toolK(t);
+        ctx.save();
+        ctx.globalAlpha = 1;
+        ctx.translate(x, y);
+        ctx.rotate(a);
+        if (t.img.complete && t.img.naturalWidth) ctx.drawImage(t.img, -d.ax * k, -d.ay * k, d.vw * k, d.vh * k);
+        if (t.kind === 'shovel' && t.load > 1) {
+          // Śnieg na łopacie: kopczyk w szufli, przy jej dolnej krawędzi.
+          const hh = loadHeight(t);
+          const half = 41 * k;
+          const yb = -3 * k;
+          const g = ctx.createLinearGradient(0, yb - hh * 1.1, 0, yb);
+          g.addColorStop(0, snowTop);
+          g.addColorStop(1, snowBottom);
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.moveTo(-half, yb);
+          ctx.bezierCurveTo(-half * 0.75, yb - hh * 1.35, half * 0.7, yb - hh * 1.4, half, yb);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(160, 188, 222, 0.45)';
+          ctx.beginPath();
+          for (const [u, v, r] of [[-0.45, 0.35, 0.09], [0.1, 0.55, 0.07], [0.5, 0.3, 0.08]]) {
+            ctx.moveTo(half * u + hh * r * 2, yb - hh * v);
+            ctx.arc(half * u, yb - hh * v, hh * r * 2, 0, TAU);
+          }
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
       // ---- Kursor ----
       function popBubble(p) {
-        add({ t: 'ring', x: p.x, y: p.y, vx: 0, vy: 0, r: p.r, grow: 1.6, lw: 1.2, c: p.c, a: 0.9, life: 14, noLand: true });
-        for (let k = 0; k < 5; k++) add({ ...radial(p.x, p.y, [1, 2.6], {}), t: 'drop', g: 0.12, life: rnd(12, 22), c: p.c, a: 0.8, noLand: true });
+        add({ t: 'ring', x: p.x, y: p.y, vx: 0, vy: 0, r: p.r, grow: 1.8, lw: 1.2, c: '#e6fbff', a: 0.9, life: 14, noLand: true });
+        for (let k = 0; k < 6 + Math.round(p.r / 4); k++) add({ ...radial(p.x, p.y, [1, 2.8], {}), t: 'drop', g: 0.12, life: rnd(12, 24), c: pickOne(colors), a: 0.85, noLand: true });
+        if (p.r > 9) for (let k = 0; k < 3; k++) add({ t: 'bubble', world: true, x: p.x + rnd(-p.r, p.r) * 0.5, y: p.y + rnd(-p.r, p.r) * 0.5, vx: rnd(-1, 1), vy: rnd(-1.5, -0.5), r: rnd(2, 4), sway: rnd(0, TAU), life: rnd(60, 120), z: 0, noLand: true });
       }
       function popBalloon(p) {
         add({ t: 'ring', x: p.x, y: p.y, vx: 0, vy: 0, r: p.s, grow: 3, lw: 1.5, c: p.c, a: 0.9, life: 14, noLand: true });
@@ -3491,13 +4439,6 @@
         if (d2 > 72900) return;
         const d = Math.sqrt(d2) || 1;
         switch (p.t) {
-          case 'flake':
-            if (d < 90) {
-              const f = (1 - d / 90) ** 2;
-              p.vx += ((dx / d) * 0.32 + pointer.vx * 0.05) * f * dt;
-              p.vy += ((dy / d) * 0.32 + pointer.vy * 0.05) * f * dt;
-            }
-            break;
           case 'leaf':
           case 'paper':
           case 'petal':
@@ -3529,16 +4470,6 @@
               const f = (1 - d / 120) ** 2;
               p.vx += (dx / d) * 0.6 * f * dt;
               p.vy += (dy / d) * 0.6 * f * dt;
-            }
-            break;
-          case 'bubble':
-            if (d < p.r + 5) {
-              popBubble(p);
-              p.dead = true;
-            } else if (d < 110) {
-              const f = (1 - d / 110) ** 2;
-              p.vx += (pointer.vx * 0.06 + (dx / d) * 0.12) * f * dt;
-              p.vy += (pointer.vy * 0.06 + (dy / d) * 0.12) * f * dt;
             }
             break;
           case 'balloon':
@@ -3585,7 +4516,7 @@
             break;
         }
       }
-      // Własne zachowanie cząsteczki (bez kursora): serca wracają do unoszenia się, nietoperze do lotu, ogniki krążą.
+      // Własne zachowanie cząsteczki (bez kursora).
       function behave(p, dt) {
         switch (p.t) {
           case 'heart':
@@ -3617,29 +4548,68 @@
             if (p.streak) p.vx += Math.sin(p.age * 0.12 + p.sway) * 0.06 * dt;
             break;
           case 'smoke':
-            p.vx += Math.sin(p.age * 0.03 + p.sway) * 0.01 * dt;
+            p.vx += Math.sin(p.age * 0.03 + (p.sway ?? 0)) * 0.01 * dt;
+            break;
+          case 'pumpkin':
+            if (p.lit > 0) p.lit -= dt;
+            break;
+          case 'foam':
+            // Piana gasi ogień (para wodna tam, gdzie było gorąco) i zostaje na dole ekranu.
+            if (fire && !p.done && p.y > fire.top) {
+              const hot = fire.quench(p.x, p.y, p.r * 1.5);
+              if (hot > 40 && Math.random() < 0.25) add({ t: 'smoke', x: p.x, y: p.y, vx: rnd(-0.3, 0.3), vy: -rnd(0.6, 1.4), r: rnd(10, 18), grow: 0.45, life: rnd(70, 110), a: rnd(0.12, 0.2), c: '#dfe6ee', sway: rnd(0, TAU), noLand: true });
+            }
+            if (!p.done && p.y > h - 5) {
+              p.done = true;
+              p.vy = 0;
+              p.vx *= 0.3;
+              p.g = 0;
+              p.drag = 0.9;
+              p.y = h - rnd(1, 6);
+              p.life = p.age + rnd(90, 160);
+              p.grow = 0.05;
+            }
+            break;
+          case 'streamer':
+            p.hist.push(p.x, p.y);
+            if (p.hist.length > 30) p.hist.splice(0, 2);
+            break;
+          case 'splat':
+            // Po chwili śnieg zaczyna się zsuwać i odpadać grudkami.
+            if (p.age > 100) {
+              p.vy = Math.min(0.22, p.vy + 0.002 * dt);
+              if (Math.random() < 0.025 * dt) add({ t: 'clump', x: p.x + rnd(-p.r, p.r) * 0.6, y: p.y - (scrollY - p.sy) + p.r * 0.6, vx: rnd(-0.3, 0.3), vy: 0.5, g: 0.2, drag: 0.99, r: rnd(0.9, 1.7), vol: 3, z: 0 });
+            }
+            break;
+          case 'ustar':
+            if (p.glow > 0) p.glow = Math.max(0, p.glow - 0.012 * dt);
+            break;
+          case 'ghost':
+            p.vx += Math.sin(p.age * 0.05 + p.sway) * 0.03 * dt;
+            p.vx *= 0.97 ** dt;
             break;
         }
       }
-      // Kursor na powierzchniach: zgarnia śnieg i strąca to, co leży.
+      // Kursor na powierzchniach: strąca to, co leży (liście, konfetti, płatki, monety). Śniegu nie rusza.
       function interact() {
         if (pointer.speed < 0.5) return;
         for (const st of surfs) {
+          if (!st.rest.length) continue;
           const lx = pointer.x - st.x;
           if (lx < -30 || lx > st.w + 30) continue;
           if (pointer.y < st.y - st.max - 30 || pointer.y > st.y + 8) continue;
-          if (st.snow) sweepSnow(st, lx);
-          if (st.rest.length) kickRest(st);
+          kickRest(st);
         }
       }
 
       // ---- Cząsteczki w powietrzu nad stroną ----
       const countType = (t) => list.reduce((n, p) => n + (p.t === t && p.near ? 1 : 0), 0);
+      const orange = () => (own ? pickOne(colors) : pickOne(['#ff7a18', '#ff8a2a', '#f26b0f']));
       function near(initial) {
         switch (theme) {
           case 'snow': {
             const r = Math.random() < 0.18 ? rnd(2.8, 4.2) : rnd(1.3, 2.8);
-            return { t: 'flake', x: rnd(-w * 0.1, w * 1.1), y: initial ? rnd(-20, h * 0.95) : rnd(-30, -6), vx: 0, vy: rnd(0.3, 0.8), r, a: rnd(0.6, 1), c: pickOne(colors), sway: rnd(0, TAU), amp: rnd(0.25, 0.8), wk: rnd(0.5, 1), tk: 0.5 + r * 0.3, crystal: r > 2.6 && Math.random() < 0.6, vr: rnd(-0.02, 0.02) };
+            return { t: 'flake', x: rnd(-w * 0.1, w * 1.1), y: initial ? rnd(-20, h * 0.95) : rnd(-30, -6), vx: 0, vy: rnd(0.3, 0.8), r, a: rnd(0.6, 1), c: pickOne(colors), sway: rnd(0, TAU), amp: rnd(0.25, 0.8), wk: rnd(0.5, 1), tk: 0.5 + r * 0.3, crystal: r > 2.6 && Math.random() < 0.6, vr: rnd(-0.02, 0.02), vol: 40 * (r / 2) ** 2, z: clamp(Math.random() * 0.75 + ((r - 1.3) / 2.9) * 0.25, 0, 1) };
           }
           case 'leaves':
             return { t: 'leaf', x: rnd(-40, w + 40), y: initial ? rnd(-20, h * 0.9) : rnd(-40, -10), vx: rnd(-0.3, 0.3), vy: rnd(0.3, 0.9), s: rnd(5, 9.5), vr: rnd(-0.05, 0.05), sway: rnd(0, TAU), amp: rnd(0.5, 1.3), wk: rnd(0.8, 1.2), tk: rnd(0.8, 1.2) };
@@ -3655,6 +4625,7 @@
             return { t: 'heart', x: rnd(0, w), y: initial ? rnd(0, h) : h + rnd(10, 40), vx: 0, vy, vy0: vy, s: rnd(4, 8), rot: rnd(-0.3, 0.3), sway: rnd(0, TAU), amp: rnd(0.3, 0.8), wk: 0.3, spinDir: Math.random() < 0.5 ? -1 : 1, noLand: true };
           }
           case 'halloween':
+            if (!initial && Math.random() < 0.05 && list.filter((q) => q.t === 'pumpkin').length < 2) return { t: 'pumpkin', x: rnd(60, w - 60), y: -30, vx: rnd(-0.6, 0.6), vy: rnd(0.5, 1.5), g: 0.2, drag: 0.995, s: rnd(7, 10), c: orange(), vr: rnd(-0.05, 0.05), rot: rnd(-0.3, 0.3) };
             if (countType('bat') < 3 + Math.round(kk * 2) && Math.random() < 0.4) {
               const dir = Math.random() < 0.5 ? 1 : -1;
               const cruise = rnd(1, 2.2);
@@ -3668,12 +4639,7 @@
           case 'storm':
             return { t: 'rain', x: rnd(-w * 0.05, w * 1.2), y: initial ? rnd(-20, h) : rnd(-80, -10), vx: rnd(-2.4, -1.6), vy: rnd(10, 15), len: rnd(10, 20), a: rnd(0.3, 0.65) };
           case 'bubbles':
-            return { t: 'bubble', x: rnd(0, w), y: initial ? rnd(0, h) : h + rnd(10, 40), vx: 0, vy: rnd(-1.1, -0.35), r: rnd(3, 11), sway: rnd(0, TAU), amp: rnd(0.3, 0.8), life: rnd(400, 900), drag: 0.995 };
-          case 'matrix': {
-            const size = pickOne([12, 14, 16]);
-            const len = Math.floor(rnd(6, 14));
-            return { t: 'code', x: Math.round(rnd(0, w) / 16) * 16, y: initial ? rnd(0, h) : rnd(-h * 0.3, -10), vx: 0, vy: rnd(2, 4.5), size, font: fxFont(size), glyphs: Array.from({ length: len }, () => pickOne(GLYPHS)), tail: len * size, a: 0.85 };
-          }
+            return { t: 'bubble', world: true, x: rnd(0, w), y: initial ? rnd(h * 0.2, h) : h + rnd(10, 40), vx: 0, vy: rnd(-1.1, -0.35), r: Math.random() < 0.2 ? rnd(9, 15) : rnd(3, 9), sway: rnd(0, TAU), life: rnd(500, 1000), noLand: true };
         }
         return null;
       }
@@ -3684,17 +4650,18 @@
         const room = initial ? want - have : Math.min(want - have, Math.ceil(want / 50) + 1);
         for (let i = 0; i < room; i++) {
           const p = near(initial);
-          if (p) add({ ...p, near: true });
+          if (p) add({ ...p, near: p.t !== 'pumpkin' });
         }
       }
 
       // ---- Ogień: płomienie jak w Doomie (siatka w niskiej rozdzielczości) dodane światłem na dole ekranu ----
-      const fire = theme === 'fire' ? makeFire() : null;
+      // Bez płomieni na dole (wyłączone w panelu) zostają iskry i dym w tle — i nie ma czego gasić.
+      const fire = theme === 'fire' && floor ? makeFire() : null;
       function makeFire() {
         const L = 36;
         const stops = accent
-          ? [[0, '#000000', 0], [0.16, hexMix(accent, '#000000', 0.75), 0.4], [0.34, hexMix(accent, '#000000', 0.4), 0.75], [0.52, accent, 0.92], [0.7, hexMix(accent, '#ffffff', 0.35), 1], [0.86, hexMix(accent, '#ffffff', 0.65), 1], [1, '#ffffff', 1]]
-          : [[0, '#000000', 0], [0.16, '#5a0c02', 0.4], [0.34, '#b3200a', 0.75], [0.52, '#f0560f', 0.92], [0.7, '#ff9a22', 1], [0.86, '#ffd350', 1], [1, '#fff6cf', 1]];
+          ? [[0, '#000000', 0], [0.16, hexMix(accent, '#000000', 0.75), 0.35], [0.34, hexMix(accent, '#000000', 0.4), 0.62], [0.52, accent, 0.78], [0.7, hexMix(accent, '#ffffff', 0.35), 0.86], [0.86, hexMix(accent, '#ffffff', 0.65), 0.9], [1, '#ffffff', 0.92]]
+          : [[0, '#000000', 0], [0.16, '#5a0c02', 0.35], [0.34, '#b3200a', 0.62], [0.52, '#f0560f', 0.78], [0.7, '#ff9a22', 0.86], [0.86, '#ffd350', 0.9], [1, '#fff6cf', 0.92]];
         const pal = new Uint8ClampedArray((L + 1) * 4);
         for (let v = 0; v <= L; v++) {
           const t = v / L;
@@ -3712,46 +4679,77 @@
         const glowRgb = `${pal[28 * 4]}, ${pal[28 * 4 + 1]}, ${pal[28 * 4 + 2]}`;
         const cv = document.createElement('canvas');
         const fc = cv.getContext('2d');
-        const F = { L, cols: 0, rows: 0, cell: 4, fh: 0, top: 0, grid: null, soft: null, img: null, boost: 0 };
+        const F = { L, cols: 0, rows: 0, cell: 4, fh: 0, top: 0, grid: null, soft: null, cold: null, fade: null, img: null, boost: 0, fuel: 1 };
+        // Siatka jest dużo wyższa niż płomienie, a górne wiersze łagodnie przygasają — języki ognia nigdy się nie urywają.
         F.size = () => {
-          F.fh = Math.min(h * (0.06 + kk * 0.09), 200);
-          F.cell = Math.max(4, Math.round(F.fh / 26));
+          F.fh = Math.min(h * (0.035 + kk * 0.05), 130);
+          F.cell = Math.max(3, Math.round(F.fh / 22));
           F.cols = Math.ceil(w / F.cell) + 2;
-          F.rows = Math.ceil((F.fh * 1.7) / F.cell) + 2;
+          F.rows = Math.ceil((F.fh * 2.6) / F.cell) + 2;
           F.top = h - (F.rows - 2) * F.cell;
           F.grid = new Uint8Array(F.cols * F.rows);
           F.soft = new Uint8Array(F.cols * F.rows);
+          F.cold = new Float32Array(F.cols);
+          F.fade = new Float32Array(F.rows);
+          const fadeRows = Math.max(3, Math.round(F.rows * 0.45));
+          for (let y = 0; y < F.rows; y++) F.fade[y] = y >= fadeRows ? 1 : (y / fadeRows) ** 1.6;
           cv.width = F.cols;
           cv.height = F.rows;
           F.img = fc.createImageData(F.cols, F.rows);
         };
-        F.heat = (x, y, r) => {
+        // Żar w kółku wokół punktu (kursor, kliknięcie) — tylko w dolnej części, żeby płomienie miały gdzie wygasnąć.
+        F.heat = (x, y, r, k = 1) => {
           const cx = Math.round(x / F.cell) + 1;
-          const cy = Math.round((y - F.top) / F.cell);
-          if (cy < 1 - r || cy > F.rows) return false;
+          const cy = Math.round((Math.max(y, h - F.fh * 0.8) - F.top) / F.cell);
+          if (y < h - F.fh * 2.2 || cy > F.rows) return false;
           for (let yy = -r; yy <= r; yy++) {
             for (let xx = -r; xx <= r; xx++) {
+              const d = Math.hypot(xx, yy);
+              if (d > r + 0.3) continue;
               const gx = cx + xx;
               const gy = cy + yy;
               if (gx < 0 || gx >= F.cols || gy < 1 || gy >= F.rows) continue;
-              const v = L - Math.round(Math.hypot(xx, yy) * 3);
+              const v = Math.round(L * k - d * 4);
               const i = gy * F.cols + gx;
               if (F.grid[i] < v) F.grid[i] = v;
             }
           }
           return true;
         };
+        // Piana z gaśnicy: gasi płomienie w tym miejscu, a kolumny pod nią na chwilę tracą paliwo.
+        F.quench = (x, y, r) => {
+          const cx = Math.round(x / F.cell) + 1;
+          const cy = Math.round((y - F.top) / F.cell);
+          const rr = Math.max(1, Math.round(r / F.cell));
+          let hot = 0;
+          for (let gx = cx - rr - 1; gx <= cx + rr + 1; gx++) {
+            if (gx < 0 || gx >= F.cols) continue;
+            F.cold[gx] = Math.min(1, F.cold[gx] + 0.05);
+            for (let gy = Math.max(0, cy - rr); gy < F.rows && gy <= cy + rr * 3; gy++) {
+              const i = gy * F.cols + gx;
+              hot += F.grid[i];
+              F.grid[i] >>= 1;
+            }
+          }
+          return hot;
+        };
         F.step = (t) => {
           const { cols, rows, grid } = F;
           // Średnio o ile słabnie żar z wiersza na wiersz (ułamek → losowo 1 albo 2) — z tego wysokość płomieni.
           const decay = Math.max(0.2, (L * F.cell) / (F.fh * 1.3 * (1 + F.boost * 0.9)));
           const base = (rows - 1) * cols;
+          let cold = 0;
           for (let x = 0; x < cols; x++) {
             const wave = 0.68 + 0.32 * Math.sin(x * 0.06 + t * 0.0011) * Math.sin(x * 0.017 - t * 0.0006);
-            grid[base + x] = Math.random() < wave + F.boost * 0.4 ? L : L - 9;
+            const hot = Math.random() < wave + F.boost * 0.4 ? L : L - 9;
+            const c = F.cold[x];
+            grid[base + x] = c > 0.01 ? Math.round(hot * (1 - c) * (1 - c)) : hot;
+            if (c > 0) F.cold[x] = Math.max(0, c - 0.0022);
+            cold += c;
           }
-          // Kursor przy ogniu podpala: dokłada żaru tam, gdzie jest.
-          if (pointer.on && pointer.y > F.top - F.cell * 4) F.heat(pointer.x, pointer.y, 2);
+          F.fuel = 1 - cold / cols;
+          // Kursor przy ogniu przyciąga płomienie (łagodny żar nisko, pod kursorem).
+          if (pointer.on && !tool && pointer.y > h - F.fh * 1.6) F.heat(pointer.x, pointer.y + F.fh * 0.3, 2, 0.72);
           const wd = fireWind;
           for (let y = 1; y < rows; y++) {
             const row = y * cols;
@@ -3772,7 +4770,7 @@
           F.boost = Math.max(0, F.boost - 0.006);
         };
         F.draw = () => {
-          const { grid, soft, img, cols, rows } = F;
+          const { grid, soft, img, cols, rows, fade } = F;
           const d = img.data;
           // Rozmycie [1 2 1] w poziomie i w pionie — miękkie języki ognia zamiast zaszumionych pikseli.
           for (let y = 0; y < rows; y++) {
@@ -3787,6 +4785,7 @@
             const row = y * cols;
             const upRow = (y > 0 ? y - 1 : y) * cols;
             const downRow = (y < rows - 1 ? y + 1 : y) * cols;
+            const fy = fade[y];
             for (let x = 0; x < cols; x++) {
               const v = (soft[upRow + x] + soft[row + x] * 2 + soft[downRow + x]) >> 2;
               const o = (row + x) * 4;
@@ -3794,7 +4793,7 @@
               d[o] = pal[p];
               d[o + 1] = pal[p + 1];
               d[o + 2] = pal[p + 2];
-              d[o + 3] = pal[p + 3];
+              d[o + 3] = pal[p + 3] * fy;
             }
           }
           fc.putImageData(img, 0, 0);
@@ -3802,11 +4801,11 @@
           ctx.globalCompositeOperation = 'lighter';
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
-          // Poświata nad ogniem — migocze razem z płomieniami.
+          // Poświata nad ogniem — migocze razem z płomieniami, słabnie, gdy ogień przygaszony.
           const flick = 0.8 + 0.2 * Math.sin(now * 0.013) * Math.sin(now * 0.031);
-          const gh = F.fh * (2.4 + F.boost);
+          const gh = F.fh * (1.7 + F.boost);
           const glow = ctx.createLinearGradient(0, h, 0, h - gh);
-          glow.addColorStop(0, `rgba(${glowRgb}, ${(0.16 + kk * 0.12) * flick})`);
+          glow.addColorStop(0, `rgba(${glowRgb}, ${(0.1 + kk * 0.08) * flick * F.fuel})`);
           glow.addColorStop(1, `rgba(${glowRgb}, 0)`);
           ctx.fillStyle = glow;
           ctx.fillRect(0, h - gh, w, gh);
@@ -3816,16 +4815,595 @@
         return F;
       }
       function spawnFire(dt) {
-        const rate = (w / 1366) * (0.5 + kk * 1.2) * dt;
+        const rate = (w / 1366) * (0.4 + kk * 1) * dt;
         for (let n = rate + Math.random(); n >= 1; n -= 1) {
-          add({ t: 'ember', x: rnd(0, w), y: h - fire.fh * rnd(0.2, 0.85), vx: rnd(-0.5, 0.5), vy: rnd(-3.4, -1.1), g: -0.012, drag: 0.992, r: rnd(0.7, 2.1), life: rnd(50, 140), sway: rnd(0, TAU), streak: true, c: pickOne(colors), noLand: true });
+          const x = rnd(0, w);
+          if (fire.cold[Math.round(x / fire.cell) + 1] > 0.5) continue;
+          add({ t: 'ember', x, y: h - fire.fh * rnd(0.2, 0.85), vx: rnd(-0.5, 0.5), vy: rnd(-3.4, -1.1), g: -0.012, drag: 0.992, r: rnd(0.7, 2.1), life: rnd(50, 140), sway: rnd(0, TAU), streak: true, c: pickOne(colors), noLand: true });
         }
-        if (Math.random() < 0.12 * dt * (0.5 + kk)) {
-          add({ t: 'smoke', x: rnd(0, w), y: h - fire.fh * rnd(0.8, 1.2), vx: rnd(-0.2, 0.2), vy: rnd(-1.1, -0.5), r: rnd(18, 34), grow: 0.35, life: rnd(110, 190), a: rnd(0.06, 0.11), c: '#6b6470', sway: rnd(0, TAU), noLand: true });
+        if (Math.random() < 0.1 * dt * (0.5 + kk) * fire.fuel) {
+          add({ t: 'smoke', x: rnd(0, w), y: h - fire.fh * rnd(0.8, 1.2), vx: rnd(-0.2, 0.2), vy: rnd(-1.1, -0.5), r: rnd(18, 34), grow: 0.35, life: rnd(110, 190), a: rnd(0.05, 0.09), c: '#6b6470', sway: rnd(0, TAU), noLand: true });
         }
         // Wiatr dla ognia: podmuchy i ruch kursora przy dole ekranu.
         const push = pointer.on && pointer.y > h - fire.fh * 3 ? pointer.vx * 0.05 : 0;
         fireWind = clamp(fireWind * 0.95 + push + (wind.x - fireWind) * 0.02, -0.9, 0.9);
+      }
+
+      // ---- Dynie (Halloween): kliknięta podskakuje, zapala się i wypuszcza nietoperze ----
+      function placePumpkins() {
+        const spots = surfs.filter((st) => st.el && st.pile && st.w > 90);
+        if (!spots.length) return false;
+        const n = 3 + Math.round(kk * 3);
+        for (let k = 0; k < n; k++) {
+          const st = pickOne(spots);
+          const s = rnd(7.5, 11);
+          const it = { t: 'pumpkin', c: orange(), s, x: rnd(s * 2, st.w - s * 2), th: s * 1.7, rot: rnd(-0.15, 0.15), y: 0, lit: 0 };
+          stack(st, it);
+          st.rest.push(it);
+          restCount += 1;
+          st.dirty = true;
+        }
+        return true;
+      }
+      function spook(x, y) {
+        for (let k = 0; k < 3; k++) add({ t: 'bat', x, y, vx: rnd(-3, 3), vy: -rnd(2, 4), cruise: rnd(1.4, 2.4), s: rnd(5, 8), flap: rnd(0.3, 0.45), sway: rnd(0, TAU), bob: 0.5, panic: 40, life: rnd(260, 420), c: pickOne(colors), noLand: true });
+        for (let k = 0; k < 18; k++) add(radial(x, y, [1.5, 5], { t: 'spark', g: 0.06, drag: 0.96, r: rnd(1, 2.4), life: rnd(30, 60), c: pickOne(['#ffb347', '#ff7a18', '#ffe27a']), noLand: true }));
+        add({ t: 'ring', x, y, vx: 0, vy: 0, r: 8, grow: 3.2, lw: 2, c: '#ffb347', a: 0.8, life: 18, noLand: true });
+      }
+      function pumpkinHit(x, y) {
+        for (const st of surfs) {
+          for (let j = st.rest.length - 1; j >= 0; j--) {
+            const it = st.rest[j];
+            if (it.t !== 'pumpkin') continue;
+            const px = st.x + it.x;
+            const py = st.y - it.y;
+            if (Math.hypot(px - x, py - y) > it.s * 1.6 + 6) continue;
+            takeRest(st, j);
+            const p = fling(st, it, rnd(-1.2, 1.2), -rnd(5, 7.5));
+            p.lit = 240;
+            spook(px, py - it.s);
+            return true;
+          }
+        }
+        for (const p of list) {
+          if (p.t !== 'pumpkin' || Math.hypot(p.x - x, p.y - y) > p.s * 1.6 + 6) continue;
+          p.vy = Math.min(p.vy, -6);
+          p.vx += rnd(-1, 1);
+          p.lit = 240;
+          p.wall = true;
+          spook(p.x, p.y);
+          return true;
+        }
+        return false;
+      }
+      // Zapalona dynia na karcie świeci (poświata na płótnie nad stroną).
+      function litGlow(dt) {
+        ctx.globalCompositeOperation = 'lighter';
+        for (const st of surfs) {
+          for (const it of st.rest) {
+            if (it.t !== 'pumpkin' || !(it.lit > 0)) continue;
+            it.lit -= dt;
+            if (it.lit <= 0) st.dirty = true;
+            ctx.globalAlpha = Math.min(1, it.lit / 60) * (0.62 + 0.25 * Math.sin(now * 0.02 + it.x));
+            const size = it.s * 7;
+            ctx.drawImage(glowSprite('#ffb347'), st.x + it.x - size / 2, st.y - it.y - size / 2, size, size);
+          }
+        }
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 1;
+      }
+
+      // ---- Matrix: teksty dekodują się po najechaniu (i same z siebie), co jakiś czas glitch ----
+      function decode(el) {
+        if (!el || mx.has(el) || el.childElementCount || el.closest('.fx-tool')) return;
+        const text = el.textContent;
+        if (!text || text.length > 48 || !text.trim()) return;
+        const t = performance.now();
+        if (t - (mxSeen.get(el) ?? -1e9) < 1600) return;
+        mxSeen.set(el, t);
+        mx.set(el, { text, t: 0, dur: 24 + text.length * 1.6, last: null });
+      }
+      function mxTick(dt) {
+        for (const [el, m] of mx) {
+          if (!el.isConnected || (m.last !== null && el.textContent !== m.last)) {
+            mx.delete(el);
+            continue;
+          }
+          m.t += dt;
+          const k = m.t / m.dur;
+          if (k >= 1) {
+            el.textContent = m.text;
+            mx.delete(el);
+            continue;
+          }
+          if (frameNo % 2) continue;
+          const shown = Math.floor(k * k * m.text.length);
+          let out = '';
+          for (let i = 0; i < m.text.length; i++) {
+            const ch = m.text[i];
+            out += i < shown || ch === ' ' ? ch : GLYPHS[(Math.random() * GLYPHS.length) | 0];
+          }
+          el.textContent = out;
+          m.last = out;
+        }
+      }
+      function pickVisible() {
+        if (frameNo % 120 === 1 || !mxPool.length) mxPool = [...document.querySelectorAll(MX_SEL)].filter((el) => !el.childElementCount);
+        for (let k = 0; k < 6; k++) {
+          const el = pickOne(mxPool);
+          if (!el) return null;
+          const r = el.getBoundingClientRect();
+          if (r.width && r.bottom > 0 && r.top < h) return el;
+        }
+        return null;
+      }
+      function glitch() {
+        const b = document.body;
+        b.classList.remove('mx-glitch');
+        void b.offsetWidth;
+        b.classList.add('mx-glitch');
+        clearTimeout(glitchTimer);
+        glitchTimer = setTimeout(() => b.classList.remove('mx-glitch'), 260);
+        for (let k = 0; k < 2; k++) decode(pickVisible());
+      }
+      function matrixTick(dt) {
+        mxTick(dt);
+        mxNext -= dt * level;
+        if (mxNext <= 0) {
+          mxNext = rnd(70, 170);
+          decode(pickVisible());
+        }
+        glitchNext -= dt * level;
+        if (glitchNext <= 0) {
+          glitchNext = rnd(420, 900);
+          glitch();
+        }
+        // Ruch kursora sypie znakami.
+        if (pointer.on && pointer.speed > 2.5 && Math.random() < 0.5) add({ t: 'glyph', ch: pickOne(GLYPHS), font: fxFont(Math.round(rnd(10, 15))), x: pointer.x + rnd(-6, 6), y: pointer.y + rnd(-4, 4), vx: rnd(-0.3, 0.3), vy: rnd(0.4, 1.4), g: 0.03, life: rnd(30, 60), noLand: true });
+      }
+      function matrixClick(x, y) {
+        add({ t: 'glyphring', x, y, vx: 0, vy: 0, r: 6, grow: 6.5, life: 44, chars: Array.from({ length: 30 }, () => pickOne(GLYPHS)), c: colors[1] ?? colors[0], instant: true, noLand: true, vr: 0.012 });
+        add({ t: 'glyphring', x, y, vx: 0, vy: 0, r: 4, grow: 4, life: 50, age: -6, chars: Array.from({ length: 22 }, () => pickOne(GLYPHS)), c: colors[0], noLand: true, vr: -0.01 });
+        MX.pulses.push({ x, y, t: performance.now() });
+        if (MX.pulses.length > 8) MX.pulses.shift();
+        const host = document.elementFromPoint(x, y)?.closest?.('.row, .top, .card, .event, header, .toolbar');
+        if (host) [...host.querySelectorAll(MX_SEL)].slice(0, 12).forEach(decode);
+        for (let k = 0; k < 12; k++) add(fxPop(theme, x, y));
+      }
+      if (theme === 'matrix') {
+        listen(document, 'pointerover', (event) => {
+          const t = event.target;
+          if (!(t instanceof Element)) return;
+          const hit = t.closest(MX_SEL);
+          if (hit) return decode(hit);
+          const host = t.closest('.row, .top');
+          if (host) host.querySelectorAll('.dn, .num.xp, .rank, .pod-col b').forEach(decode);
+        }, { passive: true });
+      }
+
+      // ---- Bąbelki: wypływają, zbierają się pod kartami (zlewają się w większe), rybki, dmuchanie bańki ----
+      function bubbleStep(p, dt) {
+        p.age += dt;
+        if (p.dead) return false;
+        if (p.held) return true;
+        // Dotknięcie kursorem przebija bańkę.
+        if (p.safe > 0) p.safe -= dt;
+        else if (pointer.on && !blowing && pointer.speed > 0.8) {
+          const d = Math.hypot(p.x - pointer.x, p.y - pointer.y);
+          if (d < p.r + 4) {
+            popBubble(p);
+            return false;
+          }
+        }
+        if (p.stick) {
+          const u = unders.find((q) => q.el === p.stick);
+          if (!u) p.stick = null;
+          else {
+            // Spód karty nigdy nie jest idealnie poziomy — bańka powoli sunie do bliższego brzegu i się wymyka.
+            p.vx = clamp(p.vx + p.side * 0.006 * dt, -1.4, 1.4);
+            p.x += p.vx * dt;
+            p.y = u.y + p.r * (0.97 + 0.03 * Math.sin(p.age * 0.15 + p.sway));
+            if (p.x < u.x0 - p.r * 0.6 || p.x > u.x1 + p.r * 0.6) {
+              p.stick = null;
+              p.vy = -0.6;
+              p.vx = p.side * 0.9;
+            }
+            if (p.age < p.life + 900) return true;
+            popBubble(p);
+            return false;
+          }
+        }
+        const rise = -(0.35 + p.r * 0.045);
+        p.vy += (rise - p.vy) * 0.03 * dt;
+        p.vx += (Math.sin(p.age * 0.04 + p.sway) * 0.25 - p.vx) * 0.05 * dt;
+        // Ruch kursora miesza wodę.
+        if (pointer.on && pointer.speed > 1) {
+          const dx = p.x - pointer.x;
+          const dy = p.y - pointer.y;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < 14400) {
+            const f = 1 - Math.sqrt(d2) / 120;
+            p.vx += pointer.vx * 0.04 * f * dt;
+            p.vy += pointer.vy * 0.04 * f * dt;
+          }
+        }
+        const prevTop = p.y - p.r;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        for (const u of unders) {
+          if (p.x < u.x0 - p.r * 0.3 || p.x > u.x1 + p.r * 0.3) continue;
+          if (prevTop >= u.y - 1 && p.y - p.r < u.y) {
+            p.stick = u.el;
+            p.y = u.y + p.r;
+            p.vy = 0;
+            p.side = p.x < (u.x0 + u.x1) / 2 ? -1 : 1;
+            p.vx = p.side * rnd(0.03, 0.12);
+            break;
+          }
+        }
+        if (p.y + p.r < -10) return false;
+        if (p.age > p.life) {
+          popBubble(p);
+          return false;
+        }
+        return !(p.x < -80 || p.x > w + 80 || p.y > h + 140);
+      }
+      // Bańki pod tą samą kartą, które się stykają, zlewają się w jedną (pole się sumuje); za duża odrywa się.
+      function mergeBubbles() {
+        const stuck = list.filter((p) => p.t === 'bubble' && p.stick && !p.dead);
+        for (let i = 0; i < stuck.length; i++) {
+          const a = stuck[i];
+          if (a.dead) continue;
+          for (let j = i + 1; j < stuck.length; j++) {
+            const b = stuck[j];
+            if (b.dead || b.stick !== a.stick) continue;
+            if (Math.hypot(a.x - b.x, a.y - b.y) > (a.r + b.r) * 0.92) continue;
+            const r = Math.sqrt(a.r * a.r + b.r * b.r);
+            a.x = (a.x * a.r * a.r + b.x * b.r * b.r) / (r * r);
+            a.r = r;
+            b.dead = true;
+            add({ t: 'ring', x: a.x, y: a.y, vx: 0, vy: 0, r: a.r, grow: 0.6, lw: 1, c: '#e6fbff', a: 0.6, life: 12, noLand: true });
+            if (a.r > 24) {
+              a.stick = null;
+              a.vy = -0.8;
+            }
+          }
+        }
+      }
+      function startBlow() {
+        startGesture('blow');
+      }
+      function blowTick(dt) {
+        if (!gesture || gesture.kind !== 'blow') return;
+        if (!blowing) {
+          if (gesture.moved) return;
+          gesture.wait -= dt;
+          if (gesture.wait > 0) return;
+          blowing = add({ t: 'bubble', world: true, held: true, x: pointer.x, y: pointer.y, vx: 0, vy: 0, r: 4, sway: rnd(0, TAU), life: Infinity, z: 0, noLand: true, instant: true });
+        }
+        const b = blowing;
+        b.r += 0.32 * dt * (1 - b.r / 95);
+        b.x = pointer.x;
+        b.y = pointer.y - b.r - 6;
+        if (b.r > 62) {
+          popBubble(b);
+          b.dead = true;
+          blowing = null;
+        }
+      }
+      function releaseBlow() {
+        const b = blowing;
+        blowing = null;
+        if (!b || b.dead) return;
+        b.held = false;
+        b.vx = clamp(pointer.vx * 0.35, -5, 5);
+        b.vy = clamp(pointer.vy * 0.35, -5, 5) - 0.4;
+        b.life = b.age + rnd(700, 1100);
+        b.safe = 45;
+      }
+      function spawnFish(initial) {
+        const dir = Math.random() < 0.5 ? 1 : -1;
+        return { x: initial ? rnd(0, w) : dir > 0 ? -40 : w + 40, y: rnd(h * 0.18, h * 0.85), dir, sp: rnd(0.45, 1.1), s: rnd(6, 10.5), c: pickOne(colors), ph: rnd(0, TAU), flee: 0, age: 0, vy: 0 };
+      }
+      function fishTick(f, dt) {
+        f.age += dt;
+        const dx = f.x - pointer.x;
+        const dy = f.y - pointer.y;
+        if (pointer.on && dx * dx + dy * dy < 16900) {
+          // Ucieka przed kursorem.
+          f.flee = 1;
+          f.dir = dx >= 0 ? 1 : -1;
+          f.vy += (dy >= 0 ? 1 : -1) * 0.15 * dt;
+        }
+        f.flee = Math.max(0, f.flee - 0.012 * dt);
+        f.vy *= 0.95 ** dt;
+        f.x += f.dir * f.sp * (1 + f.flee * 4) * dt;
+        f.y = clamp(f.y + (Math.sin(f.age * 0.02 + f.ph) * 0.25 + f.vy) * dt, 20, h - 20);
+        if (f.x < -60 || f.x > w + 60) Object.assign(f, spawnFish(false));
+      }
+      function drawFish(f) {
+        const s = f.s;
+        const wag = Math.sin(f.age * (0.22 + f.flee * 0.5)) * 0.4;
+        ctx.save();
+        ctx.translate(f.x, f.y);
+        if (f.dir < 0) ctx.scale(-1, 1);
+        ctx.globalAlpha = 0.85;
+        const dark = hexMix(f.c, '#03202f', 0.45);
+        ctx.fillStyle = dark;
+        ctx.beginPath();
+        ctx.moveTo(-s * 0.8, 0);
+        ctx.lineTo(-s * 1.75, -s * 0.62 + wag * s * 0.5);
+        ctx.lineTo(-s * 1.55, s * 0.62 + wag * s * 0.5);
+        ctx.closePath();
+        ctx.fill();
+        const g = ctx.createLinearGradient(0, -s * 0.6, 0, s * 0.6);
+        g.addColorStop(0, hexMix(f.c, '#ffffff', 0.45));
+        g.addColorStop(1, f.c);
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, s, s * 0.55, 0, 0, TAU);
+        ctx.fill();
+        ctx.fillStyle = dark;
+        ctx.beginPath();
+        ctx.moveTo(-s * 0.1, -s * 0.5);
+        ctx.quadraticCurveTo(s * 0.1, -s * 1.05, s * 0.4, -s * 0.45);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(s * 0.55, -s * 0.12, s * 0.16, 0, TAU);
+        ctx.fill();
+        ctx.fillStyle = '#04263a';
+        ctx.beginPath();
+        ctx.arc(s * 0.58, -s * 0.12, s * 0.09, 0, TAU);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // ---- Monety: przytrzymaj przycisk — magnes zbiera monety (licznik w rogu) ----
+      function magnetTick(dt) {
+        const R = 320;
+        for (const p of list) {
+          if (p.t !== 'coin' || p.dead) continue;
+          const dx = pointer.x - p.x;
+          const dy = pointer.y - p.y;
+          const d = Math.hypot(dx, dy) || 1;
+          if (d > R) continue;
+          if (d < 14) {
+            p.dead = true;
+            coinsGot += 1;
+            add({ t: 'glint', x: pointer.x, y: pointer.y, vx: 0, vy: 0, s: rnd(5, 8), life: 14, c: '#fff1b8', noLand: true });
+            add({ t: 'plus', x: pointer.x + rnd(-8, 8), y: pointer.y - 14, vx: 0, vy: -0.9, life: 40, noLand: true, instant: true });
+            bumpCounter();
+            continue;
+          }
+          const f = (1 - d / R) * 0.9 + 0.15;
+          p.vx = (p.vx + (dx / d) * f * dt) * 0.95;
+          p.vy = (p.vy + (dy / d) * f * dt - p.g * dt) * 0.95;
+          p.mag = 6;
+          p.free = 6;
+        }
+        for (const st of surfs) {
+          for (let j = st.rest.length - 1; j >= 0; j--) {
+            const it = st.rest[j];
+            if (it.t !== 'coin' || Math.random() > 0.12 * dt) continue;
+            const px = st.x + it.x;
+            const py = st.y - it.y;
+            if (Math.hypot(px - pointer.x, py - pointer.y) > R * 0.85) continue;
+            takeRest(st, j);
+            fling(st, it, (pointer.x - px) * 0.015, -rnd(2, 4));
+          }
+        }
+        if (Math.random() < 0.22 * dt) add({ t: 'coin', x: rnd(0, w), y: -12, vx: 0, vy: rnd(1, 2), g: 0.08, drag: 0.995, s: rnd(4.5, 7), spin: rnd(0.08, 0.2), sway: rnd(0, TAU), rot: 0 });
+      }
+      function bumpCounter() {
+        if (!counter) {
+          counter = document.createElement('div');
+          counter.className = 'fx-count';
+          counter.setAttribute('aria-hidden', 'true');
+          counter.innerHTML = '<i></i><b>0</b>';
+          document.body.append(counter);
+        }
+        counter.querySelector('b').textContent = String(coinsGot);
+        counter.classList.add('on');
+        counter.classList.remove('bump');
+        void counter.offsetWidth;
+        counter.classList.add('bump');
+      }
+      function drawMagnet() {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.strokeStyle = '#ffd56b';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 9]);
+        for (let k = 0; k < 2; k++) {
+          ctx.globalAlpha = 0.35 - k * 0.12;
+          ctx.lineDashOffset = -now * 0.05 * (k ? -1 : 1);
+          ctx.beginPath();
+          ctx.arc(pointer.x, pointer.y, 26 + k * 18 + Math.sin(now * 0.008) * 3, 0, TAU);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      // ---- Kliknięcia: każdy efekt ma coś swojego ----
+      function impulse(x, y, R, f) {
+        for (const p of list) {
+          if (p.t === 'ring' || p.t === 'bolt' || p.t === 'hring' || p.t === 'glyphring') continue;
+          const dx = p.x - x;
+          const dy = p.y - y;
+          const d = Math.hypot(dx, dy) || 1;
+          if (d > R) continue;
+          const k = (1 - d / R) * f;
+          p.vx += (dx / d) * k;
+          p.vy += (dy / d) * k;
+          p.free = 20;
+        }
+      }
+      // Liście i sakura: wir porywa to, co leci i co leży w pobliżu.
+      function whirl(x, y) {
+        vortex = { x, y, age: 0, life: 120, dir: Math.random() < 0.5 ? -1 : 1 };
+        for (const st of surfs) {
+          for (let j = st.rest.length - 1; j >= 0; j--) {
+            const it = st.rest[j];
+            const dx = st.x + it.x - x;
+            const dy = st.y - it.y - y;
+            if (dx * dx + dy * dy > 190 * 190) continue;
+            takeRest(st, j);
+            fling(st, it, -vortex.dir * dy * 0.02 + rnd(-0.6, 0.6), -rnd(2.5, 5));
+          }
+        }
+        for (let k = 0; k < 12; k++) add({ ...fxPop(theme, x, y), z: Math.random() });
+      }
+      function vortexTick(dt) {
+        const v = vortex;
+        v.age += dt;
+        if (v.age > v.life) {
+          vortex = null;
+          return;
+        }
+        const R = 230;
+        const k = 1 - v.age / v.life;
+        for (const p of list) {
+          if (p.t !== 'leaf' && p.t !== 'petal' && p.t !== 'blossom' && p.t !== 'paper') continue;
+          const dx = p.x - v.x;
+          const dy = p.y - v.y;
+          const d = Math.hypot(dx, dy) || 1;
+          if (d > R) continue;
+          const f = (1 - d / R) * k;
+          p.vx += ((-dy / d) * v.dir * 0.55 - (dx / d) * 0.14) * f * dt;
+          p.vy += ((dx / d) * v.dir * 0.55 - (dy / d) * 0.14 - 0.1) * f * dt;
+          p.vr += v.dir * 0.01 * f;
+          p.free = 4;
+        }
+      }
+      function drawVortex() {
+        const v = vortex;
+        ctx.save();
+        ctx.globalAlpha = 0.3 * (1 - v.age / v.life);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.4;
+        ctx.lineCap = 'round';
+        for (let k = 0; k < 4; k++) {
+          const r = 28 + k * 34;
+          const a0 = v.age * 0.13 * v.dir + k * 1.7;
+          ctx.beginPath();
+          ctx.arc(v.x, v.y - k * 8, r, a0, a0 + 1.5);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+      // Konfetti: armatka w miejscu kliknięcia (papierki i serpentyny).
+      function cannon(x, y) {
+        add({ t: 'ring', x, y, vx: 0, vy: 0, r: 6, grow: 4, lw: 2, c: pickOne(colors), a: 0.9, life: 16, noLand: true });
+        for (let k = 0; k < 46; k++) {
+          const a = -Math.PI / 2 + rnd(-0.6, 0.6);
+          const v = rnd(5, 14);
+          add({ t: 'paper', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 0.2, drag: 0.975, s: rnd(4.5, 7.5), vr: rnd(-0.3, 0.3), sway: rnd(0, TAU), amp: rnd(0.2, 0.6), wk: 0.8, tk: rnd(0.8, 1.2) });
+        }
+        for (let k = 0; k < 7; k++) {
+          const a = -Math.PI / 2 + rnd(-0.5, 0.5);
+          const v = rnd(8, 13);
+          add({ t: 'streamer', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 0.16, drag: 0.982, life: rnd(150, 210), wd: rnd(2.2, 3.2), hist: [], sway: rnd(0, TAU), noLand: true });
+        }
+      }
+      // Neon: fala uderzeniowa — trzy świecące pierścienie, wszystko w pobliżu odlatuje.
+      function shockwave(x, y) {
+        [[0, 7], [6, 5.5], [12, 4.2]].forEach(([delay, grow], i) => add({ t: 'ring', x, y, vx: 0, vy: 0, r: 4, grow, life: 44, age: -delay, c: colors[i % colors.length], noLand: true }));
+        impulse(x, y, 280, 8);
+        for (let k = 0; k < 10; k++) add(fxPop(theme, x, y));
+      }
+      // Serduszka: rosnące serce-fala i deszcz małych serduszek.
+      function heartwave(x, y) {
+        add({ t: 'hring', x, y, vx: 0, vy: 0, r: 8, grow: 3.2, life: 46, c: colors[0], instant: true, noLand: true });
+        add({ t: 'hring', x, y, vx: 0, vy: 0, r: 6, grow: 2.2, life: 52, age: -8, c: colors[1] ?? colors[0], noLand: true });
+        impulse(x, y, 240, 6);
+        for (let k = 0; k < 16; k++) add(fxPop(theme, x, y));
+      }
+      // Gwiazdy: klikaj — stawiasz gwiazdy połączone liniami; kliknięcie przy pierwszej zamyka gwiazdozbiór.
+      function placeStar(x, y) {
+        const t = performance.now();
+        const lastStar = chain[chain.length - 1];
+        if (lastStar && (t - lastStar.born > 6000 || lastStar.dead)) chain = [];
+        const first = chain[0];
+        if (chain.length >= 3 && Math.hypot(first.x - x, first.y - (scrollY - first.sy) - y) < 26) {
+          chain[chain.length - 1].link = first;
+          for (const s of chain) {
+            s.glow = 1;
+            s.life = Math.max(s.life, s.age + 900);
+          }
+          for (let i = 0; i < chain.length; i++) {
+            const a = chain[i];
+            const b = chain[(i + 1) % chain.length];
+            const ay = a.y - (scrollY - a.sy);
+            const by = b.y - (scrollY - b.sy);
+            for (let k = 0; k < 7; k++) {
+              const u = Math.random();
+              add(radial(a.x + (b.x - a.x) * u, ay + (by - ay) * u, [0.4, 1.6], { t: 'spark', r: rnd(0.8, 1.8), life: rnd(30, 60), g: 0.02, drag: 0.96, noLand: true }));
+            }
+          }
+          add({ t: 'tint', x: 0, y: 0, vx: 0, vy: 0, life: 18, c: colors[1] ?? colors[0], k: 0.08, instant: true, noLand: true });
+          chain = [];
+          return;
+        }
+        const star = add({ t: 'ustar', x, y, sy: scrollY, vx: 0, vy: 0, life: 1500, born: t, prev: chain.length ? chain[chain.length - 1] : null, glow: 0.6, instant: true, noLand: true, c: pickOne(colors) });
+        chain.push(star);
+        for (let k = 0; k < 12; k++) add(radial(x, y, [1, 3.5], { t: 'spark', r: rnd(0.8, 1.8), life: rnd(25, 45), g: 0.02, drag: 0.95, noLand: true }));
+      }
+      function ghost(x, y) {
+        add({ t: 'ghost', x, y, vx: rnd(-0.6, 0.6), vy: -rnd(0.7, 1.2), s: rnd(10, 15), life: rnd(110, 160), sway: rnd(0, TAU), noLand: true, z: 0 });
+      }
+      // Burza: piorun trzęsie trafioną kartą.
+      function zap(x, y) {
+        const el = document.elementFromPoint(x, y)?.closest?.('.card, .table, .event, .banner, .pod-col, .toolbar, .pod-av');
+        if (!el) return;
+        el.classList.remove('fx-zap');
+        void el.offsetWidth;
+        el.classList.add('fx-zap');
+        setTimeout(() => el.classList.remove('fx-zap'), 480);
+      }
+      function click(x, y) {
+        for (const p of list) {
+          if (p.t === 'bubble' && !p.held && Math.hypot(p.x - x, p.y - y) < p.r + 18) {
+            popBubble(p);
+            p.dead = true;
+          }
+          if (p.t === 'balloon' && Math.hypot(p.x - x, p.y - y) < p.s + 14) {
+            popBalloon(p);
+            p.dead = true;
+          }
+          if (p.t === 'heart' && !p.mini && Math.hypot(p.x - x, p.y - y) < 70) {
+            burstHeart(p);
+            p.dead = true;
+          }
+        }
+        switch (theme) {
+          case 'storm':
+            return strike(x, y);
+          case 'snow':
+            for (let k = 0; k < 8; k++) add({ ...fxPop(theme, x, y), z: 0 });
+            return;
+          case 'fire':
+            if (fire.heat(x, y, 3, 1)) fire.boost = Math.max(fire.boost, 0.35);
+            break;
+          case 'leaves':
+          case 'sakura':
+            return whirl(x, y);
+          case 'confetti':
+            return cannon(x, y);
+          case 'neon':
+            return shockwave(x, y);
+          case 'hearts':
+            return heartwave(x, y);
+          case 'stars':
+            return placeStar(x, y);
+          case 'matrix':
+            return matrixClick(x, y);
+          case 'halloween':
+            ghost(x, y);
+            for (let k = 0; k < 8; k++) add(fxPop(theme, x, y));
+            return;
+        }
+        for (let k = 0; k < 14; k++) add(fxPop(theme, x, y));
       }
 
       // ---- Co klatkę ----
@@ -3850,14 +5428,17 @@
           const st = pickOne(surfs);
           if (st?.snow) {
             const i = Math.floor(rnd(0, st.snow.length));
-            if (st.snow[i] > 2) add({ t: 'glint', x: st.x + i * BIN, y: st.y - st.snow[i] + 0.5, vx: 0, vy: 0, s: rnd(2.5, 4.5), life: rnd(10, 20), c: '#dff1ff', noLand: true });
+            if (st.snow[i] > 2) add({ t: 'glint', x: st.x + i * st.bin, y: st.y - st.snow[i] - (st.base ? st.base[i] : 0) + 0.5, vx: 0, vy: 0, s: rnd(2.5, 4.5), life: rnd(10, 20), c: '#dff1ff', noLand: true });
           }
         }
-        // Monety: leżące błyszczą.
-        if (theme === 'coins' && Math.random() < 0.08 * dt) {
-          const st = pickOne(surfs);
-          const it = st && pickOne(st.rest);
-          if (it) add({ t: 'glint', x: st.x + it.x, y: st.y - it.y, vx: 0, vy: 0, s: rnd(3.5, 6), life: rnd(10, 18), c: '#fff1b8', noLand: true });
+        if (theme === 'coins') {
+          // Leżące monety błyszczą.
+          if (Math.random() < 0.08 * dt) {
+            const st = pickOne(surfs);
+            const it = st && pickOne(st.rest);
+            if (it) add({ t: 'glint', x: st.x + it.x, y: st.y - it.y, vx: 0, vy: 0, s: rnd(3.5, 6), life: rnd(10, 18), c: '#fff1b8', noLand: true });
+          }
+          if (gesture?.kind === 'magnet' && pointer.on) magnetTick(dt);
         }
         // Gwiazdy: kursor zostawia gwiezdny pył; co jakiś czas spadająca gwiazda.
         if (theme === 'stars') {
@@ -3866,13 +5447,20 @@
         }
         // Burza: rzadko piorun uderza tuż obok kursora.
         if (theme === 'storm' && pointer.on && Math.random() < dt / 1500) strike(pointer.x + rnd(-60, 60), pointer.y + rnd(-20, 30));
+        if (theme === 'matrix') matrixTick(dt);
+        if (theme === 'halloween' && !pumpkinsSet && frameNo > 3) pumpkinsSet = placePumpkins();
+        if (bubbly) blowTick(dt);
+        if (vortex) vortexTick(dt);
       }
       function strike(x, y) {
         add({ t: 'bolt', x, y: 0, vx: 0, vy: 0, paths: boltTo(x, y), flash: 0.1, instant: true, life: rnd(26, 36), c: pickOne(colors), noLand: true });
         for (let k = 0; k < 26; k++) add(radial(x, y, [1.5, 7], { t: 'spark', g: 0.1, drag: 0.96, r: rnd(1, 2.6), life: rnd(30, 70), noLand: true }));
+        zap(x, y);
       }
       function step(p, dt) {
         if (p.dead) return false;
+        if (p.t === 'ball') return stepBall(p, dt);
+        if (p.world) return bubbleStep(p, dt);
         p.age += dt;
         if (p.age < 0) return true;
         if (p.wk) p.vx += (wind.x * p.wk - p.vx) * 0.012 * dt;
@@ -3895,7 +5483,23 @@
         p.y += (p.vy + (p.bob ? Math.sin(p.age * 0.05 + p.sway) * p.bob : 0)) * dt;
         p.rot += p.vr * dt;
         if (p.grow) p.r += p.grow * dt * 0.6;
-        if (p.land && p.y > prevY && collide(p, prevY)) return false;
+        if (p.wall) {
+          // Rzucone i strącone rzeczy odbijają się od krawędzi ekranu, zamiast za nie wylatywać.
+          const r = p.r ?? p.s ?? 2;
+          if (p.x < r) {
+            p.x = r;
+            p.vx = Math.abs(p.vx) * 0.35;
+          } else if (p.x > w - r) {
+            p.x = w - r;
+            p.vx = -Math.abs(p.vx) * 0.35;
+          }
+          if (p.y < r && p.vy < 0) {
+            p.y = r;
+            p.vy = -p.vy * 0.3;
+          }
+        }
+        if (p.mag > 0) p.mag -= dt;
+        else if (p.land && p.y > prevY && collide(p, prevY)) return false;
         if (p.age > p.life) {
           if (p.t === 'bubble' && p.y > 0) popBubble(p);
           return false;
@@ -3961,6 +5565,236 @@
         }
         ctx.restore();
       }
+
+      // ---- Rysowanie cząsteczek, które są tylko w świecie nad stroną ----
+      const OWN = new Set(['ball', 'splat', 'clump', 'foam', 'streamer', 'ghost', 'hring', 'glyphring', 'plus', 'tint', 'ustar']);
+      function drawBall(x, y, r, rot, alpha) {
+        ctx.globalAlpha = alpha;
+        const g = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.1, x, y, r);
+        g.addColorStop(0, '#ffffff');
+        g.addColorStop(0.62, snowTop === '#ffffff' ? '#eef4fb' : snowTop);
+        g.addColorStop(1, snowBottom);
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, TAU);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(120, 150, 190, 0.45)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        // Grudki na śnieżce obracają się, gdy się toczy.
+        ctx.fillStyle = 'rgba(150, 178, 214, 0.38)';
+        ctx.beginPath();
+        for (let k = 0; k < 5; k++) {
+          const a = rot + k * 1.257;
+          const d = r * (0.3 + (k % 3) * 0.18);
+          const rr = r * (0.09 + (k % 2) * 0.05);
+          const cx = x + Math.cos(a) * d;
+          const cy = y + Math.sin(a) * d * 0.9;
+          ctx.moveTo(cx + rr, cy);
+          ctx.arc(cx, cy, rr, 0, TAU);
+        }
+        ctx.fill();
+      }
+      function heartPath(x, y, k) {
+        ctx.beginPath();
+        ctx.moveTo(x, y + 12 * k);
+        ctx.bezierCurveTo(x - 14 * k, y + 2 * k, x - 18 * k, y - 8 * k, x - 9 * k, y - 13 * k);
+        ctx.bezierCurveTo(x - 4 * k, y - 16 * k, x, y - 12 * k, x, y - 8 * k);
+        ctx.bezierCurveTo(x, y - 12 * k, x + 4 * k, y - 16 * k, x + 9 * k, y - 13 * k);
+        ctx.bezierCurveTo(x + 18 * k, y - 8 * k, x + 14 * k, y + 2 * k, x, y + 12 * k);
+      }
+      function drawOwn(p, alpha) {
+        switch (p.t) {
+          case 'ball':
+            drawBall(p.x, p.y, p.r * (Number.isFinite(p.flight) ? 1 - 0.32 * Math.min(1, p.age / p.flight) : 1), p.rot, alpha);
+            break;
+          case 'clump':
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = snowTop;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, TAU);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(150, 180, 215, 0.45)';
+            ctx.beginPath();
+            ctx.arc(p.x + p.r * 0.25, p.y + p.r * 0.3, p.r * 0.6, 0, TAU);
+            ctx.fill();
+            break;
+          case 'splat': {
+            const y = p.y - (scrollY - p.sy);
+            const blob = (x0, y0) => {
+              ctx.beginPath();
+              ctx.moveTo(x0 + p.r * 0.75, y0);
+              ctx.arc(x0, y0, p.r * 0.75, 0, TAU);
+              for (const l of [...p.lobes, ...p.dots]) {
+                const cx = x0 + Math.cos(l.a) * l.d * p.r;
+                const cy = y0 + Math.sin(l.a) * l.d * p.r;
+                ctx.moveTo(cx + l.s * p.r, cy);
+                ctx.arc(cx, cy, l.s * p.r, 0, TAU);
+              }
+              ctx.fill();
+            };
+            ctx.globalAlpha = alpha * 0.9;
+            ctx.fillStyle = 'rgba(40, 70, 120, 0.25)';
+            blob(p.x + 1, y + 1.6);
+            ctx.fillStyle = snowTop;
+            blob(p.x, y);
+            ctx.fillStyle = 'rgba(190, 210, 235, 0.5)';
+            ctx.beginPath();
+            ctx.arc(p.x + p.r * 0.2, y + p.r * 0.25, p.r * 0.45, 0, TAU);
+            ctx.fill();
+            break;
+          }
+          case 'foam': {
+            ctx.globalAlpha = alpha;
+            const size = p.r * 2.6;
+            ctx.drawImage(sprite('puff', p.c), p.x - size / 2, p.y - size / 2, size, size);
+            break;
+          }
+          case 'streamer': {
+            const hs = p.hist;
+            if (hs.length < 6) break;
+            ctx.globalAlpha = alpha;
+            ctx.strokeStyle = p.c;
+            ctx.lineWidth = p.wd;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            for (let i = 0; i < hs.length; i += 2) {
+              const j = Math.min(hs.length - 2, i + 2);
+              const dx = hs[j] - hs[i];
+              const dy = hs[j + 1] - hs[i + 1];
+              const d = Math.hypot(dx, dy) || 1;
+              const off = Math.sin(i * 0.45 + p.age * 0.35 + p.sway) * 3.2;
+              const x = hs[i] + (-dy / d) * off;
+              const y = hs[i + 1] + (dx / d) * off;
+              if (i) ctx.lineTo(x, y);
+              else ctx.moveTo(x, y);
+            }
+            ctx.stroke();
+            break;
+          }
+          case 'ghost': {
+            const s = p.s;
+            ctx.save();
+            ctx.translate(p.x, p.y + Math.sin(p.age * 0.08 + p.sway) * 3);
+            ctx.rotate(Math.sin(p.age * 0.05 + p.sway) * 0.12);
+            ctx.globalAlpha = alpha * 0.9;
+            ctx.fillStyle = '#f4f1ff';
+            ctx.shadowColor = '#b388ff';
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            ctx.moveTo(-s, s * 0.9);
+            ctx.lineTo(-s, -s * 0.1);
+            ctx.arc(0, -s * 0.1, s, Math.PI, 0);
+            ctx.lineTo(s, s * 0.9);
+            for (let k = 0; k < 4; k++) {
+              const xa = s - (k * 2 * s) / 4;
+              const xb = s - ((k + 1) * 2 * s) / 4;
+              ctx.quadraticCurveTo((xa + xb) / 2, s * (0.9 + (k % 2 ? -0.32 : 0.32) * (0.6 + 0.4 * Math.sin(p.age * 0.2))), xb, s * 0.9);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#1a0f24';
+            ctx.beginPath();
+            ctx.ellipse(-s * 0.35, -s * 0.15, s * 0.14, s * 0.2, 0, 0, TAU);
+            ctx.ellipse(s * 0.35, -s * 0.15, s * 0.14, s * 0.2, 0, 0, TAU);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(0, s * 0.28, s * 0.12, s * 0.17, 0, 0, TAU);
+            ctx.fill();
+            ctx.restore();
+            break;
+          }
+          case 'hring':
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.strokeStyle = p.c;
+            ctx.lineWidth = 2.4;
+            ctx.shadowColor = p.c;
+            ctx.shadowBlur = 14;
+            heartPath(p.x, p.y, p.r / 14);
+            ctx.stroke();
+            ctx.restore();
+            break;
+          case 'glyphring': {
+            ctx.globalAlpha = alpha;
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.font = fxFont(14);
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = p.c;
+            const n = p.chars.length;
+            for (let i = 0; i < n; i++) {
+              const a = p.rot + (i / n) * TAU;
+              if (Math.random() < 0.05) p.chars[i] = pickOne(GLYPHS);
+              ctx.fillText(p.chars[i], p.x + Math.cos(a) * p.r, p.y + Math.sin(a) * p.r);
+            }
+            ctx.globalCompositeOperation = 'source-over';
+            break;
+          }
+          case 'plus':
+            ctx.globalAlpha = alpha;
+            ctx.font = '800 15px Rubik, system-ui, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = 'rgba(60, 35, 0, 0.75)';
+            ctx.strokeText('+1', p.x, p.y);
+            ctx.fillStyle = '#ffe08a';
+            ctx.fillText('+1', p.x, p.y);
+            break;
+          case 'tint':
+            ctx.globalAlpha = alpha * (p.k ?? 0.12);
+            ctx.fillStyle = p.c;
+            ctx.fillRect(0, 0, w, h);
+            break;
+          case 'ustar': {
+            const y = p.y - (scrollY - p.sy);
+            ctx.globalCompositeOperation = 'lighter';
+            const lines = [p.prev, p.link].filter((q) => q && !q.dead && q.age < q.life);
+            for (const q of lines) {
+              const qy = q.y - (scrollY - q.sy);
+              ctx.globalAlpha = alpha * (0.55 + Math.max(p.glow, q.glow) * 0.45);
+              ctx.strokeStyle = colors[1] ?? '#ffe39a';
+              ctx.lineWidth = 1.3 + Math.max(p.glow, q.glow) * 1.5;
+              ctx.beginPath();
+              ctx.moveTo(q.x, qy);
+              ctx.lineTo(p.x, y);
+              ctx.stroke();
+            }
+            const tw = 0.8 + 0.2 * Math.sin(p.age * 0.15);
+            const size = (20 + p.glow * 22) * tw;
+            ctx.globalAlpha = alpha;
+            ctx.drawImage(glowSprite(p.c), p.x - size / 2, y - size / 2, size, size);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            const sp = size * 0.55;
+            ctx.beginPath();
+            ctx.moveTo(p.x - sp, y);
+            ctx.lineTo(p.x + sp, y);
+            ctx.moveTo(p.x, y - sp);
+            ctx.lineTo(p.x, y + sp);
+            ctx.stroke();
+            ctx.globalCompositeOperation = 'source-over';
+            break;
+          }
+        }
+      }
+      function drawWand() {
+        // Kółko do baniek przy kursorze.
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        ctx.strokeStyle = '#e6fbff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(pointer.x, pointer.y - 4, 7, 0, TAU);
+        ctx.moveTo(pointer.x + 4, pointer.y + 2);
+        ctx.lineTo(pointer.x + 13, pointer.y + 16);
+        ctx.stroke();
+        ctx.restore();
+      }
+
       function frame(t) {
         raf = 0;
         if (dead) return;
@@ -3968,7 +5802,7 @@
         const dt = last ? Math.min((t - last) / 16.67, 2.5) : 1;
         last = t;
         frameNo += 1;
-        if (needSurfaces && frameNo % 20 === 1) collect();
+        if ((caps || bubbly) && frameNo % 20 === 1) collect();
         measure();
         if (t - pointer.t > 60) {
           pointer.vx *= 0.8;
@@ -3985,8 +5819,10 @@
           }
           spawnFire(dt);
         }
+        if (tool) toolTick(tool, dt);
+        if (held) rollBall(dt);
         themeTick(dt);
-        if (pointer.on && needSurfaces) interact();
+        if (pointer.on && piles) interact();
         stepping = true;
         list = list.filter((p) => step(p, dt));
         stepping = false;
@@ -3994,20 +5830,26 @@
           list.push(...pending);
           pending.length = 0;
         }
-        if (list.length > 1400) list.splice(0, list.length - 1400);
+        if (bubbly && frameNo % 4 === 0) mergeBubbles();
+        for (const f of fish) fishTick(f, dt);
+        if (list.length > 1600) list.splice(0, list.length - 1600);
         for (const st of surfMap.values()) if (st.hot > 0 && st.snow) settleSnow(st);
         if (ground.hot > 0 && ground.snow) settleSnow(ground);
         ctx.clearRect(0, 0, w, h);
         if (fire) fire.draw();
-        env.lens = theme === 'matrix' && pointer.on ? pointer : null;
+        for (const f of fish) drawFish(f);
         for (const p of list) {
           const fadeIn = p.instant ? 1 : Math.min(1, p.age / (p.near ? 30 : 6));
-          const fadeOut = p.instant || !Number.isFinite(p.life) ? 1 : Math.min(1, (p.life - p.age) / (p.lw ? 14 : 30));
-          fxDraw(ctx, p, Math.max(0, Math.min(fadeIn, fadeOut)) * (p.a ?? 1), env);
+          const fadeOut = !Number.isFinite(p.life) ? 1 : Math.min(1, (p.life - p.age) / (p.lw ? 14 : 30));
+          const alpha = Math.max(0, Math.min(fadeIn, fadeOut)) * (p.a ?? 1);
+          if (OWN.has(p.t)) drawOwn(p, alpha);
+          else fxDraw(ctx, p, alpha, env);
         }
         ctx.globalAlpha = 1;
+        if (theme === 'halloween') litGlow(dt);
         if (theme === 'stars') drawStarLines();
         if (theme === 'neon') drawTrail();
+        if (vortex) drawVortex();
         if (theme === 'storm' && pointer.on && umbrella > 0.02) {
           // Niewidzialny parasol: szklana kopuła tam, gdzie bije deszcz.
           ctx.save();
@@ -4029,6 +5871,15 @@
           ctx.restore();
         }
         umbrella *= 0.94;
+        if (gesture?.kind === 'magnet' && pointer.on) drawMagnet();
+        if (blowing) drawWand();
+        if (held) drawBall(held.x, held.y, held.r, held.rot, 1);
+        ctx.globalAlpha = 1;
+        for (const tl of tools) {
+          tl.rest = restPose(tl);
+          if (!tl.held) placeTool(tl);
+          drawTool(tl, dt);
+        }
         // Czapy odświeżane po kolei (najwyżej co 3 klatki każda) — śnieg rośnie powoli, nie trzeba częściej.
         let k = 0;
         for (const st of surfMap.values()) {
@@ -4045,6 +5896,7 @@
         canvas.width = Math.max(1, Math.round(w * dpr));
         canvas.height = Math.max(1, Math.round(h * dpr));
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        toolScale = clamp(h / 900, 0.6, 1);
         fire?.size();
       }
       const run = () => {
@@ -4054,11 +5906,14 @@
         }
       };
       const onVisible = () => (document.hidden ? (cancelAnimationFrame(raf), (raf = 0)) : run());
-      addEventListener('resize', fit);
-      document.addEventListener('visibilitychange', onVisible);
+      listen(window, 'resize', fit);
+      listen(document, 'visibilitychange', onVisible);
       fit();
-      if (needSurfaces) collect();
+      if (caps || bubbly) collect();
       spawnNear(true);
+      if (bubbly) for (let i = 2 + Math.round(kk * 3); i > 0; i--) fish.push(spawnFish(true));
+      if (snowy) makeTool('shovel');
+      if (fire) makeTool('ext');
       run();
       return {
         burst() {
@@ -4067,29 +5922,52 @@
           for (const p of list) if (!p.near) live += 1;
           const count = Math.min(n, Math.max(0, n * 2 - live));
           const state = {};
-          for (let i = 0; i < count; i++) add(fxSpawn(theme, 'burst', { w, h, side: i % 2, i, own, state }));
+          for (let i = 0; i < count; i++) {
+            const p = fxSpawn(theme, 'burst', { w, h, side: i % 2, i, own, state });
+            add(p.t === 'bubble' ? { ...p, world: true, noLand: true } : p);
+          }
           if (fire) fire.boost = 1;
           if (snowy || theme === 'leaves' || theme === 'sakura') {
             // Podmuch razem z wybuchem: wszystko w powietrzu leci w bok.
             wind.target = wind.base + (snowy ? 3 : 4);
             wind.until = 100;
           }
-        },
-        click(x, y) {
-          for (const p of list) {
-            if (p.t === 'bubble' && Math.hypot(p.x - x, p.y - y) < p.r + 18) { popBubble(p); p.dead = true; }
-            if (p.t === 'balloon' && Math.hypot(p.x - x, p.y - y) < p.s + 14) { popBalloon(p); p.dead = true; }
-            if (p.t === 'heart' && !p.mini && Math.hypot(p.x - x, p.y - y) < 70) { burstHeart(p); p.dead = true; }
+          // Fala z mnożnika, błysk w kolorze efektu i podskok banera.
+          const r = document.querySelector('#event .ev-mult')?.getBoundingClientRect();
+          if (r?.width) {
+            const x = r.left + r.width / 2;
+            const y = r.top + r.height / 2;
+            add({ t: 'ring', x, y, vx: 0, vy: 0, r: r.width * 0.5, grow: 9, life: 40, c: colors[0], noLand: true });
+            add({ t: 'ring', x, y, vx: 0, vy: 0, r: r.width * 0.4, grow: 6, life: 46, age: -6, c: colors[1] ?? colors[0], noLand: true });
+            if (theme === 'matrix') MX.pulses.push({ x, y, t: performance.now() });
           }
-          if (theme === 'storm') return strike(x, y);
-          if (snowy) {
-            blast(x, y);
-            for (let k = 0; k < 10; k++) add({ ...fxPop(theme, x, y), vy: -rnd(1.5, 4.5), free: 30 });
-            return;
+          add({ t: 'tint', x: 0, y: 0, vx: 0, vy: 0, life: 26, c: colors[0], instant: true, noLand: true });
+          const box = document.getElementById('event');
+          if (box) {
+            box.classList.remove('kick');
+            void box.offsetWidth;
+            box.classList.add('kick');
+            setTimeout(() => box.classList.remove('kick'), 650);
           }
-          if (fire && fire.heat(x, y, 4)) fire.boost = Math.max(fire.boost, 0.35);
-          for (let k = 0; k < 14; k++) add(fxPop(theme, x, y));
+          if (theme === 'matrix') glitch();
         },
+        // Wciśnięcie przycisku gdzieś na stronie: śnieżka, dynia, bańka, magnes albo efekt kliknięcia.
+        press(event) {
+          if (tool || dead) return;
+          const x = event.clientX;
+          const y = event.clientY;
+          const mouse = event.pointerType !== 'touch';
+          const busy = Boolean(event.target?.closest?.(INTERACTIVE));
+          if (snowy && mouse) {
+            const hit = snowAt(x, y);
+            if (hit) return startBall(hit);
+          }
+          if (theme === 'halloween' && pumpkinHit(x, y)) return;
+          if (bubbly && mouse && !busy) startBlow();
+          if (theme === 'coins' && mouse && !busy) startGesture('magnet');
+          if (level >= 1) click(x, y);
+        },
+        click,
         destroy() {
           dead = true;
           cancelAnimationFrame(raf);
@@ -4098,8 +5976,14 @@
           ground.cv.remove();
           for (const st of surfMap.values()) st.cv.remove();
           for (const layer of layers.values()) layer.remove();
-          removeEventListener('resize', fit);
-          document.removeEventListener('visibilitychange', onVisible);
+          for (const t of tools) t.btn.remove();
+          counter?.remove();
+          for (const [el, m] of mx) if (el.textContent === m.last) el.textContent = m.text;
+          mx.clear();
+          clearTimeout(glitchTimer);
+          document.body.classList.remove('mx-glitch');
+          document.documentElement.classList.remove('fx-holding', 'fx-grab', 'fx-aim');
+          for (const off of unsub) off();
         },
       };
     }
@@ -4125,6 +6009,7 @@
         theme: QS.get('preview'),
         intensity: Object.hasOwn(FX_LEVEL, QS.get('intensity') ?? '') ? QS.get('intensity') : 'medium',
         accent,
+        floor: QS.get('floor') !== '0',
       };
     }
     // Tryb osadzony: panel (ta sama domena) wysyła ustawienia z formularza wydarzenia, a strona odsyła swoją wysokość.
@@ -4135,7 +6020,7 @@
         const m = event.data ?? {};
         if (m.type === 'hk-ev-preview' && m.event) {
           const e = m.event;
-          const params = { preview: EV_THEMES.includes(e.theme) ? e.theme : 'confetti', intensity: e.intensity, mult: e.multiplier, name: e.name, accent: HEX.test(e.accent ?? '') ? e.accent.slice(1) : '' };
+          const params = { preview: EV_THEMES.includes(e.theme) ? e.theme : 'confetti', intensity: e.intensity, mult: e.multiplier, name: e.name, accent: HEX.test(e.accent ?? '') ? e.accent.slice(1) : '', floor: e.floor === false ? '0' : '' };
           for (const [k, v] of Object.entries(params)) v ? QS.set(k, String(v)) : QS.delete(k);
           setEvents({ current: previewEvent() });
         } else if (m.type === 'hk-ev-burst') burst();

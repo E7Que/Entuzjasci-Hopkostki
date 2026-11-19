@@ -1832,8 +1832,11 @@ function evSyncForm() {
   $('#ev-form-title').textContent = editing ? 'Edytuj wydarzenie' : 'Nowe wydarzenie';
   $('#ev-add').textContent = editing ? 'Zapisz wydarzenie' : 'Dodaj wydarzenie';
   $('#ev-cancel').hidden = !editing;
+  // Płomienie na dole ekranu — tylko przy efekcie „Ogień”.
+  $('#ev-floor-field').hidden = $('#ev-theme').value !== 'fire';
   // Podgląd na stronie rankingu z tym, co jest w formularzu (efekt, intensywność, kolor, mnożnik, nazwa).
   const p = new URLSearchParams({ preview: $('#ev-theme').value, intensity: $('#ev-intensity').value });
+  if (!$('#ev-floor').checked) p.set('floor', '0');
   if (m >= 1.1 && m <= 10) p.set('mult', String(m));
   if ($('#ev-accent-on').checked && EV_HEX.test($('#ev-accent').value)) p.set('accent', $('#ev-accent').value.slice(1));
   const name = $('#ev-name').value.trim();
@@ -1852,6 +1855,7 @@ function evLiveData() {
     theme: $('#ev-theme').value,
     intensity: $('#ev-intensity').value,
     accent: $('#ev-accent-on').checked && EV_HEX.test($('#ev-accent').value) ? $('#ev-accent').value.toLowerCase() : null,
+    floor: $('#ev-floor').checked,
   };
 }
 function evLivePost(message) {
@@ -1868,6 +1872,7 @@ function evLiveStart() {
   const e = evLiveData();
   const p = new URLSearchParams({ embed: '1', preview: e.theme, intensity: e.intensity, mult: String(e.multiplier), name: e.name });
   if (e.accent) p.set('accent', e.accent.slice(1));
+  if (!e.floor) p.set('floor', '0');
   frame.src = `ranking.html?${p}`;
 }
 window.addEventListener('message', (event) => {
@@ -1908,6 +1913,7 @@ function evFill(e, { copy = false } = {}) {
   $('#ev-intensity').value = EV_INTENSITY[e.intensity] ? e.intensity : 'medium';
   $('#ev-accent-on').checked = EV_HEX.test(e.accent ?? '');
   if (EV_HEX.test(e.accent ?? '')) $('#ev-accent').value = e.accent;
+  $('#ev-floor').checked = e.floor !== false;
   for (const k of Object.keys(EV_KINDS)) $(`#ev-k-${k}`).checked = (e.kinds ?? []).includes(k);
   evSyncForm();
 }
@@ -1922,6 +1928,7 @@ function evReset() {
     theme: 'confetti',
     intensity: 'medium',
     accent: null,
+    floor: true,
     kinds: Object.keys(EV_KINDS),
   });
 }
@@ -1941,7 +1948,7 @@ function renderXpEvents() {
             <div class="ev-main">
               <div><strong>${esc(e.name)}</strong> <span class="ev-badge"${accent ? ` style="background:${accent}"` : ''}>${evMult(e.multiplier)}</span> <span class="ev-status">${label}</span></div>
               <div class="muted small">${esc(evDate(start))} – ${esc(evDate(end))} · ${(e.kinds ?? []).map((k) => EV_KINDS[k]).join(', ')}</div>
-              <div class="muted small">${EV_THEMES[e.theme] ?? EV_THEMES.confetti} · ${EV_INTENSITY[e.intensity] ?? EV_INTENSITY.medium}${accent ? ` · kolor <span class="ev-swatch" style="background:${accent}"></span>` : ''}</div>
+              <div class="muted small">${EV_THEMES[e.theme] ?? EV_THEMES.confetti}${e.theme === 'fire' && e.floor === false ? ' (bez płomieni na dole)' : ''} · ${EV_INTENSITY[e.intensity] ?? EV_INTENSITY.medium}${accent ? ` · kolor <span class="ev-swatch" style="background:${accent}"></span>` : ''}</div>
             </div>
             <div class="ev-actions">
               ${cls !== 'done' ? `<button type="button" class="btn ghost small" data-ev-edit="${id}">Edytuj</button>` : ''}
@@ -1954,7 +1961,7 @@ function renderXpEvents() {
         .join('')
     : '<span class="muted small">Brak wydarzeń — dodaj pierwsze obok.</span>';
 }
-for (const sel of ['#ev-theme', '#ev-intensity', '#ev-accent-on', '#ev-mult', '#ev-name']) {
+for (const sel of ['#ev-theme', '#ev-intensity', '#ev-accent-on', '#ev-floor', '#ev-mult', '#ev-name']) {
   $(sel).addEventListener('input', evSyncForm);
   $(sel).addEventListener('change', evSyncForm);
 }
@@ -1994,6 +2001,7 @@ $('#ev-add').addEventListener('click', () => {
     theme: $('#ev-theme').value,
     intensity: $('#ev-intensity').value,
     accent: $('#ev-accent-on').checked && EV_HEX.test($('#ev-accent').value) ? $('#ev-accent').value.toLowerCase() : null,
+    floor: $('#ev-floor').checked,
   };
   let message;
   if (evEditId) {
