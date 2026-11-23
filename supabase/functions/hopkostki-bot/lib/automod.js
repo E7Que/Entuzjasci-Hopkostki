@@ -1,7 +1,8 @@
 // Automoderacja: zaproszenia do innych serwerów, masowe oznaczenia, CAPS, zakazane słowa, flood i powtarzanie
 // wiadomości, anty-rajd (dużo wejść naraz). Każdy filtr ma własną karę: usunięcie wiadomości, ostrzeżenie
 // (punkty → progi z zakładki Ostrzeżenia) albo timeout. Moderatorzy, administratorzy, role i kanały z wyjątków
-// są pomijani. Wszystko trafia na kanał logów automoderacji (albo logów moderacji).
+// są pomijani — tak samo tickety (rozmowy z obsługą, np. partnerstwa z linkami do serwerów).
+// Wszystko trafia na kanał logów automoderacji (albo logów moderacji).
 
 import { P, memberPermissions } from './permissions.js';
 import { cached, getGuildContext, isOurGuild, kickUser, timeoutUser, warnUser } from './moderation.js';
@@ -110,10 +111,22 @@ const mentionsText = (n) => `${n} ${n === 1 ? 'oznaczenie' : n % 10 >= 2 && n % 
 
 // ---------- Wyjątki ----------
 
+// Kanał ticketu (otwartego albo zamkniętego, także w archiwum)? Wynik trzymany w pamięci: „tak” długo,
+// „nie” tylko chwilę — żeby świeżo utworzony ticket nie czekał na odświeżenie.
+async function isTicketChannel(bot, channelId) {
+  const key = `automodTicket:${channelId}`;
+  const hit = bot.cache.get(key);
+  if (hit && Date.now() - hit.at < (hit.value ? 30 * 60_000 : 60_000)) return hit.value;
+  const value = await bot.store.isTicketChannel(channelId).catch(() => false);
+  bot.cache.set(key, { at: Date.now(), value });
+  return value;
+}
+
 async function isExempt(bot, config, message) {
   const a = config.automod;
   const roles = message.member?.roles ?? [];
   if (a.exemptChannelIds.includes(message.channel_id)) return true;
+  if (a.exemptTickets !== false && (await isTicketChannel(bot, message.channel_id))) return true;
   if (roles.some((id) => a.exemptRoleIds.includes(id))) return true;
   // Administracja i moderacja — chyba że w panelu wyłączono ten wyjątek (np. żeby przetestować filtry na sobie).
   if (a.exemptStaff === false) return false;

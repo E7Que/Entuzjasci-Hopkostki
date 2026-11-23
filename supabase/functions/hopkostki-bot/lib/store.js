@@ -796,6 +796,11 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return row ? mapTicket(row) : null;
     },
 
+    // Czy to kanał jakiegokolwiek ticketu (otwartego albo zamkniętego)?
+    async isTicketChannel(channelId) {
+      return Boolean(await one('select 1 as hit from bot.tickets where channel_id = $1::text limit 1', [channelId]));
+    },
+
     async openTicketsForUser(userId) {
       return (await query(`select * from bot.tickets where user_id = $1::text and status = 'open' order by id`, [userId])).map(mapTicket);
     },

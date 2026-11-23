@@ -266,7 +266,7 @@ wpisujesz w przeglądarce.
 | `/timeout uzytkownik czas jednostka powod` | Wyciszenie na czas (maksymalnie 28 dni, bo tyle pozwala Discord). |
 | `/untimeout uzytkownik [powod]` | Zdejmuje wyciszenie. |
 | `/kick uzytkownik powod` | Wyrzuca z serwera. |
-| `/warn dodaj uzytkownik powod [punkty]` | Ostrzeżenie z punktami. |
+| `/warn dodaj uzytkownik powod [punkty] [osoba2…osoba5]` | Ostrzeżenie z punktami — jednej osobie albo do 5 naraz (ten sam powód i punkty, każda dostaje własne ostrzeżenie). |
 | `/warn status uzytkownik` | Ostrzeżenia, punkty, pasek poziomu i odliczanie do wygaśnięcia (strony ◀ 1 2 3 ▶, widzi tylko moderacja). |
 | `/warn usun uzytkownik [numer]` | Lista ostrzeżeń tej osoby do usunięcia (albo od razu jedno, jeśli podasz numer). |
 | `/warn wyczysc uzytkownik` · `/warn ranking` | Czyszczenie wszystkich ostrzeżeń / ranking punktów. |

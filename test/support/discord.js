@@ -307,8 +307,14 @@ export function makeBot({ store, discord, env = {} }) {
 
 // Interakcja slash tak, jak wysyła ją Discord.
 export function commandPayload(name, options = [], { invoker = 'mod', roles = ['r-mod'], permissions = String((1n << 2n) | (1n << 1n) | (1n << 40n)), resolvedIds = ['target'], members } = {}) {
-  const users = { bot: { id: 'bot', username: 'Hopkostki Bot', bot: true }, mod: { id: 'mod', username: 'dfgbh65' }, target: { id: 'target', username: 'hurownik_og', avatar: null }, owner: { id: 'owner', username: 'wlasciciel' } };
-  const resolvedMembers = members ?? { target: { roles: ['r-member'] }, mod: { roles: ['r-mod'] }, owner: { roles: [] } };
+  const users = {
+    bot: { id: 'bot', username: 'Hopkostki Bot', bot: true },
+    mod: { id: 'mod', username: 'dfgbh65' },
+    target: { id: 'target', username: 'hurownik_og', avatar: null },
+    target2: { id: 'target2', username: 'drugi_gracz', avatar: null },
+    owner: { id: 'owner', username: 'wlasciciel' },
+  };
+  const resolvedMembers = members ?? { target: { roles: ['r-member'] }, target2: { roles: ['r-member'] }, mod: { roles: ['r-mod'] }, owner: { roles: [] } };
   return {
     type: 2,
     id: 'i1',

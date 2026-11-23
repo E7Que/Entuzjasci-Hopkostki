@@ -122,7 +122,7 @@ export const DEFAULT_CONFIG = {
         emoji: '🤝',
         welcome: 'Cześć {uzytkownik}! Dzięki za chęć nawiązania partnerstwa — administracja sprawdzi Twój serwer i odpowie tutaj.',
         // Regulamin partnerstw — pokazywany przed formularzem; edytujesz go w panelu (Tickety → Partnerstwo).
-        rules: '**1.** Serwer partnera musi być aktywny i przestrzegać regulaminu Discorda (bez treści NSFW, nienawiści i oszustw).\n**2.** Podany link do serwera musi być stałym zaproszeniem (bez limitu czasu i użyć).\n**3.** Podana liczba członków musi być prawdziwa — sprawdzamy ją w Discordzie. Boty i fałszowanie liczby = odmowa.\n**4.** Partnerstwo opiera się na wzajemnej reklamie: obie strony publikują reklamę drugiej na ustalonym kanale i nie usuwają jej bez uzgodnienia.\n**5.** Zastrzegamy sobie prawo do zerwania partnerstwa, gdy serwer partnera złamie regulamin lub przestanie spełniać wymagania.\n**6.** Decyzję o partnerstwie podejmuje administracja — odpowiedź może zająć kilka dni.',
+        rules: '**1.** Serwer partnera musi być aktywny i przestrzegać regulaminu Discorda (bez treści NSFW, nienawiści i oszustw).\n**2.** Podany link do serwera musi być stałym zaproszeniem (bez limitu czasu i użyć).\n**3.** Podana liczba członków musi być prawdziwa — sprawdzamy ją w Discordzie. Boty i fałszowanie liczby = odmowa.\n**4.** Partnerstwo opiera się na wzajemnej reklamie: obie strony publikują reklamę drugiej na ustalonym kanale i nie usuwają jej bez uzgodnienia.\n**5.** Linki w reklamie nie mogą być ukryte — żadnych linków schowanych pod tekstem (np. [kliknij](link)), w spoilerach, za skracaczami ani przekierowaniami. Zaproszenie musi być widoczne w całości.\n**6.** Zakaz promowania się pieniędzmi, konkursami, giveawayami i innymi nagrodami za dołączenie (np. Nitro, płatne zaproszenia, „dołącz i wygraj”) — dotyczy serwera partnera i treści reklamy.\n**7.** Zastrzegamy sobie prawo do zerwania partnerstwa, gdy serwer partnera złamie regulamin lub przestanie spełniać wymagania.\n**8.** Decyzję o partnerstwie podejmuje administracja — odpowiedź może zająć kilka dni.',
         categoryId: '',
         archiveCategoryId: '',
         logChannelId: '',
@@ -317,6 +317,8 @@ export const DEFAULT_CONFIG = {
     exemptChannelIds: [],
     // Pomijanie administracji i moderacji (role moderatorów, właściciel, uprawnienia do usuwania wiadomości / timeoutów).
     exemptStaff: true,
+    // Pomijanie ticketów (wszystkich rodzajów, otwartych i zamkniętych) — rozmowy z obsługą, linki przy partnerstwach.
+    exemptTickets: true,
     notify: true,
     timeoutMinutes: 10,
     warnPoints: 1,

@@ -170,6 +170,24 @@ test('wyjątki: moderatorzy, właściciel, role i kanały z wyjątków; wyłącz
   assert.equal(await onMessageAutomod(s.bot, msg(bad, { channel_id: FREE })), null);
 });
 
+test('tickety: automoderacja pomija kanały ticketów (otwartych i zamkniętych), chyba że wyłączono to w panelu', async () => {
+  const s = await setup();
+  const TICKET = '100000000000000310';
+  const CLOSED = '100000000000000311';
+  const open = await s.store.addTicket({ guildId: GUILD, userId: 'target', userTag: 'hurownik_og', type: 'Partnerstwo', subject: 'reklama' });
+  await s.store.updateTicket(open.id, { channelId: TICKET });
+  const old = await s.store.addTicket({ guildId: GUILD, userId: 'target', userTag: 'hurownik_og', type: 'Zgłoszenie', subject: 'spam' });
+  await s.store.updateTicket(old.id, { channelId: CLOSED, status: 'closed' });
+  const ad = 'mój serwer: discord.gg/obcy';
+  assert.equal(await onMessageAutomod(s.bot, msg(ad, { channel_id: TICKET })), null, 'link do serwera w tickecie partnerstwa przechodzi');
+  assert.equal(await onMessageAutomod(s.bot, msg('<@a> <@b> <@c> <@d> <@e> <@f> <@g>', { channel_id: CLOSED })), null, 'zamknięty ticket też');
+  assert.ok(await onMessageAutomod(s.bot, msg(ad)), 'zwykły kanał nadal sprawdzany');
+
+  await s.store.updateConfig({ automod: { enabled: true, exemptTickets: false } });
+  s.bot.cache.clear();
+  assert.equal((await onMessageAutomod(s.bot, msg(ad, { channel_id: TICKET }))).filter, 'invites', 'po wyłączeniu wyjątku tickety są sprawdzane');
+});
+
 test('anty-rajd: X wejść w Y s → alert z pingiem roli alertów i wyrzucenie młodych kont z tej fali', async () => {
   const s = await setup({ raid: { enabled: true, joins: 3, seconds: 30, minutes: 10, action: 'kick', accountAgeDays: 7 } });
   await s.store.updateConfig({ alerts: { pingRoleId: '100000000000000303' } });

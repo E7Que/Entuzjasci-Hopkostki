@@ -168,6 +168,46 @@ async function addWarns(store, n) {
   return warns;
 }
 
+test('/warn dodaj: kilka osób naraz — każda dostaje własne ostrzeżenie i ogłoszenie; powtórki i boty pominięte', async () => {
+  const s = await setup();
+  const second = { id: 'target2', username: 'drugi_gracz', avatar: null };
+  s.discord.state.users.set('target2', second);
+  s.discord.state.members.set('target2', { user: second, roles: ['r-member'] });
+  await s.send(
+    commandPayload(
+      'warn',
+      [sub('dodaj', [opt('uzytkownik', 'target', 6), opt('powod', 'spam na ogólnym'), opt('punkty', 2, 4), opt('osoba2', 'target2', 6), opt('osoba3', 'target', 6), opt('osoba4', 'bot', 6)])],
+      { resolvedIds: ['target', 'target2', 'bot'] },
+    ),
+  );
+  const [first] = await s.store.getWarns('target');
+  const [other] = await s.store.getWarns('target2');
+  assert.equal((await s.store.getWarns('target')).length, 1, 'ta sama osoba dwa razy = jedno ostrzeżenie');
+  assert.deepEqual([first.points, first.reason, other.points, other.reason], [2, 'spam na ogólnym', 2, 'spam na ogólnym']);
+  assert.notEqual(first.caseId, other.caseId, 'osobne sprawy');
+
+  // Pierwsza osoba w odpowiedzi na komendę, druga — osobnym ogłoszeniem na tym samym kanale.
+  const edit = s.discord.state.webhook.find((w) => w.op === 'edit');
+  assert.match(JSON.stringify(edit.body), /<@target>/);
+  assert.doesNotMatch(JSON.stringify(edit.body), /target2/);
+  assert.ok((s.discord.state.channels.get('chan') ?? []).some((m) => JSON.stringify(m).includes('<@target2>')), 'ogłoszenie dla drugiej osoby');
+  assert.deepEqual(s.discord.state.dms.map((d) => d.channel_id).sort(), ['dm-target', 'dm-target2'], 'każda osoba dostaje wiadomość prywatną');
+
+  // Bot pominięty — moderator dostaje prywatnie wyjaśnienie.
+  const note = s.discord.state.webhook.find((w) => w.op === 'followup');
+  assert.equal(note.body.flags, 64);
+  assert.match(note.body.embeds[0].description, /<@bot> — Botów nie można ostrzegać/);
+  assert.match(note.body.embeds[0].description, /Ostrzeżono: <@target>, <@target2>/);
+});
+
+test('/warn dodaj: gdy nikogo nie można ostrzec — błąd z powodem dla każdej osoby', async () => {
+  const s = await setup();
+  await s.send(commandPayload('warn', [sub('dodaj', [opt('uzytkownik', 'bot', 6), opt('powod', 'test'), opt('osoba2', 'owner', 6)])], { resolvedIds: ['bot', 'owner'] }));
+  assert.equal((await s.store.getWarns('owner')).length, 0);
+  const reply = s.discord.state.webhook.find((w) => w.op === 'followup');
+  assert.match(reply.body.embeds[0].description, /<@bot>: Botów nie można ostrzegać\.\n<@owner>: /);
+});
+
 test('/warn usun: przewinienia na stronach, przyciski ◀ 1 2 ▶ i usuwanie z listy', async () => {
   const s = await setup();
   const warns = await addWarns(s.store, 7);

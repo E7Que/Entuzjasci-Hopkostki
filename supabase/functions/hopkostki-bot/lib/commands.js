@@ -187,6 +187,9 @@ const untimeout = {
 };
 
 // ---------- Ostrzeżenia ----------
+// /warn dodaj: do 5 osób naraz (uzytkownik + osoba2…osoba5) — ten sam powód i punkty, każda dostaje własne
+// ostrzeżenie (sprawa, wiadomość prywatna, ogłoszenie, progi punktów).
+const WARN_MORE = ['osoba2', 'osoba3', 'osoba4', 'osoba5'];
 const warn = {
   permission: P.MODERATE_MEMBERS,
   // "dodaj" ogłasza karę publicznie, reszta podkomend odpowiada tylko moderatorowi.
@@ -196,10 +199,11 @@ const warn = {
     description: '⚠️ System ostrzeżeń z punktami (znikają same po 60 dniach)',
     ...GUILD_ONLY,
     options: [
-      sub('dodaj', '⚠️ Daj ostrzeżenie — ukarany dostanie wiadomość, punkty widzi tylko moderacja', [
+      sub('dodaj', '⚠️ Ostrzeżenie dla 1–5 osób naraz — dostaną wiadomość, punkty widzi tylko moderacja', [
         user('uzytkownik', '👤 Kogo ostrzec', true),
         reasonOpt('📝 Za co? Np. spam, obraza, offtop'),
         int('punkty', '🔢 Ile punktów (1–100, domyślnie z panelu) — im poważniej, tym więcej', { min_value: 1, max_value: 100 }),
+        ...WARN_MORE.map((name, i) => user(name, `👥 ${i + 2}. osoba do ostrzeżenia (ten sam powód i punkty)`)),
       ]),
       sub('status', '📋 Ostrzeżenia, punkty i odliczanie do wygaśnięcia (strony ◀ 1 2 3 ▶)', [
         user('uzytkownik', '👤 Czyje ostrzeżenia pokazać', true),
@@ -217,15 +221,57 @@ const warn = {
     const config = await store.getConfig();
 
     if (ix.sub === 'dodaj') {
-      const { target } = await ensureTarget(ix, bot, 'warn');
-      if (target.bot) throw new ReplyError('Botów nie można ostrzegać.');
-      return warnUser(bot, {
-        interaction: ix,
-        target,
-        moderator: ix.user,
-        reason: ix.opt('powod'),
-        points: ix.opt('punkty') ?? config.warns.defaultPoints,
-      });
+      // Wszystkie wybrane osoby (bez powtórek); kogo nie można ostrzec, ten jest pomijany z wyjaśnieniem.
+      const gctx = await getGuildContext(bot);
+      const seen = new Set();
+      const targets = [];
+      const skipped = [];
+      for (const name of ['uzytkownik', ...WARN_MORE]) {
+        const target = ix.getUser(name);
+        if (!target || seen.has(target.id)) continue;
+        seen.add(target.id);
+        const problem = target.bot
+          ? 'Botów nie można ostrzegać.'
+          : checkTarget({ gctx, moderator: ix.member, target, targetMember: ix.getMember(name), action: 'warn' });
+        if (problem) skipped.push({ target, problem });
+        else targets.push(target);
+      }
+      if (!targets.length) {
+        if (!skipped.length) throw new ReplyError('Nie znaleziono użytkownika.');
+        throw new ReplyError(skipped.length === 1 ? skipped[0].problem : skipped.map((s) => `<@${s.target.id}>: ${s.problem}`).join('\n'));
+      }
+      const reason = ix.opt('powod');
+      const points = ix.opt('punkty') ?? config.warns.defaultPoints;
+      // Pierwsza osoba — w odpowiedzi na komendę (jak dotąd), kolejne — osobnymi ogłoszeniami na tym samym kanale.
+      const failed = [];
+      for (const [i, target] of targets.entries()) {
+        try {
+          await warnUser(bot, { interaction: i === 0 ? ix : null, channelId: ix.channelId, target, moderator: ix.user, reason, points });
+        } catch (error) {
+          if (i === 0) throw error;
+          failed.push({ target, problem: error.message });
+        }
+      }
+      const notes = [...skipped, ...failed];
+      if (notes.length) {
+        await ix
+          .followUp({
+            flags: 64,
+            embeds: [
+              embeds.simpleEmbed(
+                'warning',
+                '⚠️ Nie wszyscy dostali ostrzeżenie',
+                [
+                  `Ostrzeżono: ${targets.filter((t) => !failed.some((f) => f.target.id === t.id)).map((t) => `<@${t.id}>`).join(', ')}`,
+                  ...notes.map((s) => `• <@${s.target.id}> — ${s.problem}`),
+                ].join('\n'),
+              ),
+            ],
+            allowed_mentions: { parse: [] },
+          })
+          .catch(() => {});
+      }
+      return null;
     }
 
     if (ix.sub === 'status') return ix.edit(await renderView(bot, 'ws', ix.getUser('uzytkownik').id, 1));
@@ -887,7 +933,7 @@ const pomoc = {
             {
               name: '⚠️ Ostrzeżenia',
               value: [
-                '`/warn dodaj` — ostrzeżenie z punktami',
+                '`/warn dodaj` — ostrzeżenie z punktami (do 5 osób naraz)',
                 '`/warn status` — ostrzeżenia i punkty osoby',
                 '`/warn usun` — wybierz osobę i usuń z listy',
                 '`/warn wyczysc` · `/warn ranking`',
