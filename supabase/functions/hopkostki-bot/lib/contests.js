@@ -153,9 +153,27 @@ export async function exchangeMemberLink(bot, token) {
 // Logowanie przez Discord (OAuth2, kod z PKCE — bez sekretu aplikacji). Gotowe, gdy adres strony jest na liście
 // Redirects aplikacji (bot sprawdza to przy konfiguracji: setup.oauthRedirect; null = Discord nie podał listy).
 export async function oauthInfo(bot) {
-  const setup = await bot.store.getState('setup');
+  let setup = await bot.store.getState('setup');
+  if (setup?.oauthRedirect === false) setup = await refreshOAuthRedirect(bot, setup);
   if (!setup?.appId || setup.oauthRedirect === false) return null;
   return { clientId: setup.appId, redirectUri: OAUTH_REDIRECT };
+}
+
+// Póki adresu nie ma na liście, bot zagląda do Discorda najwyżej raz na minutę (strona) albo od razu (panel) —
+// logowanie włącza się chwilę po dopisaniu adresu w Developer Portal, bez czekania na pełne sprawdzenie co 10 minut.
+const OAUTH_RECHECK_MS = 60_000;
+async function refreshOAuthRedirect(bot, setup, { force = false } = {}) {
+  if (!bot.discord || !setup?.appId || setup.oauthRedirect === true) return setup;
+  if (!force && Date.now() - (setup.oauthCheckedAt ?? 0) < OAUTH_RECHECK_MS) return setup;
+  const app = await bot.discord.get('/applications/@me').catch(() => null);
+  const fresh = (await bot.store.getState('setup')) ?? setup;
+  const next = {
+    ...fresh,
+    oauthCheckedAt: Date.now(),
+    oauthRedirect: Array.isArray(app?.redirect_uris) ? app.redirect_uris.includes(OAUTH_REDIRECT) : (fresh.oauthRedirect ?? null),
+  };
+  await bot.store.setState('setup', next);
+  return next;
 }
 
 // Strona: kod z Discorda (+ code_verifier PKCE) → kto to jest → sesja przeglądarki.
@@ -225,8 +243,8 @@ async function contestView(bot, c, { session, now, gctx, draws }) {
   if (session) {
     const mine = people.find((p) => p.userId === session.userId);
     me = mine
-      ? { joined: true, rank: mine.rank, invites: mine.invites, messages: mine.messages, reached: mine.reached, won: Boolean(mine.wonAt), joinedAt: mine.createdAt, canJoin: false, blocker: null }
-      : { joined: false, rank: null, invites: 0, messages: 0, reached: false, won: false, joinedAt: null, canJoin: status !== 'ended', blocker: status === 'ended' ? 'Ten event już się skończył.' : null };
+      ? { joined: true, rank: mine.rank, invites: mine.invites, messages: mine.messages, reached: mine.reached, won: Boolean(mine.wonAt), joinedAt: mine.createdAt, canJoin: false, canLeave: status !== 'ended' && !mine.wonAt, blocker: null }
+      : { joined: false, rank: null, invites: 0, messages: 0, reached: false, won: false, joinedAt: null, canJoin: status !== 'ended', canLeave: false, blocker: status === 'ended' ? 'Ten event już się skończył.' : null };
   }
   const drawn = draws?.[c.id] ?? null;
   return {
@@ -299,6 +317,22 @@ export async function joinContest(bot, { token, contestId, now = Date.now() }) {
     avatar: session.avatar,
   });
   return { joined: true, already: !entry };
+}
+
+// POST /panel/public/contests/:id/leave — wypisanie się. Postęp przepada (ponowny zapis liczy od nowa); po końcu
+// eventu i po wylosowaniu już się nie da — wyniki są ostateczne, a rezygnację z nagrody załatwia administracja.
+export async function leaveContest(bot, { token, contestId, now = Date.now() }) {
+  const session = await memberSession(bot, token);
+  if (!session) throw new MemberAuthError('Najpierw połącz konto — zaloguj się przez Discord.');
+  const config = await bot.store.getConfig();
+  const c = visibleContests(config, now).find((x) => x.id === contestId);
+  if (!c) throw new ContestError('Nie ma takiego eventu.');
+  if (contestStatus(c, now) === 'ended') throw new ContestError('Ten event już się skończył — wyniki są ostateczne.');
+  const entry = (await bot.store.contestEntries(c.id)).find((e) => e.userId === session.userId);
+  if (!entry) return { left: false, already: true };
+  if (entry.wonAt) throw new ContestError('Wylosowano Cię w tym evencie — jeśli chcesz zrezygnować z nagrody, napisz do administracji.');
+  await bot.store.removeContestEntry(c.id, session.userId);
+  return { left: true, already: false };
 }
 
 // ---------- Kto się dostał (cron) ----------
@@ -431,8 +465,9 @@ export async function contestDetails(bot, contestId, { now = Date.now() } = {}) 
 
 // Panel: czy logowanie przez Discord na stronie jest gotowe (adres strony na liście Redirects aplikacji).
 export async function oauthStatus(bot) {
-  const setup = await bot.store.getState('setup');
-  return { redirectUri: OAUTH_REDIRECT, registered: setup?.oauthRedirect ?? null, checkedAt: setup?.checkedAt ?? null };
+  let setup = await bot.store.getState('setup');
+  if (setup?.oauthRedirect === false) setup = await refreshOAuthRedirect(bot, setup, { force: true });
+  return { redirectUri: OAUTH_REDIRECT, registered: setup?.oauthRedirect ?? null, checkedAt: setup?.oauthCheckedAt ?? setup?.checkedAt ?? null };
 }
 
 export async function contestsCleanupTick(bot) {

@@ -54,6 +54,7 @@ async function connect(s, user = 'target') {
   return { out, reply, url, token, res, session: res.body.token };
 }
 const join = (s, id, session) => s.call(`/public/contests/${id}/join`, { method: 'POST', session });
+const leave = (s, id, session) => s.call(`/public/contests/${id}/leave`, { method: 'POST', session });
 const view = async (s, session, id) => (await s.call('/public/contests', { session })).body.contests.find((c) => c.id === id);
 
 test('event zaproszeń: zapis najpierw, potem liczą się prawdziwe zaproszenia od chwili zapisu; po warunku „dostał(a) się” i ogłoszenie', async () => {
@@ -185,8 +186,68 @@ test('logowanie przez Discord: kod z PKCE → sesja; adres strony musi być na l
 
   // Panel pokazuje, czy logowanie jest gotowe.
   assert.deepEqual((await handlePanel(s.bot, { method: 'GET', path: '/contests' })).body.oauth.registered, true);
+  // Adres dopisany w Developer Portal: panel wykrywa go od razu, strona — najwyżej po minucie (bez czekania na cron).
+  s.discord.state.redirectUris = ['https://example.com/'];
+  assert.equal((await ensureSetup(s.bot, { force: true })).oauthRedirect, false);
+  assert.equal((await s.call('/public/contests')).body.oauth, null);
+  s.discord.state.redirectUris = [OAUTH_REDIRECT];
+  assert.equal((await s.call('/public/contests')).body.oauth, null, 'strona pyta Discorda najwyżej raz na minutę');
+  assert.equal((await handlePanel(s.bot, { method: 'GET', path: '/contests' })).body.oauth.registered, true, 'panel sprawdza od razu');
+  assert.deepEqual((await s.call('/public/contests')).body.oauth, { clientId: 'app', redirectUri: OAUTH_REDIRECT });
+  s.discord.state.redirectUris = ['https://example.com/'];
+  await ensureSetup(s.bot, { force: true });
+  assert.equal((await s.call('/public/contests')).body.oauth, null);
+  s.discord.state.redirectUris = [OAUTH_REDIRECT];
+  await s.store.setState('setup', { ...(await s.store.getState('setup')), oauthCheckedAt: Date.now() - 61_000 });
+  assert.deepEqual((await s.call('/public/contests')).body.oauth, { clientId: 'app', redirectUri: OAUTH_REDIRECT }, 'po minucie strona sama wykrywa adres');
+
   delete s.discord.state.redirectUris;
   assert.equal((await ensureSetup(s.bot, { force: true })).oauthRedirect, null, 'Discord nie podał listy — nie wiadomo');
+});
+
+test('wypisanie się: postęp przepada, ponowny zapis liczy od nowa; po końcu eventu i po wylosowaniu — nie', async () => {
+  const now = Date.now();
+  const s = await setup([
+    { id: 'wyp00001', name: 'Wypisz', startsAt: iso(now - DAY), endsAt: iso(now + DAY), invites: 2, messages: 1, drawWinners: 1 },
+    { id: 'wyp00002', name: 'Koniec', startsAt: iso(now - 3 * DAY), endsAt: iso(now - 60_000), invites: 1 },
+  ]);
+  const link = await connect(s);
+  assert.equal((await join(s, 'wyp00001', link.session)).status, 200);
+  await new Promise((r) => setTimeout(r, 5));
+  await s.store.addInviteJoin({ userId: account(100), inviterId: 'target', code: 'abc' });
+  await s.db.query(`insert into bot.contest_scores (contest_id, user_id, messages) values ('wyp00001', 'target', 1)`);
+  let c = await view(s, link.session, 'wyp00001');
+  assert.deepEqual([c.me.joined, c.me.canLeave, c.me.invites, c.me.messages, c.participants], [true, true, 1, 1, 1]);
+
+  const out = await leave(s, 'wyp00001', link.session);
+  assert.deepEqual([out.status, out.body], [200, { left: true, already: false }]);
+  c = await view(s, link.session, 'wyp00001');
+  assert.deepEqual([c.me.joined, c.me.canJoin, c.me.canLeave, c.participants], [false, true, false, 0]);
+  assert.equal((await s.db.query(`select count(*)::int as n from bot.contest_scores where contest_id = 'wyp00001'`)).rows[0].n, 0, 'policzone wiadomości też znikają');
+  assert.deepEqual((await leave(s, 'wyp00001', link.session)).body, { left: false, already: true });
+
+  // Ponowny zapis: liczy się od nowa (zaproszenie sprzed ponownego zapisu już nie).
+  await new Promise((r) => setTimeout(r, 5));
+  await join(s, 'wyp00001', link.session);
+  c = await view(s, link.session, 'wyp00001');
+  assert.deepEqual([c.me.joined, c.me.invites, c.me.messages], [true, 0, 0]);
+
+  // Wylosowany(-a): bez wypisywania (rezygnacja z nagrody — przez administrację).
+  await s.store.setContestWinners('wyp00001', ['target']);
+  c = await view(s, link.session, 'wyp00001');
+  assert.deepEqual([c.me.won, c.me.canLeave], [true, false]);
+  const won = await leave(s, 'wyp00001', link.session);
+  assert.equal(won.status, 400);
+  assert.match(won.body.error, /Wylosowano Cię/);
+
+  // Po końcu eventu wyniki są ostateczne; bez sesji — 401; nieznany event — 400.
+  await s.store.addContestEntry({ contestId: 'wyp00002', userId: 'target', userTag: 'target' });
+  assert.equal((await view(s, link.session, 'wyp00002')).me.canLeave, false);
+  const ended = await leave(s, 'wyp00002', link.session);
+  assert.equal(ended.status, 400);
+  assert.match(ended.body.error, /już się skończył/);
+  assert.equal((await leave(s, 'wyp00001')).status, 401);
+  assert.equal((await leave(s, 'nieznany1', link.session)).status, 400);
 });
 
 test('event przed startem: zapis od razu, liczenie od startu; po końcu i spoza serwera — bez zapisu', async () => {

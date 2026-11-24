@@ -17,7 +17,7 @@ import { levelProgress, monthKey, publicArchive, publicLook, publicProfile, rank
 import { AccessError, PANEL_SITE, PASSWORD_AUTH, authenticateSession, signIn } from './access.js';
 import { RateLimitError, clientIp, clientKey, guardLogin, loginFailed, loginOk } from './loginGuard.js';
 import { verifyDiscordRequest, ed25519Supported, safeEqual } from './verify.js';
-import { ContestError, MemberAuthError, endMemberSession, exchangeMemberLink, exchangeOAuthCode, joinContest, publicContests } from './contests.js';
+import { ContestError, MemberAuthError, endMemberSession, exchangeMemberLink, exchangeOAuthCode, joinContest, leaveContest, publicContests } from './contests.js';
 
 // Supabase nie serwuje stron HTML z funkcji Edge (text/html zamienia na text/plain), więc sama strona
 // panelu stoi na GitHub Pages (PANEL_SITE w access.js), a tutaj zostaje jej API. Zapytania panelu bot
@@ -271,8 +271,11 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
       // „Zaloguj przez Discord”: kod z przekierowania + code_verifier (PKCE) → sesja.
       if (request.method === 'POST' && route === '/public/oauth') return json(await exchangeOAuthCode(bot, { code: body?.code, verifier: body?.verifier }), 200, cors);
       if (request.method === 'POST' && route === '/public/unlink') return json({ ok: true, removed: await endMemberSession(bot, member) }, 200, cors);
-      const join = /^\/public\/contests\/([a-z0-9]{6,24})\/join$/i.exec(route);
-      if (request.method === 'POST' && join) return json(await joinContest(bot, { token: member, contestId: join[1] }), 200, cors);
+      const join = /^\/public\/contests\/([a-z0-9]{6,24})\/(join|leave)$/i.exec(route);
+      if (request.method === 'POST' && join) {
+        const run = join[2].toLowerCase() === 'join' ? joinContest : leaveContest;
+        return json(await run(bot, { token: member, contestId: join[1] }), 200, cors);
+      }
       // Jedyne zapytanie panelu bez hasła panelu i sesji: login i hasło z /login → sesja przeglądarki.
       if (request.method === 'POST' && route === '/login') {
         const key = await clientKey(request);

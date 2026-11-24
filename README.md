@@ -159,7 +159,8 @@ każdy ma swoją podzakładkę. Każdy event ma **warunek**: zaprosić X osób i
 Jak to działa dla osoby: **„Zaloguj przez Discord”** na stronie (albo `/polacz` na serwerze — link, który loguje),
 potem **„Zapisz się”**. Od chwili zapisu (najwcześniej od startu) liczą się jej zaproszenia i wiadomości — **paski
 postępu** pokazują, ile brakuje. Po spełnieniu warunku strona pokazuje **„Dostałeś się!”**, a bot ogłasza to na
-kanale wybranym w panelu (z pingiem roli).
+kanale wybranym w panelu (z pingiem roli). Póki event trwa, można się **wypisać** (przycisk „Wypisz się” — postęp
+przepada, a ponowny zapis liczy od nowa); po końcu eventu i po wylosowaniu już nie.
 - **Zaproszenia** liczą się tylko za osoby, które weszły z zaproszenia, nadal są na serwerze, nie były na nim
   wcześniej i mają konto starsze niż wybrana liczba dni (bot sprawdza zaproszenia sam, także bez logu wejść).
 - **Wiadomości** liczą się tak jak XP za wiadomości w poziomach (cooldown, kanały bez XP, ochrona przed nabijaniem).
@@ -176,8 +177,9 @@ kanale wybranym w panelu (z pingiem roli).
 
 **Logowanie przez Discord** (OAuth2 z PKCE — bez sekretu aplikacji) wymaga jednorazowego dodania adresu strony
 rankingu w [Discord Developer Portal](https://discord.com/developers/applications) → aplikacja bota → **OAuth2 →
-Redirects** (`https://e7que.github.io/Entuzjasci-Hopkostki/ranking.html`). Discord nie pozwala zrobić tego przez API;
-bot sprawdza listę co 10 minut, a panel pokazuje, czy logowanie już działa. Do tego czasu działa `/polacz`.
+Redirects** (`https://e7que.github.io/Entuzjasci-Hopkostki/ranking.html`). Discord nie pozwala zrobić tego przez API.
+Po dopisaniu adresu wystarczy kliknąć **„Sprawdź teraz”** w panelu (Eventy) — logowanie włącza się od razu, a sama
+strona wykrywa je najpóźniej po minucie. Do tego czasu działa `/polacz`.
 
 ### Tickety
 
