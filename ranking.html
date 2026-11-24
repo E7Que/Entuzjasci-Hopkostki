@@ -1061,6 +1061,9 @@
     .ct-who b { font-weight: 600; }
     .ct-unlink { margin-left: auto; padding: 4px 8px; border: 0; border-radius: 6px; background: none; color: var(--faint); font-size: 0.8rem; cursor: pointer; }
     .ct-unlink:hover { color: var(--text); background: rgba(255, 255, 255, 0.06); }
+    .ct-leave { margin-left: auto; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: none; color: var(--faint); font: inherit; font-size: 0.8rem; cursor: pointer; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+    .ct-leave:hover, .ct-leave:focus-visible { color: #fca5a5; border-color: rgba(248, 113, 113, 0.45); background: rgba(248, 113, 113, 0.08); }
+    .ct-leave:disabled { opacity: 0.6; cursor: progress; }
     .ct-progress { display: grid; gap: 8px; }
     .ct-progress-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 0.86rem; }
     .ct-progress-top b { color: var(--text); font-size: 1.02rem; font-weight: 600; }
@@ -14980,7 +14983,7 @@
         facts.push(`<li class="draw">🎲 <span>Losowanie: <b>${who}</b> wśród tych, którzy się dostaną${c.draw.mode === 'auto' ? ' — po końcu eventu' : ''}</span></li>`);
       }
       facts.push(`<li>👥 <span><b>${fmt(c.participants)}</b> ${ctPlural(c.participants, ['zapisany', 'zapisanych', 'zapisanych'])}${c.qualified ? ` · <b>${fmt(c.qualified)}</b> ${ctPlural(c.qualified, ['dostał(a) się', 'dostało się', 'dostało się'])}` : ''}</span></li>`);
-      const rules = ['Najpierw się zapisz — liczy się to, co zrobisz od chwili zapisu (najwcześniej od startu eventu).'];
+      const rules = ['Najpierw się zapisz — liczy się to, co zrobisz od chwili zapisu (najwcześniej od startu eventu). Wypisać się możesz, póki event trwa (postęp wtedy przepada).'];
       if (c.invites > 0) {
         const age = c.minAccountDays ? `, mają konto co najmniej ${c.minAccountDays}-dniowe` : '';
         rules.push(`Liczą się osoby, które wejdą z Twojego zaproszenia, zostaną na serwerze${age} i nie były tu wcześniej.`);
@@ -15033,7 +15036,8 @@
         if (c.messages > m.messages) left.push(ctUnit('messages', c.messages - m.messages, true));
         status = `<span class="ct-ok">✓ Zapisano</span><span class="ct-hint">Brakuje jeszcze ${esc(left.join(' i '))}.</span>`;
       }
-      return `<section class="ct-me${m.won ? ' won gold' : m.reached ? ' won' : ''}">${head}${bars.join('')}<div class="ct-actions">${status}</div></section>`;
+      const leave = m.canLeave ? `<button type="button" class="ct-leave" data-ct-leave="${esc(c.id)}"${ct.busy ? ' disabled' : ''} title="Wypisz się z tego eventu — postęp przepadnie">Wypisz się</button>` : '';
+      return `<section class="ct-me${m.won ? ' won gold' : m.reached ? ' won' : ''}">${head}${bars.join('')}<div class="ct-actions">${status}${leave}</div></section>`;
     }
 
     function ctBoard(c) {
@@ -15270,6 +15274,31 @@
       if (state.period === 'eventy') renderContests();
     }
 
+    async function ctLeave(id) {
+      if (ct.busy || !ct.session) return;
+      const c = ct.data?.contests?.find((x) => x.id === id);
+      const lost = c?.me?.reached ? 'Masz już spełniony warunek — po wypisaniu stracisz miejsce' : 'Twój postęp przepadnie';
+      const what = [c?.invites > 0 ? 'zaproszenia' : '', c?.messages > 0 ? 'wiadomości' : ''].filter(Boolean).join(' i ') || 'postęp';
+      if (!confirm(`Wypisać się z eventu „${c?.name ?? 'event'}”?\n\n${lost}, a po ponownym zapisie ${what} liczą się od nowa.`)) return;
+      ct.busy = true;
+      renderContests();
+      try {
+        const res = await fetch(`${BASE}/contests/${encodeURIComponent(id)}/leave`, { method: 'POST', headers: { 'x-member-session': ct.session } });
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          ctForget();
+          ctMessage('err', data.error ?? 'Sesja wygasła — zaloguj się jeszcze raz.');
+        } else if (!res.ok) ctMessage('err', data.error ?? 'Nie udało się — spróbuj za chwilę.');
+        else ctMessage('ok', 'Wypisano Cię z eventu. Możesz zapisać się ponownie, póki event trwa.');
+      } catch {
+        ctMessage('err', 'Nie udało się połączyć z botem — spróbuj za chwilę.');
+      }
+      ct.busy = false;
+      ct.shown = '';
+      await loadContests();
+      if (state.period === 'eventy') renderContests();
+    }
+
     async function ctUnlink() {
       const token = ct.session;
       ctForget();
@@ -15291,6 +15320,8 @@
       }
       const join = event.target.closest('[data-ct-join]');
       if (join) return ctJoin(join.dataset.ctJoin);
+      const leave = event.target.closest('[data-ct-leave]');
+      if (leave) return ctLeave(leave.dataset.ctLeave);
       if (event.target.closest('[data-ct-login]')) return ctLogin();
       if (event.target.closest('[data-ct-unlink]')) return ctUnlink();
     }

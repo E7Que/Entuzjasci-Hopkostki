@@ -2219,7 +2219,7 @@ async function loadContestOauth() {
     return;
   }
   const o = data.oauth;
-  const steps = `Wejdź na <a href="https://discord.com/developers/applications" target="_blank" rel="noopener">Discord Developer Portal</a> → aplikacja bota → <strong>OAuth2</strong> → <strong>Redirects</strong> → <strong>Add Redirect</strong>, wklej <code class="copyable" title="Kliknij, żeby skopiować">${esc(o.redirectUri)}</code> i kliknij <strong>Save Changes</strong>. Bot sprawdza to co 10 minut.`;
+  const steps = `Wejdź na <a href="https://discord.com/developers/applications" target="_blank" rel="noopener">Discord Developer Portal</a> → aplikacja bota → <strong>OAuth2</strong> → <strong>Redirects</strong> → <strong>Add Redirect</strong>, wklej <code class="copyable" title="Kliknij, żeby skopiować">${esc(o.redirectUri)}</code> i kliknij <strong>Save Changes</strong>. Potem kliknij <button type="button" class="btn small" data-oauth-recheck>Sprawdź teraz</button> — logowanie włączy się od razu (sama strona też to wykryje w ciągu minuty).`;
   box.innerHTML = o.registered === true
     ? `<p class="ct-oauth-ok">✓ <strong>Logowanie przez Discord działa</strong> — na stronie jest przycisk „Zaloguj przez Discord”.</p>`
     : `<div class="banner warn"><strong>Logowanie przez Discord nie jest jeszcze włączone.</strong> Discord nie pozwala botowi dopisać adresu strony samemu — zrób to raz: ${steps}${o.registered === null ? ' (Bot nie mógł sprawdzić listy — jeśli adres już jest, wszystko działa.)' : ''} Do tego czasu osoby łączą konto komendą <code>/polacz</code>.</div>`;
@@ -2341,6 +2341,15 @@ $('#ct-cancel').addEventListener('click', () => {
   renderContests();
 });
 $('#ct-oauth').addEventListener('click', async (event) => {
+  const recheck = event.target.closest('[data-oauth-recheck]');
+  if (recheck) {
+    recheck.disabled = true;
+    recheck.textContent = 'Sprawdzam…';
+    await loadContestOauth();
+    if ($('#ct-oauth .ct-oauth-ok')) toast('Logowanie przez Discord działa!');
+    else toast('Adresu jeszcze nie ma na liście Redirects — sprawdź, czy kliknąłeś Save Changes.', 'error');
+    return;
+  }
   const code = event.target.closest('code.copyable');
   if (!code) return;
   try {
