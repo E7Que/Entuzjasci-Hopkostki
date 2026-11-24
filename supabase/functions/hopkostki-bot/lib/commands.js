@@ -21,6 +21,7 @@ import {
 import { VIEWS, renderView } from './views.js';
 import { COMMUNITY_COMMANDS } from './communityCommands.js';
 import { LEVEL_COMMANDS } from './levelCommands.js';
+import { CONTEST_COMMANDS } from './contests.js';
 import { PANEL_SECTIONS, PANEL_SITE, issueLogin } from './access.js';
 
 // ---------- Budowanie opcji ----------
@@ -966,6 +967,7 @@ const pomoc = {
                 '`/przypomnij` · `/afk` · `/propozycja` · `/losuj`',
                 '`/bumpy` — ranking bumpów · `/zaproszenia` — kto kogo zaprosił · `/pomoc`',
                 '`/rank` — karta poziomu · `/ranking` — ranking poziomów (łącznie, tydzień, miesiąc)',
+                '`/polacz` — połącz konto ze stroną eventów (zaproszenia, wiadomości)',
               ].join('\n'),
             },
           ],
@@ -999,6 +1001,7 @@ export const COMMANDS = [
   lockCommand('unlock', '🔓 Odblokuj pisanie na kanale', false),
   ...COMMUNITY_COMMANDS,
   ...LEVEL_COMMANDS,
+  ...CONTEST_COMMANDS,
   login,
   pomoc,
 ];

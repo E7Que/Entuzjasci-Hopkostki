@@ -150,6 +150,22 @@ Zakładka **Poziomy** ma wszystkie funkcje Arcane, także premium:
 
 Komendy dla wszystkich: `/rank` (karta poziomu) i `/ranking` (łącznie, w tym tygodniu albo miesiącu).
 
+### Eventy (konkursy na stronie rankingu)
+
+Zakładka **Eventy** w panelu tworzy konkursy, które widać na stronie rankingu w zakładce **Eventy** — pojawia się
+ona tylko wtedy, gdy jakiś event jest zaplanowany, trwa albo skończył się w ostatnich 3 dniach (wyniki), a przy
+kilku eventach każdy ma swoją podzakładkę. Rodzaje:
+- **Zaproszenia** — liczą się osoby, które weszły z zaproszenia w czasie eventu, nadal są na serwerze, nie były na
+  nim wcześniej i mają konto starsze niż wybrana liczba dni (bot sprawdza zaproszenia sam, także bez logu wejść).
+- **Wiadomości** — liczone tak jak XP za wiadomości w poziomach (cooldown, kanały bez XP, ochrona przed nabijaniem).
+- **Mieszany** — punkty: zaproszenie × X + wiadomość × Y.
+
+Udział wymaga **połączenia konta**: `/polacz` na serwerze daje jednorazowy link (ważny 15 minut), który otwiera
+stronę już połączoną z kontem tej osoby. Event **bez progu**: przycisk „Dołącz do eventu” i ranking uczestników
+(z nagradzanymi miejscami). Event **z progiem** (np. 5 zaproszeń): **pasek postępu**, a po jego zapełnieniu
+„Zgłoś się” — zgłoszenie trafia na wybrany kanał (z pingiem roli). Panel pokazuje uczestników z aktualnymi
+wynikami, najlepszych spoza listy i pozwala usunąć kogoś z eventu.
+
 ### Tickety
 
 W zakładce **Tickety** włączasz tickety, wybierasz kategorię, kanał logów i role obsługi, a potem wysyłasz
@@ -291,6 +307,7 @@ wpisujesz w przeglądarce.
 | `/profil` · `/rolainfo` · `/czlonkowie` | Profil użytkownika / informacje o roli / liczba członków i online. |
 | `/losuj kostka/moneta/liczba/wybor` · `/bumpy ranking/status` | Losowanie / ranking bumpów i kiedy następny. |
 | `/zaproszenia [uzytkownik]` | Ranking zaproszeń albo kogo zaprosiła dana osoba. |
+| `/polacz` | Link, który łączy Twoje konto ze stroną rankingu (zakładka „Eventy”: postęp, dołączanie, zgłoszenia). Widoczny tylko dla Ciebie, działa raz. |
 | `/login [nowy]` | Login i hasło do panelu bota (tylko na kanale do logowania, widoczne tylko dla Ciebie); `nowy:True` wymusza nowe hasło. |
 | `/pomoc` | Lista komend. |
 

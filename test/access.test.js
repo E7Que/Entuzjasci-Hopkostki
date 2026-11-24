@@ -214,7 +214,7 @@ test('pełny dostęp: właściciel i hasło panelu (nie samo uprawnienie Adminis
   const list = await (await s.call('/access/logins', { session: owner.token })).json();
   assert.deepEqual(
     list.logins.map((x) => [x.login, x.full, x.sections.length, x.sessions]).sort(),
-    [['dfgbh65', false, 1, 2], ['hurownik_og', false, 1, 1], ['wlasciciel', true, 16, 1]],
+    [['dfgbh65', false, 1, 2], ['hurownik_og', false, 1, 1], ['wlasciciel', true, 17, 1]],
   );
   assert.ok(list.logins.every((x) => !('tokenHash' in x) && !('token_hash' in x)));
 

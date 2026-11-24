@@ -193,7 +193,8 @@ export function newAccountPing(alert) {
   return { content: who, allowed_mentions: { parse: ['everyone'] } };
 }
 
-export async function logMemberJoin(bot, member, memberCount) {
+// invite: wynik detectInvite policzony już przy wejściu (np. dla eventu zaproszeń); undefined = sprawdzamy tutaj.
+export async function logMemberJoin(bot, member, memberCount, invite = undefined) {
   const config = await bot.store.getConfig();
   if (!logChannelFor(config.logs, 'memberJoin')) return;
   const user = member.user;
@@ -202,7 +203,8 @@ export async function logMemberJoin(bot, member, memberCount) {
   const young = Date.now() - created < alert.days * 24 * 60 * 60_000;
   const limit = alert.days === 1 ? '1 dzień' : `${alert.days} dni`;
   // Kto zaprosił — liczone przed wysłaniem logu, żeby było w tej samej wiadomości.
-  const invite = config.logs.events.memberInvite ? `\n${inviteLine(await detectInvite(bot, member).catch(() => null))}` : '';
+  const used = config.logs.events.memberInvite ? (invite !== undefined ? invite : await detectInvite(bot, member).catch(() => null)) : undefined;
+  const inviteText = config.logs.events.memberInvite ? `\n${inviteLine(used)}` : '';
   await send(bot, config, 'memberJoin', {
     ...(young && alert.ping && !user.bot ? newAccountPing(alert) : {}),
     embeds: [
@@ -210,7 +212,7 @@ export async function logMemberJoin(bot, member, memberCount) {
         color: young ? COLOR.yellow : COLOR.green,
         author: authorOf(user, ' dołączył(a)'),
         thumbnail: { url: avatarUrl(user, 128) },
-        description: `<@${user.id}> ${escapeMarkdown(userTag(user))}${user.bot ? ' (bot)' : ''}\n**Konto założone:** ${discordTimestamp(created, 'f')} (${discordTimestamp(created, 'R')})${young ? `\n**Uwaga:** nowe konto — ma mniej niż ${limit}.` : ''}${invite}`,
+        description: `<@${user.id}> ${escapeMarkdown(userTag(user))}${user.bot ? ' (bot)' : ''}\n**Konto założone:** ${discordTimestamp(created, 'f')} (${discordTimestamp(created, 'R')})${young ? `\n**Uwaga:** nowe konto — ma mniej niż ${limit}.` : ''}${inviteText}`,
         footer: { text: `ID: ${user.id}${memberCount ? ` • Członków: ${memberCount}` : ''}` },
         timestamp: now(),
       },

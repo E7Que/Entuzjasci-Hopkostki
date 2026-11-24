@@ -5,6 +5,7 @@
 
 import { resolveGuildId } from './moderation.js';
 import { plural } from './duration.js';
+import { inviteContestStart } from './contests.js';
 
 const SNAPSHOT = 'invites_snapshot';
 
@@ -73,8 +74,15 @@ async function detect(bot, member) {
 }
 
 // Cron: pierwszy stan zaproszeń (potem aktualizuje go każde wejście), żeby już pierwsze wejście miało porównanie.
+// Event zaproszeń (contests.js) włącza śledzenie także bez logu wejść — wtedy stan sprzed startu eventu mógł się
+// zestarzeć (wejścia nie były sprawdzane), więc na start eventu pobieramy go od nowa.
 export async function ensureInviteSnapshot(bot, config) {
-  if (!inviteTrackingOn(config) || (await bot.store.getState(SNAPSHOT))?.invites) return 0;
+  const logs = inviteTrackingOn(config);
+  const contestStart = inviteContestStart(config);
+  if (!logs && contestStart === null) return 0;
+  const snapshot = await bot.store.getState(SNAPSHOT);
+  const stale = !logs && contestStart !== null && (snapshot?.at ?? 0) < contestStart;
+  if (snapshot?.invites && !stale) return 0;
   await bot.store.setState(SNAPSHOT, await fetchInvites(bot, await resolveGuildId(bot)));
   return 1;
 }

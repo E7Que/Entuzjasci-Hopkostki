@@ -96,6 +96,49 @@ function cleanXpEvents(input, current) {
   return out.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)).slice(-50);
 }
 
+// Eventy (konkursy) na stronie rankingu: invites — zaproszenia, messages — wiadomości, mixed — punkty za jedno i drugie.
+export const CONTEST_TYPES = ['invites', 'messages', 'mixed'];
+const CONTEST_MAX_MS = 92 * 24 * 60 * 60_000;
+const oneLine = (value, max) => String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
+const between = (value, min, max, fallback) => {
+  const n = Math.floor(Number(value));
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+};
+
+// Eventy z panelu: poprawne daty (koniec po początku, najwyżej 92 dni), znany typ; goal — próg (0 = bez progu:
+// zwykły ranking, inaczej pasek postępu i zgłoszenie po jego osiągnięciu); points — punkty w evencie mieszanym
+// (co najmniej jedno niezerowe); winners — ile pierwszych miejsc jest nagradzanych (0–25); minAccountDays —
+// zaproszone konta młodsze niż tyle dni się nie liczą. Najwyżej 30, posortowane po początku.
+function cleanContests(input, current) {
+  if (!Array.isArray(input)) return current;
+  const seen = new Set();
+  const out = [];
+  for (const c of input.slice(0, 40)) {
+    const id = String(c?.id ?? '');
+    const start = Date.parse(c?.startsAt);
+    const end = Date.parse(c?.endsAt);
+    if (!/^[a-z0-9]{6,24}$/i.test(id) || seen.has(id) || !CONTEST_TYPES.includes(c?.type)) continue;
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || end - start > CONTEST_MAX_MS) continue;
+    seen.add(id);
+    let points = { invite: between(c?.points?.invite, 0, 10_000, 10), message: between(c?.points?.message, 0, 10_000, 1) };
+    if (!points.invite && !points.message) points = { invite: 10, message: 1 };
+    out.push({
+      id,
+      name: oneLine(c?.name, 80) || 'Event',
+      description: String(c?.description ?? '').replace(/\r/g, '').trim().slice(0, 1500),
+      prize: oneLine(c?.prize, 200),
+      type: c.type,
+      startsAt: new Date(start).toISOString(),
+      endsAt: new Date(end).toISOString(),
+      goal: between(c?.goal, 0, 1_000_000, 0),
+      points,
+      winners: between(c?.winners, 0, 25, 3),
+      minAccountDays: between(c?.minAccountDays, 0, 365, 7),
+    });
+  }
+  return out.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)).slice(-30);
+}
+
 function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
@@ -318,6 +361,7 @@ function cleanValue(path, input, current, def) {
     return Number.isFinite(n) ? Math.min(1440, Math.max(30, n)) : current;
   }
   if (path === 'tickets.types') return cleanTicketTypes(input, current);
+  if (path === 'contests.list') return cleanContests(input, current);
   if (path.startsWith('panelAccess.roles.')) return Array.isArray(input) ? cleanRoleIds(input) : current;
   if (path.startsWith('levels.')) {
     const cleaned = cleanLevelValue(path, input, current);

@@ -13,6 +13,7 @@ import { autoRoleSweep, ensureIntentFlags } from './members.js';
 import { bumpReminderTick, bumpScan } from './bump.js';
 import { seedMemberProfiles } from './logs.js';
 import { ensureInviteSnapshot } from './invites.js';
+import { contestsCleanupTick } from './contests.js';
 import { sendDueReminders, finishDueGiveaways } from './community.js';
 import { pruneBannerAssets } from './serverInfo.js';
 import { voiceXpTick, highlightsTick, firstPlaceTick, levelProfilesTick, levelAccentTick, xpEventsTick, winnersArchiveTick } from './levels.js';
@@ -166,6 +167,7 @@ export async function runCron(bot, { force = false } = {}) {
       await bot.store.prunePanelSessions();
       await bot.store.pruneLevelDaily(400);
       await bot.store.pruneLoginAttempts();
+      await contestsCleanupTick(bot);
       await pruneBannerAssets(bot);
     });
     report.health = await step('health', () => healthTick(bot, report));

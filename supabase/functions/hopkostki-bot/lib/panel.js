@@ -18,6 +18,7 @@ import { activeXpEvent, changeXp, dayKey, importLevels, levelProgress, levelUpMe
 import { alertChannel, sendAlertTest } from './health.js';
 import { commandIdMap, fillServerInfoSections, saveBannerAsset, sendServerInfo, serverInfoContext, suggestServerInfoRoles } from './serverInfo.js';
 import { sanitizeConfig } from './configSchema.js';
+import { contestDetails } from './contests.js';
 import { discordCommandPermissions } from './discordCommandPerms.js';
 
 // Wersja kodu: funkcja na Supabase importuje bota z GitHuba pod adresem z pełnym SHA commita.
@@ -68,6 +69,7 @@ const ROUTE_SECTIONS = [
   [/^\/warns(\/|$)/, 'ostrzezenia'],
   [/^\/tempbans(\/|$)/, 'bany'],
   [/^\/levels(\/|$)/, 'poziomy'],
+  [/^\/contests(\/|$)/, 'eventy'],
 ];
 function requiredSection(path) {
   const match = ROUTE_SECTIONS.find(([pattern]) => pattern.test(path));
@@ -515,6 +517,18 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
   const loginMatch = /^\/access\/logins\/(\d+)$/.exec(path);
   if (method === 'DELETE' && loginMatch) {
     if (!(await store.deletePanelLogins({ id: Number(loginMatch[1]), kind: 'login' }))) return fail(404, 'Nie ma takiego loginu');
+    return ok({ ok: true });
+  }
+
+  // Eventy: uczestnicy z aktualnymi wynikami (i najlepsi spoza listy), usuwanie uczestnika (np. za oszustwo).
+  const contestMatch = /^\/contests\/([a-z0-9]{6,24})$/i.exec(path);
+  if (method === 'GET' && contestMatch) {
+    const details = await contestDetails(bot, contestMatch[1]);
+    return details ? ok({ ...details, now: Date.now() }) : fail(404, 'Nie ma takiego eventu — może nie został jeszcze zapisany.');
+  }
+  const entryMatch = /^\/contests\/([a-z0-9]{6,24})\/entries\/(\w+)$/i.exec(path);
+  if (method === 'DELETE' && entryMatch) {
+    if (!(await store.removeContestEntry(entryMatch[1], entryMatch[2]))) return fail(404, 'Tej osoby nie ma już na liście.');
     return ok({ ok: true });
   }
 

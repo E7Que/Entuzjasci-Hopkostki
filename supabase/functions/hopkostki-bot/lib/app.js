@@ -17,6 +17,7 @@ import { levelProgress, monthKey, publicArchive, publicLook, publicProfile, rank
 import { AccessError, PANEL_SITE, PASSWORD_AUTH, authenticateSession, signIn } from './access.js';
 import { RateLimitError, clientIp, clientKey, guardLogin, loginFailed, loginOk } from './loginGuard.js';
 import { verifyDiscordRequest, ed25519Supported, safeEqual } from './verify.js';
+import { ContestError, MemberAuthError, endMemberSession, exchangeMemberLink, joinContest, publicContests } from './contests.js';
 
 // Supabase nie serwuje stron HTML z funkcji Edge (text/html zamienia na text/plain), więc sama strona
 // panelu stoi na GitHub Pages (PANEL_SITE w access.js), a tutaj zostaje jej API. Zapytania panelu bot
@@ -33,7 +34,7 @@ function corsHeaders(request) {
   return {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'content-type, x-panel-password, x-panel-session',
+    'Access-Control-Allow-Headers': 'content-type, x-panel-password, x-panel-session, x-member-session',
     'Access-Control-Max-Age': '86400',
     Vary: 'Origin',
   };
@@ -262,6 +263,14 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
         const profile = bot.discord ? await publicProfile(bot, url.searchParams.get('id')) : null;
         return profile ? json(profile, 200, cors) : json({ error: 'Nie ma takiej osoby w rankingu.' }, 404, cors);
       }
+      // Eventy na stronie rankingu (contests.js): lista z wynikiem połączonej osoby, połączenie konta linkiem z /polacz,
+      // rozłączenie i dołączenie/zgłoszenie. Sesja osoby w nagłówku x-member-session.
+      const member = request.headers.get('x-member-session');
+      if (request.method === 'GET' && route === '/public/contests') return json(await publicContests(bot, { token: member }), 200, cors);
+      if (request.method === 'POST' && route === '/public/link') return json(await exchangeMemberLink(bot, body?.token), 200, cors);
+      if (request.method === 'POST' && route === '/public/unlink') return json({ ok: true, removed: await endMemberSession(bot, member) }, 200, cors);
+      const join = /^\/public\/contests\/([a-z0-9]{6,24})\/join$/i.exec(route);
+      if (request.method === 'POST' && join) return json(await joinContest(bot, { token: member, contestId: join[1] }), 200, cors);
       // Jedyne zapytanie panelu bez hasła panelu i sesji: login i hasło z /login → sesja przeglądarki.
       if (request.method === 'POST' && route === '/login') {
         const key = await clientKey(request);
@@ -279,7 +288,8 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
       const result = await handlePanel(bot, { method: request.method, path: route, query: Object.fromEntries(url.searchParams), body, auth });
       return json(result.body, result.status, cors);
     } catch (error) {
-      if (error instanceof AccessError) return json({ error: error.message }, 401, cors);
+      if (error instanceof AccessError || error instanceof MemberAuthError) return json({ error: error.message }, 401, cors);
+      if (error instanceof ContestError) return json({ error: error.message }, 400, cors);
       if (error instanceof RateLimitError) return json({ error: error.message }, 429, { ...cors, 'Retry-After': String(error.retryAfter) });
       throw error;
     }

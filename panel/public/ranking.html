@@ -950,6 +950,161 @@
     .board.ev-mode .num .plus { color: var(--evc2); }
     .board.ev-mode .row.sel { box-shadow: inset 3px 0 0 var(--evc); }
 
+    /* ---------- Eventy (konkursy): zakładka tylko wtedy, gdy jakiś event jest zaplanowany, trwa albo ma świeże wyniki ---------- */
+    .tab[data-period="eventy"] { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+    .tab[data-period="eventy"]::before { content: ''; flex: none; width: 7px; height: 7px; border-radius: 50%; background: #f5b83d; box-shadow: 0 0 8px #f5b83d; }
+    .tab[data-period="eventy"].live::before { background: #4ade80; box-shadow: 0 0 8px #4ade80; animation: ev-blink 1.4s ease-in-out infinite; }
+    .tab .ct-n { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--border); color: var(--text); font-size: 0.7rem; font-weight: 600; line-height: 18px; }
+    .toolbar.ct-mode .search, .toolbar.ct-mode .sort, .toolbar.ct-mode .views, .toolbar.ct-mode .me-btn { display: none; }
+    .board.ct-mode > :not(.contests) { display: none !important; }
+    .contests { display: grid; gap: 14px; }
+
+    .ct-tabs { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 4px; scrollbar-width: none; }
+    .ct-tabs::-webkit-scrollbar { display: none; }
+    .ct-tab {
+      --c: #3cc3d6;
+      display: inline-flex; align-items: center; gap: 9px; flex: none; padding: 9px 14px; border: 1px solid var(--border); border-radius: 10px;
+      background: var(--surface); color: var(--muted); font-weight: 500; white-space: nowrap; cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .ct-tab[data-type="invites"] { --c: #8b7bff; }
+    .ct-tab[data-type="mixed"] { --c: #f5a524; }
+    .ct-tab:hover { color: var(--text); background: var(--hover); }
+    .ct-tab[aria-selected="true"] { color: var(--text); border-color: color-mix(in srgb, var(--c) 55%, var(--border)); background: color-mix(in srgb, var(--c) 11%, var(--surface)); box-shadow: inset 0 -2px 0 var(--c); }
+    .ct-tab i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
+    .ct-tab.live i { background: #4ade80; box-shadow: 0 0 8px #4ade80; animation: ev-blink 1.4s ease-in-out infinite; }
+    .ct-tab.upcoming i { background: #f5b83d; }
+    .ct-tab small { color: var(--faint); font-size: 0.74rem; font-weight: 400; }
+
+    .ct-flash { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 10px; font-size: 0.9rem; animation: ct-in 0.35s ease-out; }
+    .ct-flash.ok { background: rgba(34, 197, 94, 0.12); color: #a7f3c4; box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.32); }
+    .ct-flash.err { background: rgba(244, 63, 94, 0.1); color: #fecdd3; box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.32); }
+    @keyframes ct-in { from { opacity: 0; transform: translateY(-6px); } }
+
+    .ct-card {
+      --c: #3cc3d6; --c2: #a5ecf5;
+      position: relative; overflow: hidden; border: 1px solid var(--border); border-radius: 14px; background: var(--surface);
+      box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.95);
+    }
+    .ct-card[data-type="invites"] { --c: #8b7bff; --c2: #cfc7ff; }
+    .ct-card[data-type="mixed"] { --c: #f5a524; --c2: #ffd88f; }
+    .ct-hero {
+      position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 20px 22px;
+      background: radial-gradient(110% 150% at 0% 0%, color-mix(in srgb, var(--c) 24%, transparent), transparent 62%), linear-gradient(180deg, color-mix(in srgb, var(--c) 7%, var(--surface-2)), var(--surface));
+      border-bottom: 1px solid var(--border);
+    }
+    .ct-hero::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
+      background: linear-gradient(115deg, transparent 35%, color-mix(in srgb, var(--c2) 16%, transparent) 50%, transparent 65%); background-size: 250% 100%;
+      animation: ct-sheen 7s ease-in-out infinite;
+    }
+    @keyframes ct-sheen { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+    .ct-icon {
+      position: relative; z-index: 1; width: 56px; height: 56px; display: grid; place-items: center; border-radius: 15px; color: var(--c2);
+      background: color-mix(in srgb, var(--c) 20%, var(--surface-2));
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent), 0 10px 26px -12px var(--c);
+    }
+    .ct-icon svg { width: 28px; height: 28px; }
+    .ct-icon.sm { width: 44px; height: 44px; border-radius: 12px; }
+    .ct-icon.sm svg { width: 22px; height: 22px; }
+    .ct-title { position: relative; z-index: 1; min-width: 0; }
+    .ct-kicker { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; color: var(--c2); font-size: 0.74rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+    .ct-st { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); color: var(--text); letter-spacing: 0.03em; }
+    .ct-st i { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); }
+    .ct-st.live i { background: #4ade80; box-shadow: 0 0 6px #4ade80; animation: ev-blink 1.4s ease-in-out infinite; }
+    .ct-st.upcoming i { background: #f5b83d; }
+    .ct-title h2 { margin: 5px 0 0; font-size: 1.4rem; line-height: 1.2; overflow-wrap: anywhere; }
+    .ct-dates { margin-top: 3px; color: var(--muted); font-size: 0.84rem; }
+    .ct-clock { position: relative; z-index: 1; text-align: right; white-space: nowrap; }
+    .ct-clock small { display: block; color: var(--muted); font-size: 0.72rem; letter-spacing: 0.05em; text-transform: uppercase; }
+    .ct-clock b { font-size: 1.2rem; font-weight: 600; }
+
+    .ct-body { display: grid; gap: 16px; padding: 18px 22px 22px; }
+    .ct-desc { margin: 0; white-space: pre-line; overflow-wrap: anywhere; font-size: 0.93rem; }
+    .ct-facts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .ct-facts li { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 0.83rem; }
+    .ct-facts li b { color: var(--text); font-weight: 500; }
+    .ct-facts li.prize { border-color: color-mix(in srgb, var(--gold) 45%, var(--border)); background: color-mix(in srgb, var(--gold) 11%, var(--surface-2)); color: #f3d68b; }
+    .ct-facts li.prize b { color: #ffe7a8; }
+    .ct-rules { margin: -4px 0 0; padding: 0; list-style: none; display: grid; gap: 3px; color: var(--faint); font-size: 0.8rem; }
+    .ct-rules li::before { content: 'ⓘ '; }
+
+    .ct-me {
+      display: grid; gap: 14px; padding: 16px; border-radius: 12px;
+      border: 1px solid color-mix(in srgb, var(--c) 32%, var(--border));
+      background: linear-gradient(135deg, color-mix(in srgb, var(--c) 10%, var(--surface-2)), var(--surface-2) 70%);
+    }
+    .ct-connect { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
+    .ct-connect b { font-weight: 600; }
+    .ct-steps { margin: 6px 0 0; padding-left: 20px; display: grid; gap: 3px; color: var(--muted); font-size: 0.86rem; }
+    .ct-steps b { color: var(--text); font-weight: 500; }
+    .ct-me code, .ct-steps code { padding: 1px 6px; border-radius: 5px; background: rgba(255, 255, 255, 0.08); color: var(--text); font-size: 0.86em; }
+    .ct-who { display: flex; align-items: center; gap: 12px; }
+    .ct-who img { width: 40px; height: 40px; border-radius: 50%; background: var(--surface); object-fit: cover; }
+    .ct-who small { display: block; color: var(--muted); font-size: 0.74rem; }
+    .ct-who b { font-weight: 600; }
+    .ct-unlink { margin-left: auto; padding: 4px 8px; border: 0; border-radius: 6px; background: none; color: var(--faint); font-size: 0.8rem; cursor: pointer; }
+    .ct-unlink:hover { color: var(--text); background: rgba(255, 255, 255, 0.06); }
+    .ct-progress { display: grid; gap: 8px; }
+    .ct-progress-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 0.86rem; }
+    .ct-progress-top b { color: var(--text); font-size: 1.02rem; font-weight: 600; }
+    .ct-bar { position: relative; height: 14px; border-radius: 999px; overflow: hidden; background: color-mix(in srgb, var(--c) 13%, #090c0e); box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.55); }
+    .ct-bar i {
+      position: absolute; inset: 0 auto 0 0; width: var(--p, 0%); min-width: 0; border-radius: inherit;
+      background: linear-gradient(90deg, var(--c), var(--c2)); box-shadow: 0 0 16px -2px var(--c); transition: width 1.1s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .ct-bar i::after {
+      content: ''; position: absolute; inset: 0; border-radius: inherit;
+      background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.4) 50%, transparent 70%); background-size: 220% 100%; animation: ct-shine 2.2s linear infinite;
+    }
+    @keyframes ct-shine { from { background-position: 160% 0; } to { background-position: -60% 0; } }
+    .ct-bar.done i { background: linear-gradient(90deg, #16a34a, #86efac); box-shadow: 0 0 18px -2px #22c55e; }
+    .ct-progress small { color: var(--muted); font-size: 0.82rem; }
+    .ct-progress small.ok { color: #86efac; font-weight: 500; }
+    .ct-stats { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--muted); font-size: 0.87rem; }
+    .ct-stats:empty { display: none; }
+    .ct-stats b { color: var(--text); font-size: 1.02rem; font-weight: 600; }
+    .ct-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; }
+    .ct-btn {
+      display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border: 0; border-radius: 10px; font-weight: 600; cursor: pointer;
+      background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 60%, #fff)); color: #0a0e10; box-shadow: 0 10px 24px -12px var(--c);
+      transition: transform 0.15s, filter 0.15s, box-shadow 0.15s;
+    }
+    .ct-btn:hover { transform: translateY(-1px); filter: brightness(1.07); box-shadow: 0 14px 28px -12px var(--c); }
+    .ct-btn:active { transform: translateY(0); }
+    .ct-btn:disabled { cursor: not-allowed; transform: none; filter: none; background: var(--surface); color: var(--faint); box-shadow: inset 0 0 0 1px var(--border); }
+    .ct-btn.ghost { background: var(--surface); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); white-space: nowrap; }
+    .ct-btn.ghost:hover { background: var(--hover); }
+    .ct-ok { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 10px; background: rgba(34, 197, 94, 0.12); color: #86efac; font-weight: 500; box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.3); animation: ct-pop 0.45s cubic-bezier(0.2, 1.6, 0.4, 1); }
+    @keyframes ct-pop { from { transform: scale(0.7); opacity: 0; } }
+    .ct-hint { color: var(--muted); font-size: 0.84rem; }
+
+    .ct-board h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 0.95rem; font-weight: 600; }
+    .ct-board h3 span { padding: 0 7px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 0.78rem; font-weight: 500; line-height: 20px; }
+    .ct-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .ct-row { display: grid; grid-template-columns: 34px 36px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 58px; padding: 8px 16px; border-bottom: 1px solid var(--border); }
+    .ct-row:last-child { border-bottom: 0; }
+    .ct-row[data-id] { cursor: pointer; }
+    .ct-row[data-id]:hover { background: var(--hover); }
+    .ct-row.win { background: linear-gradient(90deg, color-mix(in srgb, var(--c) 10%, transparent), transparent 55%); }
+    .ct-row.me { background: color-mix(in srgb, var(--c) 12%, transparent); box-shadow: inset 3px 0 0 var(--c); }
+    .ct-row .avatar { width: 36px; height: 36px; }
+    .ct-row .avatar.ghost { display: block; background: var(--surface-2); }
+    .ct-row.win:not(.r1, .r2, .r3) .rank { color: var(--c2); }
+    .ct-person { min-width: 0; }
+    .ct-person b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+    .ct-person b em { color: var(--c2); font-style: normal; font-weight: 400; }
+    .ct-person small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--faint); font-size: 0.78rem; }
+    .ct-mini { display: block; height: 5px; margin-top: 6px; max-width: 220px; border-radius: 3px; overflow: hidden; background: var(--border); }
+    .ct-mini i { display: block; height: 100%; width: var(--p, 0%); border-radius: inherit; background: linear-gradient(90deg, var(--c), var(--c2)); }
+    .ct-mini.done i { background: #22c55e; }
+    .ct-score { text-align: right; white-space: nowrap; }
+    .ct-score b { font-size: 1.05rem; font-weight: 600; }
+    .ct-score small { display: block; color: var(--faint); font-size: 0.74rem; }
+    .ct-row.reached .ct-score b::after { content: ' ✓'; color: #4ade80; font-size: 0.9rem; }
+    .ct-more { margin: 8px 2px 0; color: var(--faint); font-size: 0.82rem; }
+    .ct-empty { padding: 26px 16px; border: 1px dashed var(--border); border-radius: 12px; color: var(--muted); text-align: center; font-size: 0.9rem; }
+    .ct-empty b { display: block; margin-bottom: 2px; color: var(--text); font-weight: 600; }
+
     /* ---------- Telefony ---------- */
     @media (max-width: 720px) {
       main { padding-top: 12px; }
@@ -1007,7 +1162,31 @@
       .me-btn { padding: 0 11px; }
       .tab .ts { display: inline; }
     }
+    @media (max-width: 720px) {
+      .ct-hero { grid-template-columns: auto minmax(0, 1fr); gap: 12px 14px; padding: 16px; }
+      .ct-icon { width: 48px; height: 48px; border-radius: 13px; }
+      .ct-icon svg { width: 24px; height: 24px; }
+      .ct-title h2 { font-size: 1.18rem; }
+      .ct-clock { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 8px; text-align: left; }
+      .ct-clock small { display: inline; }
+      .ct-clock b { font-size: 1.05rem; }
+      .ct-body { gap: 14px; padding: 14px 14px 18px; }
+      .ct-connect { grid-template-columns: auto minmax(0, 1fr); }
+      .ct-connect .ct-btn { grid-column: 1 / -1; justify-self: start; }
+      .ct-row { grid-template-columns: 24px 32px minmax(0, 1fr) auto; gap: 10px; padding: 8px 12px; }
+      .ct-row .avatar { width: 32px; height: 32px; }
+      .tab[data-period="eventy"]::before { display: none; }
+      /* Przy 5 zakładkach (wydarzenie XP + eventy) pasek przewija się w bok zamiast łamać napisy */
+      .tabs { overflow-x: auto; scrollbar-width: none; }
+      .tabs::-webkit-scrollbar { display: none; }
+      .tabs.more-right { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 34px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 34px), transparent); }
+      .tabs.more-left { -webkit-mask-image: linear-gradient(90deg, transparent, #000 34px); mask-image: linear-gradient(90deg, transparent, #000 34px); }
+      .tabs.more-left.more-right { -webkit-mask-image: linear-gradient(90deg, transparent, #000 34px, #000 calc(100% - 34px), transparent); mask-image: linear-gradient(90deg, transparent, #000 34px, #000 calc(100% - 34px), transparent); }
+      .tab { flex: 1 0 auto; white-space: nowrap; }
+    }
     @media (prefers-reduced-motion: reduce) {
+      .ct-hero::after, .ct-bar i::after, .ct-tab.live i, .ct-st.live i, .tab[data-period="eventy"].live::before, .ct-ok, .ct-flash { animation: none; }
+      .ct-bar i { transition: none; }
       .skeleton, .pf-skel, .profile, .blob, .bg-grid, .saw svg, .cog svg, .pillar::after, .chev span, .dn.fx7 { animation: none; }
       .event, .event.active.fx-high, .event::after, .ev-mult, .ev-mult::before, .ev-dot, .ev-clock b.tick, body[data-ev-live] .tab[data-period="event"]::before { animation: none; }
       .ev-deco *, body.ev-page h1, body.ev-page .event .ev-mult, body.ev-page .top.t1 .pod-av::after { animation: none !important; }
@@ -1064,6 +1243,7 @@
         <button class="tab" role="tab" aria-selected="false" data-period="week"><span class="tl">Ten tydzień</span><span class="ts">Tydzień</span></button>
         <button class="tab" role="tab" aria-selected="false" data-period="month"><span class="tl">Ten miesiąc</span><span class="ts">Miesiąc</span></button>
         <button class="tab" role="tab" aria-selected="false" data-period="event" hidden>Wydarzenie</button>
+        <button class="tab" role="tab" aria-selected="false" data-period="eventy" hidden>Eventy<span class="ct-n" hidden></span></button>
       </div>
       <label class="search">
         <span class="sr-only">Szukaj osoby</span>
@@ -1083,6 +1263,7 @@
 
     <div class="layout">
       <section class="board" id="board" aria-live="polite">
+        <section class="contests" id="contests" hidden aria-label="Eventy"></section>
         <p class="note" id="note" hidden></p>
         <div class="top3" id="top3" hidden></div>
         <p class="found" id="found" hidden></p>
@@ -1126,6 +1307,7 @@
               <div><code>/rank</code>Twoja karta poziomu</div>
               <div><code>/ranking</code>ranking na serwerze</div>
               <div><code>/prywatnosc</code>ukryj się na tej stronie</div>
+              <div><code>/polacz</code>połącz konto (zakładka Eventy)</div>
             </div>
           </section>
           <section class="card">
@@ -1152,7 +1334,7 @@
     const relative = new Intl.RelativeTimeFormat('pl', { numeric: 'auto' });
     const desktop = matchMedia('(min-width: 980px)');
     const FALLBACK_AVATAR = 'https://cdn.discordapp.com/embed/avatars/0.png';
-    const PERIODS = ['all', 'week', 'month', 'event'];
+    const PERIODS = ['all', 'week', 'month', 'event', 'eventy'];
     const PAGE = 50;
     const saved = {
       get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
@@ -1644,7 +1826,7 @@
       const id = ++state.req;
       $('#board').classList.add('loading');
       $('#more').disabled = true;
-      const params = new URLSearchParams({ period: state.period, offset: String(append ? state.entries.length : 0), limit: String(PAGE) });
+      const params = new URLSearchParams({ period: state.period === 'eventy' ? 'all' : state.period, offset: String(append ? state.entries.length : 0), limit: String(PAGE) });
       if (state.search) params.set('search', state.search);
       if (state.period === 'event' && ev.pick?.ranked) params.set('event', ev.pick.ranked.id);
       if (state.period === 'all' && state.sort !== 'xp') params.set('sort', state.sort);
@@ -1659,7 +1841,7 @@
           return;
         }
         state.data = data;
-        if (data.period && data.period !== state.period) markPeriod(data.period);
+        if (data.period && data.period !== state.period && state.period !== 'eventy') markPeriod(data.period);
         if (!PREVIEW) setEvents(data.events);
         state.total = data.total ?? data.entries.length;
         state.entries = append ? state.entries.concat(data.entries) : data.entries;
@@ -14618,6 +14800,391 @@
       document.body.append(bar);
     }
 
+    // ---------- Eventy (konkursy) ----------
+    // Zakładka „Eventy” jest widoczna tylko wtedy, gdy bot zwraca jakiś event (zaplanowany, trwający albo zakończony
+    // w ostatnich 3 dniach); przy kilku eventach każdy ma swoją podzakładkę. Udział wymaga połączenia konta:
+    // /polacz na serwerze daje link #polacz=…, który strona wymienia na sesję (w tej przeglądarce). Z nią widać
+    // postęp, pasek do progu i przyciski „Dołącz do eventu” albo „Zgłoś się” (po osiągnięciu progu).
+    const SESSION_KEY = 'ranking-session';
+    const CT_KEY = 'ranking-contest';
+    const ct = { data: null, selected: saved.get(CT_KEY), session: saved.get(SESSION_KEY), busy: false, flash: null, error: null, open: false, shown: '', due: 0, msgTimer: 0 };
+    const CT_STATUS = { live: 'trwa', upcoming: 'wkrótce', ended: 'zakończony' };
+    const CT_TYPES = {
+      invites: {
+        label: 'Zaproszenia',
+        unit: ['zaproszenie', 'zaproszenia', 'zaproszeń'],
+        of: ['zaproszenia', 'zaproszeń', 'zaproszeń'],
+        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2.5 20.5c.8-3.6 3.3-5.5 6.5-5.5s5.7 1.9 6.5 5.5M19 8v6M16 11h6"/></svg>',
+      },
+      messages: {
+        label: 'Wiadomości',
+        unit: ['wiadomość', 'wiadomości', 'wiadomości'],
+        of: ['wiadomości', 'wiadomości', 'wiadomości'],
+        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/><path d="M8.5 10.5h7M8.5 13.8h4.5"/></svg>',
+      },
+      mixed: {
+        label: 'Mieszany',
+        unit: ['punkt', 'punkty', 'punktów'],
+        of: ['punktu', 'punktów', 'punktów'],
+        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.8l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z"/></svg>',
+      },
+    };
+    const CT_LINK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></svg>';
+    const ctPlural = (n, [one, few, many]) => {
+      if (n === 1) return one;
+      const n10 = n % 10;
+      const n100 = n % 100;
+      return n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14) ? few : many;
+    };
+    const ctType = (c) => CT_TYPES[c?.type] ?? CT_TYPES.mixed;
+    const ctUnit = (c, n, of = false) => `${fmt(n)} ${ctPlural(Math.abs(n), of ? ctType(c).of : ctType(c).unit)}`;
+    const ctShort = (iso) => new Date(iso).toLocaleString('pl-PL', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+    function ctUntil(ms) {
+      const s = Math.max(0, Math.floor((ms - Date.now()) / 1000));
+      const [d, h, m, sec] = [Math.floor(s / 86400), Math.floor((s % 86400) / 3600), Math.floor((s % 3600) / 60), s % 60];
+      const two = (n) => String(n).padStart(2, '0');
+      return d ? `${d} d ${two(h)} h ${two(m)} min` : `${two(h)} h ${two(m)} min ${two(sec)} s`;
+    }
+    function ctForget() {
+      ct.session = null;
+      try { localStorage.removeItem(SESSION_KEY); } catch {}
+    }
+    function ctMessage(kind, text) {
+      ct.flash = kind === 'ok' ? text : null;
+      ct.error = kind === 'err' ? text : null;
+      clearTimeout(ct.msgTimer);
+      ct.msgTimer = setTimeout(() => {
+        ct.flash = null;
+        ct.error = null;
+        if (state.period === 'eventy') renderContests();
+      }, 9000);
+    }
+
+    function ctFacts(c) {
+      const facts = [];
+      if (c.prize) facts.push(`<li class="prize">🎁 <span><b>Nagroda:</b> ${esc(c.prize)}</span></li>`);
+      if (c.goal > 0) facts.push(`<li>🎯 <span>Próg: <b>${esc(ctUnit(c, c.goal))}</b></span></li>`);
+      if (!c.goal && c.winners > 0) facts.push(`<li>🏆 <span>Nagradzane: <b>${c.winners === 1 ? '1. miejsce' : `miejsca 1–${c.winners}`}</b></span></li>`);
+      if (c.type === 'mixed' && c.points) facts.push(`<li>⚖️ <span>zaproszenie = <b>${fmt(c.points.invite)} pkt</b> · wiadomość = <b>${fmt(c.points.message)} pkt</b></span></li>`);
+      const people = c.goal > 0 ? ['zgłoszenie', 'zgłoszenia', 'zgłoszeń'] : ['uczestnik', 'uczestnicy', 'uczestników'];
+      facts.push(`<li>👥 <span><b>${fmt(c.participants)}</b> ${ctPlural(c.participants, people)}</span></li>`);
+      const rules = [];
+      if (c.type !== 'messages') {
+        const age = c.minAccountDays ? `, a ich konto ma co najmniej ${c.minAccountDays} ${ctPlural(c.minAccountDays, ['dzień', 'dni', 'dni'])}` : '';
+        rules.push(`Liczą się osoby, które weszły z Twojego zaproszenia w czasie eventu i nadal są na serwerze${age}. Powroty się nie liczą.`);
+      }
+      if (c.type !== 'invites') rules.push('Wiadomości liczą się tak jak do poziomów — spam i powtarzanie tego samego nic nie dają.');
+      return `<ul class="ct-facts">${facts.join('')}</ul><ul class="ct-rules">${rules.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>`;
+    }
+
+    // Twój udział: połączenie konta, postęp (pasek do progu), wynik, „Dołącz do eventu” / „Zgłoś się”.
+    function ctMe(c, animate) {
+      const me = ct.data?.me;
+      if (!me) {
+        return `<section class="ct-me ct-connect">
+          <div class="ct-icon sm">${CT_LINK_ICON}</div>
+          <div><b>Połącz konto, żeby wziąć udział</b>
+            <ol class="ct-steps"><li>Wpisz <code>/polacz</code> na serwerze.</li><li>Kliknij <b>Połącz konto</b> w odpowiedzi bota — wrócisz tutaj już połączony(-a).</li></ol>
+          </div>
+          <button type="button" class="ct-btn ghost" data-ct-copy>Kopiuj /polacz</button>
+        </section>`;
+      }
+      const m = c.me ?? { joined: false, score: 0, invites: 0, messages: 0, canJoin: false, blocker: null };
+      const head = `<div class="ct-who"><img class="avatar" src="${esc(me.avatar)}" alt="" width="40" height="40"><div><small>Połączono jako</small><b>${esc(me.name)}</b></div><button type="button" class="ct-unlink" data-ct-unlink title="Rozłącz konto w tej przeglądarce">Rozłącz</button></div>`;
+      let progress = '';
+      if (c.goal > 0) {
+        const p = Math.min(100, Math.floor((m.score / c.goal) * 100));
+        const done = m.score >= c.goal;
+        const label = c.status === 'upcoming' ? 'Postęp ruszy razem z eventem' : 'Twój postęp';
+        const note = done
+          ? `<small class="ok">✓ Próg osiągnięty${m.joined ? ' — zgłoszenie wysłane.' : c.status === 'live' ? ' — możesz się zgłosić!' : '.'}</small>`
+          : `<small>${c.status === 'ended' ? 'Event się skończył.' : `Brakuje jeszcze ${esc(ctUnit(c, c.goal - m.score, true))}.`}</small>`;
+        progress = `<div class="ct-progress">
+          <div class="ct-progress-top"><span>${label}</span><b>${fmt(m.score)} / ${esc(ctUnit(c, c.goal))}</b></div>
+          <div class="ct-bar${done ? ' done' : ''}" role="progressbar" aria-label="Postęp do progu" aria-valuemin="0" aria-valuemax="${c.goal}" aria-valuenow="${Math.min(m.score, c.goal)}"><i style="--p:${animate ? 0 : p}%" data-p="${p}"></i></div>
+          ${note}
+        </div>`;
+      }
+      const stats = [];
+      if (c.type === 'mixed') stats.push(`<span><b>${fmt(m.score)}</b> pkt</span>`, `<span>${esc(ctUnit({ type: 'invites' }, m.invites))}</span>`, `<span>${esc(ctUnit({ type: 'messages' }, m.messages))}</span>`);
+      else if (!c.goal && c.status !== 'upcoming') stats.push(`<span>Twój wynik: <b>${esc(ctUnit(c, m.score))}</b></span>`);
+      if (c.status === 'upcoming') stats.length = 0;
+      if (m.joined && m.rank) stats.push(`<span>Miejsce: <b>#${m.rank}</b></span>`);
+      let action;
+      if (m.joined) action = `<span class="ct-ok">✓ ${c.goal > 0 ? 'Zgłoszono' : 'Bierzesz udział'}</span>`;
+      else if (c.status === 'ended') action = '<span class="ct-hint">Ten event już się skończył.</span>';
+      else {
+        const label = c.goal > 0 ? 'Zgłoś się' : 'Dołącz do eventu';
+        // Brakujące zaproszenia/wiadomości pokazuje już pasek postępu — bez powtarzania obok przycisku.
+        const hint = m.blocker && !(c.goal > 0 && c.status === 'live') ? `<span class="ct-hint">${esc(m.blocker)}</span>` : '';
+        action = `<button type="button" class="ct-btn" data-ct-join="${esc(c.id)}"${m.canJoin && !ct.busy ? '' : ' disabled'}>${ct.busy ? 'Chwila…' : label}</button>${hint}`;
+      }
+      return `<section class="ct-me">${head}${progress}<div class="ct-stats">${stats.join('')}</div><div class="ct-actions">${action}</div></section>`;
+    }
+
+    function ctBoard(c) {
+      const title = c.goal > 0 ? 'Zgłoszeni' : 'Ranking uczestników';
+      if (!c.entries.length) {
+        const empty = c.goal > 0 ? 'Nikt jeszcze się nie zgłosił' : 'Nikt jeszcze nie dołączył';
+        return `<section class="ct-board"><h3>${title}</h3><div class="ct-empty"><b>${empty}</b>${c.status === 'ended' ? '' : 'Bądź pierwszy(-a)!'}</div></section>`;
+      }
+      const unitWord = (n) => (c.type === 'mixed' ? 'pkt' : ctPlural(n, ctType(c).unit));
+      const rows = c.entries
+        .map((e) => {
+          const win = !c.goal && c.winners > 0 && e.rank <= c.winners;
+          const name = e.displayName ?? e.name;
+          const sub = c.type === 'mixed' ? `${ctUnit({ type: 'invites' }, e.invites)} · ${ctUnit({ type: 'messages' }, e.messages)}` : e.displayName ? e.name : '';
+          const p = c.goal > 0 ? Math.min(100, Math.floor((e.score / c.goal) * 100)) : null;
+          const cls = [e.rank <= 3 ? `r${e.rank}` : '', win ? 'win' : '', e.me ? 'me' : '', e.reached ? 'reached' : ''].filter(Boolean).join(' ');
+          return `<li class="ct-row ${cls}"${e.userId ? ` data-id="${esc(e.userId)}" tabindex="0"` : ''}>
+            <span class="rank">${e.rank}</span>
+            ${e.avatar ? `<img class="avatar" src="${esc(e.avatar)}" alt="" width="36" height="36" loading="lazy">` : '<span class="avatar ghost"></span>'}
+            <span class="ct-person"><b>${esc(name)}${e.me ? ' <em>· Ty</em>' : ''}</b>${sub ? `<small>${esc(sub)}</small>` : ''}${p !== null ? `<span class="ct-mini${e.reached ? ' done' : ''}"><i style="--p:${p}%"></i></span>` : ''}</span>
+            <span class="ct-score"><b>${fmt(e.score)}</b><small>${esc(unitWord(e.score))}</small></span>
+          </li>`;
+        })
+        .join('');
+      const more = c.participants > c.entries.length ? `<p class="ct-more">…i jeszcze ${fmt(c.participants - c.entries.length)}</p>` : '';
+      return `<section class="ct-board"><h3>${title}<span>${fmt(c.participants)}</span></h3><ol class="ct-list">${rows}</ol>${more}</section>`;
+    }
+
+    function ctCard(c, animate) {
+      const T = ctType(c);
+      const target = Date.parse(c.status === 'upcoming' ? c.startsAt : c.endsAt);
+      const clock = c.status === 'ended'
+        ? `<div class="ct-clock"><small>Zakończony</small><b>${esc(ctShort(c.endsAt))}</b></div>`
+        : `<div class="ct-clock"><small>${c.status === 'live' ? 'Koniec za' : 'Start za'}</small><b data-ct-until="${target}">${esc(ctUntil(target))}</b></div>`;
+      const dates = `${esc(ctShort(c.startsAt))} – ${esc(ctShort(c.endsAt))}`;
+      return `<article class="ct-card" data-type="${esc(c.type)}">
+        <header class="ct-hero">
+          <div class="ct-icon">${T.icon}</div>
+          <div class="ct-title">
+            <div class="ct-kicker">Event · ${T.label}<span class="ct-st ${c.status}"><i></i>${CT_STATUS[c.status]}</span></div>
+            <h2>${esc(c.name)}</h2>
+            <div class="ct-dates">${dates}</div>
+          </div>
+          ${clock}
+        </header>
+        <div class="ct-body">
+          ${c.description ? `<p class="ct-desc">${esc(c.description)}</p>` : ''}
+          ${ctFacts(c)}
+          ${ctMe(c, animate)}
+          ${ctBoard(c)}
+        </div>
+      </article>`;
+    }
+
+    function renderContests() {
+      const box = $('#contests');
+      const list = ct.data?.contests ?? [];
+      const banner = ct.flash ? `<div class="ct-flash ok" role="status">${esc(ct.flash)}</div>` : ct.error ? `<div class="ct-flash err" role="alert">${esc(ct.error)}</div>` : '';
+      if (!list.length) {
+        box.innerHTML = `${banner}<div class="ct-empty"><b>Teraz nie ma żadnego eventu</b>Zakładka wróci, gdy ruszy następny.</div>`;
+        return;
+      }
+      const c = list.find((x) => x.id === ct.selected) ?? list.find((x) => x.status === 'live') ?? list[0];
+      const animate = ct.shown !== c.id;
+      ct.shown = c.id;
+      const scroll = box.querySelector('.ct-tabs')?.scrollLeft ?? 0;
+      const tabs = list.length > 1
+        ? `<div class="ct-tabs" role="tablist" aria-label="Eventy">${list
+            .map((x) => `<button type="button" role="tab" class="ct-tab ${x.status}" data-ct="${esc(x.id)}" data-type="${esc(x.type)}" aria-selected="${x.id === c.id}"><i></i>${esc(x.name)}<small>${CT_STATUS[x.status]}</small></button>`)
+            .join('')}</div>`
+        : '';
+      box.innerHTML = `${banner}${tabs}${ctCard(c, animate)}`;
+      const strip = box.querySelector('.ct-tabs');
+      if (strip) strip.scrollLeft = scroll;
+      // Pasek postępu „rośnie” przy pierwszym pokazaniu eventu.
+      if (animate) requestAnimationFrame(() => requestAnimationFrame(() => box.querySelectorAll('.ct-bar i[data-p]').forEach((i) => i.style.setProperty('--p', `${i.dataset.p}%`))));
+      markSelected();
+    }
+
+    function renderContestsTab() {
+      const list = ct.data?.contests ?? [];
+      const tab = $('.tab[data-period="eventy"]');
+      tab.hidden = !list.length || Boolean(PREVIEW) || EMBED;
+      tab.classList.toggle('live', list.some((c) => c.status === 'live'));
+      const n = tab.querySelector('.ct-n');
+      n.hidden = list.length < 2;
+      n.textContent = String(list.length);
+      if (tab.hidden && state.period === 'eventy') selectPeriod('all');
+    }
+
+    function showContests(on) {
+      $('#board').classList.toggle('ct-mode', on);
+      $('.toolbar').classList.toggle('ct-mode', on);
+      $('#contests').hidden = !on;
+      if (on) {
+        ct.shown = '';
+        renderContests();
+      }
+    }
+
+    async function loadContests() {
+      if (PREVIEW || EMBED) return;
+      try {
+        const res = await fetch(`${BASE}/contests`, { headers: ct.session ? { 'x-member-session': ct.session } : {} });
+        if (!res.ok) throw new Error(String(res.status));
+        const data = await res.json();
+        if (data.expired) {
+          ctForget();
+          if (!ct.error) ctMessage('err', 'Połączenie z kontem wygasło — wpisz /polacz na serwerze, żeby połączyć je znowu.');
+        }
+        ct.data = data;
+        if (data.me?.id && data.me.id !== state.me) setMe(data.me.id);
+      } catch {
+        if (!ct.data) return;
+      }
+      renderContestsTab();
+      const list = ct.data?.contests ?? [];
+      if (state.period === 'eventy') renderContests();
+      else if (ct.open && list.length) {
+        ct.open = false;
+        selectPeriod('eventy');
+      } else if (ct.open && (ct.flash || ct.error)) {
+        // Połączono z linku, ale żaden event teraz nie trwa — informacja nad rankingiem.
+        ct.open = false;
+        const note = $('#note');
+        note.innerHTML = `<b>${esc(ct.flash ?? ct.error)}</b>${ct.flash ? ' Teraz nie ma żadnego eventu — zakładka „Eventy” pojawi się, gdy ruszy następny.' : ''}`;
+        note.hidden = false;
+      }
+    }
+
+    // Link z /polacz (#polacz=…): token od razu znika z adresu, strona dostaje sesję tej osoby.
+    async function ctLink(token) {
+      try { history.replaceState(null, '', `${location.pathname}${location.search}#eventy`); } catch {}
+      ct.open = true;
+      try {
+        const res = await fetch(`${BASE}/link`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token }) });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.token) return ctMessage('err', data.error ?? 'Nie udało się połączyć konta — wpisz /polacz jeszcze raz.');
+        ct.session = data.token;
+        saved.set(SESSION_KEY, data.token);
+        ctMessage('ok', `Połączono z kontem ${data.me?.name ?? ''} — możesz brać udział w eventach.`);
+        if (data.me?.id) setMe(data.me.id);
+      } catch {
+        ctMessage('err', 'Nie udało się połączyć konta — sprawdź internet i spróbuj jeszcze raz.');
+      }
+    }
+
+    async function ctJoin(id) {
+      if (ct.busy || !ct.session) return;
+      const c = ct.data?.contests?.find((x) => x.id === id);
+      ct.busy = true;
+      renderContests();
+      try {
+        const res = await fetch(`${BASE}/contests/${encodeURIComponent(id)}/join`, { method: 'POST', headers: { 'x-member-session': ct.session } });
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          ctForget();
+          ctMessage('err', data.error ?? 'Połączenie z kontem wygasło — wpisz /polacz jeszcze raz.');
+        } else if (!res.ok) ctMessage('err', data.error ?? 'Nie udało się — spróbuj za chwilę.');
+        else ctMessage('ok', c?.goal > 0 ? 'Zgłoszenie wysłane — administracja już je widzi. Powodzenia!' : 'Dołączono do eventu — powodzenia!');
+      } catch {
+        ctMessage('err', 'Nie udało się połączyć z botem — spróbuj za chwilę.');
+      }
+      ct.busy = false;
+      await loadContests();
+      if (state.period === 'eventy') renderContests();
+    }
+
+    async function ctUnlink() {
+      const token = ct.session;
+      ctForget();
+      ctMessage('ok', 'Rozłączono konto w tej przeglądarce.');
+      renderContests();
+      if (token) fetch(`${BASE}/unlink`, { method: 'POST', headers: { 'x-member-session': token } }).catch(() => {});
+      await loadContests();
+    }
+
+    $('#contests').addEventListener('click', async (event) => {
+      const tab = event.target.closest('[data-ct]');
+      if (tab) {
+        ct.selected = tab.dataset.ct;
+        saved.set(CT_KEY, ct.selected);
+        renderContests();
+        return;
+      }
+      const join = event.target.closest('[data-ct-join]');
+      if (join) return ctJoin(join.dataset.ctJoin);
+      if (event.target.closest('[data-ct-unlink]')) return ctUnlink();
+      const copy = event.target.closest('[data-ct-copy]');
+      if (copy) {
+        try {
+          await navigator.clipboard.writeText('/polacz');
+          copy.textContent = 'Skopiowano ✓';
+        } catch {
+          copy.textContent = 'Wpisz /polacz';
+        }
+        setTimeout(() => { copy.textContent = 'Kopiuj /polacz'; }, 2200);
+      }
+    });
+    // Strzałki w podzakładkach eventów.
+    $('#contests').addEventListener('keydown', (event) => {
+      const tab = event.target.closest('[data-ct]');
+      if (!tab || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+      const tabs = [...document.querySelectorAll('#contests [data-ct]')];
+      const next = tabs[(tabs.indexOf(tab) + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length];
+      ct.selected = next.dataset.ct;
+      saved.set(CT_KEY, ct.selected);
+      renderContests();
+      document.querySelector(`#contests [data-ct="${CSS.escape(ct.selected)}"]`)?.focus();
+    });
+
+    // Telefon: przy wielu zakładkach pasek przewija się w bok — wycieniowana krawędź podpowiada, że jest więcej,
+    // a wybrana zakładka zawsze jest widoczna.
+    function fitTabs() {
+      const bar = $('.tabs');
+      const hidden = bar.scrollWidth - bar.clientWidth;
+      bar.classList.toggle('more-right', hidden > 2 && bar.scrollLeft < hidden - 2);
+      bar.classList.toggle('more-left', hidden > 2 && bar.scrollLeft > 2);
+    }
+    function revealTab(period) {
+      const bar = $('.tabs');
+      const tab = bar.querySelector(`.tab[data-period="${period}"]`);
+      if (!tab || bar.scrollWidth <= bar.clientWidth) return fitTabs();
+      const left = tab.offsetLeft - bar.offsetLeft;
+      if (left < bar.scrollLeft) bar.scrollLeft = Math.max(0, left - 24);
+      else if (left + tab.offsetWidth > bar.scrollLeft + bar.clientWidth) bar.scrollLeft = left + tab.offsetWidth - bar.clientWidth + 24;
+      fitTabs();
+    }
+    $('.tabs').addEventListener('scroll', fitTabs, { passive: true });
+    addEventListener('resize', fitTabs);
+    new MutationObserver(() => revealTab(state.period)).observe($('.tabs'), { subtree: true, attributes: true, attributeFilter: ['hidden'] });
+
+    // Odliczanie co sekundę; po starcie albo końcu eventu — świeże dane.
+    function ctTick() {
+      if (state.period !== 'eventy') return;
+      let ended = false;
+      document.querySelectorAll('#contests [data-ct-until]').forEach((b) => {
+        const target = Number(b.dataset.ctUntil);
+        b.textContent = ctUntil(target);
+        if (target <= Date.now()) ended = true;
+      });
+      if (ended && Date.now() > ct.due) {
+        ct.due = Date.now() + 15000;
+        loadContests();
+      }
+    }
+
+    async function contestsInit(initial) {
+      if (PREVIEW || EMBED) return;
+      if (initial.startsWith('polacz=')) await ctLink(initial.slice(7));
+      else if (initial === 'eventy') ct.open = true;
+      await loadContests();
+      setInterval(ctTick, 1000);
+      setInterval(() => { if (!document.hidden) loadContests(); }, 60000);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) loadContests(); });
+      // Link z /polacz otwarty w karcie, w której strona już działa (zmienia się tylko #).
+      window.addEventListener('hashchange', async () => {
+        const hash = location.hash.slice(1);
+        if (hash.startsWith('polacz=')) {
+          await ctLink(hash.slice(7));
+          await loadContests();
+        } else if (hash === 'eventy' && ct.data?.contests?.length) selectPeriod('eventy');
+      });
+    }
+
     // ---------- Zdarzenia ----------
     function setView(view) {
       state.view = view;
@@ -14646,6 +15213,11 @@
     async function goToMe() {
       const id = state.me;
       if (!id) return;
+      if (state.period === 'eventy') {
+        markPeriod('all');
+        showContests(false);
+        await load();
+      }
       if (state.search) {
         $('#search').value = '';
         state.search = '';
@@ -14689,11 +15261,16 @@
     function markPeriod(period) {
       state.period = period;
       document.querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.period === period)));
+      revealTab(period);
       try { history.replaceState(null, '', `${location.pathname}${location.search}${period === 'all' ? '' : `#${period}`}`); } catch {}
     }
     function selectPeriod(period) {
       if (period === state.period) return;
+      const fromContests = state.period === 'eventy';
       markPeriod(period);
+      // „Eventy” mają własny widok (contests) — ranking pod spodem zostaje, jak był.
+      if (period === 'eventy') return showContests(true);
+      if (fromContests) showContests(false);
       load();
     }
     document.querySelectorAll('.tab').forEach((tab) => tab.addEventListener('click', () => selectPeriod(tab.dataset.period)));
@@ -14753,8 +15330,9 @@
     if (EMBED) embedBridge();
     else {
       if (PREVIEW) previewBar();
-      if (PERIODS.includes(initial) && initial !== 'all') selectPeriod(initial);
+      if (PERIODS.includes(initial) && !['all', 'eventy'].includes(initial)) selectPeriod(initial);
       else load();
+      contestsInit(initial);
       const linked = new URLSearchParams(location.search).get('u');
       if (linked) openProfile(linked);
     }

@@ -8,6 +8,7 @@ import { avatarUrl, guildIconUrl } from './rest.js';
 import { cached, getGuildContext, hasModAccess, isOurGuild } from './moderation.js';
 import { BRAND, colorInt, escapeMarkdown } from './embeds.js';
 import { PANEL_SITE } from './access.js';
+import { messageContestIds } from './contests.js';
 
 const DAY = 24 * 60 * 60_000;
 const THREAD_TYPES = new Set([10, 11, 12]);
@@ -154,6 +155,8 @@ export async function awardXp(bot, config, { user, amount, kind, cooldown, minut
     dailyCap: config.antiFarm.dailyCap > 0 ? Math.round(config.antiFarm.dailyCap * mult) : 0,
     textHash: config.antiFarm.ignoreRepeats ? hash : null,
     eventId: event?.id ?? null,
+    // Policzona wiadomość liczy się też w trwających eventach wiadomości i mieszanych (zakładka Eventy).
+    contestIds: kind === 'message' ? messageContestIds(await bot.store.getConfig()) : [],
   });
   if (!row) return null;
   const { level } = levelProgress(row.xp, config.formula);

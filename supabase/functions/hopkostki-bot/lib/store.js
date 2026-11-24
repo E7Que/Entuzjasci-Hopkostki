@@ -44,6 +44,31 @@ const mapLevel = (r) => ({
 const levelSearch = (n, alias, publicOnly) =>
   `($${n}::text = '' or (${publicOnly ? `not ${alias}hidden and ` : ''}(${alias}user_id = $${n}::text or ${alias}user_tag ilike '%' || $${n}::text || '%' or ${alias}display_name ilike '%' || $${n}::text || '%')))`;
 
+const mapContestEntry = (r) => ({
+  contestId: r.contest_id,
+  userId: r.user_id,
+  userTag: r.l_tag ?? r.user_tag ?? null,
+  displayName: r.l_name ?? r.display_name ?? null,
+  avatar: r.l_avatar ?? r.avatar ?? null,
+  guildAvatar: r.l_guild_avatar ?? null,
+  hidden: Boolean(r.hidden),
+  score: Number(r.score ?? 0),
+  createdAt: ms(r.created_at),
+});
+
+// Bez skrótu tokenu — ten zostaje w bazie.
+const mapMemberLink = (r) => ({
+  id: r.id,
+  kind: r.kind,
+  userId: r.user_id,
+  userTag: r.user_tag ?? null,
+  displayName: r.display_name ?? null,
+  avatar: r.avatar ?? null,
+  createdAt: ms(r.created_at),
+  expiresAt: ms(r.expires_at),
+  lastSeenAt: ms(r.last_seen_at),
+});
+
 // Bez skrótu tokenu — ten zostaje w bazie.
 const mapPanelSession = (r) => ({
   id: r.id,
@@ -972,6 +997,138 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return rows.map((r) => ({ inviterId: r.inviter_id, count: r.n }));
     },
 
+    // Wyjście z serwera — jej zaproszenie przestaje się liczyć w eventach.
+    async markInviteLeft(userId) {
+      await query('update bot.invite_joins set left_at = now() where user_id = $1::text and left_at is null', [userId]);
+    },
+
+    // ---------- Eventy (konkursy) ----------
+    // Zaproszenia w evencie: osoby, które weszły z zaproszenia w czasie [start, end), nadal są na serwerze, nie były
+    // tu wcześniej (powroty się nie liczą) i w chwili wejścia miały konto starsze niż minAccountMs.
+    // inviterIds = null → wszyscy zapraszający. Zwraca Map(inviterId → liczba osób).
+    async contestInvites({ start, end, minAccountMs = 0, inviterIds = null }) {
+      const rows = await query(
+        `select j.inviter_id, count(distinct j.user_id)::int as n
+         from bot.invite_joins j
+         where j.inviter_id is not null and j.inviter_id <> j.user_id
+           and j.joined_at >= $1::timestamptz and j.joined_at < $2::timestamptz
+           and j.left_at is null
+           and (case when j.user_id ~ '^[0-9]{15,19}$' then (j.user_id::bigint >> 22) + 1420070400000 else 0 end)
+               <= (extract(epoch from j.joined_at) * 1000)::bigint - $3::bigint
+           and not exists (select 1 from bot.invite_joins p where p.user_id = j.user_id and p.joined_at < $1::timestamptz)
+           and ($4::text is null or j.inviter_id in (select jsonb_array_elements_text($4::text::jsonb)))
+         group by j.inviter_id`,
+        [new Date(start).toISOString(), new Date(end).toISOString(), Math.max(0, Math.floor(minAccountMs)), inviterIds ? JSON.stringify(inviterIds) : null],
+      );
+      return new Map(rows.map((r) => [r.inviter_id, r.n]));
+    },
+
+    // Wiadomości policzone w evencie (userIds = null → wszystkich): Map(userId → liczba).
+    async contestMessages(contestId, userIds = null) {
+      const rows = await query(
+        `select user_id, messages from bot.contest_scores where contest_id = $1::text
+           and ($2::text is null or user_id in (select jsonb_array_elements_text($2::text::jsonb)))`,
+        [contestId, userIds ? JSON.stringify(userIds) : null],
+      );
+      return new Map(rows.map((r) => [r.user_id, r.messages]));
+    },
+
+    // Uczestnicy eventu (od najwcześniej zapisanych) — nazwa i avatar z rankingu poziomów, jeśli są świeższe.
+    async contestEntries(contestId) {
+      const rows = await query(
+        `select e.*, l.user_tag as l_tag, l.display_name as l_name, l.avatar as l_avatar, l.guild_avatar as l_guild_avatar,
+                coalesce(l.hidden, false) as hidden
+         from bot.contest_entries e left join bot.levels l on l.user_id = e.user_id
+         where e.contest_id = $1::text order by e.created_at, e.user_id`,
+        [contestId],
+      );
+      return rows.map(mapContestEntry);
+    },
+
+    // Zapis do eventu; null = ta osoba już jest zapisana.
+    async addContestEntry({ contestId, userId, userTag = null, displayName = null, avatar = null, score = 0 }) {
+      const row = await one(
+        `insert into bot.contest_entries (contest_id, user_id, user_tag, display_name, avatar, score)
+         values ($1::text, $2::text, $3::text, $4::text, $5::text, $6::int)
+         on conflict (contest_id, user_id) do nothing returning *`,
+        [contestId, userId, userTag, displayName, avatar, Math.max(0, Math.floor(score))],
+      );
+      return row ? mapContestEntry(row) : null;
+    },
+
+    // Nazwy osób (z rankingu poziomów albo profili członków) — np. najlepsi spoza listy uczestników w panelu.
+    async userNames(userIds) {
+      if (!userIds?.length) return new Map();
+      const rows = await query(
+        `select u.id as user_id, coalesce(l.user_tag, p.username) as user_tag, coalesce(l.display_name, p.global_name) as display_name
+         from jsonb_array_elements_text($1::text::jsonb) u(id)
+         left join bot.levels l on l.user_id = u.id
+         left join bot.member_profiles p on p.user_id = u.id`,
+        [JSON.stringify(userIds)],
+      );
+      return new Map(rows.map((r) => [r.user_id, { userTag: r.user_tag ?? null, displayName: r.display_name ?? null }]));
+    },
+
+    async removeContestEntry(contestId, userId) {
+      const rows = await query('delete from bot.contest_entries where contest_id = $1::text and user_id = $2::text returning user_id', [contestId, userId]);
+      return rows.length > 0;
+    },
+
+    // Wyniki i zapisy eventów, których nie ma już w konfiguracji (po 30 dniach — usunięcie można cofnąć w dzienniku).
+    async pruneContestData(keepIds) {
+      const keep = JSON.stringify(keepIds ?? []);
+      await query(
+        `delete from bot.contest_scores where updated_at < now() - interval '30 days'
+           and contest_id not in (select jsonb_array_elements_text($1::text::jsonb))`,
+        [keep],
+      );
+      await query(
+        `delete from bot.contest_entries where created_at < now() - interval '30 days'
+           and contest_id not in (select jsonb_array_elements_text($1::text::jsonb))`,
+        [keep],
+      );
+    },
+
+    // ---------- Konta połączone ze stroną (/polacz) ----------
+    async addMemberLink({ kind, tokenHash, userId, userTag = null, displayName = null, avatar = null, ttlMs }) {
+      const row = await one(
+        `insert into bot.member_links (kind, token_hash, user_id, user_tag, display_name, avatar, expires_at)
+         values ($1::text, $2::text, $3::text, $4::text, $5::text, $6::text, now() + make_interval(secs => $7::double precision))
+         returning *`,
+        [kind, tokenHash, userId, userTag, displayName, avatar, ttlMs / 1000],
+      );
+      return mapMemberLink(row);
+    },
+
+    // Jednorazowy link z /polacz: znika przy pierwszym użyciu (także wygasły). null = nie ma takiego.
+    async takeMemberLink(tokenHash) {
+      const row = await one("delete from bot.member_links where token_hash = $1::text and kind = 'link' returning *", [tokenHash]);
+      return row ? mapMemberLink(row) : null;
+    },
+
+    async getMemberSession(tokenHash) {
+      const row = await one("select * from bot.member_links where token_hash = $1::text and kind = 'session' and expires_at > now()", [tokenHash]);
+      return row ? mapMemberLink(row) : null;
+    },
+
+    async touchMemberSession(id) {
+      await query('update bot.member_links set last_seen_at = now() where id = $1::int', [id]);
+    },
+
+    async deleteMemberLinks({ userId = null, kind = null, tokenHash = null }) {
+      if (!userId && !tokenHash) return 0;
+      const rows = await query(
+        `delete from bot.member_links where ($1::text is null or user_id = $1::text) and ($2::text is null or kind = $2::text)
+           and ($3::text is null or token_hash = $3::text) returning id`,
+        [userId, kind, tokenHash],
+      );
+      return rows.length;
+    },
+
+    async pruneMemberLinks() {
+      await query('delete from bot.member_links where expires_at < now()');
+    },
+
     // ---------- Bumpy ----------
     async addBump({ userId, channelId, messageId }) {
       const row = await one(
@@ -1182,7 +1339,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
     // XP z cooldownem danego rodzaju. dailyCap > 0 — najwyżej tyle XP na dobę (dayKey, czas polski), reszta przepada;
     // textHash — skrót wiadomości: ta sama wiadomość co ostatnio nagrodzona nie daje XP (null = bez sprawdzania).
     // Zwraca null (cooldown / powtórka) albo { xp, level, granted }. Dzienne sumy trafiają do bot.level_daily.
-    async awardXp({ userId, userTag, displayName = null, avatar, amount, kind, cooldownSec, minutes = 0, weekKey, monthKey, dayKey, dailyCap = 0, textHash = null, eventId = null }) {
+    async awardXp({ userId, userTag, displayName = null, avatar, amount, kind, cooldownSec, minutes = 0, weekKey, monthKey, dayKey, dailyCap = 0, textHash = null, eventId = null, contestIds = [] }) {
       const k = XP_KINDS[kind];
       const counter = kind === 'voice' ? minutes : 1;
       const day = dayKey ?? new Date().toISOString().slice(0, 10);
@@ -1225,9 +1382,16 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
            select $13::text, $1::text, (select xp from given)
            where $13::text is not null and (select xp from given) > 0 and exists (select 1 from up)
            on conflict (event_id, user_id) do update set xp = e.xp + excluded.xp
+         ),
+         -- Trwające eventy z wiadomościami (contests.js): policzona wiadomość = +1 w każdym z nich.
+         contest as (
+           insert into bot.contest_scores as s (contest_id, user_id, messages)
+           select c, $1::text, 1 from jsonb_array_elements_text(coalesce($14::text, '[]')::jsonb) c
+           where exists (select 1 from up)
+           on conflict (contest_id, user_id) do update set messages = s.messages + 1, updated_at = now()
          )
          select up.xp, up.level, (select xp from given) as granted from up`,
-        [userId, userTag ?? null, avatar ?? null, amount, weekKey, monthKey, cooldownSec, counter, displayName ?? null, day, dailyCap, textHash, eventId],
+        [userId, userTag ?? null, avatar ?? null, amount, weekKey, monthKey, cooldownSec, counter, displayName ?? null, day, dailyCap, textHash, eventId, contestIds?.length ? JSON.stringify(contestIds) : null],
       );
       return row ? { xp: Number(row.xp), level: row.level, granted: Number(row.granted) } : null;
     },

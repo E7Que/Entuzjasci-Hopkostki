@@ -58,6 +58,7 @@
         <a href="#spolecznosc" data-view="spolecznosc"><span>Społeczność</span></a>
         <a href="#automod" data-view="automod"><span>Automoderacja</span></a>
         <a href="#poziomy" data-view="poziomy"><span>Poziomy</span></a>
+        <a href="#eventy" data-view="eventy"><span>Eventy</span></a>
         <a href="#tickety" data-view="tickety"><span>Tickety</span></a>
         <a href="#glosowe" data-view="glosowe"><span>Kanały głosowe</span></a>
         <a href="#wiadomosci" data-view="wiadomosci"><span>Wiadomości</span></a>
@@ -809,6 +810,59 @@
       </section>
 
       <!-- SPOŁECZNOŚĆ -->
+      <section id="view-eventy" class="view">
+        <header class="view-head">
+          <h2>Eventy</h2>
+          <p class="muted">Konkursy na <a id="ct-site-link" href="ranking.html#eventy" target="_blank" rel="noopener">stronie rankingu</a>: <strong>zaproszenia</strong> (kto zaprosi najwięcej osób albo dobije do progu), <strong>wiadomości</strong> albo <strong>mieszany</strong> (punkty za jedno i drugie). Zakładka „Eventy” pojawia się na stronie tylko wtedy, gdy jakiś event jest zaplanowany, trwa albo skończył się w ostatnich 3 dniach — przy kilku eventach każdy ma swoją podzakładkę. Żeby wziąć udział, osoba łączy konto komendą <code>/polacz</code> (link od bota loguje ją na stronie).</p>
+        </header>
+        <div class="card">
+          <label class="toggle"><input type="checkbox" data-path="contests.enabled"><span></span>Włącz eventy</label>
+          <div class="grid two tight">
+            <label class="field"><span>Kanał zgłoszeń (ktoś osiągnął próg)</span><select data-path="contests.logChannelId" data-channel-select="none"></select></label>
+            <label class="field"><span>Rola z pingiem przy zgłoszeniu</span><select data-path="contests.pingRoleId" data-role-select="none"></select></label>
+          </div>
+          <p class="muted small">Gdy event ma próg (np. 5 zaproszeń), każdy widzi na stronie pasek postępu, a po jego zapełnieniu może kliknąć „Zgłoś się” — wtedy bot wysyła zgłoszenie na wybrany kanał.</p>
+          <div class="banner warn hidden" id="ct-warning"></div>
+        </div>
+
+        <div class="grid two">
+          <div class="card" id="ct-form">
+            <h3 id="ct-form-title">Nowy event</h3>
+            <div class="grid two tight">
+              <label class="field"><span>Nazwa</span><input type="text" id="ct-name" maxlength="80" placeholder="Zaproś znajomych"></label>
+              <label class="field"><span>Rodzaj</span>
+                <select id="ct-type"><option value="invites">📨 Zaproszenia</option><option value="messages">💬 Wiadomości</option><option value="mixed">⭐ Mieszany (punkty)</option></select>
+              </label>
+              <label class="field"><span>Początek</span><input type="datetime-local" id="ct-start"></label>
+              <label class="field"><span>Koniec</span><input type="datetime-local" id="ct-end"></label>
+              <label class="field"><span id="ct-goal-label">Próg zgłoszenia (0 = bez progu)</span><input type="number" id="ct-goal" min="0" max="1000000" value="0" inputmode="numeric"></label>
+              <label class="field"><span>Nagradzane miejsca (0 = bez)</span><input type="number" id="ct-winners" min="0" max="25" value="3" inputmode="numeric"></label>
+              <label class="field" id="ct-pts-invite-field"><span>Punkty za zaproszenie</span><input type="number" id="ct-pts-invite" min="0" max="10000" value="10" inputmode="numeric"></label>
+              <label class="field" id="ct-pts-message-field"><span>Punkty za wiadomość</span><input type="number" id="ct-pts-message" min="0" max="10000" value="1" inputmode="numeric"></label>
+              <label class="field" id="ct-age-field"><span>Zaproszone konto ma co najmniej (dni)</span><input type="number" id="ct-age" min="0" max="365" value="7" inputmode="numeric"></label>
+              <label class="field"><span>Nagroda (opcjonalnie)</span><input type="text" id="ct-prize" maxlength="200" placeholder="Nitro Classic na miesiąc"></label>
+            </div>
+            <label class="field"><span>Opis (opcjonalnie)</span><textarea id="ct-desc" rows="3" maxlength="1500" placeholder="Zasady i nagrody — widać je na stronie nad Twoim postępem."></textarea></label>
+            <p class="muted small" id="ct-hint"></p>
+            <div class="bulk-row">
+              <button type="button" class="btn ghost" id="ct-add">Dodaj event</button>
+              <button type="button" class="btn ghost" id="ct-cancel" hidden>Anuluj edycję</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Eventy</h3>
+            <div id="ct-list" class="ev-list"></div>
+          </div>
+        </div>
+
+        <div class="card" id="ct-people-card" hidden>
+          <div class="card-head"><h3 id="ct-people-title">Uczestnicy</h3><button type="button" class="btn ghost small" id="ct-people-refresh">Odśwież</button></div>
+          <p class="muted small" id="ct-people-note"></p>
+          <div class="table-wrap"><table class="table compact form-cards" id="ct-people"></table></div>
+          <div id="ct-others"></div>
+        </div>
+      </section>
+
       <section id="view-spolecznosc" class="view">
         <header class="view-head">
           <h2>Społeczność</h2>
@@ -1175,6 +1229,7 @@
               <div class="field"><span>Sprawy</span><div data-picker-slot="cfg:panelAccess.roles.sprawy"></div></div>
               <div class="field"><span>Tymczasowe bany</span><div data-picker-slot="cfg:panelAccess.roles.bany"></div></div>
               <div class="field"><span>Poziomy</span><div data-picker-slot="cfg:panelAccess.roles.poziomy"></div></div>
+              <div class="field"><span>Eventy</span><div data-picker-slot="cfg:panelAccess.roles.eventy"></div></div>
               <div class="field"><span>Automoderacja</span><div data-picker-slot="cfg:panelAccess.roles.automod"></div></div>
               <div class="field"><span>Serwer info</span><div data-picker-slot="cfg:panelAccess.roles.serwerinfo"></div></div>
             </div>

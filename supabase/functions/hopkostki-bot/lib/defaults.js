@@ -303,6 +303,17 @@ export const DEFAULT_CONFIG = {
     publicLeaderboard: true,
   },
 
+  // Eventy (konkursy) na stronie rankingu — zakładka „Eventy” pokazuje się tylko, gdy jakiś event jest zaplanowany,
+  // trwa albo skończył się w ostatnich 3 dniach. Udział wymaga połączenia konta: /polacz na Discordzie daje link,
+  // który loguje na stronie. list: eventy (contests.js), logChannelId: kanał, na który trafiają zgłoszenia osób,
+  // które osiągnęły próg (puste = bez powiadomień), pingRoleId: rola oznaczana przy zgłoszeniu.
+  contests: {
+    enabled: true,
+    logChannelId: '',
+    pingRoleId: '',
+    list: [],
+  },
+
   // Logowanie moderacji do panelu: /login na wybranym kanale daje osobie jej login i hasło, ważne loginDays
   // dni (7, 14 albo 30 — potem /login daje nowe; /login nowy:True wymusza nowe wcześniej).
   // roles: które role odblokowują którą część panelu (bot sprawdza aktualne role na bieżąco).
@@ -402,6 +413,7 @@ export const DEFAULT_CONFIG = {
       sprawy: [],
       bany: [],
       poziomy: [],
+      eventy: [],
       automod: [],
       serwerinfo: [],
     },

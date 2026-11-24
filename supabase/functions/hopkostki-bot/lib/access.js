@@ -31,6 +31,7 @@ export const PANEL_SECTIONS = {
   sprawy: 'Sprawy',
   bany: 'Tymczasowe bany',
   poziomy: 'Poziomy',
+  eventy: 'Eventy',
   automod: 'Automoderacja',
   serwerinfo: 'Serwer info',
 };
@@ -50,6 +51,7 @@ export const SECTION_CONFIG_KEYS = {
   embedy: ['actions'],
   ostrzezenia: ['warns', 'escalation'],
   poziomy: ['levels'],
+  eventy: ['contests'],
   automod: ['automod'],
   serwerinfo: ['serverInfo'],
 };

@@ -6,6 +6,8 @@ import { getApp, getGuildContext, isOurGuild } from './moderation.js';
 import { avatarUrl } from './rest.js';
 import { COLORS, colorInt, escapeMarkdown, fillTemplate } from './embeds.js';
 import { joinLogsOn, logMemberJoin, logMemberLeave, messageLogsOn, profileLogsOn } from './logs.js';
+import { detectInvite } from './invites.js';
+import { inviteContestLive, inviteContestPlanned } from './contests.js';
 
 const FLAG = { MEMBERS: 1 << 14, MEMBERS_LIMITED: 1 << 15, CONTENT: 1 << 18, CONTENT_LIMITED: 1 << 19 };
 const RECENT_JOIN_MS = 30 * 60_000;
@@ -21,7 +23,8 @@ export function membersFeaturesOn(config) {
   const levels = config.levels.enabled && config.levels.autoReset;
   // Automoderacja: anty-rajd liczy wejścia na serwer.
   const raid = config.automod.enabled && config.automod.raid.enabled;
-  return m.autoRole.enabled || m.welcome.enabled || m.goodbye.enabled || joinLogsOn(config) || profileLogsOn(config) || levels || raid;
+  // Eventy zaproszeń: kto kogo zaprosił i kto wyszedł z serwera (GUILD_MEMBER_ADD/REMOVE).
+  return m.autoRole.enabled || m.welcome.enabled || m.goodbye.enabled || joinLogsOn(config) || profileLogsOn(config) || levels || raid || inviteContestPlanned(config);
 }
 
 // Treść cudzych wiadomości: zapis ticketów, logi usuniętych/edytowanych wiadomości, embed DISBOARD przy bumpie.
@@ -85,6 +88,8 @@ export async function onMemberJoin(bot, member) {
 
   const logJoins = joinLogsOn(config);
   const needsGuild = members.welcome.enabled || logJoins;
+  // Trwa event zaproszeń — kto zaprosił, sprawdzamy od razu (raz; wynik trafia też do logu wejść).
+  const invite = inviteContestLive(config) ? await detectInvite(bot, member).catch(() => null) : undefined;
   const gctx = needsGuild ? await getGuildContext(bot, { force: true }).catch(() => null) : null;
   const user = member.user;
 
@@ -107,7 +112,7 @@ export async function onMemberJoin(bot, member) {
       .catch((error) => console.warn(`[powitanie] ${error.message}`));
   }
 
-  if (logJoins) await logMemberJoin(bot, member, gctx?.guild?.memberCount);
+  if (logJoins) await logMemberJoin(bot, member, gctx?.guild?.memberCount, invite);
 }
 
 // Po zaakceptowaniu regulaminu (pending: true → false) dostaje role, których nie mógł dostać przy wejściu.
@@ -122,6 +127,8 @@ export async function onMemberUpdate(bot, member) {
 
 export async function onMemberLeave(bot, data) {
   if (!(await isOurGuild(bot, data?.guild_id))) return;
+  // Zaproszenie osoby, która wyszła, przestaje się liczyć w eventach zaproszeń.
+  if (data.user?.id) await bot.store.markInviteLeft(data.user.id).catch((error) => console.warn(`[eventy] Wyjście: ${error.message}`));
   const config = await bot.store.getConfig();
   const { members } = config;
   if (!members.goodbye.enabled && !joinLogsOn(config)) return;
