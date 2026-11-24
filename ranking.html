@@ -1019,7 +1019,23 @@
     .ct-clock b { font-size: 1.2rem; font-weight: 600; }
 
     .ct-body { display: grid; gap: 16px; padding: 18px 22px 22px; }
-    .ct-desc { margin: 0; white-space: pre-line; overflow-wrap: anywhere; font-size: 0.93rem; }
+    .ct-desc { margin: 0; overflow-wrap: anywhere; font-size: 0.93rem; line-height: 1.55; }
+    .rich b { font-weight: 600; }
+    .rich a { color: var(--accent); text-decoration: none; }
+    .rich a:hover { text-decoration: underline; }
+    .rich code { padding: 1px 5px; border-radius: 5px; background: rgba(255, 255, 255, 0.08); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.88em; }
+    .rich ul { margin: 4px 0; padding-left: 1.3em; }
+    .rich li { margin: 2px 0; }
+    .rich .rt-h1, .rich .rt-h2, .rich .rt-h3 { display: block; margin: 6px 0 2px; font-weight: 700; line-height: 1.3; }
+    .rich .rt-h1 { font-size: 1.22rem; }
+    .rich .rt-h2 { font-size: 1.08rem; }
+    .rich .rt-h3 { font-size: 0.98rem; }
+    .rich .rt-quote { display: block; margin: 2px 0; padding-left: 10px; border-left: 3px solid color-mix(in srgb, var(--c, var(--accent)) 55%, var(--border)); color: var(--muted); }
+    .rich img.emoji { display: inline-block; width: 1.35em; height: 1.35em; vertical-align: -0.3em; object-fit: contain; }
+    .rich .spoiler { padding: 0 3px; border-radius: 4px; background: #2b2d31; color: transparent; cursor: pointer; transition: background 0.2s, color 0.2s; }
+    .rich .spoiler:hover { background: #35373c; }
+    .rich .spoiler.on { background: rgba(255, 255, 255, 0.1); color: inherit; cursor: auto; }
+    .rich .spoiler:not(.on) * { visibility: hidden; }
     .ct-facts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
     .ct-facts li { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 0.83rem; }
     .ct-facts li b { color: var(--text); font-weight: 500; }
@@ -1093,6 +1109,20 @@
     .ct-win b { color: #86efac; font-size: 1.08rem; }
     .ct-win span { color: var(--muted); font-size: 0.84rem; }
     .ct-score b.in { color: #4ade80; font-size: 1.2rem; }
+    .ct-facts li.draw { border-color: color-mix(in srgb, var(--gold) 35%, var(--border)); }
+    .ct-trophy { margin-right: 5px; }
+    .ct-row.drawn { background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 14%, transparent), transparent 60%); }
+    .ct-me.won.gold { border-color: color-mix(in srgb, var(--gold) 60%, transparent); background: linear-gradient(135deg, color-mix(in srgb, var(--gold) 16%, var(--surface-2)), var(--surface-2) 70%); }
+    .ct-win.gold { background: color-mix(in srgb, var(--gold) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 45%, transparent); }
+    .ct-win.gold b { color: #ffd88f; }
+    .ct-drawn { padding: 14px 16px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--gold) 40%, var(--border)); background: linear-gradient(135deg, color-mix(in srgb, var(--gold) 10%, var(--surface-2)), var(--surface-2) 75%); }
+    .ct-drawn h3 { margin: 0 0 10px; font-size: 0.95rem; font-weight: 600; color: #ffe3a3; }
+    .ct-drawn-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .ct-drawn-person { display: inline-flex; align-items: center; gap: 9px; padding: 6px 12px 6px 6px; border-radius: 999px; background: rgba(0, 0, 0, 0.25); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06); }
+    .ct-drawn-person.me { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 70%, transparent); }
+    .ct-drawn-person .avatar { width: 34px; height: 34px; }
+    .ct-drawn-person b { font-weight: 600; font-size: 0.9rem; }
+    .ct-drawn-person small { display: block; color: #ffd88f; font-size: 0.74rem; }
     #card-account .acc { display: flex; align-items: center; gap: 10px; }
     #card-account .acc img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
     #card-account .acc div { min-width: 0; }
@@ -14841,15 +14871,15 @@
     const CT_TYPES = {
       invites: {
         label: 'Zaproszenia',
-        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2.5 20.5c.8-3.6 3.3-5.5 6.5-5.5s5.7 1.9 6.5 5.5M19 8v6M16 11h6"/></svg>',
+        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.5" cy="7.5" r="4"/><path d="M2.5 20.5c.8-3.8 3.5-6 7-6s6.2 2.2 7 6M19 8v6M16 11h6"/></svg>',
       },
       messages: {
         label: 'Wiadomości',
-        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/><path d="M8.5 10.5h7M8.5 13.8h4.5"/></svg>',
+        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01M12 12h.01M16 12h.01" stroke-width="2.6"/></svg>',
       },
       mixed: {
         label: 'Zaproszenia i wiadomości',
-        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.8l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z"/></svg>',
+        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5l2.94 5.96 6.56.95-4.75 4.63 1.12 6.54L12 17.49l-5.87 3.09 1.12-6.54L2.5 9.41l6.56-.95z"/></svg>',
       },
     };
     // Formy: biernik („zaproś 3 osoby”), dopełniacz („brakuje 1 osoby”).
@@ -14857,7 +14887,7 @@
       invites: { to: ['osobę', 'osoby', 'osób'], of: ['osoby', 'osób', 'osób'] },
       messages: { to: ['wiadomość', 'wiadomości', 'wiadomości'], of: ['wiadomości', 'wiadomości', 'wiadomości'] },
     };
-    const CT_LINK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></svg>';
+    const CT_LINK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
     const DISCORD_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.6 5.3A16.6 16.6 0 0 0 15.5 4l-.5 1a15.4 15.4 0 0 0-6 0L8.5 4a16.6 16.6 0 0 0-4.1 1.3C1.8 9.2 1.1 13 1.4 16.7a16.7 16.7 0 0 0 5.1 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a11.9 11.9 0 0 0 11.4 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a16.6 16.6 0 0 0 5.1-2.6c.4-4.3-.7-8.1-3-11.4zM8.7 14.4c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>';
     const ctPlural = (n, [one, few, many]) => {
       if (n === 1) return one;
@@ -14898,9 +14928,57 @@
     }
     const loginButton = (cls = '') => `<button type="button" class="ct-discord ${cls}" data-ct-login>${DISCORD_ICON}Zaloguj przez Discord</button>`;
 
+    // Stylizacja tekstu jak na Discordzie: **pogrubienie**, *kursywa*, __podkreślenie__, ~~przekreślenie~~,
+    // ||spoiler||, `kod`, # nagłówek (## i ### mniejsze), - lista, > cytat, [tekst](https://…), linki i emoji
+    // z serwera <:nazwa:id>. Najpierw całość jest escapowana — HTML z opisu nigdy nie trafia na stronę.
+    function richText(text) {
+      const tokens = [];
+      const keep = (html) => `\u0000${tokens.push(html) - 1}\u0000`;
+      const link = (href, label) => keep(`<a href="${href}" target="_blank" rel="noopener nofollow ugc">${label}</a>`);
+      const inline = (t) =>
+        t
+          .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+          .replace(/__(.+?)__/g, '<u>$1</u>')
+          .replace(/~~(.+?)~~/g, '<s>$1</s>')
+          .replace(/\|\|(.+?)\|\|/g, '<span class="spoiler" tabindex="0" title="Kliknij, żeby odsłonić">$1</span>')
+          .replace(/(^|[^*\w])\*(?=\S)([^*]+?)\*(?!\*)/g, '$1<i>$2</i>')
+          .replace(/(^|[^_\w])_(?=\S)([^_]+?)_(?![_\w])/g, '$1<i>$2</i>');
+      let s = esc(String(text ?? ''))
+        .replace(/`([^`\n]+)`/g, (_, code) => keep(`<code>${code}</code>`))
+        .replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, (_, label, href) => link(href, label))
+        .replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, (_, pre, href) => pre + link(href, href))
+        .replace(/&lt;(a?):(\w{2,32}):(\d{15,25})&gt;/g, (_, anim, name, id) => keep(`<img class="emoji" src="https://cdn.discordapp.com/emojis/${id}.${anim ? 'gif' : 'webp'}?size=48" alt=":${name}:" title=":${name}:" loading="lazy">`));
+      const out = [];
+      let list = [];
+      const flush = () => {
+        if (list.length) out.push(`<ul>${list.join('')}</ul>`);
+        list = [];
+      };
+      for (const line of s.split('\n')) {
+        const item = /^\s*[-*] (.+)$/.exec(line);
+        if (item) {
+          list.push(`<li>${inline(item[1])}</li>`);
+          continue;
+        }
+        flush();
+        const head = /^(#{1,3}) (.+)$/.exec(line);
+        const quote = /^&gt; ?(.*)$/.exec(line);
+        if (head) out.push(`<span class="rt-h${head[1].length}">${inline(head[2])}</span>`);
+        else if (quote) out.push(`<span class="rt-quote">${inline(quote[1]) || '&nbsp;'}</span>`);
+        else out.push(`${inline(line)}<br>`);
+      }
+      flush();
+      s = out.join('').replace(/(<br>)+$/, '');
+      return s.replace(/\u0000(\d+)\u0000/g, (_, i) => tokens[Number(i)]);
+    }
+
     function ctFacts(c) {
       const facts = [`<li class="goal">🎯 <span>Warunek: <b>${esc(ctRequirement(c))}</b></span></li>`];
       if (c.prize) facts.push(`<li class="prize">🎁 <span><b>Nagroda:</b> ${esc(c.prize)}</span></li>`);
+      if (c.draw && c.draw.winners > 0) {
+        const who = `${c.draw.winners} ${ctPlural(c.draw.winners, ['zwycięzca', 'zwycięzców', 'zwycięzców'])}`;
+        facts.push(`<li class="draw">🎲 <span>Losowanie: <b>${who}</b> wśród tych, którzy się dostaną${c.draw.mode === 'auto' ? ' — po końcu eventu' : ''}</span></li>`);
+      }
       facts.push(`<li>👥 <span><b>${fmt(c.participants)}</b> ${ctPlural(c.participants, ['zapisany', 'zapisanych', 'zapisanych'])}${c.qualified ? ` · <b>${fmt(c.qualified)}</b> ${ctPlural(c.qualified, ['dostał(a) się', 'dostało się', 'dostało się'])}` : ''}</span></li>`);
       const rules = ['Najpierw się zapisz — liczy się to, co zrobisz od chwili zapisu (najwcześniej od startu eventu).'];
       if (c.invites > 0) {
@@ -14945,7 +15023,8 @@
       if (c.invites > 0) bars.push(ctBar('invites', 'Zaproszone osoby', m.invites, c.invites, animate));
       if (c.messages > 0) bars.push(ctBar('messages', 'Wiadomości', m.messages, c.messages, animate));
       let status;
-      if (m.reached) status = '<div class="ct-win"><b>🎉 Dostałeś się!</b><span>Warunek spełniony — administracja już to widzi.</span></div>';
+      if (m.won) status = '<div class="ct-win gold"><b>🏆 Wygrałeś w losowaniu!</b><span>Administracja odezwie się w sprawie nagrody.</span></div>';
+      else if (m.reached) status = `<div class="ct-win"><b>🎉 Dostałeś się!</b><span>${c.draw?.done ? 'Warunek spełniony — tym razem losowanie wygrał ktoś inny.' : c.draw?.winners ? 'Warunek spełniony — bierzesz udział w losowaniu.' : 'Warunek spełniony — administracja już to widzi.'}</span></div>`;
       else if (c.status === 'upcoming') status = `<span class="ct-ok">✓ Zapisano</span><span class="ct-hint">Liczenie ruszy razem z eventem.</span>`;
       else if (c.status === 'ended') status = '<span class="ct-hint">Event się skończył — warunek nie został spełniony.</span>';
       else {
@@ -14954,7 +15033,7 @@
         if (c.messages > m.messages) left.push(ctUnit('messages', c.messages - m.messages, true));
         status = `<span class="ct-ok">✓ Zapisano</span><span class="ct-hint">Brakuje jeszcze ${esc(left.join(' i '))}.</span>`;
       }
-      return `<section class="ct-me${m.reached ? ' won' : ''}">${head}${bars.join('')}<div class="ct-actions">${status}</div></section>`;
+      return `<section class="ct-me${m.won ? ' won gold' : m.reached ? ' won' : ''}">${head}${bars.join('')}<div class="ct-actions">${status}</div></section>`;
     }
 
     function ctBoard(c) {
@@ -14969,17 +15048,27 @@
           if (c.messages > 0) parts.push(`${fmt(e.messages)}/${fmt(c.messages)} wiad.`);
           const ratio = [c.invites > 0 ? Math.min(1, e.invites / c.invites) : null, c.messages > 0 ? Math.min(1, e.messages / c.messages) : null].filter((x) => x !== null);
           const p = Math.floor((ratio.reduce((a, b) => a + b, 0) / ratio.length) * 100);
-          const cls = [e.reached ? 'win reached' : '', e.me ? 'me' : ''].filter(Boolean).join(' ');
+          const cls = [e.reached ? 'win reached' : '', e.won ? 'drawn' : '', e.me ? 'me' : ''].filter(Boolean).join(' ');
           return `<li class="ct-row ${cls}"${e.userId ? ` data-id="${esc(e.userId)}" tabindex="0"` : ''}>
             <span class="rank">${e.rank}</span>
             ${e.avatar ? `<img class="avatar" src="${esc(e.avatar)}" alt="" width="36" height="36" loading="lazy">` : '<span class="avatar ghost"></span>'}
-            <span class="ct-person"><b>${esc(name)}${e.me ? ' <em>· Ty</em>' : ''}</b><small>${esc(parts.join(' · '))}</small><span class="ct-mini${e.reached ? ' done' : ''}"><i style="--p:${p}%"></i></span></span>
+            <span class="ct-person"><b>${e.won ? '<span class="ct-trophy" title="Wylosowany(-a)">🏆</span>' : ''}${esc(name)}${e.me ? ' <em>· Ty</em>' : ''}</b><small>${esc(parts.join(' · '))}</small><span class="ct-mini${e.reached ? ' done' : ''}"><i style="--p:${p}%"></i></span></span>
             <span class="ct-score">${e.reached ? '<b class="in">✓</b><small>dostał(a) się</small>' : `<b>${p}%</b><small>postęp</small>`}</span>
           </li>`;
         })
         .join('');
       const more = c.participants > c.entries.length ? `<p class="ct-more">…i jeszcze ${fmt(c.participants - c.entries.length)}</p>` : '';
       return `<section class="ct-board"><h3>Zapisani<span>${fmt(c.participants)}</span></h3><ol class="ct-list">${rows}</ol>${more}</section>`;
+    }
+
+    // Wylosowani (po losowaniu w panelu albo samym po końcu eventu).
+    function ctWinners(c) {
+      if (!c.draw?.done) return '';
+      if (!c.winners?.length) return '<section class="ct-drawn"><h3>🎲 Losowanie</h3><p class="ct-hint">Nikt nie spełnił warunku — nie było kogo losować.</p></section>';
+      const people = c.winners
+        .map((w, i) => `<span class="ct-drawn-person${w.me ? ' me' : ''}">${w.avatar ? `<img class="avatar" src="${esc(w.avatar)}" alt="" width="34" height="34">` : '<span class="avatar ghost"></span>'}<span><b>${['🥇', '🥈', '🥉'][i] ?? '🏅'} ${esc(w.displayName ?? w.name)}</b>${w.me ? '<small>to Ty!</small>' : ''}</span></span>`)
+        .join('');
+      return `<section class="ct-drawn"><h3>🏆 ${c.winners.length === 1 ? 'Wylosowany zwycięzca' : 'Wylosowani zwycięzcy'}</h3><div class="ct-drawn-list">${people}</div></section>`;
     }
 
     function ctCard(c, animate) {
@@ -14999,8 +15088,9 @@
           ${clock}
         </header>
         <div class="ct-body">
-          ${c.description ? `<p class="ct-desc">${esc(c.description)}</p>` : ''}
+          ${c.description ? `<div class="ct-desc rich">${richText(c.description)}</div>` : ''}
           ${ctFacts(c)}
+          ${ctWinners(c)}
           ${ctMe(c, animate)}
           ${ctBoard(c)}
         </div>
@@ -15205,6 +15295,9 @@
       if (event.target.closest('[data-ct-unlink]')) return ctUnlink();
     }
     $('#contests').addEventListener('click', ctClick);
+    // Spoiler w opisie: kliknięcie (albo Enter) odsłania.
+    $('#contests').addEventListener('click', (event) => event.target.closest('.spoiler')?.classList.add('on'));
+    $('#contests').addEventListener('keydown', (event) => { if (event.key === 'Enter') event.target.closest('.spoiler')?.classList.add('on'); });
     $('#card-account').addEventListener('click', ctClick);
     // Strzałki w podzakładkach eventów.
     $('#contests').addEventListener('keydown', (event) => {
@@ -15412,6 +15505,8 @@
       if (img.tagName !== 'IMG') return;
       if (img.classList.contains('pf-deco') || img.classList.contains('deco') || img.classList.contains('plate') || img.closest('.gtag')) img.remove();
       else if ((img.classList.contains('avatar') || img.classList.contains('pic')) && img.src !== FALLBACK_AVATAR) img.src = FALLBACK_AVATAR;
+      // Emoji z opisu, którego już nie ma na serwerze → sama nazwa (:nazwa:), jak na Discordzie.
+      else if (img.classList.contains('emoji') && img.closest('.rich')) img.replaceWith(img.alt);
     }, true);
 
     const initial = location.hash.slice(1);
