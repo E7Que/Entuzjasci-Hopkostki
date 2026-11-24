@@ -3,7 +3,8 @@
 // i/lub napisać `messages` wiadomości (0 = bez tego warunku). Jak to działa dla osoby:
 //   1. łączy konto („Zaloguj przez Discord” na stronie albo link z /polacz) i klika „Zapisz się”,
 //   2. od chwili zapisu (najwcześniej od startu eventu) liczą się jej zaproszenia i wiadomości — pasek postępu,
-//   3. po spełnieniu warunku „Dostałeś się!” — bot ogłasza to na kanale wybranym w panelu.
+//   3. po spełnieniu warunku „Dostałeś się!” — bot ogłasza to na kanale wybranym w panelu,
+//   4. opcjonalnie losowanie nagród wśród tych, którzy się dostali: ręcznie (panel) albo samo po końcu eventu.
 // Zaproszenia liczą się tylko za osoby, które weszły z zaproszenia, nadal są na serwerze, nie były na nim wcześniej
 // i mają konto starsze niż minAccountDays dni. Wiadomości liczą się tak jak do poziomów (cooldown, kanały bez XP,
 // ochrona przed nabijaniem).
@@ -27,6 +28,7 @@ export const OAUTH_REDIRECT = CONTEST_SITE;
 const UNITS = { invites: ['osobę', 'osoby', 'osób'], messages: ['wiadomość', 'wiadomości', 'wiadomości'] };
 // Dopełniacz („brakuje 1 osoby / 2 osób”).
 const UNITS_OF = { invites: ['osoby', 'osób', 'osób'], messages: ['wiadomości', 'wiadomości', 'wiadomości'] };
+const DRAWS = 'contest_draws';
 
 // Brak połączenia albo wygasła sesja — API odpowiada 401 (strona prosi o ponowne połączenie).
 export class MemberAuthError extends Error {}
@@ -201,7 +203,7 @@ export async function endMemberSession(bot, token) {
 // ---------- Widok eventów na stronie ----------
 function personView(p, session, gctx) {
   const mine = session?.userId === p.userId;
-  const base = { rank: p.rank, invites: p.invites, messages: p.messages, reached: p.reached, me: mine, joinedAt: p.createdAt, qualifiedAt: p.qualifiedAt };
+  const base = { rank: p.rank, invites: p.invites, messages: p.messages, reached: p.reached, won: Boolean(p.wonAt), me: mine, joinedAt: p.createdAt, qualifiedAt: p.qualifiedAt };
   // Osoba ukryta komendą /prywatnosc: miejsce i postęp zostają, bez nazwy, avatara i ID.
   if (p.hidden && !mine) return { ...base, hidden: true, userId: null, name: 'Ukryta osoba', displayName: null, avatar: null };
   return {
@@ -216,16 +218,17 @@ function personView(p, session, gctx) {
   };
 }
 
-async function contestView(bot, c, { session, now, gctx }) {
+async function contestView(bot, c, { session, now, gctx, draws }) {
   const status = contestStatus(c, now);
   const people = await standings(bot, c, now);
   let me = null;
   if (session) {
     const mine = people.find((p) => p.userId === session.userId);
     me = mine
-      ? { joined: true, rank: mine.rank, invites: mine.invites, messages: mine.messages, reached: mine.reached, joinedAt: mine.createdAt, canJoin: false, blocker: null }
-      : { joined: false, rank: null, invites: 0, messages: 0, reached: false, joinedAt: null, canJoin: status !== 'ended', blocker: status === 'ended' ? 'Ten event już się skończył.' : null };
+      ? { joined: true, rank: mine.rank, invites: mine.invites, messages: mine.messages, reached: mine.reached, won: Boolean(mine.wonAt), joinedAt: mine.createdAt, canJoin: false, blocker: null }
+      : { joined: false, rank: null, invites: 0, messages: 0, reached: false, won: false, joinedAt: null, canJoin: status !== 'ended', blocker: status === 'ended' ? 'Ten event już się skończył.' : null };
   }
+  const drawn = draws?.[c.id] ?? null;
   return {
     id: c.id,
     name: c.name,
@@ -240,6 +243,8 @@ async function contestView(bot, c, { session, now, gctx }) {
     minAccountDays: c.invites > 0 ? c.minAccountDays : null,
     participants: people.length,
     qualified: people.filter((p) => p.reached).length,
+    draw: c.drawWinners > 0 || drawn ? { winners: c.drawWinners, mode: c.drawMode, done: Boolean(drawn), at: drawn?.at ?? null } : null,
+    winners: people.filter((p) => p.wonAt).map((p) => personView(p, session, gctx)),
     entries: people.slice(0, TOP).map((p) => personView(p, session, gctx)),
     me,
   };
@@ -259,8 +264,9 @@ export async function publicContests(bot, { token = null, now = Date.now() } = {
     expired = true;
   }
   const gctx = list.length && bot.discord ? await getGuildContext(bot).catch(() => null) : null;
+  const draws = list.length ? ((await bot.store.getState(DRAWS)) ?? {}) : {};
   const contests = [];
-  for (const c of list) contests.push(await contestView(bot, c, { session, now, gctx }));
+  for (const c of list) contests.push(await contestView(bot, c, { session, now, gctx, draws }));
   return { enabled: contestsOn(config), contests, me: session ? describeMember(session) : null, expired, oauth: await oauthInfo(bot), now };
 }
 
@@ -311,7 +317,68 @@ export async function contestsTick(bot, { now = Date.now() } = {}) {
       await logQualified(bot, config, c, p).catch((error) => console.warn(`[eventy] Ogłoszenie: ${error.message}`));
     }
   }
+  // Losowanie samo po końcu eventu (raz).
+  const due = contestList(config).filter((c) => c.drawMode === 'auto' && c.drawWinners > 0 && Date.parse(c.endsAt) <= now && Date.parse(c.endsAt) + CONTEST_SHOW_AFTER_MS > now);
+  if (due.length) {
+    const draws = (await bot.store.getState(DRAWS)) ?? {};
+    for (const c of due.filter((x) => !draws[x.id])) await drawContest(bot, c.id, { by: null, now }).catch((error) => console.warn(`[eventy] Losowanie: ${error.message}`));
+  }
   return marked;
+}
+
+// ---------- Losowanie ----------
+// Uczciwe tasowanie (Fisher–Yates na crypto.getRandomValues) — pierwsze `n` osób wygrywa.
+function pickRandom(list, n) {
+  const pool = [...list];
+  for (let i = pool.length - 1; i > 0; i -= 1) {
+    const r = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1);
+    [pool[i], pool[r]] = [pool[r], pool[i]];
+  }
+  return pool.slice(0, n);
+}
+
+// Losuje zwycięzców wśród osób, które teraz spełniają warunek (kolejne losowanie zastępuje poprzednie).
+// by — kto losował (null = automatycznie po końcu eventu). Zwraca { winners: [...], pool }.
+export async function drawContest(bot, contestId, { by = null, now = Date.now() } = {}) {
+  const config = await bot.store.getConfig();
+  const c = (config.contests?.list ?? []).find((x) => x.id === contestId);
+  if (!c) throw new ContestError('Nie ma takiego eventu — może nie został jeszcze zapisany.');
+  if (contestStatus(c, now) === 'upcoming') throw new ContestError('Event jeszcze się nie zaczął — nie ma kogo losować.');
+  const eligible = (await standings(bot, c, now)).filter((p) => p.reached);
+  const picked = pickRandom(eligible, Math.max(1, c.drawWinners || 1));
+  await bot.store.setContestWinners(c.id, picked.map((p) => p.userId));
+  const draws = (await bot.store.getState(DRAWS)) ?? {};
+  draws[c.id] = { at: now, by, winners: picked.map((p) => p.userId), pool: eligible.length };
+  await bot.store.setState(DRAWS, draws);
+  await logDraw(bot, config, c, picked, { by, pool: eligible.length }).catch((error) => console.warn(`[eventy] Ogłoszenie losowania: ${error.message}`));
+  return { winners: picked.map((p) => ({ userId: p.userId, userTag: p.userTag, displayName: p.displayName })), pool: eligible.length };
+}
+
+async function logDraw(bot, config, c, picked, { by, pool }) {
+  const { logChannelId, pingRoleId } = config.contests;
+  if (!logChannelId || !bot.discord) return;
+  const names = picked.map((p, i) => `${['🥇', '🥈', '🥉'][i] ?? '🏅'} <@${p.userId}>`);
+  const ids = picked.map((p) => p.userId);
+  await bot.discord.post(`/channels/${logChannelId}/messages`, {
+    content: [pingRoleId ? `<@&${pingRoleId}>` : '', ...ids.map((id) => `<@${id}>`)].filter(Boolean).join(' ') || undefined,
+    allowed_mentions: { users: ids, roles: pingRoleId ? [pingRoleId] : [] },
+    embeds: [
+      {
+        color: embeds.COLORS.success,
+        title: `🎲 Losowanie — ${c.name}`.slice(0, 256),
+        description: [
+          picked.length
+            ? `**${picked.length === 1 ? 'Zwycięzca' : 'Zwycięzcy'}:**\n${names.join('\n')}`
+            : 'Nikt nie spełnił warunku — nie było kogo losować.',
+          ...(c.prize ? [`**Nagroda:** ${c.prize}`] : []),
+          `-# Losowanie wśród ${pool} ${pool === 1 ? 'osoby, która się dostała' : `${plural(pool, ['osoby', 'osób', 'osób'])}, które się dostały`}${by ? ` · losował(a): ${by}` : ' · automatycznie po końcu eventu'}.`,
+        ].join('\n'),
+        footer: { text: embeds.BRAND },
+        timestamp: new Date().toISOString(),
+      },
+    ],
+    components: [{ type: 1, components: [{ type: 2, style: 5, label: 'Zobacz event', url: `${CONTEST_SITE}#eventy` }] }],
+  });
 }
 
 async function logQualified(bot, config, c, p) {
@@ -356,8 +423,10 @@ export async function contestDetails(bot, contestId, { now = Date.now() } = {}) 
     reached: p.reached,
     joinedAt: p.createdAt,
     qualifiedAt: p.qualifiedAt,
+    won: Boolean(p.wonAt),
   }));
-  return { contest: { ...c, status: contestStatus(c, now) }, entries: people };
+  const drawn = ((await bot.store.getState(DRAWS)) ?? {})[c.id] ?? null;
+  return { contest: { ...c, status: contestStatus(c, now) }, entries: people, draw: drawn };
 }
 
 // Panel: czy logowanie przez Discord na stronie jest gotowe (adres strony na liście Redirects aplikacji).

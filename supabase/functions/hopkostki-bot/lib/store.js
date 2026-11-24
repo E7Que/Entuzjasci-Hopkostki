@@ -55,6 +55,7 @@ const mapContestEntry = (r) => ({
   score: Number(r.score ?? 0),
   createdAt: ms(r.created_at),
   qualifiedAt: ms(r.qualified_at),
+  wonAt: ms(r.won_at),
 });
 
 // Bez skrótu tokenu — ten zostaje w bazie.
@@ -1064,6 +1065,18 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
         [contestId, userId, userTag, displayName, avatar, Math.max(0, Math.floor(score))],
       );
       return row ? mapContestEntry(row) : null;
+    },
+
+    // Losowanie: nowi zwycięzcy zastępują poprzednich. Zwraca ID oznaczonych.
+    async setContestWinners(contestId, userIds) {
+      await query('update bot.contest_entries set won_at = null where contest_id = $1::text and won_at is not null', [contestId]);
+      if (!userIds?.length) return [];
+      const rows = await query(
+        `update bot.contest_entries set won_at = now()
+         where contest_id = $1::text and user_id in (select jsonb_array_elements_text($2::text::jsonb)) returning user_id`,
+        [contestId, JSON.stringify(userIds)],
+      );
+      return rows.map((r) => r.user_id);
     },
 
     // Usunięcie z eventu kasuje też policzone wiadomości — po ponownym zapisie postęp liczy się od nowa.

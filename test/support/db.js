@@ -30,6 +30,7 @@ const LOGIN_ATTEMPTS = new URL('../../supabase/migrations/20261116080000_bot_log
 const ASSETS = new URL('../../supabase/migrations/20261116090000_bot_assets.sql', import.meta.url);
 const CONTESTS = new URL('../../supabase/migrations/20261124100000_bot_contests.sql', import.meta.url);
 const CONTESTS_QUALIFIED = new URL('../../supabase/migrations/20261124110000_bot_contests_qualified.sql', import.meta.url);
+const CONTESTS_DRAW = new URL('../../supabase/migrations/20261124120000_bot_contests_draw.sql', import.meta.url);
 const withoutCron = (sql) => sql.split(/^select cron\.schedule/m)[0];
 const withoutGrants = (sql) => sql.replace(/revoke .*? from anon, authenticated;/g, '');
 let shared = null;
@@ -62,6 +63,7 @@ async function database() {
       await db.exec(withoutGrants(fs.readFileSync(ASSETS, 'utf8')));
       await db.exec(withoutGrants(fs.readFileSync(CONTESTS, 'utf8')));
       await db.exec(withoutGrants(fs.readFileSync(CONTESTS_QUALIFIED, 'utf8')));
+      await db.exec(withoutGrants(fs.readFileSync(CONTESTS_DRAW, 'utf8')));
       return db;
     })();
   }

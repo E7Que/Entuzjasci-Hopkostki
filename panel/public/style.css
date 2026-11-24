@@ -669,3 +669,22 @@ select.chip-add:hover { border-color: var(--blurple); }
 .ct-oauth .banner { margin: .8rem 0 0; }
 .ct-oauth code.copyable { cursor: copy; user-select: all; word-break: break-all; }
 .ct-oauth-ok { margin: .6rem 0 0; color: var(--green); font-size: .9rem; }
+
+/* Eventy: pasek formatowania opisu i podgląd (jak na stronie rankingu) */
+.md-tools { display: flex; flex-wrap: wrap; gap: .3rem; margin: .1rem 0 .4rem; }
+.md-tools button { min-width: 2rem; height: 2rem; padding: 0 .5rem; border: 1px solid var(--line); border-radius: 6px; background: var(--bg-3); color: var(--text); font: inherit; cursor: pointer; }
+.md-tools button:hover { background: var(--bg-hover, var(--bg-2)); border-color: var(--blurple); }
+.md-preview { margin-top: .5rem; padding: .7rem .85rem; border: 1px dashed var(--line); border-radius: 8px; background: var(--bg-2); font-size: .92rem; line-height: 1.55; overflow-wrap: anywhere; }
+.md-preview::before { content: 'Podgląd na stronie'; display: block; margin-bottom: .35rem; color: var(--muted); font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; }
+.rich b { font-weight: 700; }
+.rich a { color: var(--blurple); }
+.rich code { padding: 1px 5px; border-radius: 5px; background: rgba(255, 255, 255, .08); font-size: .88em; }
+.rich ul { margin: .25rem 0; padding-left: 1.3em; }
+.rich .rt-h1, .rich .rt-h2, .rich .rt-h3 { display: block; margin: .35rem 0 .1rem; font-weight: 700; line-height: 1.3; }
+.rich .rt-h1 { font-size: 1.2rem; }
+.rich .rt-h2 { font-size: 1.07rem; }
+.rich .rt-h3 { font-size: .98rem; }
+.rich .rt-quote { display: block; padding-left: .6rem; border-left: 3px solid var(--line); color: var(--muted); }
+.rich img.emoji { display: inline-block; width: 1.35em; height: 1.35em; vertical-align: -.3em; }
+.rich .spoiler { padding: 0 3px; border-radius: 4px; background: #2b2d31; color: transparent; cursor: pointer; }
+.rich .spoiler.on { background: rgba(255, 255, 255, .1); color: inherit; }

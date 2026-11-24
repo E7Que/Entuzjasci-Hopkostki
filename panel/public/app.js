@@ -2072,6 +2072,50 @@ function ctRequirement(c) {
   if (c.messages > 0) parts.push(`napisać ${c.messages} ${plural(c.messages, ['wiadomość', 'wiadomości', 'wiadomości'])}`);
   return parts.join(' i ') || '—';
 }
+// Stylizacja tekstu jak na Discordzie: **pogrubienie**, *kursywa*, __podkreślenie__, ~~przekreślenie~~,
+// ||spoiler||, `kod`, # nagłówek (## i ### mniejsze), - lista, > cytat, [tekst](https://…), linki i emoji
+// z serwera <:nazwa:id>. Najpierw całość jest escapowana — HTML z opisu nigdy nie trafia na stronę.
+function richText(text) {
+  const tokens = [];
+  const keep = (html) => `\u0000${tokens.push(html) - 1}\u0000`;
+  const link = (href, label) => keep(`<a href="${href}" target="_blank" rel="noopener nofollow ugc">${label}</a>`);
+  const inline = (t) =>
+    t
+      .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+      .replace(/__(.+?)__/g, '<u>$1</u>')
+      .replace(/~~(.+?)~~/g, '<s>$1</s>')
+      .replace(/\|\|(.+?)\|\|/g, '<span class="spoiler" tabindex="0" title="Kliknij, żeby odsłonić">$1</span>')
+      .replace(/(^|[^*\w])\*(?=\S)([^*]+?)\*(?!\*)/g, '$1<i>$2</i>')
+      .replace(/(^|[^_\w])_(?=\S)([^_]+?)_(?![_\w])/g, '$1<i>$2</i>');
+  let s = esc(String(text ?? ''))
+    .replace(/`([^`\n]+)`/g, (_, code) => keep(`<code>${code}</code>`))
+    .replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, (_, label, href) => link(href, label))
+    .replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, (_, pre, href) => pre + link(href, href))
+    .replace(/&lt;(a?):(\w{2,32}):(\d{15,25})&gt;/g, (_, anim, name, id) => keep(`<img class="emoji" src="https://cdn.discordapp.com/emojis/${id}.${anim ? 'gif' : 'webp'}?size=48" alt=":${name}:" title=":${name}:" loading="lazy">`));
+  const out = [];
+  let list = [];
+  const flush = () => {
+    if (list.length) out.push(`<ul>${list.join('')}</ul>`);
+    list = [];
+  };
+  for (const line of s.split('\n')) {
+    const item = /^\s*[-*] (.+)$/.exec(line);
+    if (item) {
+      list.push(`<li>${inline(item[1])}</li>`);
+      continue;
+    }
+    flush();
+    const head = /^(#{1,3}) (.+)$/.exec(line);
+    const quote = /^&gt; ?(.*)$/.exec(line);
+    if (head) out.push(`<span class="rt-h${head[1].length}">${inline(head[2])}</span>`);
+    else if (quote) out.push(`<span class="rt-quote">${inline(quote[1]) || '&nbsp;'}</span>`);
+    else out.push(`${inline(line)}<br>`);
+  }
+  flush();
+  s = out.join('').replace(/(<br>)+$/, '');
+  return s.replace(/\u0000(\d+)\u0000/g, (_, i) => tokens[Number(i)]);
+}
+
 // Event otwarty w formularzu do edycji (null = formularz dodaje nowy) i event, którego zapisanych widać pod listą.
 let ctEditId = null;
 let ctPeopleId = null;
@@ -2080,6 +2124,7 @@ function ctSyncForm() {
   const invites = ctInt('#ct-invites', 0, 1000, 0);
   const messages = ctInt('#ct-messages', 0, 1_000_000, 0);
   $('#ct-age-field').hidden = invites <= 0;
+  $('#ct-draw-winners-field').hidden = $('#ct-draw-mode').value === 'none';
   const req = ctRequirement({ invites, messages });
   $('#ct-hint').textContent = invites || messages
     ? `Osoba loguje się na stronie, klika „Zapisz się”, a potem musi ${req} — liczy się od chwili zapisu (najwcześniej od startu). Po spełnieniu warunku strona pokazuje „Dostałeś się!”, a bot ogłasza to na kanale ogłoszeń.${invites ? ' Liczą się tylko osoby, które zostaną na serwerze, nie były tu wcześniej i mają konto starsze niż podana liczba dni.' : ''}${messages ? ' Wiadomości liczą się tak jak XP w poziomach (cooldown, bez spamu).' : ''}`
@@ -2105,7 +2150,16 @@ function ctFill(c, { copy = false } = {}) {
   $('#ct-age').value = String(c.minAccountDays ?? 7);
   $('#ct-prize').value = c.prize ?? '';
   $('#ct-desc').value = c.description ?? '';
+  $('#ct-draw-mode').value = c.drawWinners > 0 ? (c.drawMode === 'auto' ? 'auto' : 'manual') : 'none';
+  $('#ct-draw-winners').value = String(c.drawWinners > 0 ? c.drawWinners : 1);
+  ctPreview();
   ctSyncForm();
+}
+// Podgląd opisu tak, jak wygląda na stronie rankingu.
+function ctPreview() {
+  const text = $('#ct-desc').value.trim();
+  $('#ct-desc-preview').hidden = !text;
+  $('#ct-desc-preview').innerHTML = text ? richText(text) : '';
 }
 function ctReset() {
   ctEditId = null;
@@ -2139,7 +2193,7 @@ function renderContests() {
             <div class="ev-main">
               <div><strong>${esc(c.name)}</strong> <span class="ev-status">${label}</span></div>
               <div class="muted small">${esc(evDate(Date.parse(c.startsAt)))} – ${esc(evDate(Date.parse(c.endsAt)))}</div>
-              <div class="muted small">🎯 Warunek: ${esc(ctRequirement(c))}${c.prize ? ` · 🎁 ${esc(c.prize)}` : ''}</div>
+              <div class="muted small">🎯 Warunek: ${esc(ctRequirement(c))}${c.prize ? ` · 🎁 ${esc(c.prize)}` : ''}${c.drawWinners > 0 ? ` · 🎲 losowanie: ${c.drawWinners} ${plural(c.drawWinners, ['zwycięzca', 'zwycięzców', 'zwycięzców'])} (${c.drawMode === 'auto' ? 'samo po końcu' : 'ręcznie'})` : ''}</div>
             </div>
             <div class="ev-actions">
               <button type="button" class="btn ghost small" data-ct-people="${id}">Zapisani</button>
@@ -2188,6 +2242,12 @@ async function loadContestPeople(id) {
   if (ctPeopleId !== id) return;
   const ct = data.contest;
   const inCount = data.entries.filter((p) => p.reached).length;
+  const drawBtn = $('#ct-draw-btn');
+  drawBtn.hidden = !(ct.drawWinners > 0) || ct.status === 'upcoming';
+  drawBtn.textContent = data.draw ? '🎲 Losuj ponownie' : '🎲 Losuj zwycięzców';
+  drawBtn.dataset.redo = data.draw ? '1' : '';
+  $('#ct-draw-note').hidden = !data.draw;
+  if (data.draw) $('#ct-draw-note').textContent = `Ostatnie losowanie: ${shortDate(data.draw.at)} (${data.draw.by ? `losował(a): ${data.draw.by}` : 'samo po końcu eventu'}) — wśród ${data.draw.pool} ${data.draw.pool === 1 ? 'osoby, która się dostała' : `${plural(data.draw.pool, ['osoby', 'osób', 'osób'])}, które się dostały`}.`;
   $('#ct-people-note').textContent = `${data.entries.length} ${plural(data.entries.length, ['osoba zapisana', 'osoby zapisane', 'osób zapisanych'])}, ${inCount} ${plural(inCount, ['dostała się', 'dostały się', 'dostało się'])}. Warunek: ${ctRequirement(ct)}. Postęp liczy się na bieżąco — gdy zaproszona osoba wyjdzie z serwera, spada.`;
   const who = (p) => `${esc(p.displayName && p.displayName !== p.userTag ? `${p.displayName} (${p.userTag})` : p.userTag ?? 'nieznana osoba')}<span class="note">${esc(p.userId)}${p.hidden ? ' · ukryta na stronie' : ''}</span>`;
   const progress = (p) =>
@@ -2197,9 +2257,9 @@ async function loadContestPeople(id) {
         .map(
           (p) => `<tr>
             <td data-label="#">${p.rank}</td>
-            <td data-label="Osoba">${who(p)}</td>
+            <td data-label="Osoba">${p.won ? '🏆 ' : ''}${who(p)}</td>
             <td data-label="Postęp">${progress(p)}</td>
-            <td data-label="Status">${p.reached ? `✅ dostał(a) się${p.qualifiedAt ? `<span class="note">${esc(shortDate(p.qualifiedAt))}</span>` : ''}` : ct.status === 'upcoming' ? '⏳ czeka na start' : '⏳ w trakcie'}</td>
+            <td data-label="Status">${p.won ? '🏆 wylosowany(-a)<br>' : ''}${p.reached ? `✅ dostał(a) się${p.qualifiedAt ? `<span class="note">${esc(shortDate(p.qualifiedAt))}</span>` : ''}` : ct.status === 'upcoming' ? '⏳ czeka na start' : '⏳ w trakcie'}</td>
             <td data-label="Zapisał(a) się">${esc(shortDate(p.joinedAt))}</td>
             <td><button type="button" class="btn danger small" data-ct-kick="${esc(p.userId)}" title="Usuń z eventu (np. za oszukiwanie)">Usuń</button></td>
           </tr>`,
@@ -2208,10 +2268,74 @@ async function loadContestPeople(id) {
     : '<tbody><tr><td class="muted">Nikt jeszcze się nie zapisał.</td></tr></tbody>';
 }
 
-for (const sel of ['#ct-invites', '#ct-messages']) {
+for (const sel of ['#ct-invites', '#ct-messages', '#ct-draw-mode']) {
   $(sel).addEventListener('input', ctSyncForm);
   $(sel).addEventListener('change', ctSyncForm);
 }
+$('#ct-desc').addEventListener('input', ctPreview);
+$('#ct-desc-preview').addEventListener('click', (event) => event.target.closest('.spoiler')?.classList.add('on'));
+// Emoji, którego nie ma na serwerze (albo literówka w id) → sama nazwa, zamiast pustego obrazka.
+$('#ct-desc-preview').addEventListener('error', (event) => {
+  const img = event.target;
+  if (img.matches?.('img.emoji')) img.replaceWith(Object.assign(document.createElement('span'), { className: 'emoji-fallback', textContent: img.alt }));
+}, true);
+// Pasek formatowania: zaznaczony tekst dostaje znaczniki (albo wstawia się pusta para), linie — prefiks.
+$('#ct-desc-tools').addEventListener('click', (event) => {
+  const btn = event.target.closest('button');
+  if (!btn) return;
+  const area = $('#ct-desc');
+  const { selectionStart: a, selectionEnd: b, value } = area;
+  const picked = value.slice(a, b);
+  let insert;
+  let caret;
+  if (btn.dataset.md) {
+    const mark = btn.dataset.md;
+    // Zaznaczone razem ze znacznikami (np. „**tekst**”) → zdejmij je.
+    const wrapped = picked.length > 2 * mark.length && picked.startsWith(mark) && picked.endsWith(mark) && !(mark === '*' && picked.startsWith('**'));
+    if (wrapped) {
+      insert = picked.slice(mark.length, -mark.length);
+      caret = [a, a + insert.length];
+    } else {
+      insert = `${mark}${picked || 'tekst'}${mark}`;
+      caret = [a + mark.length, a + mark.length + (picked || 'tekst').length];
+    }
+  } else if (btn.dataset.mdLine) {
+    // Całe linie z zaznaczenia (albo ta, w której stoi kursor); drugi klik zdejmuje prefiks.
+    const prefix = btn.dataset.mdLine;
+    const lineStart = a === 0 ? 0 : value.lastIndexOf('\n', a - 1) + 1;
+    const end = b > a && value[b - 1] === '\n' ? b - 1 : b;
+    const nl = value.indexOf('\n', end);
+    const lineEnd = nl === -1 ? value.length : nl;
+    const lines = (value.slice(lineStart, lineEnd) || 'tekst').split('\n');
+    const on = lines.every((l) => l.startsWith(prefix));
+    insert = lines.map((l) => (on ? l.slice(prefix.length) : `${prefix}${l}`)).join('\n');
+    area.setRangeText(insert, lineStart, lineEnd, 'end');
+    area.focus();
+    ctPreview();
+    return;
+  } else {
+    insert = `[${picked || 'tekst linku'}](https://)`;
+    caret = [a + insert.length - 9, a + insert.length - 1];
+  }
+  area.setRangeText(insert, a, b, 'end');
+  area.focus();
+  if (caret) area.setSelectionRange(caret[0], caret[1]);
+  ctPreview();
+});
+$('#ct-draw-btn').addEventListener('click', async () => {
+  if (!ctPeopleId) return;
+  const btn = $('#ct-draw-btn');
+  if (btn.dataset.redo && !confirm('Losować jeszcze raz? Nowi zwycięzcy zastąpią poprzednich, a bot ogłosi nowe losowanie.')) return;
+  btn.disabled = true;
+  try {
+    const { result } = await api(`/contests/${encodeURIComponent(ctPeopleId)}/draw`, { method: 'POST' });
+    toast(result.winners.length ? `Wylosowano: ${result.winners.map((w) => w.displayName ?? w.userTag ?? w.userId).join(', ')}` : 'Nikt nie spełnił warunku — nie było kogo losować.');
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+  btn.disabled = false;
+  loadContestPeople(ctPeopleId);
+});
 $('#ct-cancel').addEventListener('click', () => {
   ctReset();
   renderContests();
@@ -2247,6 +2371,8 @@ $('#ct-add').addEventListener('click', () => {
     minAccountDays: ctInt('#ct-age', 0, 365, 7),
     prize: $('#ct-prize').value.replace(/\s+/g, ' ').trim().slice(0, 200),
     description: $('#ct-desc').value.trim().slice(0, 1500),
+    drawWinners: $('#ct-draw-mode').value === 'none' ? 0 : ctInt('#ct-draw-winners', 1, 50, 1),
+    drawMode: $('#ct-draw-mode').value === 'auto' ? 'auto' : 'manual',
   };
   let message;
   if (ctEditId) {

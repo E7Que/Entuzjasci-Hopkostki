@@ -98,7 +98,9 @@ function cleanXpEvents(input, current) {
 
 // Eventy na stronie rankingu: warunek dostania się — zaprosić `invites` osób i/lub napisać `messages` wiadomości
 // (0 = bez tego warunku, co najmniej jeden > 0); poprawne daty (koniec po początku, najwyżej 92 dni);
-// minAccountDays — zaproszone konta młodsze niż tyle dni się nie liczą. Najwyżej 30, posortowane po początku.
+// minAccountDays — zaproszone konta młodsze niż tyle dni się nie liczą; drawWinners — ilu zwycięzców losować wśród
+// osób, które się dostały (0 = bez losowania), drawMode — manual (przycisk w panelu) albo auto (po końcu eventu).
+// Najwyżej 30, posortowane po początku.
 // Stary zapis (type + goal) zamieniamy na warunek.
 const CONTEST_MAX_MS = 92 * 24 * 60 * 60_000;
 const oneLine = (value, max) => String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
@@ -131,6 +133,8 @@ function cleanContests(input, current) {
       invites,
       messages,
       minAccountDays: between(c?.minAccountDays, 0, 365, 7),
+      drawWinners: between(c?.drawWinners, 0, 50, 0),
+      drawMode: c?.drawMode === 'auto' ? 'auto' : 'manual',
     });
   }
   return out.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)).slice(-30);

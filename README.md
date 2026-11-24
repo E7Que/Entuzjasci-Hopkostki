@@ -163,6 +163,14 @@ kanale wybranym w panelu (z pingiem roli).
 - **Zaproszenia** liczą się tylko za osoby, które weszły z zaproszenia, nadal są na serwerze, nie były na nim
   wcześniej i mają konto starsze niż wybrana liczba dni (bot sprawdza zaproszenia sam, także bez logu wejść).
 - **Wiadomości** liczą się tak jak XP za wiadomości w poziomach (cooldown, kanały bez XP, ochrona przed nabijaniem).
+- **Losowanie** (opcjonalne): wśród osób, które się dostały, bot losuje wybraną liczbę zwycięzców (1–50) —
+  **ręcznie** przyciskiem „🎲 Losuj zwycięzców” w panelu (w trakcie albo po evencie, można powtórzyć) albo **samo**
+  po końcu eventu. Bot ogłasza wynik na kanale eventów z pingiem zwycięzców, a strona pokazuje wylosowanych
+  (🏆 przy osobie na liście, „Wygrałeś w losowaniu!” dla zwycięzcy). Losowanie używa `crypto.getRandomValues`.
+- **Opis** eventu można formatować jak na Discordzie: `**pogrubienie**`, `*kursywa*`, `__podkreślenie__`,
+  `~~przekreślenie~~`, `||spoiler||`, `` `kod` ``, `# nagłówek`, `- lista`, `> cytat`, `[tekst](https://…)`
+  i emoji z serwera `<:nazwa:id>`. W panelu jest pasek przycisków (zaznacz tekst → klik) i podgląd na żywo.
+  HTML z opisu nigdy nie trafia na stronę — całość jest najpierw escapowana.
 - Panel: tworzenie, edycja (także zakończonych — np. przedłużenie), duplikowanie, zakończenie, lista zapisanych
   z postępem i usuwanie kogoś z eventu.
 

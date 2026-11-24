@@ -836,8 +836,27 @@
               <label class="field"><span>Warunek: zaprosić osób (0 = bez)</span><input type="number" id="ct-invites" min="0" max="1000" value="3" inputmode="numeric"></label>
               <label class="field"><span>Warunek: napisać wiadomości (0 = bez)</span><input type="number" id="ct-messages" min="0" max="1000000" value="0" inputmode="numeric"></label>
               <label class="field" id="ct-age-field"><span>Zaproszone konto ma co najmniej (dni)</span><input type="number" id="ct-age" min="0" max="365" value="7" inputmode="numeric"></label>
+              <label class="field"><span>Losowanie nagród</span>
+                <select id="ct-draw-mode"><option value="none">Bez losowania</option><option value="manual">Ręcznie — przycisk „Losuj” w panelu</option><option value="auto">Samo po końcu eventu</option></select>
+              </label>
+              <label class="field" id="ct-draw-winners-field"><span>Ilu zwycięzców</span><input type="number" id="ct-draw-winners" min="1" max="50" value="1" inputmode="numeric"></label>
             </div>
-            <label class="field"><span>Opis (opcjonalnie)</span><textarea id="ct-desc" rows="3" maxlength="1500" placeholder="Zasady i nagrody — widać je na stronie nad postępem."></textarea></label>
+            <div class="field"><span>Opis (opcjonalnie) — formatowanie jak na Discordzie</span>
+              <div class="md-tools" id="ct-desc-tools" role="toolbar" aria-label="Formatowanie opisu">
+                <button type="button" data-md="**" title="Pogrubienie (**tekst**)"><b>B</b></button>
+                <button type="button" data-md="*" title="Kursywa (*tekst*)"><i>I</i></button>
+                <button type="button" data-md="__" title="Podkreślenie (__tekst__)"><u>U</u></button>
+                <button type="button" data-md="~~" title="Przekreślenie (~~tekst~~)"><s>S</s></button>
+                <button type="button" data-md="||" title="Spoiler (||tekst||)">▒</button>
+                <button type="button" data-md="`" title="Kod (`tekst`)">&lt;/&gt;</button>
+                <button type="button" data-md-line="# " title="Nagłówek (# tekst)">H</button>
+                <button type="button" data-md-line="- " title="Lista (- tekst)">•</button>
+                <button type="button" data-md-line="> " title="Cytat (> tekst)">❝</button>
+                <button type="button" data-md-link title="Link ([tekst](https://…))">🔗</button>
+              </div>
+              <textarea id="ct-desc" rows="4" maxlength="1500" placeholder="Zasady i nagrody — widać je na stronie nad postępem. Zaznacz tekst i kliknij przycisk powyżej, żeby go sformatować. Emoji z serwera: wklej np. <:nazwa:123…>."></textarea>
+              <div class="md-preview rich" id="ct-desc-preview" hidden></div>
+            </div>
             <p class="muted small" id="ct-hint"></p>
             <div class="bulk-row">
               <button type="button" class="btn ghost" id="ct-add">Dodaj event</button>
@@ -851,7 +870,8 @@
         </div>
 
         <div class="card" id="ct-people-card" hidden>
-          <div class="card-head"><h3 id="ct-people-title">Uczestnicy</h3><button type="button" class="btn ghost small" id="ct-people-refresh">Odśwież</button></div>
+          <div class="card-head"><h3 id="ct-people-title">Zapisani</h3><div class="bulk-row"><button type="button" class="btn small" id="ct-draw-btn" hidden>🎲 Losuj zwycięzców</button><button type="button" class="btn ghost small" id="ct-people-refresh">Odśwież</button></div></div>
+          <p class="muted small" id="ct-draw-note" hidden></p>
           <p class="muted small" id="ct-people-note"></p>
           <div class="table-wrap"><table class="table compact form-cards" id="ct-people"></table></div>
           <div id="ct-others"></div>

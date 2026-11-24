@@ -18,7 +18,7 @@ import { activeXpEvent, changeXp, dayKey, importLevels, levelProgress, levelUpMe
 import { alertChannel, sendAlertTest } from './health.js';
 import { commandIdMap, fillServerInfoSections, saveBannerAsset, sendServerInfo, serverInfoContext, suggestServerInfoRoles } from './serverInfo.js';
 import { sanitizeConfig } from './configSchema.js';
-import { contestDetails, oauthStatus } from './contests.js';
+import { ContestError, contestDetails, drawContest, oauthStatus } from './contests.js';
 import { discordCommandPermissions } from './discordCommandPerms.js';
 
 // Wersja kodu: funkcja na Supabase importuje bota z GitHuba pod adresem z pełnym SHA commita.
@@ -526,6 +526,16 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
   if (method === 'GET' && contestMatch) {
     const details = await contestDetails(bot, contestMatch[1]);
     return details ? ok({ ...details, now: Date.now() }) : fail(404, 'Nie ma takiego eventu — może nie został jeszcze zapisany.');
+  }
+  // Losowanie zwycięzców wśród osób, które spełniły warunek (kolejne losowanie zastępuje poprzednie).
+  const drawMatch = /^\/contests\/([a-z0-9]{6,24})\/draw$/i.exec(path);
+  if (method === 'POST' && drawMatch) {
+    try {
+      return ok({ result: await drawContest(bot, drawMatch[1], { by: auth.user?.tag ?? 'hasło panelu' }) });
+    } catch (error) {
+      if (error instanceof ContestError) return fail(400, error.message);
+      throw error;
+    }
   }
   const entryMatch = /^\/contests\/([a-z0-9]{6,24})\/entries\/(\w+)$/i.exec(path);
   if (method === 'DELETE' && entryMatch) {

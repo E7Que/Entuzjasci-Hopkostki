@@ -240,7 +240,7 @@ test('panel: walidacja eventów (warunek, stary zapis), zapisani z postępem, us
   const config = await s.store.updateConfig({
     contests: {
       list: [
-        { id: 'oba00002', name: '  Wielki   event ', startsAt: iso(now - DAY), endsAt: iso(now + DAY), invites: 3, messages: 50, minAccountDays: 1000, description: 'Opis\r\nlinia' },
+        { id: 'oba00002', name: '  Wielki   event ', startsAt: iso(now - DAY), endsAt: iso(now + DAY), invites: 3, messages: 50, minAccountDays: 1000, description: 'Opis\r\nlinia', drawWinners: 99, drawMode: 'zle' },
         { id: 'stary002', name: 'Stary zapis', type: 'invites', goal: 5, startsAt: iso(now), endsAt: iso(now + DAY) },
         { id: 'krot', name: 'Złe ID', invites: 1, startsAt: iso(now), endsAt: iso(now + DAY) },
         { id: 'bezwar01', name: 'Bez warunku', invites: 0, messages: 0, startsAt: iso(now), endsAt: iso(now + DAY) },
@@ -250,8 +250,8 @@ test('panel: walidacja eventów (warunek, stary zapis), zapisani z postępem, us
     },
   });
   assert.deepEqual(config.contests.list, [
-    { id: 'oba00002', name: 'Wielki event', description: 'Opis\nlinia', prize: '', startsAt: iso(now - DAY), endsAt: iso(now + DAY), invites: 3, messages: 50, minAccountDays: 365 },
-    { id: 'stary002', name: 'Stary zapis', description: '', prize: '', startsAt: iso(now), endsAt: iso(now + DAY), invites: 5, messages: 0, minAccountDays: 7 },
+    { id: 'oba00002', name: 'Wielki event', description: 'Opis\nlinia', prize: '', startsAt: iso(now - DAY), endsAt: iso(now + DAY), invites: 3, messages: 50, minAccountDays: 365, drawWinners: 50, drawMode: 'manual' },
+    { id: 'stary002', name: 'Stary zapis', description: '', prize: '', startsAt: iso(now), endsAt: iso(now + DAY), invites: 5, messages: 0, minAccountDays: 7, drawWinners: 0, drawMode: 'manual' },
   ]);
 
   const link = await connect(s);
@@ -273,4 +273,46 @@ test('panel: walidacja eventów (warunek, stary zapis), zapisani z postępem, us
   assert.deepEqual((await s.call('/public/contests')).body.contests, []);
   await handleInteraction(commandPayload('polacz', [], { invoker: 'target', roles: [], permissions: '0' }), s.bot).then((o) => o.task?.());
   assert.match(JSON.stringify(s.discord.state.webhook.at(-1).body), /Eventy są wyłączone/);
+});
+
+test('losowanie: ręcznie z panelu wśród tych, którzy się dostali (ponowne zastępuje), samo po końcu eventu — raz', async () => {
+  const now = Date.now();
+  const s = await setup([
+    { id: 'los00001', name: 'Losowanie Nitro', startsAt: iso(now - DAY), endsAt: iso(now + DAY), invites: 1, drawWinners: 2, prize: 'Nitro' },
+    { id: 'los00002', name: 'Po końcu', startsAt: iso(now - 3 * DAY), endsAt: iso(now - 60_000), messages: 1, drawWinners: 1, drawMode: 'auto' },
+    { id: 'los00003', name: 'Później', startsAt: iso(now + DAY), endsAt: iso(now + 2 * DAY), invites: 1, drawWinners: 1 },
+  ]);
+  for (const user of ['target', 'mod', 'owner']) {
+    await s.store.addContestEntry({ contestId: 'los00001', userId: user, userTag: user });
+    await s.db.query(`update bot.contest_entries set created_at = now() - interval '1 hour' where user_id = $1`, [user]);
+  }
+  for (const user of ['target', 'mod']) await s.store.addInviteJoin({ userId: account(100), inviterId: user, code: 'abc' });
+
+  const first = await handlePanel(s.bot, { method: 'POST', path: '/contests/los00001/draw' });
+  assert.equal(first.status, 200);
+  assert.deepEqual(first.body.result.winners.map((w) => w.userId).sort(), ['mod', 'target'], 'losowanie tylko wśród tych, którzy się dostali');
+  assert.equal(first.body.result.pool, 2);
+  const log = s.discord.state.channels.get(LOG).at(-1);
+  assert.match(log.embeds[0].title, /Losowanie — Losowanie Nitro/);
+  assert.match(log.embeds[0].description, /\*\*Zwycięzcy:\*\*\n🥇 <@(target|mod)>\n🥈 <@(target|mod)>\n\*\*Nagroda:\*\* Nitro\n-# Losowanie wśród 2 osób, które się dostały · losował\(a\): hasło panelu\./);
+  assert.deepEqual(log.allowed_mentions.users.sort(), ['mod', 'target'], 'zwycięzcy dostają ping');
+  const link = await connect(s);
+  const c = await view(s, link.session, 'los00001');
+  assert.deepEqual([c.draw.done, c.draw.winners, c.winners.length, c.me.won], [true, 2, 2, true]);
+  assert.equal(c.entries.find((e) => e.userId === 'owner').won, false);
+
+  // Ponowne losowanie zastępuje poprzednie; panel widzi zwycięzców.
+  assert.equal((await handlePanel(s.bot, { method: 'POST', path: '/contests/los00001/draw' })).status, 200);
+  const details = (await handlePanel(s.bot, { method: 'GET', path: '/contests/los00001' })).body;
+  assert.equal(details.entries.filter((e) => e.won).length, 2);
+  assert.equal(details.draw.pool, 2);
+  assert.match((await handlePanel(s.bot, { method: 'POST', path: '/contests/los00003/draw' })).body.error, /jeszcze się nie zaczął/);
+
+  // Samo po końcu eventu: raz (nikt się nie dostał — ogłoszenie, że nie było kogo losować).
+  const before = s.discord.state.channels.get(LOG).length;
+  await contestsTick(s.bot);
+  await contestsTick(s.bot);
+  const auto = s.discord.state.channels.get(LOG).slice(before).filter((m) => /^🎲 Losowanie/.test(m.embeds[0].title));
+  assert.equal(auto.length, 1, 'jedno losowanie (osobno ogłoszenia o spełnionym warunku)');
+  assert.match(auto[0].embeds[0].description, /Nikt nie spełnił warunku — nie było kogo losować\.[\s\S]*automatycznie po końcu eventu/);
 });
