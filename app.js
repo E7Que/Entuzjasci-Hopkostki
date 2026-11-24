@@ -20,7 +20,7 @@ const RULE_ACTIONS = { alert: 'Alert', timeout: 'Timeout', kick: 'Kick', ban: 'B
 const PLACEHOLDERS = ['{uzytkownik}', '{nick}', '{moderator}', '{moderatorNick}', '{powod}', '{czas}', '{serwer}', '{sprawa}', '{typ}'];
 const ACTIVITY_LABELS = { custom: 'Własny opis', playing: 'Gra w', listening: 'Słucha', watching: 'Ogląda', competing: 'Rywalizuje w' };
 const PRESENCE_PLACEHOLDERS = ['{czlonkowie}', '{online}', '{serwer}', '{ostrzezenia}', '{sprawy}'];
-const VIEWS = ['pulpit', 'ustawienia', 'uprawnienia', 'czlonkowie', 'logi', 'bump', 'spolecznosc', 'automod', 'poziomy', 'tickety', 'glosowe', 'wiadomosci', 'serwerinfo', 'embedy', 'ostrzezenia', 'sprawy', 'bany', 'dostep'];
+const VIEWS = ['pulpit', 'ustawienia', 'uprawnienia', 'czlonkowie', 'logi', 'bump', 'spolecznosc', 'automod', 'poziomy', 'eventy', 'tickety', 'glosowe', 'wiadomosci', 'serwerinfo', 'embedy', 'ostrzezenia', 'sprawy', 'bany', 'dostep'];
 const MEMBER_VARS = ['{uzytkownik}', '{nick}', '{serwer}', '{liczba}'];
 const TICKET_VARS = ['{uzytkownik}', '{nick}', '{numer}', '{typ}'];
 const BUMP_VARS = ['{uzytkownik}', '{nick}', '{liczba}', '{nastepny}', '{godzina}'];
@@ -469,6 +469,10 @@ function route() {
     renderLevels();
     if (open) loadLevels();
   }
+  if (state.view === 'eventy') {
+    renderContests();
+    if (open && ctPeopleId) loadContestPeople(ctPeopleId);
+  }
   if (state.view === 'wiadomosci') {
     renderMessageEditor();
     if (open) loadSentMessages();
@@ -724,6 +728,7 @@ function renderConfigUi() {
   renderEmbedTabs();
   renderRoleSelects();
   renderLevels();
+  renderContests();
   renderServerInfo();
   fillInputs();
   renderEmojiButtons();
@@ -2049,6 +2054,270 @@ $('#ev-list').addEventListener('click', (event) => {
   renderXpEvents();
   $('#ev-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
   $('#ev-name').focus({ preventScroll: true });
+});
+
+// ---------- Eventy (konkursy na stronie rankingu) ----------
+const CT_TYPES = { invites: '📨 Zaproszenia', messages: '💬 Wiadomości', mixed: '⭐ Mieszany' };
+const CT_UNITS = { invites: ['zaproszenie', 'zaproszenia', 'zaproszeń'], messages: ['wiadomość', 'wiadomości', 'wiadomości'], mixed: ['punkt', 'punkty', 'punktów'] };
+const ctUnit = (type, n) => `${Number(n).toLocaleString('pl-PL')} ${plural(n, CT_UNITS[type] ?? CT_UNITS.mixed)}`;
+const ctList = () => state.draft?.contests?.list ?? [];
+const ctInt = (sel, min, max, fallback) => {
+  const n = Math.floor(Number($(sel).value));
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+};
+// Event otwarty w formularzu do edycji (null = formularz dodaje nowy) i event, którego uczestników widać pod listą.
+let ctEditId = null;
+let ctPeopleId = null;
+
+function ctSyncForm() {
+  const type = $('#ct-type').value;
+  $('#ct-pts-invite-field').hidden = type !== 'mixed';
+  $('#ct-pts-message-field').hidden = type !== 'mixed';
+  $('#ct-age-field').hidden = type === 'messages';
+  $('#ct-goal-label').textContent = `Próg zgłoszenia: ${{ invites: 'liczba zaproszeń', messages: 'liczba wiadomości', mixed: 'punkty' }[type]} (0 = bez progu)`;
+  const goal = ctInt('#ct-goal', 0, 1_000_000, 0);
+  const how = {
+    invites: 'Liczą się osoby, które weszły z zaproszenia w czasie eventu i nadal są na serwerze (bez powrotów i kont młodszych niż podana liczba dni).',
+    messages: 'Wiadomości liczą się tak jak XP w poziomach — z cooldownem, bez kanałów bez XP i bez nabijania.',
+    mixed: `Punkty: zaproszenie × ${ctInt('#ct-pts-invite', 0, 10000, 10)} + wiadomość × ${ctInt('#ct-pts-message', 0, 10000, 1)}.`,
+  }[type];
+  $('#ct-hint').textContent = `${how} ${
+    goal > 0
+      ? `Z progiem: każdy widzi pasek postępu, a po zdobyciu ${ctUnit(type, goal)} klika „Zgłoś się” — zgłoszenie trafia na kanał zgłoszeń.`
+      : 'Bez progu: osoby dołączają przyciskiem „Dołącz do eventu” i rywalizują w rankingu uczestników.'
+  }`;
+  $('#ct-form-title').textContent = ctEditId ? 'Edycja eventu' : 'Nowy event';
+  $('#ct-add').textContent = ctEditId ? 'Zapisz zmiany eventu' : 'Dodaj event';
+  $('#ct-cancel').hidden = !ctEditId;
+}
+// Wypełnia formularz; `copy` = jako nowy event (od najbliższej pełnej godziny, ta sama długość).
+function ctFill(c, { copy = false } = {}) {
+  let start = Date.parse(c.startsAt);
+  let end = Date.parse(c.endsAt);
+  if (copy) {
+    const length = Math.min(Math.max(end - start, HOUR), 92 * DAY);
+    start = evDefaultStart();
+    end = start + length;
+  }
+  $('#ct-name').value = c.name ?? '';
+  $('#ct-type').value = CT_TYPES[c.type] ? c.type : 'invites';
+  $('#ct-start').value = localInput(start);
+  $('#ct-end').value = localInput(end);
+  $('#ct-goal').value = String(c.goal ?? 0);
+  $('#ct-winners').value = String(c.winners ?? 3);
+  $('#ct-pts-invite').value = String(c.points?.invite ?? 10);
+  $('#ct-pts-message').value = String(c.points?.message ?? 1);
+  $('#ct-age').value = String(c.minAccountDays ?? 7);
+  $('#ct-prize').value = c.prize ?? '';
+  $('#ct-desc').value = c.description ?? '';
+  ctSyncForm();
+}
+function ctReset() {
+  ctEditId = null;
+  const start = evDefaultStart();
+  ctFill({ name: '', type: 'invites', startsAt: new Date(start).toISOString(), endsAt: new Date(start + 7 * DAY).toISOString(), goal: 0, winners: 3, minAccountDays: 7 });
+}
+
+function renderContests() {
+  const cfg = state.draft?.contests;
+  if (!cfg) return;
+  const list = ctList();
+  if ((ctEditId && !list.some((c) => c.id === ctEditId)) || !$('#ct-start').value) ctReset();
+  $('#ct-site-link').href = new URL('ranking.html#eventy', location.href).href;
+  const lv = state.draft.levels;
+  const warn = [];
+  if (cfg.enabled && list.some((c) => c.type !== 'invites' && Date.parse(c.endsAt) > Date.now()) && !(lv.enabled && lv.message.enabled)) {
+    warn.push('<strong>Wiadomości nie będą liczone</strong> — eventy liczą je tak jak XP za wiadomości. Włącz poziomy i XP za wiadomości (zakładka Poziomy).');
+  }
+  if (cfg.enabled && list.some((c) => c.type !== 'messages' && Date.parse(c.endsAt) > Date.now()) && state.guild.bot && state.guild.bot.membersIntent === false) {
+    warn.push('<strong>Potrzebna intencja „Server Members”</strong> — bot włącza ją sam po zapisaniu ustawień; bez niej nie zobaczy wejść z zaproszeń.');
+  }
+  $('#ct-warning').innerHTML = warn.join('<br>');
+  $('#ct-warning').classList.toggle('hidden', !warn.length);
+  const now = Date.now();
+  $('#ct-list').innerHTML = list.length
+    ? list
+        .map((c, i) => {
+          const [label, cls] = evStatus(c, now);
+          const id = esc(c.id);
+          const details = [
+            CT_TYPES[c.type],
+            c.goal > 0 ? `próg ${ctUnit(c.type, c.goal)}` : c.winners > 0 ? `nagradzane miejsca 1–${c.winners}` : 'bez nagradzanych miejsc',
+            c.type === 'mixed' ? `zaproszenie ${c.points.invite} pkt, wiadomość ${c.points.message} pkt` : '',
+          ].filter(Boolean);
+          return `<div class="ev-item ${cls}${c.id === ctEditId ? ' editing' : ''}">
+            <div class="ev-main">
+              <div><strong>${esc(c.name)}</strong> <span class="ev-status">${label}</span></div>
+              <div class="muted small">${esc(evDate(Date.parse(c.startsAt)))} – ${esc(evDate(Date.parse(c.endsAt)))}</div>
+              <div class="muted small">${esc(details.join(' · '))}${c.prize ? ` · 🎁 ${esc(c.prize)}` : ''}</div>
+            </div>
+            <div class="ev-actions">
+              <button type="button" class="btn ghost small" data-ct-people="${id}">Uczestnicy</button>
+              ${cls !== 'done' ? `<button type="button" class="btn ghost small" data-ct-edit="${id}">Edytuj</button>` : ''}
+              <button type="button" class="btn ghost small" data-ct-dup="${id}" title="Nowy event z tymi samymi ustawieniami">Duplikuj</button>
+              ${cls === 'live' ? `<button type="button" class="btn ghost small" data-ct-end="${id}">Zakończ teraz</button>` : ''}
+              <button type="button" class="btn danger small" data-ct-del="${i}">Usuń</button>
+            </div>
+          </div>`;
+        })
+        .join('')
+    : '<span class="muted small">Brak eventów — dodaj pierwszy obok. Zakładka „Eventy” na stronie rankingu pokaże się, gdy jakiś będzie zaplanowany.</span>';
+}
+
+async function loadContestPeople(id) {
+  ctPeopleId = id;
+  const card = $('#ct-people-card');
+  const c = ctList().find((x) => x.id === id);
+  card.hidden = false;
+  $('#ct-people-title').textContent = `Uczestnicy — ${c?.name ?? 'event'}`;
+  $('#ct-people').innerHTML = '<tbody><tr><td class="muted">Wczytywanie…</td></tr></tbody>';
+  $('#ct-others').innerHTML = '';
+  let data;
+  try {
+    data = await api(`/contests/${encodeURIComponent(id)}`);
+  } catch (error) {
+    $('#ct-people').innerHTML = `<tbody><tr><td class="muted">${esc(/Nie ma takiego eventu/.test(error.message) ? 'Ten event nie jest jeszcze zapisany — zapisz zmiany (przycisk na dole ekranu), wtedy zobaczysz uczestników.' : error.message)}</td></tr></tbody>`;
+    return;
+  }
+  if (ctPeopleId !== id) return;
+  const ct = data.contest;
+  const unit = (n) => ctUnit(ct.type, n);
+  const goal = ct.goal > 0;
+  $('#ct-people-note').textContent = goal
+    ? `Zgłoszenia osób, które osiągnęły próg ${unit(ct.goal)}. Wynik liczy się na bieżąco — gdy zaproszona osoba wyjdzie z serwera, wynik spada.`
+    : `Ranking osób, które dołączyły${ct.winners ? ` — nagradzane miejsca 1–${ct.winners}` : ''}. Wynik liczy się na bieżąco.`;
+  const who = (p) => `${esc(p.displayName && p.displayName !== p.userTag ? `${p.displayName} (${p.userTag})` : p.userTag ?? 'nieznana osoba')}<span class="note">${esc(p.userId)}${p.hidden ? ' · ukryta na stronie' : ''}</span>`;
+  const parts = (p) => (ct.type === 'mixed' ? `<span class="note">${esc(ctUnit('invites', p.invites))}, ${esc(ctUnit('messages', p.messages))}</span>` : '');
+  $('#ct-people').innerHTML = data.entries.length
+    ? `<thead><tr><th>#</th><th>Osoba</th><th>Wynik</th>${goal ? '<th>Próg</th>' : ''}<th>Dołączył(a)</th><th></th></tr></thead><tbody>${data.entries
+        .map(
+          (p) => `<tr>
+            <td data-label="#">${p.rank}${!goal && ct.winners && p.rank <= ct.winners ? ' 🏆' : ''}</td>
+            <td data-label="Osoba">${who(p)}</td>
+            <td data-label="Wynik"><strong>${esc(unit(p.score))}</strong>${parts(p)}</td>
+            ${goal ? `<td data-label="Próg">${p.reached ? '✅ osiągnięty' : `❌ ${esc(unit(p.score))} z ${esc(unit(ct.goal))}`}</td>` : ''}
+            <td data-label="Dołączył(a)">${esc(shortDate(p.joinedAt))}${goal ? `<span class="note">wynik przy zgłoszeniu: ${esc(unit(p.scoreAtJoin))}</span>` : ''}</td>
+            <td><button type="button" class="btn danger small" data-ct-kick="${esc(p.userId)}" title="Usuń z eventu (np. za oszukiwanie)">Usuń</button></td>
+          </tr>`,
+        )
+        .join('')}</tbody>`
+    : `<tbody><tr><td class="muted">${goal ? 'Nikt jeszcze się nie zgłosił.' : 'Nikt jeszcze nie dołączył.'}</td></tr></tbody>`;
+  $('#ct-others').innerHTML = data.others.length
+    ? `<p class="muted small">Najlepsi spoza listy (nie ${goal ? 'zgłosili się' : 'dołączyli'}):</p><div class="chips">${data.others
+        .map((p) => `<span class="role-chip">${esc(p.displayName ?? p.userTag ?? p.userId)} — <strong>${esc(unit(p.score))}</strong></span>`)
+        .join('')}</div>`
+    : '';
+}
+
+for (const sel of ['#ct-type', '#ct-goal', '#ct-pts-invite', '#ct-pts-message']) {
+  $(sel).addEventListener('input', ctSyncForm);
+  $(sel).addEventListener('change', ctSyncForm);
+}
+$('#ct-cancel').addEventListener('click', () => {
+  ctReset();
+  renderContests();
+});
+$('#ct-add').addEventListener('click', () => {
+  const start = Date.parse($('#ct-start').value);
+  const end = Date.parse($('#ct-end').value);
+  const type = $('#ct-type').value;
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return toast('Podaj początek i koniec eventu.', 'error');
+  if (end <= start) return toast('Koniec musi być po początku.', 'error');
+  if (end - start > 92 * DAY) return toast('Event może trwać najwyżej 92 dni.', 'error');
+  if (end <= Date.now()) return toast('Ten termin już minął.', 'error');
+  const points = { invite: ctInt('#ct-pts-invite', 0, 10000, 10), message: ctInt('#ct-pts-message', 0, 10000, 1) };
+  if (type === 'mixed' && !points.invite && !points.message) return toast('W evencie mieszanym coś musi dawać punkty.', 'error');
+  const data = {
+    name: $('#ct-name').value.replace(/\s+/g, ' ').trim().slice(0, 80) || 'Event',
+    type,
+    startsAt: new Date(start).toISOString(),
+    endsAt: new Date(end).toISOString(),
+    goal: ctInt('#ct-goal', 0, 1_000_000, 0),
+    winners: ctInt('#ct-winners', 0, 25, 3),
+    points,
+    minAccountDays: ctInt('#ct-age', 0, 365, 7),
+    prize: $('#ct-prize').value.replace(/\s+/g, ' ').trim().slice(0, 200),
+    description: $('#ct-desc').value.trim().slice(0, 1500),
+  };
+  const list = [...ctList()];
+  let message;
+  if (ctEditId) {
+    const i = list.findIndex((c) => c.id === ctEditId);
+    if (i < 0) {
+      ctReset();
+      renderContests();
+      return toast('Tego eventu już nie ma na liście.', 'error');
+    }
+    // To samo id: zgłoszenia i policzone wiadomości zostają.
+    list[i] = { ...list[i], ...data };
+    message = 'Zmieniono event — zapisz zmiany (przycisk na dole ekranu).';
+  } else {
+    if (list.length >= 30) return toast('Za dużo eventów — usuń stare.', 'error');
+    list.push({ id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, ...data });
+    message = 'Dodano event — zapisz zmiany (przycisk na dole ekranu).';
+  }
+  setPath(state.draft, 'contests.list', list.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)));
+  ctReset();
+  renderContests();
+  markDirty();
+  toast(message);
+});
+$('#ct-list').addEventListener('click', (event) => {
+  const del = event.target.closest('[data-ct-del]');
+  if (del) {
+    const list = [...ctList()];
+    const [removed] = list.splice(Number(del.dataset.ctDel), 1);
+    if (!removed || !confirm(`Usunąć event „${removed.name}”? Zgłoszenia znikną po zapisaniu (można to cofnąć w dzienniku zmian).`)) return;
+    setPath(state.draft, 'contests.list', list);
+    if (ctEditId === removed.id) ctReset();
+    if (ctPeopleId === removed.id) {
+      ctPeopleId = null;
+      $('#ct-people-card').hidden = true;
+    }
+    renderContests();
+    markDirty();
+    return toast('Usunięto event — zapisz zmiany (przycisk na dole ekranu).');
+  }
+  const btn = event.target.closest('[data-ct-end], [data-ct-edit], [data-ct-dup], [data-ct-people]');
+  if (!btn) return;
+  const id = btn.dataset.ctEnd ?? btn.dataset.ctEdit ?? btn.dataset.ctDup ?? btn.dataset.ctPeople;
+  const c = ctList().find((x) => x.id === id);
+  if (!c) return;
+  if (btn.dataset.ctPeople) {
+    loadContestPeople(id);
+    $('#ct-people-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  if (btn.dataset.ctEnd) {
+    c.endsAt = new Date(Math.max(Date.now(), Date.parse(c.startsAt) + MINUTE)).toISOString();
+    if (ctEditId === c.id) ctReset();
+    renderContests();
+    markDirty();
+    return toast('Zapisz zmiany, żeby zakończyć event.');
+  }
+  if (btn.dataset.ctEdit) {
+    ctEditId = c.id;
+    ctFill(c);
+  } else {
+    ctEditId = null;
+    ctFill(c, { copy: true });
+    toast('Skopiowano ustawienia — sprawdź termin i kliknij „Dodaj event”.');
+  }
+  renderContests();
+  $('#ct-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  $('#ct-name').focus({ preventScroll: true });
+});
+$('#ct-people-refresh').addEventListener('click', () => ctPeopleId && loadContestPeople(ctPeopleId));
+$('#ct-people').addEventListener('click', async (event) => {
+  const btn = event.target.closest('[data-ct-kick]');
+  if (!btn || !ctPeopleId || !confirm('Usunąć tę osobę z eventu? Może dołączyć ponownie, jeśli spełni warunki.')) return;
+  try {
+    await api(`/contests/${encodeURIComponent(ctPeopleId)}/entries/${encodeURIComponent(btn.dataset.ctKick)}`, { method: 'DELETE' });
+    toast('Usunięto z eventu.');
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+  loadContestPeople(ctPeopleId);
 });
 
 function addLevelsItem(path, item) {
