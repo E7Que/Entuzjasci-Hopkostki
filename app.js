@@ -471,7 +471,10 @@ function route() {
   }
   if (state.view === 'eventy') {
     renderContests();
-    if (open && ctPeopleId) loadContestPeople(ctPeopleId);
+    if (open) {
+      loadContestOauth();
+      if (ctPeopleId) loadContestPeople(ctPeopleId);
+    }
   }
   if (state.view === 'wiadomosci') {
     renderMessageEditor();
@@ -2056,36 +2059,31 @@ $('#ev-list').addEventListener('click', (event) => {
   $('#ev-name').focus({ preventScroll: true });
 });
 
-// ---------- Eventy (konkursy na stronie rankingu) ----------
-const CT_TYPES = { invites: '📨 Zaproszenia', messages: '💬 Wiadomości', mixed: '⭐ Mieszany' };
-const CT_UNITS = { invites: ['zaproszenie', 'zaproszenia', 'zaproszeń'], messages: ['wiadomość', 'wiadomości', 'wiadomości'], mixed: ['punkt', 'punkty', 'punktów'] };
-const ctUnit = (type, n) => `${Number(n).toLocaleString('pl-PL')} ${plural(n, CT_UNITS[type] ?? CT_UNITS.mixed)}`;
+// ---------- Eventy (strona rankingu): zapis → warunek → „Dostałeś się!” ----------
 const ctList = () => state.draft?.contests?.list ?? [];
 const ctInt = (sel, min, max, fallback) => {
   const n = Math.floor(Number($(sel).value));
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
 };
-// Event otwarty w formularzu do edycji (null = formularz dodaje nowy) i event, którego uczestników widać pod listą.
+// „zaprosić 3 osoby i napisać 50 wiadomości”.
+function ctRequirement(c) {
+  const parts = [];
+  if (c.invites > 0) parts.push(`zaprosić ${c.invites} ${plural(c.invites, ['osobę', 'osoby', 'osób'])}`);
+  if (c.messages > 0) parts.push(`napisać ${c.messages} ${plural(c.messages, ['wiadomość', 'wiadomości', 'wiadomości'])}`);
+  return parts.join(' i ') || '—';
+}
+// Event otwarty w formularzu do edycji (null = formularz dodaje nowy) i event, którego zapisanych widać pod listą.
 let ctEditId = null;
 let ctPeopleId = null;
 
 function ctSyncForm() {
-  const type = $('#ct-type').value;
-  $('#ct-pts-invite-field').hidden = type !== 'mixed';
-  $('#ct-pts-message-field').hidden = type !== 'mixed';
-  $('#ct-age-field').hidden = type === 'messages';
-  $('#ct-goal-label').textContent = `Próg zgłoszenia: ${{ invites: 'liczba zaproszeń', messages: 'liczba wiadomości', mixed: 'punkty' }[type]} (0 = bez progu)`;
-  const goal = ctInt('#ct-goal', 0, 1_000_000, 0);
-  const how = {
-    invites: 'Liczą się osoby, które weszły z zaproszenia w czasie eventu i nadal są na serwerze (bez powrotów i kont młodszych niż podana liczba dni).',
-    messages: 'Wiadomości liczą się tak jak XP w poziomach — z cooldownem, bez kanałów bez XP i bez nabijania.',
-    mixed: `Punkty: zaproszenie × ${ctInt('#ct-pts-invite', 0, 10000, 10)} + wiadomość × ${ctInt('#ct-pts-message', 0, 10000, 1)}.`,
-  }[type];
-  $('#ct-hint').textContent = `${how} ${
-    goal > 0
-      ? `Z progiem: każdy widzi pasek postępu, a po zdobyciu ${ctUnit(type, goal)} klika „Zgłoś się” — zgłoszenie trafia na kanał zgłoszeń.`
-      : 'Bez progu: osoby dołączają przyciskiem „Dołącz do eventu” i rywalizują w rankingu uczestników.'
-  }`;
+  const invites = ctInt('#ct-invites', 0, 1000, 0);
+  const messages = ctInt('#ct-messages', 0, 1_000_000, 0);
+  $('#ct-age-field').hidden = invites <= 0;
+  const req = ctRequirement({ invites, messages });
+  $('#ct-hint').textContent = invites || messages
+    ? `Osoba loguje się na stronie, klika „Zapisz się”, a potem musi ${req} — liczy się od chwili zapisu (najwcześniej od startu). Po spełnieniu warunku strona pokazuje „Dostałeś się!”, a bot ogłasza to na kanale ogłoszeń.${invites ? ' Liczą się tylko osoby, które zostaną na serwerze, nie były tu wcześniej i mają konto starsze niż podana liczba dni.' : ''}${messages ? ' Wiadomości liczą się tak jak XP w poziomach (cooldown, bez spamu).' : ''}`
+    : 'Ustaw warunek — liczbę zaproszeń, wiadomości albo obie.';
   $('#ct-form-title').textContent = ctEditId ? 'Edycja eventu' : 'Nowy event';
   $('#ct-add').textContent = ctEditId ? 'Zapisz zmiany eventu' : 'Dodaj event';
   $('#ct-cancel').hidden = !ctEditId;
@@ -2100,13 +2098,10 @@ function ctFill(c, { copy = false } = {}) {
     end = start + length;
   }
   $('#ct-name').value = c.name ?? '';
-  $('#ct-type').value = CT_TYPES[c.type] ? c.type : 'invites';
   $('#ct-start').value = localInput(start);
   $('#ct-end').value = localInput(end);
-  $('#ct-goal').value = String(c.goal ?? 0);
-  $('#ct-winners').value = String(c.winners ?? 3);
-  $('#ct-pts-invite').value = String(c.points?.invite ?? 10);
-  $('#ct-pts-message').value = String(c.points?.message ?? 1);
+  $('#ct-invites').value = String(c.invites ?? 0);
+  $('#ct-messages').value = String(c.messages ?? 0);
   $('#ct-age').value = String(c.minAccountDays ?? 7);
   $('#ct-prize').value = c.prize ?? '';
   $('#ct-desc').value = c.description ?? '';
@@ -2115,7 +2110,7 @@ function ctFill(c, { copy = false } = {}) {
 function ctReset() {
   ctEditId = null;
   const start = evDefaultStart();
-  ctFill({ name: '', type: 'invites', startsAt: new Date(start).toISOString(), endsAt: new Date(start + 7 * DAY).toISOString(), goal: 0, winners: 3, minAccountDays: 7 });
+  ctFill({ name: '', startsAt: new Date(start).toISOString(), endsAt: new Date(start + 7 * DAY).toISOString(), invites: 3, messages: 0, minAccountDays: 7 });
 }
 
 function renderContests() {
@@ -2126,10 +2121,10 @@ function renderContests() {
   $('#ct-site-link').href = new URL('ranking.html#eventy', location.href).href;
   const lv = state.draft.levels;
   const warn = [];
-  if (cfg.enabled && list.some((c) => c.type !== 'invites' && Date.parse(c.endsAt) > Date.now()) && !(lv.enabled && lv.message.enabled)) {
+  if (cfg.enabled && list.some((c) => c.messages > 0 && Date.parse(c.endsAt) > Date.now()) && !(lv.enabled && lv.message.enabled)) {
     warn.push('<strong>Wiadomości nie będą liczone</strong> — eventy liczą je tak jak XP za wiadomości. Włącz poziomy i XP za wiadomości (zakładka Poziomy).');
   }
-  if (cfg.enabled && list.some((c) => c.type !== 'messages' && Date.parse(c.endsAt) > Date.now()) && state.guild.bot && state.guild.bot.membersIntent === false) {
+  if (cfg.enabled && list.some((c) => c.invites > 0 && Date.parse(c.endsAt) > Date.now()) && state.guild.bot && state.guild.bot.membersIntent === false) {
     warn.push('<strong>Potrzebna intencja „Server Members”</strong> — bot włącza ją sam po zapisaniu ustawień; bez niej nie zobaczy wejść z zaproszeń.');
   }
   $('#ct-warning').innerHTML = warn.join('<br>');
@@ -2140,20 +2135,15 @@ function renderContests() {
         .map((c, i) => {
           const [label, cls] = evStatus(c, now);
           const id = esc(c.id);
-          const details = [
-            CT_TYPES[c.type],
-            c.goal > 0 ? `próg ${ctUnit(c.type, c.goal)}` : c.winners > 0 ? `nagradzane miejsca 1–${c.winners}` : 'bez nagradzanych miejsc',
-            c.type === 'mixed' ? `zaproszenie ${c.points.invite} pkt, wiadomość ${c.points.message} pkt` : '',
-          ].filter(Boolean);
           return `<div class="ev-item ${cls}${c.id === ctEditId ? ' editing' : ''}">
             <div class="ev-main">
               <div><strong>${esc(c.name)}</strong> <span class="ev-status">${label}</span></div>
               <div class="muted small">${esc(evDate(Date.parse(c.startsAt)))} – ${esc(evDate(Date.parse(c.endsAt)))}</div>
-              <div class="muted small">${esc(details.join(' · '))}${c.prize ? ` · 🎁 ${esc(c.prize)}` : ''}</div>
+              <div class="muted small">🎯 Warunek: ${esc(ctRequirement(c))}${c.prize ? ` · 🎁 ${esc(c.prize)}` : ''}</div>
             </div>
             <div class="ev-actions">
-              <button type="button" class="btn ghost small" data-ct-people="${id}">Uczestnicy</button>
-              ${cls !== 'done' ? `<button type="button" class="btn ghost small" data-ct-edit="${id}">Edytuj</button>` : ''}
+              <button type="button" class="btn ghost small" data-ct-people="${id}">Zapisani</button>
+              <button type="button" class="btn ghost small" data-ct-edit="${id}">Edytuj</button>
               <button type="button" class="btn ghost small" data-ct-dup="${id}" title="Nowy event z tymi samymi ustawieniami">Duplikuj</button>
               ${cls === 'live' ? `<button type="button" class="btn ghost small" data-ct-end="${id}">Zakończ teraz</button>` : ''}
               <button type="button" class="btn danger small" data-ct-del="${i}">Usuń</button>
@@ -2164,52 +2154,61 @@ function renderContests() {
     : '<span class="muted small">Brak eventów — dodaj pierwszy obok. Zakładka „Eventy” na stronie rankingu pokaże się, gdy jakiś będzie zaplanowany.</span>';
 }
 
+// Czy działa „Zaloguj przez Discord” na stronie (adres strony musi być na liście Redirects aplikacji).
+async function loadContestOauth() {
+  const box = $('#ct-oauth');
+  let data;
+  try {
+    data = await api('/contests');
+  } catch {
+    box.innerHTML = '';
+    return;
+  }
+  const o = data.oauth;
+  const steps = `Wejdź na <a href="https://discord.com/developers/applications" target="_blank" rel="noopener">Discord Developer Portal</a> → aplikacja bota → <strong>OAuth2</strong> → <strong>Redirects</strong> → <strong>Add Redirect</strong>, wklej <code class="copyable" title="Kliknij, żeby skopiować">${esc(o.redirectUri)}</code> i kliknij <strong>Save Changes</strong>. Bot sprawdza to co 10 minut.`;
+  box.innerHTML = o.registered === true
+    ? `<p class="ct-oauth-ok">✓ <strong>Logowanie przez Discord działa</strong> — na stronie jest przycisk „Zaloguj przez Discord”.</p>`
+    : `<div class="banner warn"><strong>Logowanie przez Discord nie jest jeszcze włączone.</strong> Discord nie pozwala botowi dopisać adresu strony samemu — zrób to raz: ${steps}${o.registered === null ? ' (Bot nie mógł sprawdzić listy — jeśli adres już jest, wszystko działa.)' : ''} Do tego czasu osoby łączą konto komendą <code>/polacz</code>.</div>`;
+}
+
 async function loadContestPeople(id) {
   ctPeopleId = id;
   const card = $('#ct-people-card');
   const c = ctList().find((x) => x.id === id);
   card.hidden = false;
-  $('#ct-people-title').textContent = `Uczestnicy — ${c?.name ?? 'event'}`;
+  $('#ct-people-title').textContent = `Zapisani — ${c?.name ?? 'event'}`;
   $('#ct-people').innerHTML = '<tbody><tr><td class="muted">Wczytywanie…</td></tr></tbody>';
-  $('#ct-others').innerHTML = '';
   let data;
   try {
     data = await api(`/contests/${encodeURIComponent(id)}`);
   } catch (error) {
-    $('#ct-people').innerHTML = `<tbody><tr><td class="muted">${esc(/Nie ma takiego eventu/.test(error.message) ? 'Ten event nie jest jeszcze zapisany — zapisz zmiany (przycisk na dole ekranu), wtedy zobaczysz uczestników.' : error.message)}</td></tr></tbody>`;
+    $('#ct-people').innerHTML = `<tbody><tr><td class="muted">${esc(/Nie ma takiego eventu/.test(error.message) ? 'Ten event nie jest jeszcze zapisany — zapisz zmiany (przycisk na dole ekranu), wtedy zobaczysz zapisanych.' : error.message)}</td></tr></tbody>`;
     return;
   }
   if (ctPeopleId !== id) return;
   const ct = data.contest;
-  const unit = (n) => ctUnit(ct.type, n);
-  const goal = ct.goal > 0;
-  $('#ct-people-note').textContent = goal
-    ? `Zgłoszenia osób, które osiągnęły próg ${unit(ct.goal)}. Wynik liczy się na bieżąco — gdy zaproszona osoba wyjdzie z serwera, wynik spada.`
-    : `Ranking osób, które dołączyły${ct.winners ? ` — nagradzane miejsca 1–${ct.winners}` : ''}. Wynik liczy się na bieżąco.`;
+  const inCount = data.entries.filter((p) => p.reached).length;
+  $('#ct-people-note').textContent = `${data.entries.length} ${plural(data.entries.length, ['osoba zapisana', 'osoby zapisane', 'osób zapisanych'])}, ${inCount} ${plural(inCount, ['dostała się', 'dostały się', 'dostało się'])}. Warunek: ${ctRequirement(ct)}. Postęp liczy się na bieżąco — gdy zaproszona osoba wyjdzie z serwera, spada.`;
   const who = (p) => `${esc(p.displayName && p.displayName !== p.userTag ? `${p.displayName} (${p.userTag})` : p.userTag ?? 'nieznana osoba')}<span class="note">${esc(p.userId)}${p.hidden ? ' · ukryta na stronie' : ''}</span>`;
-  const parts = (p) => (ct.type === 'mixed' ? `<span class="note">${esc(ctUnit('invites', p.invites))}, ${esc(ctUnit('messages', p.messages))}</span>` : '');
+  const progress = (p) =>
+    [ct.invites > 0 ? `${p.invites}/${ct.invites} zaproszeń` : '', ct.messages > 0 ? `${p.messages}/${ct.messages} wiadomości` : ''].filter(Boolean).join('<br>');
   $('#ct-people').innerHTML = data.entries.length
-    ? `<thead><tr><th>#</th><th>Osoba</th><th>Wynik</th>${goal ? '<th>Próg</th>' : ''}<th>Dołączył(a)</th><th></th></tr></thead><tbody>${data.entries
+    ? `<thead><tr><th>#</th><th>Osoba</th><th>Postęp</th><th>Status</th><th>Zapisał(a) się</th><th></th></tr></thead><tbody>${data.entries
         .map(
           (p) => `<tr>
-            <td data-label="#">${p.rank}${!goal && ct.winners && p.rank <= ct.winners ? ' 🏆' : ''}</td>
+            <td data-label="#">${p.rank}</td>
             <td data-label="Osoba">${who(p)}</td>
-            <td data-label="Wynik"><strong>${esc(unit(p.score))}</strong>${parts(p)}</td>
-            ${goal ? `<td data-label="Próg">${p.reached ? '✅ osiągnięty' : `❌ ${esc(unit(p.score))} z ${esc(unit(ct.goal))}`}</td>` : ''}
-            <td data-label="Dołączył(a)">${esc(shortDate(p.joinedAt))}${goal ? `<span class="note">wynik przy zgłoszeniu: ${esc(unit(p.scoreAtJoin))}</span>` : ''}</td>
+            <td data-label="Postęp">${progress(p)}</td>
+            <td data-label="Status">${p.reached ? `✅ dostał(a) się${p.qualifiedAt ? `<span class="note">${esc(shortDate(p.qualifiedAt))}</span>` : ''}` : ct.status === 'upcoming' ? '⏳ czeka na start' : '⏳ w trakcie'}</td>
+            <td data-label="Zapisał(a) się">${esc(shortDate(p.joinedAt))}</td>
             <td><button type="button" class="btn danger small" data-ct-kick="${esc(p.userId)}" title="Usuń z eventu (np. za oszukiwanie)">Usuń</button></td>
           </tr>`,
         )
         .join('')}</tbody>`
-    : `<tbody><tr><td class="muted">${goal ? 'Nikt jeszcze się nie zgłosił.' : 'Nikt jeszcze nie dołączył.'}</td></tr></tbody>`;
-  $('#ct-others').innerHTML = data.others.length
-    ? `<p class="muted small">Najlepsi spoza listy (nie ${goal ? 'zgłosili się' : 'dołączyli'}):</p><div class="chips">${data.others
-        .map((p) => `<span class="role-chip">${esc(p.displayName ?? p.userTag ?? p.userId)} — <strong>${esc(unit(p.score))}</strong></span>`)
-        .join('')}</div>`
-    : '';
+    : '<tbody><tr><td class="muted">Nikt jeszcze się nie zapisał.</td></tr></tbody>';
 }
 
-for (const sel of ['#ct-type', '#ct-goal', '#ct-pts-invite', '#ct-pts-message']) {
+for (const sel of ['#ct-invites', '#ct-messages']) {
   $(sel).addEventListener('input', ctSyncForm);
   $(sel).addEventListener('change', ctSyncForm);
 }
@@ -2217,39 +2216,47 @@ $('#ct-cancel').addEventListener('click', () => {
   ctReset();
   renderContests();
 });
+$('#ct-oauth').addEventListener('click', async (event) => {
+  const code = event.target.closest('code.copyable');
+  if (!code) return;
+  try {
+    await navigator.clipboard.writeText(code.textContent);
+    toast('Skopiowano adres — wklej go w Redirects.');
+  } catch {
+    toast('Zaznacz adres i skopiuj go ręcznie.', 'error');
+  }
+});
 $('#ct-add').addEventListener('click', () => {
   const start = Date.parse($('#ct-start').value);
   const end = Date.parse($('#ct-end').value);
-  const type = $('#ct-type').value;
+  const invites = ctInt('#ct-invites', 0, 1000, 0);
+  const messages = ctInt('#ct-messages', 0, 1_000_000, 0);
+  if (!invites && !messages) return toast('Ustaw warunek — ile osób zaprosić albo ile wiadomości napisać.', 'error');
   if (!Number.isFinite(start) || !Number.isFinite(end)) return toast('Podaj początek i koniec eventu.', 'error');
   if (end <= start) return toast('Koniec musi być po początku.', 'error');
   if (end - start > 92 * DAY) return toast('Event może trwać najwyżej 92 dni.', 'error');
-  if (end <= Date.now()) return toast('Ten termin już minął.', 'error');
-  const points = { invite: ctInt('#ct-pts-invite', 0, 10000, 10), message: ctInt('#ct-pts-message', 0, 10000, 1) };
-  if (type === 'mixed' && !points.invite && !points.message) return toast('W evencie mieszanym coś musi dawać punkty.', 'error');
+  const list = [...ctList()];
+  const editing = ctEditId ? list.findIndex((c) => c.id === ctEditId) : -1;
+  if (end <= Date.now() && editing < 0) return toast('Ten termin już minął.', 'error');
   const data = {
     name: $('#ct-name').value.replace(/\s+/g, ' ').trim().slice(0, 80) || 'Event',
-    type,
     startsAt: new Date(start).toISOString(),
     endsAt: new Date(end).toISOString(),
-    goal: ctInt('#ct-goal', 0, 1_000_000, 0),
-    winners: ctInt('#ct-winners', 0, 25, 3),
-    points,
+    invites,
+    messages,
     minAccountDays: ctInt('#ct-age', 0, 365, 7),
     prize: $('#ct-prize').value.replace(/\s+/g, ' ').trim().slice(0, 200),
     description: $('#ct-desc').value.trim().slice(0, 1500),
   };
-  const list = [...ctList()];
   let message;
   if (ctEditId) {
-    const i = list.findIndex((c) => c.id === ctEditId);
-    if (i < 0) {
+    if (editing < 0) {
       ctReset();
       renderContests();
       return toast('Tego eventu już nie ma na liście.', 'error');
     }
-    // To samo id: zgłoszenia i policzone wiadomości zostają.
-    list[i] = { ...list[i], ...data };
+    // To samo id: zapisani i ich postęp zostają.
+    list[editing] = { ...list[editing], ...data };
     message = 'Zmieniono event — zapisz zmiany (przycisk na dole ekranu).';
   } else {
     if (list.length >= 30) return toast('Za dużo eventów — usuń stare.', 'error');
@@ -2267,7 +2274,7 @@ $('#ct-list').addEventListener('click', (event) => {
   if (del) {
     const list = [...ctList()];
     const [removed] = list.splice(Number(del.dataset.ctDel), 1);
-    if (!removed || !confirm(`Usunąć event „${removed.name}”? Zgłoszenia znikną po zapisaniu (można to cofnąć w dzienniku zmian).`)) return;
+    if (!removed || !confirm(`Usunąć event „${removed.name}”? Lista zapisanych zniknie po zapisaniu (można to cofnąć w dzienniku zmian).`)) return;
     setPath(state.draft, 'contests.list', list);
     if (ctEditId === removed.id) ctReset();
     if (ctPeopleId === removed.id) {
@@ -2310,7 +2317,7 @@ $('#ct-list').addEventListener('click', (event) => {
 $('#ct-people-refresh').addEventListener('click', () => ctPeopleId && loadContestPeople(ctPeopleId));
 $('#ct-people').addEventListener('click', async (event) => {
   const btn = event.target.closest('[data-ct-kick]');
-  if (!btn || !ctPeopleId || !confirm('Usunąć tę osobę z eventu? Może dołączyć ponownie, jeśli spełni warunki.')) return;
+  if (!btn || !ctPeopleId || !confirm('Usunąć tę osobę z eventu? Może zapisać się ponownie (postęp liczy się wtedy od nowa).')) return;
   try {
     await api(`/contests/${encodeURIComponent(ctPeopleId)}/entries/${encodeURIComponent(btn.dataset.ctKick)}`, { method: 'DELETE' });
     toast('Usunięto z eventu.');
