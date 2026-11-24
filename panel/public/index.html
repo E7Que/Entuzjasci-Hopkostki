@@ -813,7 +813,7 @@
       <section id="view-eventy" class="view">
         <header class="view-head">
           <h2>Eventy</h2>
-          <p class="muted">Eventy na <a id="ct-site-link" href="ranking.html#eventy" target="_blank" rel="noopener">stronie rankingu</a>: osoba loguje się przez Discord, klika <strong>„Zapisz się”</strong>, a potem musi spełnić warunek — np. <strong>zaprosić 3 osoby</strong> i/lub <strong>napisać 50 wiadomości</strong> (liczy się od chwili zapisu). Pasek postępu pokazuje, ile brakuje; po spełnieniu warunku „Dostałeś się!”, a bot ogłasza to na kanale poniżej. Zakładka „Eventy” pojawia się na stronie tylko wtedy, gdy jakiś event jest zaplanowany, trwa albo skończył się w ostatnich 3 dniach — przy kilku eventach każdy ma swoją podzakładkę.</p>
+          <p class="muted">Eventy mają własną stronę — <a id="ct-site-link" href="event" target="_blank" rel="noopener">strona eventów</a> (/event): osoba loguje się przez Discord, klika <strong>„Zapisz się”</strong>, a potem musi spełnić warunek — np. <strong>zaprosić 3 osoby</strong> i/lub <strong>napisać 50 wiadomości</strong> (liczy się od chwili zapisu). Pasek postępu pokazuje, ile brakuje; po spełnieniu warunku „Dostałeś się!”, a bot ogłasza to na kanale poniżej. Na stronie widać eventy zaplanowane, trwające i zakończone w ostatnich 3 dniach (przy kilku — podzakładki); ranking poziomów pokazuje wtedy pasek z linkiem. Każdy event może mieć własny wygląd: kolory (gradient) i baner.</p>
         </header>
         <div class="card">
           <label class="toggle"><input type="checkbox" data-path="contests.enabled"><span></span>Włącz eventy</label>
@@ -852,10 +852,28 @@
                 <button type="button" data-md-line="# " title="Nagłówek (# tekst)">H</button>
                 <button type="button" data-md-line="- " title="Lista (- tekst)">•</button>
                 <button type="button" data-md-line="> " title="Cytat (> tekst)">❝</button>
+                <button type="button" data-md-line="-# " title="Mały tekst — stopka (-# tekst)"><small>-#</small></button>
                 <button type="button" data-md-link title="Link ([tekst](https://…))">🔗</button>
               </div>
               <textarea id="ct-desc" rows="4" maxlength="1500" placeholder="Zasady i nagrody — widać je na stronie nad postępem. Zaznacz tekst i kliknij przycisk powyżej, żeby go sformatować. Emoji z serwera: wklej np. <:nazwa:123…>."></textarea>
               <div class="md-preview rich" id="ct-desc-preview" hidden></div>
+            </div>
+            <div class="field ct-theme"><span>Wygląd na stronie eventów — kolory (gradient) i baner w nagłówku; ikona zostaje</span>
+              <div class="ct-tp" id="ct-tp">
+                <div class="ct-tp-banner"><img id="ct-tp-img" src="img/banner.webp" alt="" width="1600" height="500"></div>
+                <div class="ct-tp-hero"><span class="ct-tp-dot"></span><div><small id="ct-tp-kind">Event · Zaproszenia</small><b id="ct-tp-name">Nazwa eventu</b></div></div>
+                <div class="ct-tp-bar"><i></i></div>
+              </div>
+              <div class="ct-theme-row">
+                <label class="ct-color" title="Kolor główny — nagłówek eventu, akcenty, początek paska postępu"><input type="color" id="ct-color" value="#8b7bff"><span>Kolor główny</span></label>
+                <label class="ct-color" title="Drugi kolor — koniec gradientu (pasek postępu, poświata)"><input type="color" id="ct-color2" value="#cfc7ff"><span>Drugi kolor</span></label>
+                <button type="button" class="btn ghost small" id="ct-theme-reset" title="Kolory typu eventu (zaproszenia — fiolet, wiadomości — turkus, oba — pomarańcz)">Domyślne kolory</button>
+              </div>
+              <div class="ct-theme-row">
+                <label class="btn ghost small" id="ct-banner-btn">Wgraj baner<input type="file" id="ct-banner-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden></label>
+                <button type="button" class="btn ghost small" id="ct-banner-del" hidden>Usuń baner</button>
+                <span class="muted small">Szeroki obrazek, najlepiej 1600×500 px (PNG, JPG, WebP, GIF do 3 MB). Bez banera — baner serwera.</span>
+              </div>
             </div>
             <p class="muted small" id="ct-hint"></p>
             <div class="bulk-row">

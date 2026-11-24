@@ -150,11 +150,15 @@ Zakładka **Poziomy** ma wszystkie funkcje Arcane, także premium:
 
 Komendy dla wszystkich: `/rank` (karta poziomu) i `/ranking` (łącznie, w tym tygodniu albo miesiącu).
 
-### Eventy (na stronie rankingu)
+### Eventy serwera (strona /event)
 
-Zakładka **Eventy** w panelu tworzy eventy widoczne na stronie rankingu w zakładce **Eventy** — pojawia się ona
-tylko wtedy, gdy jakiś event jest zaplanowany, trwa albo skończył się w ostatnich 3 dniach, a przy kilku eventach
-każdy ma swoją podzakładkę. Każdy event ma **warunek**: zaprosić X osób i/lub napisać Y wiadomości.
+Eventy serwera mają **własną stronę**: `https://e7que.github.io/Entuzjasci-Hopkostki/event` (plik `event.html`).
+To co innego niż **wydarzenia XP** (mnożniki XP z efektami) — te należą do poziomów i zostają na stronie rankingu.
+Zakładka **Eventy** w panelu tworzy eventy; strona pokazuje te zaplanowane, trwające i zakończone w ostatnich 3 dniach
+(przy kilku — podzakładki, a wybrany event ma swój adres: `/event#<id>`). Gdy jakiś event jest zaplanowany albo trwa,
+ranking poziomów pokazuje **pasek z linkiem** do niego (w kolorach eventu). Stare linki (`ranking.html#eventy`,
+linki z `/polacz` i powrót z logowania na adres rankingu) przekierowują na `/event`. Każdy event ma **warunek**:
+zaprosić X osób i/lub napisać Y wiadomości.
 
 Jak to działa dla osoby: **„Zaloguj przez Discord”** na stronie (albo `/polacz` na serwerze — link, który loguje),
 potem **„Zapisz się”**. Od chwili zapisu (najwcześniej od startu) liczą się jej zaproszenia i wiadomości — **paski
@@ -168,18 +172,24 @@ przepada, a ponowny zapis liczy od nowa); po końcu eventu i po wylosowaniu już
   **ręcznie** przyciskiem „🎲 Losuj zwycięzców” w panelu (w trakcie albo po evencie, można powtórzyć) albo **samo**
   po końcu eventu. Bot ogłasza wynik na kanale eventów z pingiem zwycięzców, a strona pokazuje wylosowanych
   (🏆 przy osobie na liście, „Wygrałeś w losowaniu!” dla zwycięzcy). Losowanie używa `crypto.getRandomValues`.
+- **Wygląd** (opcjonalny): kolor główny i drugi kolor (gradient — nagłówek eventu, paski postępu, akcenty strony)
+  oraz **baner** wgrany w panelu (zmniejszany w przeglądarce, PNG/JPG/WebP/GIF do 3 MB, najlepiej 1600×500 px).
+  Na stronie baner eventu zastępuje baner serwera w nagłówku; ikona serwera i ikona typu eventu zostają. Bez
+  własnych kolorów — kolory typu (zaproszenia: fiolet, wiadomości: turkus, oba warunki: pomarańcz). Banery leżą
+  w `bot.assets` (jak w „Serwer info”) i są serwowane pod `/panel/public/asset/<id>`; nieużywane bot sprząta po dniu.
 - **Opis** eventu można formatować jak na Discordzie: `**pogrubienie**`, `*kursywa*`, `__podkreślenie__`,
-  `~~przekreślenie~~`, `||spoiler||`, `` `kod` ``, `# nagłówek`, `- lista`, `> cytat`, `[tekst](https://…)`
-  i emoji z serwera `<:nazwa:id>`. W panelu jest pasek przycisków (zaznacz tekst → klik) i podgląd na żywo.
-  HTML z opisu nigdy nie trafia na stronę — całość jest najpierw escapowana.
+  `~~przekreślenie~~`, `||spoiler||`, `` `kod` ``, `# nagłówek`, `-# mały tekst (stopka)`, `- lista`, `> cytat`,
+  `[tekst](https://…)` i emoji z serwera `<:nazwa:id>`. W panelu jest pasek przycisków (zaznacz tekst → klik)
+  i podgląd na żywo. HTML z opisu nigdy nie trafia na stronę — całość jest najpierw escapowana.
 - Panel: tworzenie, edycja (także zakończonych — np. przedłużenie), duplikowanie, zakończenie, lista zapisanych
   z postępem i usuwanie kogoś z eventu.
 
 **Logowanie przez Discord** (OAuth2 z PKCE — bez sekretu aplikacji) wymaga jednorazowego dodania adresu strony
-rankingu w [Discord Developer Portal](https://discord.com/developers/applications) → aplikacja bota → **OAuth2 →
-Redirects** (`https://e7que.github.io/Entuzjasci-Hopkostki/ranking.html`). Discord nie pozwala zrobić tego przez API.
-Po dopisaniu adresu wystarczy kliknąć **„Sprawdź teraz”** w panelu (Eventy) — logowanie włącza się od razu, a sama
-strona wykrywa je najpóźniej po minucie. Do tego czasu działa `/polacz`.
+w [Discord Developer Portal](https://discord.com/developers/applications) → aplikacja bota → **OAuth2 → Redirects**:
+najlepiej `https://e7que.github.io/Entuzjasci-Hopkostki/event`. Działa też dodany wcześniej adres strony rankingu
+(`…/ranking.html`) — ranking od razu przekazuje powrót z Discorda na `/event`. Discord nie pozwala dopisać adresu
+przez API. Po dopisaniu wystarczy kliknąć **„Sprawdź teraz”** w panelu (Eventy) — logowanie włącza się od razu,
+a sama strona wykrywa je najpóźniej po minucie. Do tego czasu działa `/polacz`.
 
 ### Tickety
 
@@ -322,7 +332,7 @@ wpisujesz w przeglądarce.
 | `/profil` · `/rolainfo` · `/czlonkowie` | Profil użytkownika / informacje o roli / liczba członków i online. |
 | `/losuj kostka/moneta/liczba/wybor` · `/bumpy ranking/status` | Losowanie / ranking bumpów i kiedy następny. |
 | `/zaproszenia [uzytkownik]` | Ranking zaproszeń albo kogo zaprosiła dana osoba. |
-| `/polacz` | Link, który loguje Cię na stronie rankingu (zakładka „Eventy”: zapis i postęp) — gdy logowanie przez Discord nie działa. Widoczny tylko dla Ciebie, działa raz. |
+| `/polacz` | Link, który loguje Cię na stronie eventów (`/event`: zapis i postęp) — gdy logowanie przez Discord nie działa. Widoczny tylko dla Ciebie, działa raz. |
 | `/login [nowy]` | Login i hasło do panelu bota (tylko na kanale do logowania, widoczne tylko dla Ciebie); `nowy:True` wymusza nowe hasło. |
 | `/pomoc` | Lista komend. |
 

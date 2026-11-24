@@ -444,6 +444,9 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
   if (method === 'POST' && path === '/serverinfo/banner') {
     return attempt(async () => saveBannerAsset(bot, body?.data));
   }
+  if (method === 'POST' && path === '/contests/banner') {
+    return attempt(async () => saveBannerAsset(bot, body?.data));
+  }
 
   if (method === 'GET' && path === '/appeals') {
     const status = ['pending', 'accepted', 'rejected'].includes(query.status) ? query.status : null;

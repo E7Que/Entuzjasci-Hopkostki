@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nie ma takiej strony — Entuzjaści Hopkostki</title>
+  <meta name="robots" content="noindex">
+  <script>
+    // Adres bez .html (np. /event albo /ranking) → plik .html tej strony, z resztą adresu (#…, ?…).
+    (function () {
+      var m = /^(.*\/)(event|ranking)\/?$/.exec(location.pathname);
+      if (m) location.replace(m[1] + m[2] + '.html' + location.search + location.hash);
+    })();
+  </script>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0d1113; color: #e6ebed; font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; text-align: center; padding: 16px; }
+    h1 { margin: 0 0 6px; font-size: 1.5rem; }
+    p { margin: 0 0 18px; color: #8b989e; }
+    a { display: inline-block; margin: 0 6px; padding: 9px 14px; border: 1px solid #242d32; border-radius: 10px; background: #151b1e; color: #e6ebed; text-decoration: none; }
+    a:hover { background: #1f282c; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Nie ma takiej strony</h1>
+    <p>Link mógł się zmienić. Zajrzyj tutaj:</p>
+    <a href="ranking.html" data-page>Ranking poziomów</a><a href="event.html" data-page>Eventy serwera</a>
+  </main>
+  <script>
+    // Strona 404 odpowiada na dowolny adres — linki liczone od katalogu strony (GitHub Pages: /Entuzjasci-Hopkostki/).
+    var base = /\.github\.io$/.test(location.hostname) ? '/' + location.pathname.split('/')[1] + '/' : '/';
+    document.querySelectorAll('[data-page]').forEach(function (a) { a.href = base + a.getAttribute('href'); });
+  </script>
+</body>
+</html>

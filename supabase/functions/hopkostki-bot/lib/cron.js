@@ -13,7 +13,7 @@ import { autoRoleSweep, ensureIntentFlags } from './members.js';
 import { bumpReminderTick, bumpScan } from './bump.js';
 import { seedMemberProfiles } from './logs.js';
 import { ensureInviteSnapshot } from './invites.js';
-import { OAUTH_REDIRECT, contestsCleanupTick, contestsTick } from './contests.js';
+import { contestsCleanupTick, contestsTick, pickOAuthRedirect } from './contests.js';
 import { sendDueReminders, finishDueGiveaways } from './community.js';
 import { pruneBannerAssets } from './serverInfo.js';
 import { voiceXpTick, highlightsTick, firstPlaceTick, levelProfilesTick, levelAccentTick, xpEventsTick, winnersArchiveTick } from './levels.js';
@@ -62,6 +62,7 @@ export async function ensureSetup(bot, { force = false } = {}) {
 
   const intents = await ensureIntentFlags(bot, await bot.store.getConfig()).catch((error) => ({ error: error.message }));
 
+  const oauthPick = pickOAuthRedirect(app.redirect_uris);
   const setup = {
     ok: !endpointError,
     checkedAt: Date.now(),
@@ -73,9 +74,10 @@ export async function ensureSetup(bot, { force = false } = {}) {
     endpoint,
     endpointError,
     intents,
-    // Logowanie przez Discord na stronie rankingu działa, gdy jej adres jest na liście Redirects aplikacji
-    // (Discord nie pozwala dopisać go przez API). null = Discord nie podał listy.
-    oauthRedirect: Array.isArray(app.redirect_uris) ? app.redirect_uris.includes(OAUTH_REDIRECT) : null,
+    // Logowanie przez Discord na stronie eventów działa, gdy jej adres (albo strony rankingu) jest na liście
+    // Redirects aplikacji (Discord nie pozwala dopisać go przez API). null = Discord nie podał listy.
+    oauthRedirect: oauthPick === undefined ? null : Boolean(oauthPick),
+    oauthRedirectUri: oauthPick ?? null,
   };
   await bot.store.setState('setup', setup);
   return setup;

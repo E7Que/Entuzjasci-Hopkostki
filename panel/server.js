@@ -19,6 +19,9 @@ const STATIC_FILES = new Set([
   'app.js',
   'style.css',
   'ranking.html',
+  'ranking',
+  'event.html',
+  'event',
   'img/banner.webp',
   'img/banner-og.jpg',
   'img/icon.webp',
@@ -69,7 +72,9 @@ function readBody(req) {
 }
 
 function serveStatic(res, name) {
-  const file = path.join(PUBLIC_DIR, name === '' ? 'index.html' : name);
+  let file = path.join(PUBLIC_DIR, name === '' ? 'index.html' : name);
+  // Jak GitHub Pages: /event → event.html (strona eventów), /ranking → ranking.html.
+  if (!fs.existsSync(file) && !path.extname(file) && fs.existsSync(`${file}.html`)) file = `${file}.html`;
   if (!fs.existsSync(file)) return sendText(res, 404, 'text/plain; charset=utf-8', 'Nie znaleziono');
   sendText(res, 200, MIME[path.extname(file)] ?? 'application/octet-stream', fs.readFileSync(file));
 }

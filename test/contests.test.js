@@ -9,7 +9,8 @@ import { ensureSetup } from '../supabase/functions/hopkostki-bot/lib/cron.js';
 import { onMessageLevels } from '../supabase/functions/hopkostki-bot/lib/levels.js';
 import { membersFeaturesOn, onMemberJoin, onMemberLeave } from '../supabase/functions/hopkostki-bot/lib/members.js';
 import { ensureInviteSnapshot } from '../supabase/functions/hopkostki-bot/lib/invites.js';
-import { OAUTH_REDIRECT, contestsTick, messageContestIds, requirementText } from '../supabase/functions/hopkostki-bot/lib/contests.js';
+import { OAUTH_REDIRECT, OAUTH_REDIRECTS, contestsTick, messageContestIds, requirementText } from '../supabase/functions/hopkostki-bot/lib/contests.js';
+import { pruneBannerAssets } from '../supabase/functions/hopkostki-bot/lib/serverInfo.js';
 
 const BASE = 'https://x.supabase.co/functions/v1/hopkostki-bot/panel';
 const DAY = 86_400_000;
@@ -75,7 +76,7 @@ test('event zaproszeń: zapis najpierw, potem liczą się prawdziwe zaproszenia 
 
   const link = await connect(s);
   assert.equal(link.out.response.data.flags, 64, 'link widzi tylko ta osoba');
-  assert.match(link.url, /^https:\/\/e7que\.github\.io\/Entuzjasci-Hopkostki\/ranking\.html#polacz=[\w-]{40,}$/);
+  assert.match(link.url, /^https:\/\/e7que\.github\.io\/Entuzjasci-Hopkostki\/event#polacz=[\w-]{40,}$/, 'eventy mają własną stronę (/event)');
   assert.match(link.reply.embeds[0].description, /Zaproś znajomych\*\* — trzeba zaprosić 3 osoby, koniec <t:\d+:R>/);
   assert.equal((await s.call('/public/link', { method: 'POST', body: { token: link.token } })).status, 401, 'link działa tylko raz');
 
@@ -186,6 +187,25 @@ test('logowanie przez Discord: kod z PKCE → sesja; adres strony musi być na l
 
   // Panel pokazuje, czy logowanie jest gotowe.
   assert.deepEqual((await handlePanel(s.bot, { method: 'GET', path: '/contests' })).body.oauth.registered, true);
+  // Kilka adresów: strona eventów wygrywa; sam adres rankingu (dodany przed /event) też działa — ranking przekazuje
+  // powrót z Discorda na /event. Zapis sprzed listy adresów (oauthRedirect: true bez adresu) = adres rankingu.
+  const RANKING = OAUTH_REDIRECTS.at(-1);
+  s.discord.state.redirectUris = [RANKING];
+  assert.equal((await ensureSetup(s.bot, { force: true })).oauthRedirectUri, RANKING);
+  assert.equal((await s.call('/public/contests')).body.oauth.redirectUri, RANKING);
+  assert.equal((await handlePanel(s.bot, { method: 'GET', path: '/contests' })).body.oauth.using, RANKING, 'panel widzi, którego adresu używa logowanie');
+  s.discord.state.redirectUris = [RANKING, OAUTH_REDIRECT];
+  assert.equal((await ensureSetup(s.bot, { force: true })).oauthRedirectUri, OAUTH_REDIRECT);
+  await s.store.setState('setup', { ...(await s.store.getState('setup')), oauthRedirect: true, oauthRedirectUri: undefined });
+  assert.equal((await s.call('/public/contests')).body.oauth.redirectUri, RANKING, 'stary zapis stanu');
+  // Wymiana kodu z adresem, którego użyła strona (tylko z listy obsługiwanych).
+  s.discord.state.oauthCodes = { 'kod-2222222222': { userId: 'target', verifier } };
+  assert.equal((await s.call('/public/oauth', { method: 'POST', body: { code: 'kod-2222222222', verifier, redirectUri: OAUTH_REDIRECT } })).status, 200);
+  assert.equal(s.discord.state.lastTokenForm.redirect_uri, OAUTH_REDIRECT);
+  s.discord.state.oauthCodes = { 'kod-3333333333': { userId: 'target', verifier } };
+  await s.call('/public/oauth', { method: 'POST', body: { code: 'kod-3333333333', verifier, redirectUri: 'https://zly.example/' } });
+  assert.equal(s.discord.state.lastTokenForm.redirect_uri, RANKING, 'obcy adres → adres z konfiguracji');
+
   // Adres dopisany w Developer Portal: panel wykrywa go od razu, strona — najwyżej po minucie (bez czekania na cron).
   s.discord.state.redirectUris = ['https://example.com/'];
   assert.equal((await ensureSetup(s.bot, { force: true })).oauthRedirect, false);
@@ -311,8 +331,8 @@ test('panel: walidacja eventów (warunek, stary zapis), zapisani z postępem, us
     },
   });
   assert.deepEqual(config.contests.list, [
-    { id: 'oba00002', name: 'Wielki event', description: 'Opis\nlinia', prize: '', startsAt: iso(now - DAY), endsAt: iso(now + DAY), invites: 3, messages: 50, minAccountDays: 365, drawWinners: 50, drawMode: 'manual' },
-    { id: 'stary002', name: 'Stary zapis', description: '', prize: '', startsAt: iso(now), endsAt: iso(now + DAY), invites: 5, messages: 0, minAccountDays: 7, drawWinners: 0, drawMode: 'manual' },
+    { id: 'oba00002', name: 'Wielki event', description: 'Opis\nlinia', prize: '', startsAt: iso(now - DAY), endsAt: iso(now + DAY), invites: 3, messages: 50, minAccountDays: 365, drawWinners: 50, drawMode: 'manual', color: '', color2: '', banner: '' },
+    { id: 'stary002', name: 'Stary zapis', description: '', prize: '', startsAt: iso(now), endsAt: iso(now + DAY), invites: 5, messages: 0, minAccountDays: 7, drawWinners: 0, drawMode: 'manual', color: '', color2: '', banner: '' },
   ]);
 
   const link = await connect(s);
@@ -376,4 +396,45 @@ test('losowanie: ręcznie z panelu wśród tych, którzy się dostali (ponowne z
   const auto = s.discord.state.channels.get(LOG).slice(before).filter((m) => /^🎲 Losowanie/.test(m.embeds[0].title));
   assert.equal(auto.length, 1, 'jedno losowanie (osobno ogłoszenia o spełnionym warunku)');
   assert.match(auto[0].embeds[0].description, /Nikt nie spełnił warunku — nie było kogo losować\.[\s\S]*automatycznie po końcu eventu/);
+});
+
+test('motyw eventu: kolory (gradient) i baner wgrany w panelu — walidacja, widok na stronie, sprzątanie obrazków', async () => {
+  const now = Date.now();
+  const s = await setup();
+  const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+  const up = await handlePanel(s.bot, { method: 'POST', path: '/contests/banner', body: { data: PNG } });
+  assert.equal(up.status, 200);
+  assert.match(up.body.url, /^https:\/\/example\.supabase\.co\/functions\/v1\/hopkostki-bot\/panel\/public\/asset\/[a-f0-9]{24}\.png$/);
+  assert.equal((await handlePanel(s.bot, { method: 'POST', path: '/contests/banner', body: { data: 'data:text/html;base64,PGgxPg==' } })).status, 400);
+
+  const config = await s.store.updateConfig({
+    contests: {
+      list: [
+        { id: 'mot00001', name: 'Z motywem', startsAt: iso(now - DAY), endsAt: iso(now + DAY), invites: 1, color: '#FF00AA', color2: '#22d3ee', banner: up.body.url },
+        { id: 'mot00002', name: 'Złe wartości', startsAt: iso(now - DAY), endsAt: iso(now + DAY), invites: 1, color: 'red', color2: '#12345', banner: 'https://zly.example/obrazek.png' },
+        { id: 'mot00003', name: 'Skrypt', startsAt: iso(now - DAY), endsAt: iso(now + DAY), invites: 1, banner: 'javascript:alert(1)//panel/public/asset/0123456789abcdef01234567.png' },
+      ],
+    },
+  });
+  const [a, b, c] = config.contests.list;
+  assert.deepEqual([a.color, a.color2, a.banner], ['#ff00aa', '#22d3ee', up.body.url]);
+  assert.deepEqual([b.color, b.color2, b.banner], ['', '', '']);
+  assert.equal(c.banner, '');
+
+  const page = (await s.call('/public/contests')).body.contests;
+  assert.deepEqual(page.map((x) => [x.id, x.color, x.color2, x.banner]), [
+    ['mot00001', '#ff00aa', '#22d3ee', up.body.url],
+    ['mot00002', null, null, null],
+    ['mot00003', null, null, null],
+  ]);
+  const image = await createHandler(s.bot)(new Request(up.body.url));
+  assert.deepEqual([image.status, image.headers.get('content-type')], [200, 'image/png'], 'baner widać bez logowania');
+
+  // Sprzątanie: baner używany przez event zostaje, nieużywany (starszy niż dzień) znika.
+  const unused = await handlePanel(s.bot, { method: 'POST', path: '/contests/banner', body: { data: PNG } });
+  await s.store.query("update bot.assets set created_at = now() - interval '2 days'");
+  await pruneBannerAssets(s.bot);
+  const left = (await s.store.query('select id from bot.assets')).map((r) => r.id);
+  assert.deepEqual(left, [up.body.url.split('/').pop()]);
+  assert.ok(!left.includes(unused.body.id));
 });

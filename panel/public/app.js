@@ -2106,8 +2106,10 @@ function richText(text) {
     }
     flush();
     const head = /^(#{1,3}) (.+)$/.exec(line);
+    const small = /^-# (.+)$/.exec(line);
     const quote = /^&gt; ?(.*)$/.exec(line);
     if (head) out.push(`<span class="rt-h${head[1].length}">${inline(head[2])}</span>`);
+    else if (small) out.push(`<span class="rt-sub">${inline(small[1])}</span>`);
     else if (quote) out.push(`<span class="rt-quote">${inline(quote[1]) || '&nbsp;'}</span>`);
     else out.push(`${inline(line)}<br>`);
   }
@@ -2120,9 +2122,41 @@ function richText(text) {
 let ctEditId = null;
 let ctPeopleId = null;
 
+// Wygląd eventu na stronie eventów: kolory (puste = kolory typu) i baner (obrazek wgrany w panelu).
+const CT_COLORS = { messages: ['#3cc3d6', '#a5ecf5'], invites: ['#8b7bff', '#cfc7ff'], mixed: ['#f5a524', '#ffd88f'] };
+const CT_KIND_LABEL = { messages: 'Wiadomości', invites: 'Zaproszenia', mixed: 'Zaproszenia i wiadomości' };
+let ctLook = { color: '', color2: '', banner: '' };
+const ctKind = (c) => (c.invites > 0 && c.messages > 0 ? 'mixed' : c.invites > 0 ? 'invites' : 'messages');
+// [kolor główny, drugi kolor] — jak na stronie: bez drugiego koloru gradient idzie do jaśniejszego głównego.
+function ctColors(c) {
+  const [base, light] = CT_COLORS[ctKind(c)];
+  const main = /^#[0-9a-f]{6}$/i.test(c.color ?? '') ? c.color : null;
+  const second = /^#[0-9a-f]{6}$/i.test(c.color2 ?? '') ? c.color2 : null;
+  return [main ?? base, second ?? (main ? `color-mix(in srgb, ${main} 45%, #fff)` : light)];
+}
+function ctSyncLook() {
+  const shape = { invites: ctInt('#ct-invites', 0, 1000, 0), messages: ctInt('#ct-messages', 0, 1_000_000, 0) };
+  const kind = ctKind(shape);
+  const [base, light] = CT_COLORS[kind];
+  const [c1, cg] = ctColors({ ...shape, ...ctLook });
+  $('#ct-color').value = ctLook.color || base;
+  $('#ct-color2').value = ctLook.color2 || (ctLook.color ? ctLook.color : light);
+  $('#ct-tp').style.setProperty('--c', c1);
+  $('#ct-tp').style.setProperty('--cg', cg);
+  $('#ct-tp-kind').textContent = `Event · ${CT_KIND_LABEL[kind]}`;
+  $('#ct-tp-name').textContent = $('#ct-name').value.trim() || 'Nazwa eventu';
+  const img = $('#ct-tp-img');
+  const src = ctLook.banner || 'img/banner.webp';
+  if (img.getAttribute('src') !== src) img.src = src;
+  $('#ct-banner-del').hidden = !ctLook.banner;
+  $('#ct-banner-btn').firstChild.textContent = ctLook.banner ? 'Zmień baner' : 'Wgraj baner';
+  $('#ct-theme-reset').disabled = !ctLook.color && !ctLook.color2;
+}
+
 function ctSyncForm() {
   const invites = ctInt('#ct-invites', 0, 1000, 0);
   const messages = ctInt('#ct-messages', 0, 1_000_000, 0);
+  ctSyncLook();
   $('#ct-age-field').hidden = invites <= 0;
   $('#ct-draw-winners-field').hidden = $('#ct-draw-mode').value === 'none';
   const req = ctRequirement({ invites, messages });
@@ -2152,6 +2186,7 @@ function ctFill(c, { copy = false } = {}) {
   $('#ct-desc').value = c.description ?? '';
   $('#ct-draw-mode').value = c.drawWinners > 0 ? (c.drawMode === 'auto' ? 'auto' : 'manual') : 'none';
   $('#ct-draw-winners').value = String(c.drawWinners > 0 ? c.drawWinners : 1);
+  ctLook = { color: c.color ?? '', color2: c.color2 ?? '', banner: c.banner ?? '' };
   ctPreview();
   ctSyncForm();
 }
@@ -2172,7 +2207,7 @@ function renderContests() {
   if (!cfg) return;
   const list = ctList();
   if ((ctEditId && !list.some((c) => c.id === ctEditId)) || !$('#ct-start').value) ctReset();
-  $('#ct-site-link').href = new URL('ranking.html#eventy', location.href).href;
+  $('#ct-site-link').href = new URL('event', location.href).href;
   const lv = state.draft.levels;
   const warn = [];
   if (cfg.enabled && list.some((c) => c.messages > 0 && Date.parse(c.endsAt) > Date.now()) && !(lv.enabled && lv.message.enabled)) {
@@ -2191,7 +2226,7 @@ function renderContests() {
           const id = esc(c.id);
           return `<div class="ev-item ${cls}${c.id === ctEditId ? ' editing' : ''}">
             <div class="ev-main">
-              <div><strong>${esc(c.name)}</strong> <span class="ev-status">${label}</span></div>
+              <div><span class="ct-swatch" style="background:linear-gradient(90deg, ${ctColors(c).join(', ')})" title="Kolory eventu"></span><strong>${esc(c.name)}</strong> <span class="ev-status">${label}</span>${c.banner ? ' <span class="muted small" title="Własny baner na stronie eventów">🖼️ baner</span>' : ''}</div>
               <div class="muted small">${esc(evDate(Date.parse(c.startsAt)))} – ${esc(evDate(Date.parse(c.endsAt)))}</div>
               <div class="muted small">🎯 Warunek: ${esc(ctRequirement(c))}${c.prize ? ` · 🎁 ${esc(c.prize)}` : ''}${c.drawWinners > 0 ? ` · 🎲 losowanie: ${c.drawWinners} ${plural(c.drawWinners, ['zwycięzca', 'zwycięzców', 'zwycięzców'])} (${c.drawMode === 'auto' ? 'samo po końcu' : 'ręcznie'})` : ''}</div>
             </div>
@@ -2205,7 +2240,7 @@ function renderContests() {
           </div>`;
         })
         .join('')
-    : '<span class="muted small">Brak eventów — dodaj pierwszy obok. Zakładka „Eventy” na stronie rankingu pokaże się, gdy jakiś będzie zaplanowany.</span>';
+    : '<span class="muted small">Brak eventów — dodaj pierwszy obok. Strona eventów (i pasek z linkiem w rankingu) pokaże go, gdy będzie zaplanowany.</span>';
 }
 
 // Czy działa „Zaloguj przez Discord” na stronie (adres strony musi być na liście Redirects aplikacji).
@@ -2220,8 +2255,9 @@ async function loadContestOauth() {
   }
   const o = data.oauth;
   const steps = `Wejdź na <a href="https://discord.com/developers/applications" target="_blank" rel="noopener">Discord Developer Portal</a> → aplikacja bota → <strong>OAuth2</strong> → <strong>Redirects</strong> → <strong>Add Redirect</strong>, wklej <code class="copyable" title="Kliknij, żeby skopiować">${esc(o.redirectUri)}</code> i kliknij <strong>Save Changes</strong>. Potem kliknij <button type="button" class="btn small" data-oauth-recheck>Sprawdź teraz</button> — logowanie włączy się od razu (sama strona też to wykryje w ciągu minuty).`;
+  const viaRanking = o.registered === true && o.using && !/\/event(\.html)?$/.test(o.using);
   box.innerHTML = o.registered === true
-    ? `<p class="ct-oauth-ok">✓ <strong>Logowanie przez Discord działa</strong> — na stronie jest przycisk „Zaloguj przez Discord”.</p>`
+    ? `<p class="ct-oauth-ok">✓ <strong>Logowanie przez Discord działa</strong> — na stronie eventów jest przycisk „Zaloguj przez Discord”.${viaRanking ? ` Discord wraca na adres strony rankingu, a ta od razu przekierowuje na eventy. Możesz dodać w Redirects też <code class="copyable" title="Kliknij, żeby skopiować">${esc(o.redirectUri)}</code> — wtedy Discord wróci prosto na stronę eventów.` : ''}</p>`
     : `<div class="banner warn"><strong>Logowanie przez Discord nie jest jeszcze włączone.</strong> Discord nie pozwala botowi dopisać adresu strony samemu — zrób to raz: ${steps}${o.registered === null ? ' (Bot nie mógł sprawdzić listy — jeśli adres już jest, wszystko działa.)' : ''} Do tego czasu osoby łączą konto komendą <code>/polacz</code>.</div>`;
 }
 
@@ -2273,6 +2309,45 @@ for (const sel of ['#ct-invites', '#ct-messages', '#ct-draw-mode']) {
   $(sel).addEventListener('change', ctSyncForm);
 }
 $('#ct-desc').addEventListener('input', ctPreview);
+$('#ct-name').addEventListener('input', ctSyncLook);
+// Kolory: wybranie koloru = własny motyw; „Domyślne kolory” wraca do kolorów typu eventu.
+$('#ct-color').addEventListener('input', (event) => {
+  ctLook.color = event.target.value.toLowerCase();
+  ctSyncLook();
+});
+$('#ct-color2').addEventListener('input', (event) => {
+  ctLook.color2 = event.target.value.toLowerCase();
+  ctSyncLook();
+});
+$('#ct-theme-reset').addEventListener('click', () => {
+  ctLook.color = '';
+  ctLook.color2 = '';
+  ctSyncLook();
+});
+// Baner: zmniejszony w przeglądarce (jak w „Serwer info”) i wgrany do bota; event zapisuje jego adres.
+$('#ct-banner-file').addEventListener('change', async (event) => {
+  const file = event.target.files?.[0];
+  event.target.value = '';
+  if (!file) return;
+  const btn = $('#ct-banner-btn');
+  btn.classList.add('busy');
+  btn.firstChild.textContent = 'Wgrywanie…';
+  try {
+    const data = await siBannerData(file);
+    const { url } = await api('/contests/banner', { method: 'POST', body: JSON.stringify({ data }) });
+    ctLook.banner = url;
+    toast('Wgrano baner — kliknij „Dodaj event” / „Zapisz zmiany eventu”, a potem zapisz ustawienia.');
+  } catch (error) {
+    toast(error.message, 'error');
+  } finally {
+    btn.classList.remove('busy');
+    ctSyncLook();
+  }
+});
+$('#ct-banner-del').addEventListener('click', () => {
+  ctLook.banner = '';
+  ctSyncLook();
+});
 $('#ct-desc-preview').addEventListener('click', (event) => event.target.closest('.spoiler')?.classList.add('on'));
 // Emoji, którego nie ma na serwerze (albo literówka w id) → sama nazwa, zamiast pustego obrazka.
 $('#ct-desc-preview').addEventListener('error', (event) => {
@@ -2382,6 +2457,9 @@ $('#ct-add').addEventListener('click', () => {
     description: $('#ct-desc').value.trim().slice(0, 1500),
     drawWinners: $('#ct-draw-mode').value === 'none' ? 0 : ctInt('#ct-draw-winners', 1, 50, 1),
     drawMode: $('#ct-draw-mode').value === 'auto' ? 'auto' : 'manual',
+    color: ctLook.color,
+    color2: ctLook.color2,
+    banner: ctLook.banner,
   };
   let message;
   if (ctEditId) {

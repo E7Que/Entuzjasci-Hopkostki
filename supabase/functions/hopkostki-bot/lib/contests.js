@@ -1,5 +1,6 @@
-// Eventy na stronie rankingu — zakładka „Eventy” pokazuje się tylko wtedy, gdy jakiś event jest zaplanowany,
-// trwa albo skończył się w ostatnich 3 dniach. Każdy event ma warunek dostania się: zaprosić `invites` osób
+// Eventy serwera — mają własną stronę (/event, event.html); ranking poziomów pokazuje do niej pasek z linkiem, gdy
+// jakiś event jest zaplanowany, trwa albo skończył się w ostatnich 3 dniach. Każdy event może mieć własny wygląd
+// (kolory — gradient — i baner w nagłówku strony). Każdy event ma warunek dostania się: zaprosić `invites` osób
 // i/lub napisać `messages` wiadomości (0 = bez tego warunku). Jak to działa dla osoby:
 //   1. łączy konto („Zaloguj przez Discord” na stronie albo link z /polacz) i klika „Zapisz się”,
 //   2. od chwili zapisu (najwcześniej od startu eventu) liczą się jej zaproszenia i wiadomości — pasek postępu,
@@ -22,8 +23,19 @@ const SESSION_TTL_MS = 90 * DAY;
 const SEEN_EVERY_MS = 60 * 60_000;
 const TOP = 100;
 // Strona rankingu — tu wraca też logowanie przez Discord (adres musi być na liście Redirects aplikacji w Developer Portal).
-export const CONTEST_SITE = `${PANEL_SITE}ranking.html`;
+// Eventy mają własną stronę (/event — event.html na GitHub Pages); ranking zostaje przy poziomach.
+export const CONTEST_SITE = `${PANEL_SITE}event`;
+// Logowanie przez Discord: adres, który warto mieć w Redirects aplikacji (pokazuje go panel), i wszystkie, które
+// strona obsłuży — pierwszy z nich obecny na liście wygrywa. Strona rankingu przekazuje powrót z Discorda dalej
+// (zgodność z adresem dodanym, zanim eventy dostały własną stronę).
 export const OAUTH_REDIRECT = CONTEST_SITE;
+const LEGACY_REDIRECT = `${PANEL_SITE}ranking.html`;
+export const OAUTH_REDIRECTS = [CONTEST_SITE, `${PANEL_SITE}event.html`, LEGACY_REDIRECT];
+// Lista Redirects z Discorda → adres do logowania; undefined = Discord nie podał listy.
+export function pickOAuthRedirect(uris) {
+  if (!Array.isArray(uris)) return undefined;
+  return OAUTH_REDIRECTS.find((uri) => uris.includes(uri)) ?? null;
+}
 // Biernik („zaprosić 1 osobę / 2 osoby”, „napisać 1 wiadomość”).
 const UNITS = { invites: ['osobę', 'osoby', 'osób'], messages: ['wiadomość', 'wiadomości', 'wiadomości'] };
 // Dopełniacz („brakuje 1 osoby / 2 osób”).
@@ -156,7 +168,9 @@ export async function oauthInfo(bot) {
   let setup = await bot.store.getState('setup');
   if (setup?.oauthRedirect === false) setup = await refreshOAuthRedirect(bot, setup);
   if (!setup?.appId || setup.oauthRedirect === false) return null;
-  return { clientId: setup.appId, redirectUri: OAUTH_REDIRECT };
+  // Zapis sprzed listy adresów: wtedy jedynym był adres strony rankingu.
+  const redirectUri = setup.oauthRedirectUri ?? (setup.oauthRedirect === true ? LEGACY_REDIRECT : OAUTH_REDIRECT);
+  return { clientId: setup.appId, redirectUri };
 }
 
 // Póki adresu nie ma na liście, bot zagląda do Discorda najwyżej raz na minutę (strona) albo od razu (panel) —
@@ -167,18 +181,21 @@ async function refreshOAuthRedirect(bot, setup, { force = false } = {}) {
   if (!force && Date.now() - (setup.oauthCheckedAt ?? 0) < OAUTH_RECHECK_MS) return setup;
   const app = await bot.discord.get('/applications/@me').catch(() => null);
   const fresh = (await bot.store.getState('setup')) ?? setup;
+  const picked = pickOAuthRedirect(app?.redirect_uris);
   const next = {
     ...fresh,
     oauthCheckedAt: Date.now(),
-    oauthRedirect: Array.isArray(app?.redirect_uris) ? app.redirect_uris.includes(OAUTH_REDIRECT) : (fresh.oauthRedirect ?? null),
+    oauthRedirect: picked === undefined ? (fresh.oauthRedirect ?? null) : Boolean(picked),
+    oauthRedirectUri: picked === undefined ? (fresh.oauthRedirectUri ?? null) : picked,
   };
   await bot.store.setState('setup', next);
   return next;
 }
 
 // Strona: kod z Discorda (+ code_verifier PKCE) → kto to jest → sesja przeglądarki.
-export async function exchangeOAuthCode(bot, { code, verifier }) {
+export async function exchangeOAuthCode(bot, { code, verifier, redirectUri = null }) {
   const info = await oauthInfo(bot);
+  if (info && OAUTH_REDIRECTS.includes(redirectUri)) info.redirectUri = redirectUri;
   if (!info || !bot.discord) throw new ContestError('Logowanie przez Discord nie jest jeszcze włączone — połącz konto komendą /polacz.');
   if (!/^[\w-]{10,200}$/.test(String(code ?? '')) || !/^[\w.~-]{43,128}$/.test(String(verifier ?? ''))) {
     throw new MemberAuthError('Logowanie nie powiodło się — spróbuj jeszcze raz.');
@@ -253,6 +270,10 @@ async function contestView(bot, c, { session, now, gctx, draws }) {
     description: c.description,
     prize: c.prize,
     type: contestKind(c),
+    // Motyw z panelu: kolory (gradient) i baner; puste = domyślne dla typu eventu.
+    color: c.color || null,
+    color2: c.color2 || null,
+    banner: c.banner || null,
     status,
     startsAt: c.startsAt,
     endsAt: c.endsAt,
@@ -411,7 +432,7 @@ async function logDraw(bot, config, c, picked, { by, pool }) {
         timestamp: new Date().toISOString(),
       },
     ],
-    components: [{ type: 1, components: [{ type: 2, style: 5, label: 'Zobacz event', url: `${CONTEST_SITE}#eventy` }] }],
+    components: [{ type: 1, components: [{ type: 2, style: 5, label: 'Zobacz event', url: `${CONTEST_SITE}#${c.id}` }] }],
   });
 }
 
@@ -436,7 +457,7 @@ async function logQualified(bot, config, c, p) {
         timestamp: new Date().toISOString(),
       },
     ],
-    components: [{ type: 1, components: [{ type: 2, style: 5, label: 'Zobacz event', url: `${CONTEST_SITE}#eventy` }] }],
+    components: [{ type: 1, components: [{ type: 2, style: 5, label: 'Zobacz event', url: `${CONTEST_SITE}#${c.id}` }] }],
   });
 }
 
@@ -467,7 +488,8 @@ export async function contestDetails(bot, contestId, { now = Date.now() } = {}) 
 export async function oauthStatus(bot) {
   let setup = await bot.store.getState('setup');
   if (setup?.oauthRedirect === false) setup = await refreshOAuthRedirect(bot, setup, { force: true });
-  return { redirectUri: OAUTH_REDIRECT, registered: setup?.oauthRedirect ?? null, checkedAt: setup?.oauthCheckedAt ?? setup?.checkedAt ?? null };
+  const using = setup?.oauthRedirectUri ?? (setup?.oauthRedirect === true ? LEGACY_REDIRECT : null);
+  return { redirectUri: OAUTH_REDIRECT, registered: setup?.oauthRedirect ?? null, using, checkedAt: setup?.oauthCheckedAt ?? setup?.checkedAt ?? null };
 }
 
 export async function contestsCleanupTick(bot) {
@@ -495,7 +517,7 @@ const polacz = {
           color: embeds.COLORS.info,
           title: '🔗 Połącz konto ze stroną eventów',
           description: [
-            'Kliknij przycisk poniżej — strona rankingu otworzy się już połączona z Twoim kontem. Zapiszesz się tam do eventu i zobaczysz swój postęp.',
+            'Kliknij przycisk poniżej — strona eventów otworzy się już połączona z Twoim kontem. Zapiszesz się tam do eventu i zobaczysz swój postęp.',
             '',
             list,
             '',

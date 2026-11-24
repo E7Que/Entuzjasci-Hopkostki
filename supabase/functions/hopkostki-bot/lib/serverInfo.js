@@ -300,10 +300,10 @@ export async function saveBannerAsset(bot, dataUrl) {
   return { id, url };
 }
 
-// Sprząta obrazki, których nie używa ani ustawienie, ani wysłana wiadomość (starsze niż dzień).
+// Sprząta obrazki, których nie używa ani ustawienie (Serwer info, banery eventów), ani wysłana wiadomość (starsze niż dzień).
 export async function pruneBannerAssets(bot) {
   const [config, posted] = await Promise.all([bot.store.getConfig(), bot.store.getState('server_info_message')]);
-  const keep = [...bannersOf(config.serverInfo), ...(posted?.banners ?? [])]
+  const keep = [...bannersOf(config.serverInfo), ...(posted?.banners ?? []), ...(config.contests?.list ?? []).map((c) => c.banner).filter(Boolean)]
     .map((url) => /\/asset\/([a-f0-9]{24}\.\w+)$/.exec(url)?.[1])
     .filter(Boolean);
   await bot.store.pruneAssets(keep, 24);

@@ -94,6 +94,7 @@ export function fakeDiscord({ dmFails = false, banError = null, endpoint = null 
     ['GET', /^\/applications\/@me$/, () => ({ id: 'app', name: 'Hopkostki', verify_key: state.verifyKey ?? 'aa', bot: users.get('bot'), interactions_endpoint_url: state.endpoint, flags: state.appFlags, redirect_uris: state.redirectUris })],
     // OAuth2 (logowanie przez Discord): state.oauthCodes = { kod: { userId, verifier } } — kod działa raz.
     ['POST', /^\/oauth2\/token$/, (m, body, opts) => {
+      state.lastTokenForm = opts.form ?? null;
       const grant = state.oauthCodes?.[opts.form?.code];
       const challengeOk = grant && grant.verifier === opts.form?.code_verifier && opts.auth === null && opts.form?.client_id === 'app';
       if (!challengeOk) throw new DiscordError(400, { error: 'invalid_grant' });

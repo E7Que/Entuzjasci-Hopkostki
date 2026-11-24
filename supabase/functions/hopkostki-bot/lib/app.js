@@ -269,7 +269,7 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
       if (request.method === 'GET' && route === '/public/contests') return json(await publicContests(bot, { token: member }), 200, cors);
       if (request.method === 'POST' && route === '/public/link') return json(await exchangeMemberLink(bot, body?.token), 200, cors);
       // „Zaloguj przez Discord”: kod z przekierowania + code_verifier (PKCE) → sesja.
-      if (request.method === 'POST' && route === '/public/oauth') return json(await exchangeOAuthCode(bot, { code: body?.code, verifier: body?.verifier }), 200, cors);
+      if (request.method === 'POST' && route === '/public/oauth') return json(await exchangeOAuthCode(bot, { code: body?.code, verifier: body?.verifier, redirectUri: body?.redirectUri ?? null }), 200, cors);
       if (request.method === 'POST' && route === '/public/unlink') return json({ ok: true, removed: await endMemberSession(bot, member) }, 200, cors);
       const join = /^\/public\/contests\/([a-z0-9]{6,24})\/(join|leave)$/i.exec(route);
       if (request.method === 'POST' && join) {

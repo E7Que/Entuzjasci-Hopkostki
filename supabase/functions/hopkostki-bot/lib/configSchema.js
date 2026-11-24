@@ -104,6 +104,9 @@ function cleanXpEvents(input, current) {
 // Stary zapis (type + goal) zamieniamy na warunek.
 const CONTEST_MAX_MS = 92 * 24 * 60 * 60_000;
 const oneLine = (value, max) => String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
+// Motyw eventu: kolor #rrggbb (pusty = domyślny dla typu) i baner wgrany w panelu (obrazek bota: /panel/public/asset/…).
+const hexColor = (value) => (/^#[0-9a-f]{6}$/i.test(String(value ?? '')) ? String(value).toLowerCase() : '');
+const assetLink = (value) => (/^https:\/\/[^\s"'<>\\]+\/panel\/public\/asset\/[a-f0-9]{24}\.(?:webp|png|jpg|gif)$/.test(String(value ?? '')) ? String(value) : '');
 const between = (value, min, max, fallback) => {
   const n = Math.floor(Number(value));
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
@@ -135,6 +138,9 @@ function cleanContests(input, current) {
       minAccountDays: between(c?.minAccountDays, 0, 365, 7),
       drawWinners: between(c?.drawWinners, 0, 50, 0),
       drawMode: c?.drawMode === 'auto' ? 'auto' : 'manual',
+      color: hexColor(c?.color),
+      color2: hexColor(c?.color2),
+      banner: assetLink(c?.banner),
     });
   }
   return out.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)).slice(-30);
