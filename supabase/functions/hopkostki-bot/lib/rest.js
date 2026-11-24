@@ -15,7 +15,9 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function createRest(token, { fetchImpl = fetch, base = API } = {}) {
   // files: [{ name, content, type? }] — wysyłane jako multipart (np. zapis ticketu w .txt).
-  async function request(method, path, { body, reason, query, files } = {}) {
+  // form: pola formularza (application/x-www-form-urlencoded — endpointy OAuth2), auth: własny nagłówek
+  // Authorization (np. „Bearer …” użytkownika) albo null = bez nagłówka (wymiana kodu OAuth2 z PKCE).
+  async function request(method, path, { body, reason, query, files, form, auth } = {}) {
     const url = new URL(base + path);
     for (const [key, value] of Object.entries(query ?? {})) {
       if (value !== undefined && value !== null) url.searchParams.set(key, String(value));
@@ -24,11 +26,18 @@ export function createRest(token, { fetchImpl = fetch, base = API } = {}) {
       Authorization: `Bot ${token}`,
       'User-Agent': 'DiscordBot (https://github.com/E7Que/Entuzjasci-Hopkostki, 2.0)',
     };
+    if (auth !== undefined) {
+      if (auth) headers.Authorization = auth;
+      else delete headers.Authorization;
+    }
     if (reason) headers['X-Audit-Log-Reason'] = encodeURIComponent(reason.slice(0, 512));
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
       let payload;
-      if (files?.length) {
+      if (form) {
+        headers['Content-Type'] = 'application/x-www-form-urlencoded';
+        payload = new URLSearchParams(form).toString();
+      } else if (files?.length) {
         payload = new FormData();
         payload.append('payload_json', JSON.stringify(body ?? {}));
         files.forEach((f, i) => payload.append(`files[${i}]`, new Blob([f.content], { type: f.type ?? 'text/plain; charset=utf-8' }), f.name));

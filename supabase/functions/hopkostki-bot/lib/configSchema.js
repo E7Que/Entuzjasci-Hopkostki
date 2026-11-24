@@ -96,19 +96,16 @@ function cleanXpEvents(input, current) {
   return out.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)).slice(-50);
 }
 
-// Eventy (konkursy) na stronie rankingu: invites — zaproszenia, messages — wiadomości, mixed — punkty za jedno i drugie.
-export const CONTEST_TYPES = ['invites', 'messages', 'mixed'];
+// Eventy na stronie rankingu: warunek dostania się — zaprosić `invites` osób i/lub napisać `messages` wiadomości
+// (0 = bez tego warunku, co najmniej jeden > 0); poprawne daty (koniec po początku, najwyżej 92 dni);
+// minAccountDays — zaproszone konta młodsze niż tyle dni się nie liczą. Najwyżej 30, posortowane po początku.
+// Stary zapis (type + goal) zamieniamy na warunek.
 const CONTEST_MAX_MS = 92 * 24 * 60 * 60_000;
 const oneLine = (value, max) => String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
 const between = (value, min, max, fallback) => {
   const n = Math.floor(Number(value));
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
 };
-
-// Eventy z panelu: poprawne daty (koniec po początku, najwyżej 92 dni), znany typ; goal — próg (0 = bez progu:
-// zwykły ranking, inaczej pasek postępu i zgłoszenie po jego osiągnięciu); points — punkty w evencie mieszanym
-// (co najmniej jedno niezerowe); winners — ile pierwszych miejsc jest nagradzanych (0–25); minAccountDays —
-// zaproszone konta młodsze niż tyle dni się nie liczą. Najwyżej 30, posortowane po początku.
 function cleanContests(input, current) {
   if (!Array.isArray(input)) return current;
   const seen = new Set();
@@ -117,22 +114,22 @@ function cleanContests(input, current) {
     const id = String(c?.id ?? '');
     const start = Date.parse(c?.startsAt);
     const end = Date.parse(c?.endsAt);
-    if (!/^[a-z0-9]{6,24}$/i.test(id) || seen.has(id) || !CONTEST_TYPES.includes(c?.type)) continue;
+    if (!/^[a-z0-9]{6,24}$/i.test(id) || seen.has(id)) continue;
     if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || end - start > CONTEST_MAX_MS) continue;
+    const legacy = c?.invites === undefined && c?.messages === undefined;
+    const invites = between(legacy ? (c?.type === 'invites' ? c?.goal : 0) : c?.invites, 0, 1000, 0);
+    const messages = between(legacy ? (c?.type === 'messages' ? c?.goal : 0) : c?.messages, 0, 1_000_000, 0);
+    if (!invites && !messages) continue;
     seen.add(id);
-    let points = { invite: between(c?.points?.invite, 0, 10_000, 10), message: between(c?.points?.message, 0, 10_000, 1) };
-    if (!points.invite && !points.message) points = { invite: 10, message: 1 };
     out.push({
       id,
       name: oneLine(c?.name, 80) || 'Event',
       description: String(c?.description ?? '').replace(/\r/g, '').trim().slice(0, 1500),
       prize: oneLine(c?.prize, 200),
-      type: c.type,
       startsAt: new Date(start).toISOString(),
       endsAt: new Date(end).toISOString(),
-      goal: between(c?.goal, 0, 1_000_000, 0),
-      points,
-      winners: between(c?.winners, 0, 25, 3),
+      invites,
+      messages,
       minAccountDays: between(c?.minAccountDays, 0, 365, 7),
     });
   }

@@ -150,21 +150,26 @@ Zakładka **Poziomy** ma wszystkie funkcje Arcane, także premium:
 
 Komendy dla wszystkich: `/rank` (karta poziomu) i `/ranking` (łącznie, w tym tygodniu albo miesiącu).
 
-### Eventy (konkursy na stronie rankingu)
+### Eventy (na stronie rankingu)
 
-Zakładka **Eventy** w panelu tworzy konkursy, które widać na stronie rankingu w zakładce **Eventy** — pojawia się
-ona tylko wtedy, gdy jakiś event jest zaplanowany, trwa albo skończył się w ostatnich 3 dniach (wyniki), a przy
-kilku eventach każdy ma swoją podzakładkę. Rodzaje:
-- **Zaproszenia** — liczą się osoby, które weszły z zaproszenia w czasie eventu, nadal są na serwerze, nie były na
-  nim wcześniej i mają konto starsze niż wybrana liczba dni (bot sprawdza zaproszenia sam, także bez logu wejść).
-- **Wiadomości** — liczone tak jak XP za wiadomości w poziomach (cooldown, kanały bez XP, ochrona przed nabijaniem).
-- **Mieszany** — punkty: zaproszenie × X + wiadomość × Y.
+Zakładka **Eventy** w panelu tworzy eventy widoczne na stronie rankingu w zakładce **Eventy** — pojawia się ona
+tylko wtedy, gdy jakiś event jest zaplanowany, trwa albo skończył się w ostatnich 3 dniach, a przy kilku eventach
+każdy ma swoją podzakładkę. Każdy event ma **warunek**: zaprosić X osób i/lub napisać Y wiadomości.
 
-Udział wymaga **połączenia konta**: `/polacz` na serwerze daje jednorazowy link (ważny 15 minut), który otwiera
-stronę już połączoną z kontem tej osoby. Event **bez progu**: przycisk „Dołącz do eventu” i ranking uczestników
-(z nagradzanymi miejscami). Event **z progiem** (np. 5 zaproszeń): **pasek postępu**, a po jego zapełnieniu
-„Zgłoś się” — zgłoszenie trafia na wybrany kanał (z pingiem roli). Panel pokazuje uczestników z aktualnymi
-wynikami, najlepszych spoza listy i pozwala usunąć kogoś z eventu.
+Jak to działa dla osoby: **„Zaloguj przez Discord”** na stronie (albo `/polacz` na serwerze — link, który loguje),
+potem **„Zapisz się”**. Od chwili zapisu (najwcześniej od startu) liczą się jej zaproszenia i wiadomości — **paski
+postępu** pokazują, ile brakuje. Po spełnieniu warunku strona pokazuje **„Dostałeś się!”**, a bot ogłasza to na
+kanale wybranym w panelu (z pingiem roli).
+- **Zaproszenia** liczą się tylko za osoby, które weszły z zaproszenia, nadal są na serwerze, nie były na nim
+  wcześniej i mają konto starsze niż wybrana liczba dni (bot sprawdza zaproszenia sam, także bez logu wejść).
+- **Wiadomości** liczą się tak jak XP za wiadomości w poziomach (cooldown, kanały bez XP, ochrona przed nabijaniem).
+- Panel: tworzenie, edycja (także zakończonych — np. przedłużenie), duplikowanie, zakończenie, lista zapisanych
+  z postępem i usuwanie kogoś z eventu.
+
+**Logowanie przez Discord** (OAuth2 z PKCE — bez sekretu aplikacji) wymaga jednorazowego dodania adresu strony
+rankingu w [Discord Developer Portal](https://discord.com/developers/applications) → aplikacja bota → **OAuth2 →
+Redirects** (`https://e7que.github.io/Entuzjasci-Hopkostki/ranking.html`). Discord nie pozwala zrobić tego przez API;
+bot sprawdza listę co 10 minut, a panel pokazuje, czy logowanie już działa. Do tego czasu działa `/polacz`.
 
 ### Tickety
 
@@ -307,7 +312,7 @@ wpisujesz w przeglądarce.
 | `/profil` · `/rolainfo` · `/czlonkowie` | Profil użytkownika / informacje o roli / liczba członków i online. |
 | `/losuj kostka/moneta/liczba/wybor` · `/bumpy ranking/status` | Losowanie / ranking bumpów i kiedy następny. |
 | `/zaproszenia [uzytkownik]` | Ranking zaproszeń albo kogo zaprosiła dana osoba. |
-| `/polacz` | Link, który łączy Twoje konto ze stroną rankingu (zakładka „Eventy”: postęp, dołączanie, zgłoszenia). Widoczny tylko dla Ciebie, działa raz. |
+| `/polacz` | Link, który loguje Cię na stronie rankingu (zakładka „Eventy”: zapis i postęp) — gdy logowanie przez Discord nie działa. Widoczny tylko dla Ciebie, działa raz. |
 | `/login [nowy]` | Login i hasło do panelu bota (tylko na kanale do logowania, widoczne tylko dla Ciebie); `nowy:True` wymusza nowe hasło. |
 | `/pomoc` | Lista komend. |
 

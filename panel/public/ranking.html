@@ -1033,7 +1033,8 @@
       border: 1px solid color-mix(in srgb, var(--c) 32%, var(--border));
       background: linear-gradient(135deg, color-mix(in srgb, var(--c) 10%, var(--surface-2)), var(--surface-2) 70%);
     }
-    .ct-connect { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
+    .ct-connect { grid-template-columns: auto minmax(0, 1fr); align-items: center; }
+    .ct-connect .ct-actions { grid-column: 1 / -1; }
     .ct-connect b { font-weight: 600; }
     .ct-steps { margin: 6px 0 0; padding-left: 20px; display: grid; gap: 3px; color: var(--muted); font-size: 0.86rem; }
     .ct-steps b { color: var(--text); font-weight: 500; }
@@ -1077,6 +1078,31 @@
     .ct-ok { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 10px; background: rgba(34, 197, 94, 0.12); color: #86efac; font-weight: 500; box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.3); animation: ct-pop 0.45s cubic-bezier(0.2, 1.6, 0.4, 1); }
     @keyframes ct-pop { from { transform: scale(0.7); opacity: 0; } }
     .ct-hint { color: var(--muted); font-size: 0.84rem; }
+    .ct-sub { margin: 2px 0 0; color: var(--muted); font-size: 0.86rem; }
+    .ct-facts li.goal { border-color: color-mix(in srgb, var(--c) 45%, var(--border)); background: color-mix(in srgb, var(--c) 12%, var(--surface-2)); color: var(--text); }
+    .ct-facts li.goal b { color: var(--c2); }
+    .ct-discord {
+      display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 42px; padding: 0 18px; border: 0; border-radius: 10px;
+      background: #5865f2; color: #fff; font-weight: 600; white-space: nowrap; cursor: pointer; box-shadow: 0 10px 24px -12px #5865f2; transition: transform 0.15s, filter 0.15s;
+    }
+    .ct-discord svg { width: 21px; height: 21px; flex: none; }
+    .ct-discord:hover { transform: translateY(-1px); filter: brightness(1.08); }
+    .ct-discord.wide { width: 100%; margin-top: 10px; }
+    .ct-me.won { border-color: rgba(34, 197, 94, 0.5); background: linear-gradient(135deg, rgba(34, 197, 94, 0.14), var(--surface-2) 70%); }
+    .ct-win { display: grid; gap: 2px; padding: 10px 14px; border-radius: 10px; background: rgba(34, 197, 94, 0.12); box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.35); animation: ct-pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1); }
+    .ct-win b { color: #86efac; font-size: 1.08rem; }
+    .ct-win span { color: var(--muted); font-size: 0.84rem; }
+    .ct-score b.in { color: #4ade80; font-size: 1.2rem; }
+    #card-account .acc { display: flex; align-items: center; gap: 10px; }
+    #card-account .acc img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+    #card-account .acc div { min-width: 0; }
+    #card-account .acc b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 0.92rem; }
+    #card-account .acc small { color: var(--muted); font-size: 0.76rem; }
+    #card-account p + p { margin-top: 8px; }
+    #card-account code { padding: 1px 6px; border-radius: 5px; background: rgba(255, 255, 255, 0.08); color: var(--text); }
+    #card-account .acc-ok, #card-account .acc-err { margin: 0 0 10px; padding: 8px 10px; border-radius: 8px; font-size: 0.84rem; }
+    #card-account .acc-ok { background: rgba(34, 197, 94, 0.12); color: #a7f3c4; }
+    #card-account .acc-err { background: rgba(244, 63, 94, 0.1); color: #fecdd3; }
 
     .ct-board h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 0.95rem; font-weight: 600; }
     .ct-board h3 span { padding: 0 7px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 0.78rem; font-weight: 500; line-height: 20px; }
@@ -1100,7 +1126,6 @@
     .ct-score { text-align: right; white-space: nowrap; }
     .ct-score b { font-size: 1.05rem; font-weight: 600; }
     .ct-score small { display: block; color: var(--faint); font-size: 0.74rem; }
-    .ct-row.reached .ct-score b::after { content: ' ✓'; color: #4ade80; font-size: 0.9rem; }
     .ct-more { margin: 8px 2px 0; color: var(--faint); font-size: 0.82rem; }
     .ct-empty { padding: 26px 16px; border: 1px dashed var(--border); border-radius: 12px; color: var(--muted); text-align: center; font-size: 0.9rem; }
     .ct-empty b { display: block; margin-bottom: 2px; color: var(--text); font-weight: 600; }
@@ -1171,8 +1196,7 @@
       .ct-clock small { display: inline; }
       .ct-clock b { font-size: 1.05rem; }
       .ct-body { gap: 14px; padding: 14px 14px 18px; }
-      .ct-connect { grid-template-columns: auto minmax(0, 1fr); }
-      .ct-connect .ct-btn { grid-column: 1 / -1; justify-self: start; }
+      .ct-connect .ct-discord { width: 100%; }
       .ct-row { grid-template-columns: 24px 32px minmax(0, 1fr) auto; gap: 10px; padding: 8px 12px; }
       .ct-row .avatar { width: 32px; height: 32px; }
       .tab[data-period="eventy"]::before { display: none; }
@@ -1301,13 +1325,17 @@
             <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4.5" rx="1"/><path d="M5 12.5V21h14v-8.5M12 8v13"/><path d="M12 8c-1.5-3-5.5-4.5-6-2s3 2 6 2zM12 8c1.5-3 5.5-4.5 6-2s-3 2-6 2z"/></svg>Nagrody za poziomy</h2>
             <ul class="rewards" id="rewards"></ul>
           </section>
+          <section class="card" id="card-account" hidden>
+            <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20.5c.9-3.8 4-5.8 8-5.8s7.1 2 8 5.8"/></svg>Twoje konto</h2>
+            <div id="account-body"></div>
+          </section>
           <section class="card">
             <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3.5" width="18" height="17" rx="4"/><path d="m10 16 4-8"/></svg>Na Discordzie</h2>
             <div class="cmds">
               <div><code>/rank</code>Twoja karta poziomu</div>
               <div><code>/ranking</code>ranking na serwerze</div>
               <div><code>/prywatnosc</code>ukryj się na tej stronie</div>
-              <div><code>/polacz</code>połącz konto (zakładka Eventy)</div>
+              <div><code>/polacz</code>logowanie bez przeglądarki Discorda</div>
             </div>
           </section>
           <section class="card">
@@ -14800,36 +14828,37 @@
       document.body.append(bar);
     }
 
-    // ---------- Eventy (konkursy) ----------
+    // ---------- Eventy ----------
     // Zakładka „Eventy” jest widoczna tylko wtedy, gdy bot zwraca jakiś event (zaplanowany, trwający albo zakończony
-    // w ostatnich 3 dniach); przy kilku eventach każdy ma swoją podzakładkę. Udział wymaga połączenia konta:
-    // /polacz na serwerze daje link #polacz=…, który strona wymienia na sesję (w tej przeglądarce). Z nią widać
-    // postęp, pasek do progu i przyciski „Dołącz do eventu” albo „Zgłoś się” (po osiągnięciu progu).
+    // w ostatnich 3 dniach); przy kilku eventach każdy ma swoją podzakładkę. Jak to działa: logujesz się przez
+    // Discord (albo linkiem z /polacz), klikasz „Zapisz się”, a od tej chwili liczą się Twoje zaproszenia
+    // i wiadomości — paski postępu pokazują, ile brakuje do warunku. Po jego spełnieniu: „Dostałeś się!”.
     const SESSION_KEY = 'ranking-session';
     const CT_KEY = 'ranking-contest';
+    const OAUTH_KEY = 'ranking-oauth';
     const ct = { data: null, selected: saved.get(CT_KEY), session: saved.get(SESSION_KEY), busy: false, flash: null, error: null, open: false, shown: '', due: 0, msgTimer: 0 };
     const CT_STATUS = { live: 'trwa', upcoming: 'wkrótce', ended: 'zakończony' };
     const CT_TYPES = {
       invites: {
         label: 'Zaproszenia',
-        unit: ['zaproszenie', 'zaproszenia', 'zaproszeń'],
-        of: ['zaproszenia', 'zaproszeń', 'zaproszeń'],
         icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2.5 20.5c.8-3.6 3.3-5.5 6.5-5.5s5.7 1.9 6.5 5.5M19 8v6M16 11h6"/></svg>',
       },
       messages: {
         label: 'Wiadomości',
-        unit: ['wiadomość', 'wiadomości', 'wiadomości'],
-        of: ['wiadomości', 'wiadomości', 'wiadomości'],
         icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/><path d="M8.5 10.5h7M8.5 13.8h4.5"/></svg>',
       },
       mixed: {
-        label: 'Mieszany',
-        unit: ['punkt', 'punkty', 'punktów'],
-        of: ['punktu', 'punktów', 'punktów'],
+        label: 'Zaproszenia i wiadomości',
         icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.8l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z"/></svg>',
       },
     };
+    // Formy: biernik („zaproś 3 osoby”), dopełniacz („brakuje 1 osoby”).
+    const CT_UNITS = {
+      invites: { to: ['osobę', 'osoby', 'osób'], of: ['osoby', 'osób', 'osób'] },
+      messages: { to: ['wiadomość', 'wiadomości', 'wiadomości'], of: ['wiadomości', 'wiadomości', 'wiadomości'] },
+    };
     const CT_LINK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></svg>';
+    const DISCORD_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.6 5.3A16.6 16.6 0 0 0 15.5 4l-.5 1a15.4 15.4 0 0 0-6 0L8.5 4a16.6 16.6 0 0 0-4.1 1.3C1.8 9.2 1.1 13 1.4 16.7a16.7 16.7 0 0 0 5.1 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a11.9 11.9 0 0 0 11.4 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a16.6 16.6 0 0 0 5.1-2.6c.4-4.3-.7-8.1-3-11.4zM8.7 14.4c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>';
     const ctPlural = (n, [one, few, many]) => {
       if (n === 1) return one;
       const n10 = n % 10;
@@ -14837,8 +14866,15 @@
       return n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14) ? few : many;
     };
     const ctType = (c) => CT_TYPES[c?.type] ?? CT_TYPES.mixed;
-    const ctUnit = (c, n, of = false) => `${fmt(n)} ${ctPlural(Math.abs(n), of ? ctType(c).of : ctType(c).unit)}`;
+    const ctUnit = (kind, n, of = false) => `${fmt(n)} ${ctPlural(Math.abs(n), CT_UNITS[kind][of ? 'of' : 'to'])}`;
     const ctShort = (iso) => new Date(iso).toLocaleString('pl-PL', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+    // „zaproś 3 osoby i napisz 50 wiadomości”.
+    function ctRequirement(c) {
+      const parts = [];
+      if (c.invites > 0) parts.push(`zaproś ${ctUnit('invites', c.invites)}`);
+      if (c.messages > 0) parts.push(`napisz ${ctUnit('messages', c.messages)}`);
+      return parts.join(' i ');
+    }
     function ctUntil(ms) {
       const s = Math.max(0, Math.floor((ms - Date.now()) / 1000));
       const [d, h, m, sec] = [Math.floor(s / 86400), Math.floor((s % 86400) / 3600), Math.floor((s % 3600) / 60), s % 60];
@@ -14857,95 +14893,93 @@
         ct.flash = null;
         ct.error = null;
         if (state.period === 'eventy') renderContests();
+        renderAccount();
       }, 9000);
     }
+    const loginButton = (cls = '') => `<button type="button" class="ct-discord ${cls}" data-ct-login>${DISCORD_ICON}Zaloguj przez Discord</button>`;
 
     function ctFacts(c) {
-      const facts = [];
+      const facts = [`<li class="goal">🎯 <span>Warunek: <b>${esc(ctRequirement(c))}</b></span></li>`];
       if (c.prize) facts.push(`<li class="prize">🎁 <span><b>Nagroda:</b> ${esc(c.prize)}</span></li>`);
-      if (c.goal > 0) facts.push(`<li>🎯 <span>Próg: <b>${esc(ctUnit(c, c.goal))}</b></span></li>`);
-      if (!c.goal && c.winners > 0) facts.push(`<li>🏆 <span>Nagradzane: <b>${c.winners === 1 ? '1. miejsce' : `miejsca 1–${c.winners}`}</b></span></li>`);
-      if (c.type === 'mixed' && c.points) facts.push(`<li>⚖️ <span>zaproszenie = <b>${fmt(c.points.invite)} pkt</b> · wiadomość = <b>${fmt(c.points.message)} pkt</b></span></li>`);
-      const people = c.goal > 0 ? ['zgłoszenie', 'zgłoszenia', 'zgłoszeń'] : ['uczestnik', 'uczestnicy', 'uczestników'];
-      facts.push(`<li>👥 <span><b>${fmt(c.participants)}</b> ${ctPlural(c.participants, people)}</span></li>`);
-      const rules = [];
-      if (c.type !== 'messages') {
-        const age = c.minAccountDays ? `, a ich konto ma co najmniej ${c.minAccountDays} ${ctPlural(c.minAccountDays, ['dzień', 'dni', 'dni'])}` : '';
-        rules.push(`Liczą się osoby, które weszły z Twojego zaproszenia w czasie eventu i nadal są na serwerze${age}. Powroty się nie liczą.`);
+      facts.push(`<li>👥 <span><b>${fmt(c.participants)}</b> ${ctPlural(c.participants, ['zapisany', 'zapisanych', 'zapisanych'])}${c.qualified ? ` · <b>${fmt(c.qualified)}</b> ${ctPlural(c.qualified, ['dostał(a) się', 'dostało się', 'dostało się'])}` : ''}</span></li>`);
+      const rules = ['Najpierw się zapisz — liczy się to, co zrobisz od chwili zapisu (najwcześniej od startu eventu).'];
+      if (c.invites > 0) {
+        const age = c.minAccountDays ? `, mają konto co najmniej ${c.minAccountDays}-dniowe` : '';
+        rules.push(`Liczą się osoby, które wejdą z Twojego zaproszenia, zostaną na serwerze${age} i nie były tu wcześniej.`);
       }
-      if (c.type !== 'invites') rules.push('Wiadomości liczą się tak jak do poziomów — spam i powtarzanie tego samego nic nie dają.');
+      if (c.messages > 0) rules.push('Wiadomości liczą się tak jak do poziomów — spam i powtarzanie tego samego nic nie dają.');
       return `<ul class="ct-facts">${facts.join('')}</ul><ul class="ct-rules">${rules.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>`;
     }
 
-    // Twój udział: połączenie konta, postęp (pasek do progu), wynik, „Dołącz do eventu” / „Zgłoś się”.
+    function ctBar(kind, label, have, need, animate) {
+      const p = Math.min(100, Math.floor((have / need) * 100));
+      const done = have >= need;
+      return `<div class="ct-progress">
+        <div class="ct-progress-top"><span>${label}</span><b>${fmt(Math.min(have, 1e9))} / ${fmt(need)}</b></div>
+        <div class="ct-bar${done ? ' done' : ''}" role="progressbar" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="${need}" aria-valuenow="${Math.min(have, need)}"><i style="--p:${animate ? 0 : p}%" data-p="${p}"></i></div>
+      </div>`;
+    }
+
+    // Twój udział: logowanie, „Zapisz się”, paski postępu do warunku, „Dostałeś się!”.
     function ctMe(c, animate) {
       const me = ct.data?.me;
       if (!me) {
+        const login = ct.data?.oauth
+          ? `${loginButton()}<span class="ct-hint">albo wpisz <code>/polacz</code> na serwerze i kliknij link od bota</span>`
+          : '<ol class="ct-steps"><li>Wpisz <code>/polacz</code> na serwerze.</li><li>Kliknij <b>Połącz konto</b> w odpowiedzi bota — wrócisz tutaj zalogowany(-a).</li></ol>';
         return `<section class="ct-me ct-connect">
           <div class="ct-icon sm">${CT_LINK_ICON}</div>
-          <div><b>Połącz konto, żeby wziąć udział</b>
-            <ol class="ct-steps"><li>Wpisz <code>/polacz</code> na serwerze.</li><li>Kliknij <b>Połącz konto</b> w odpowiedzi bota — wrócisz tutaj już połączony(-a).</li></ol>
-          </div>
-          <button type="button" class="ct-btn ghost" data-ct-copy>Kopiuj /polacz</button>
+          <div><b>Zaloguj się, żeby się zapisać</b><p class="ct-sub">Po zapisie od razu zobaczysz, ile brakuje Ci do warunku.</p></div>
+          <div class="ct-actions">${login}</div>
         </section>`;
       }
-      const m = c.me ?? { joined: false, score: 0, invites: 0, messages: 0, canJoin: false, blocker: null };
-      const head = `<div class="ct-who"><img class="avatar" src="${esc(me.avatar)}" alt="" width="40" height="40"><div><small>Połączono jako</small><b>${esc(me.name)}</b></div><button type="button" class="ct-unlink" data-ct-unlink title="Rozłącz konto w tej przeglądarce">Rozłącz</button></div>`;
-      let progress = '';
-      if (c.goal > 0) {
-        const p = Math.min(100, Math.floor((m.score / c.goal) * 100));
-        const done = m.score >= c.goal;
-        const label = c.status === 'upcoming' ? 'Postęp ruszy razem z eventem' : 'Twój postęp';
-        const note = done
-          ? `<small class="ok">✓ Próg osiągnięty${m.joined ? ' — zgłoszenie wysłane.' : c.status === 'live' ? ' — możesz się zgłosić!' : '.'}</small>`
-          : `<small>${c.status === 'ended' ? 'Event się skończył.' : `Brakuje jeszcze ${esc(ctUnit(c, c.goal - m.score, true))}.`}</small>`;
-        progress = `<div class="ct-progress">
-          <div class="ct-progress-top"><span>${label}</span><b>${fmt(m.score)} / ${esc(ctUnit(c, c.goal))}</b></div>
-          <div class="ct-bar${done ? ' done' : ''}" role="progressbar" aria-label="Postęp do progu" aria-valuemin="0" aria-valuemax="${c.goal}" aria-valuenow="${Math.min(m.score, c.goal)}"><i style="--p:${animate ? 0 : p}%" data-p="${p}"></i></div>
-          ${note}
-        </div>`;
+      const m = c.me ?? { joined: false, invites: 0, messages: 0, reached: false, canJoin: false, blocker: null };
+      const head = `<div class="ct-who"><img class="avatar" src="${esc(me.avatar)}" alt="" width="40" height="40"><div><small>Zalogowano jako</small><b>${esc(me.name)}</b></div><button type="button" class="ct-unlink" data-ct-unlink title="Wyloguj w tej przeglądarce">Wyloguj</button></div>`;
+      if (!m.joined) {
+        const action = c.status === 'ended'
+          ? '<span class="ct-hint">Ten event już się skończył.</span>'
+          : `<button type="button" class="ct-btn" data-ct-join="${esc(c.id)}"${ct.busy ? ' disabled' : ''}>${ct.busy ? 'Chwila…' : 'Zapisz się'}</button><span class="ct-hint">Potem ${esc(ctRequirement(c))} — liczy się od chwili zapisu.</span>`;
+        return `<section class="ct-me">${head}<div class="ct-actions">${action}</div></section>`;
       }
-      const stats = [];
-      if (c.type === 'mixed') stats.push(`<span><b>${fmt(m.score)}</b> pkt</span>`, `<span>${esc(ctUnit({ type: 'invites' }, m.invites))}</span>`, `<span>${esc(ctUnit({ type: 'messages' }, m.messages))}</span>`);
-      else if (!c.goal && c.status !== 'upcoming') stats.push(`<span>Twój wynik: <b>${esc(ctUnit(c, m.score))}</b></span>`);
-      if (c.status === 'upcoming') stats.length = 0;
-      if (m.joined && m.rank) stats.push(`<span>Miejsce: <b>#${m.rank}</b></span>`);
-      let action;
-      if (m.joined) action = `<span class="ct-ok">✓ ${c.goal > 0 ? 'Zgłoszono' : 'Bierzesz udział'}</span>`;
-      else if (c.status === 'ended') action = '<span class="ct-hint">Ten event już się skończył.</span>';
+      const bars = [];
+      if (c.invites > 0) bars.push(ctBar('invites', 'Zaproszone osoby', m.invites, c.invites, animate));
+      if (c.messages > 0) bars.push(ctBar('messages', 'Wiadomości', m.messages, c.messages, animate));
+      let status;
+      if (m.reached) status = '<div class="ct-win"><b>🎉 Dostałeś się!</b><span>Warunek spełniony — administracja już to widzi.</span></div>';
+      else if (c.status === 'upcoming') status = `<span class="ct-ok">✓ Zapisano</span><span class="ct-hint">Liczenie ruszy razem z eventem.</span>`;
+      else if (c.status === 'ended') status = '<span class="ct-hint">Event się skończył — warunek nie został spełniony.</span>';
       else {
-        const label = c.goal > 0 ? 'Zgłoś się' : 'Dołącz do eventu';
-        // Brakujące zaproszenia/wiadomości pokazuje już pasek postępu — bez powtarzania obok przycisku.
-        const hint = m.blocker && !(c.goal > 0 && c.status === 'live') ? `<span class="ct-hint">${esc(m.blocker)}</span>` : '';
-        action = `<button type="button" class="ct-btn" data-ct-join="${esc(c.id)}"${m.canJoin && !ct.busy ? '' : ' disabled'}>${ct.busy ? 'Chwila…' : label}</button>${hint}`;
+        const left = [];
+        if (c.invites > m.invites) left.push(ctUnit('invites', c.invites - m.invites, true));
+        if (c.messages > m.messages) left.push(ctUnit('messages', c.messages - m.messages, true));
+        status = `<span class="ct-ok">✓ Zapisano</span><span class="ct-hint">Brakuje jeszcze ${esc(left.join(' i '))}.</span>`;
       }
-      return `<section class="ct-me">${head}${progress}<div class="ct-stats">${stats.join('')}</div><div class="ct-actions">${action}</div></section>`;
+      return `<section class="ct-me${m.reached ? ' won' : ''}">${head}${bars.join('')}<div class="ct-actions">${status}</div></section>`;
     }
 
     function ctBoard(c) {
-      const title = c.goal > 0 ? 'Zgłoszeni' : 'Ranking uczestników';
       if (!c.entries.length) {
-        const empty = c.goal > 0 ? 'Nikt jeszcze się nie zgłosił' : 'Nikt jeszcze nie dołączył';
-        return `<section class="ct-board"><h3>${title}</h3><div class="ct-empty"><b>${empty}</b>${c.status === 'ended' ? '' : 'Bądź pierwszy(-a)!'}</div></section>`;
+        return `<section class="ct-board"><h3>Zapisani</h3><div class="ct-empty"><b>Nikt jeszcze się nie zapisał</b>${c.status === 'ended' ? '' : 'Bądź pierwszy(-a)!'}</div></section>`;
       }
-      const unitWord = (n) => (c.type === 'mixed' ? 'pkt' : ctPlural(n, ctType(c).unit));
       const rows = c.entries
         .map((e) => {
-          const win = !c.goal && c.winners > 0 && e.rank <= c.winners;
           const name = e.displayName ?? e.name;
-          const sub = c.type === 'mixed' ? `${ctUnit({ type: 'invites' }, e.invites)} · ${ctUnit({ type: 'messages' }, e.messages)}` : e.displayName ? e.name : '';
-          const p = c.goal > 0 ? Math.min(100, Math.floor((e.score / c.goal) * 100)) : null;
-          const cls = [e.rank <= 3 ? `r${e.rank}` : '', win ? 'win' : '', e.me ? 'me' : '', e.reached ? 'reached' : ''].filter(Boolean).join(' ');
+          const parts = [];
+          if (c.invites > 0) parts.push(`${fmt(e.invites)}/${fmt(c.invites)} ${ctPlural(c.invites, ['osoba', 'osoby', 'osób'])}`);
+          if (c.messages > 0) parts.push(`${fmt(e.messages)}/${fmt(c.messages)} wiad.`);
+          const ratio = [c.invites > 0 ? Math.min(1, e.invites / c.invites) : null, c.messages > 0 ? Math.min(1, e.messages / c.messages) : null].filter((x) => x !== null);
+          const p = Math.floor((ratio.reduce((a, b) => a + b, 0) / ratio.length) * 100);
+          const cls = [e.reached ? 'win reached' : '', e.me ? 'me' : ''].filter(Boolean).join(' ');
           return `<li class="ct-row ${cls}"${e.userId ? ` data-id="${esc(e.userId)}" tabindex="0"` : ''}>
             <span class="rank">${e.rank}</span>
             ${e.avatar ? `<img class="avatar" src="${esc(e.avatar)}" alt="" width="36" height="36" loading="lazy">` : '<span class="avatar ghost"></span>'}
-            <span class="ct-person"><b>${esc(name)}${e.me ? ' <em>· Ty</em>' : ''}</b>${sub ? `<small>${esc(sub)}</small>` : ''}${p !== null ? `<span class="ct-mini${e.reached ? ' done' : ''}"><i style="--p:${p}%"></i></span>` : ''}</span>
-            <span class="ct-score"><b>${fmt(e.score)}</b><small>${esc(unitWord(e.score))}</small></span>
+            <span class="ct-person"><b>${esc(name)}${e.me ? ' <em>· Ty</em>' : ''}</b><small>${esc(parts.join(' · '))}</small><span class="ct-mini${e.reached ? ' done' : ''}"><i style="--p:${p}%"></i></span></span>
+            <span class="ct-score">${e.reached ? '<b class="in">✓</b><small>dostał(a) się</small>' : `<b>${p}%</b><small>postęp</small>`}</span>
           </li>`;
         })
         .join('');
       const more = c.participants > c.entries.length ? `<p class="ct-more">…i jeszcze ${fmt(c.participants - c.entries.length)}</p>` : '';
-      return `<section class="ct-board"><h3>${title}<span>${fmt(c.participants)}</span></h3><ol class="ct-list">${rows}</ol>${more}</section>`;
+      return `<section class="ct-board"><h3>Zapisani<span>${fmt(c.participants)}</span></h3><ol class="ct-list">${rows}</ol>${more}</section>`;
     }
 
     function ctCard(c, animate) {
@@ -14954,14 +14988,13 @@
       const clock = c.status === 'ended'
         ? `<div class="ct-clock"><small>Zakończony</small><b>${esc(ctShort(c.endsAt))}</b></div>`
         : `<div class="ct-clock"><small>${c.status === 'live' ? 'Koniec za' : 'Start za'}</small><b data-ct-until="${target}">${esc(ctUntil(target))}</b></div>`;
-      const dates = `${esc(ctShort(c.startsAt))} – ${esc(ctShort(c.endsAt))}`;
       return `<article class="ct-card" data-type="${esc(c.type)}">
         <header class="ct-hero">
           <div class="ct-icon">${T.icon}</div>
           <div class="ct-title">
             <div class="ct-kicker">Event · ${T.label}<span class="ct-st ${c.status}"><i></i>${CT_STATUS[c.status]}</span></div>
             <h2>${esc(c.name)}</h2>
-            <div class="ct-dates">${dates}</div>
+            <div class="ct-dates">${esc(ctShort(c.startsAt))} – ${esc(ctShort(c.endsAt))}</div>
           </div>
           ${clock}
         </header>
@@ -14988,15 +15021,28 @@
       const scroll = box.querySelector('.ct-tabs')?.scrollLeft ?? 0;
       const tabs = list.length > 1
         ? `<div class="ct-tabs" role="tablist" aria-label="Eventy">${list
-            .map((x) => `<button type="button" role="tab" class="ct-tab ${x.status}" data-ct="${esc(x.id)}" data-type="${esc(x.type)}" aria-selected="${x.id === c.id}"><i></i>${esc(x.name)}<small>${CT_STATUS[x.status]}</small></button>`)
+            .map((x) => `<button type="button" role="tab" class="ct-tab ${x.status}" data-ct="${esc(x.id)}" data-type="${esc(x.type)}" aria-selected="${x.id === c.id}"><i></i>${esc(x.name)}<small>${x.me?.reached ? '✓ jesteś' : CT_STATUS[x.status]}</small></button>`)
             .join('')}</div>`
         : '';
       box.innerHTML = `${banner}${tabs}${ctCard(c, animate)}`;
       const strip = box.querySelector('.ct-tabs');
       if (strip) strip.scrollLeft = scroll;
-      // Pasek postępu „rośnie” przy pierwszym pokazaniu eventu.
+      // Paski postępu „rosną” przy pierwszym pokazaniu eventu.
       if (animate) requestAnimationFrame(() => requestAnimationFrame(() => box.querySelectorAll('.ct-bar i[data-p]').forEach((i) => i.style.setProperty('--p', `${i.dataset.p}%`))));
       markSelected();
+    }
+
+    // Karta „Twoje konto” obok rankingu — na każdej zakładce widać, czy jesteś zalogowany(-a).
+    function renderAccount() {
+      const card = $('#card-account');
+      if (!card) return;
+      card.hidden = !ct.data?.enabled || Boolean(PREVIEW) || EMBED;
+      if (card.hidden) return;
+      const me = ct.data.me;
+      const note = ct.error && !ct.data?.contests?.length ? `<p class="acc-err">${esc(ct.error)}</p>` : ct.flash && !ct.data?.contests?.length ? `<p class="acc-ok">${esc(ct.flash)}</p>` : '';
+      $('#account-body').innerHTML = me
+        ? `${note}<div class="acc"><img class="avatar" src="${esc(me.avatar)}" alt="" width="36" height="36"><div><b>${esc(me.name)}</b><small>zalogowano przez Discord</small></div><button type="button" class="ct-unlink" data-ct-unlink>Wyloguj</button></div>`
+        : `${note}<p>Zaloguj się, żeby zapisywać się na eventy i widzieć swój postęp.</p>${ct.data.oauth ? loginButton('wide') : '<p>Wpisz <code>/polacz</code> na serwerze i kliknij link od bota.</p>'}`;
     }
 
     function renderContestsTab() {
@@ -15028,7 +15074,7 @@
         const data = await res.json();
         if (data.expired) {
           ctForget();
-          if (!ct.error) ctMessage('err', 'Połączenie z kontem wygasło — wpisz /polacz na serwerze, żeby połączyć je znowu.');
+          if (!ct.error) ctMessage('err', 'Sesja wygasła — zaloguj się jeszcze raz.');
         }
         ct.data = data;
         if (data.me?.id && data.me.id !== state.me) setMe(data.me.id);
@@ -15036,18 +15082,13 @@
         if (!ct.data) return;
       }
       renderContestsTab();
+      renderAccount();
       const list = ct.data?.contests ?? [];
       if (state.period === 'eventy') renderContests();
       else if (ct.open && list.length) {
         ct.open = false;
         selectPeriod('eventy');
-      } else if (ct.open && (ct.flash || ct.error)) {
-        // Połączono z linku, ale żaden event teraz nie trwa — informacja nad rankingiem.
-        ct.open = false;
-        const note = $('#note');
-        note.innerHTML = `<b>${esc(ct.flash ?? ct.error)}</b>${ct.flash ? ' Teraz nie ma żadnego eventu — zakładka „Eventy” pojawi się, gdy ruszy następny.' : ''}`;
-        note.hidden = false;
-      }
+      } else ct.open = false;
     }
 
     // Link z /polacz (#polacz=…): token od razu znika z adresu, strona dostaje sesję tej osoby.
@@ -15057,19 +15098,69 @@
       try {
         const res = await fetch(`${BASE}/link`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token }) });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data.token) return ctMessage('err', data.error ?? 'Nie udało się połączyć konta — wpisz /polacz jeszcze raz.');
-        ct.session = data.token;
-        saved.set(SESSION_KEY, data.token);
-        ctMessage('ok', `Połączono z kontem ${data.me?.name ?? ''} — możesz brać udział w eventach.`);
-        if (data.me?.id) setMe(data.me.id);
+        if (!res.ok || !data.token) return ctMessage('err', data.error ?? 'Nie udało się połączyć konta — spróbuj jeszcze raz.');
+        ctSignedIn(data);
       } catch {
         ctMessage('err', 'Nie udało się połączyć konta — sprawdź internet i spróbuj jeszcze raz.');
       }
     }
+    function ctSignedIn(data) {
+      ct.session = data.token;
+      saved.set(SESSION_KEY, data.token);
+      ctMessage('ok', `Zalogowano jako ${data.me?.name ?? 'Ty'} — możesz zapisywać się na eventy.`);
+      if (data.me?.id) setMe(data.me.id);
+    }
+
+    // „Zaloguj przez Discord” (OAuth2 z PKCE): losowy code_verifier i state zostają w tej karcie, Discord wraca
+    // na stronę z ?code=…, a bot wymienia kod na to, kim jesteś (bez sekretu aplikacji).
+    const b64url = (bytes) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    async function ctLogin() {
+      const o = ct.data?.oauth;
+      if (!o) return;
+      const verifier = b64url(crypto.getRandomValues(new Uint8Array(32)));
+      const stateId = b64url(crypto.getRandomValues(new Uint8Array(16)));
+      const challenge = b64url(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))));
+      try { sessionStorage.setItem(OAUTH_KEY, JSON.stringify({ state: stateId, verifier, contest: ct.selected ?? null })); } catch {}
+      const params = new URLSearchParams({ response_type: 'code', client_id: o.clientId, scope: 'identify', redirect_uri: o.redirectUri, state: stateId, code_challenge: challenge, code_challenge_method: 'S256', prompt: 'none' });
+      location.href = `https://discord.com/oauth2/authorize?${params}`;
+    }
+    async function ctOAuthReturn() {
+      const qs = new URLSearchParams(location.search);
+      const code = qs.get('code');
+      const error = qs.get('error');
+      if (!code && !error) return false;
+      const returned = qs.get('state');
+      let pending = null;
+      try {
+        pending = JSON.parse(sessionStorage.getItem(OAUTH_KEY) ?? 'null');
+        sessionStorage.removeItem(OAUTH_KEY);
+      } catch {}
+      for (const k of ['code', 'state', 'iss', 'error', 'error_description']) qs.delete(k);
+      const rest = qs.toString();
+      try { history.replaceState(null, '', `${location.pathname}${rest ? `?${rest}` : ''}#eventy`); } catch {}
+      ct.open = true;
+      if (error) {
+        ctMessage('err', error === 'access_denied' ? 'Anulowano logowanie przez Discord.' : 'Logowanie przez Discord nie powiodło się — spróbuj jeszcze raz.');
+        return true;
+      }
+      if (!pending || pending.state !== returned) {
+        ctMessage('err', 'Logowanie wygasło — kliknij „Zaloguj przez Discord” jeszcze raz.');
+        return true;
+      }
+      if (pending.contest) ct.selected = pending.contest;
+      try {
+        const res = await fetch(`${BASE}/oauth`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code, verifier: pending.verifier }) });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.token) ctMessage('err', data.error ?? 'Logowanie przez Discord nie powiodło się — spróbuj jeszcze raz.');
+        else ctSignedIn(data);
+      } catch {
+        ctMessage('err', 'Nie udało się połączyć z botem — spróbuj za chwilę.');
+      }
+      return true;
+    }
 
     async function ctJoin(id) {
       if (ct.busy || !ct.session) return;
-      const c = ct.data?.contests?.find((x) => x.id === id);
       ct.busy = true;
       renderContests();
       try {
@@ -15077,13 +15168,14 @@
         const data = await res.json().catch(() => ({}));
         if (res.status === 401) {
           ctForget();
-          ctMessage('err', data.error ?? 'Połączenie z kontem wygasło — wpisz /polacz jeszcze raz.');
+          ctMessage('err', data.error ?? 'Sesja wygasła — zaloguj się jeszcze raz.');
         } else if (!res.ok) ctMessage('err', data.error ?? 'Nie udało się — spróbuj za chwilę.');
-        else ctMessage('ok', c?.goal > 0 ? 'Zgłoszenie wysłane — administracja już je widzi. Powodzenia!' : 'Dołączono do eventu — powodzenia!');
+        else ctMessage('ok', 'Zapisano! Teraz spełnij warunek — pasek pokaże, ile brakuje.');
       } catch {
         ctMessage('err', 'Nie udało się połączyć z botem — spróbuj za chwilę.');
       }
       ct.busy = false;
+      ct.shown = '';
       await loadContests();
       if (state.period === 'eventy') renderContests();
     }
@@ -15091,13 +15183,15 @@
     async function ctUnlink() {
       const token = ct.session;
       ctForget();
-      ctMessage('ok', 'Rozłączono konto w tej przeglądarce.');
-      renderContests();
+      ctMessage('ok', 'Wylogowano w tej przeglądarce.');
+      if (ct.data) ct.data.me = null;
+      if (state.period === 'eventy') renderContests();
+      renderAccount();
       if (token) fetch(`${BASE}/unlink`, { method: 'POST', headers: { 'x-member-session': token } }).catch(() => {});
       await loadContests();
     }
 
-    $('#contests').addEventListener('click', async (event) => {
+    async function ctClick(event) {
       const tab = event.target.closest('[data-ct]');
       if (tab) {
         ct.selected = tab.dataset.ct;
@@ -15107,18 +15201,11 @@
       }
       const join = event.target.closest('[data-ct-join]');
       if (join) return ctJoin(join.dataset.ctJoin);
+      if (event.target.closest('[data-ct-login]')) return ctLogin();
       if (event.target.closest('[data-ct-unlink]')) return ctUnlink();
-      const copy = event.target.closest('[data-ct-copy]');
-      if (copy) {
-        try {
-          await navigator.clipboard.writeText('/polacz');
-          copy.textContent = 'Skopiowano ✓';
-        } catch {
-          copy.textContent = 'Wpisz /polacz';
-        }
-        setTimeout(() => { copy.textContent = 'Kopiuj /polacz'; }, 2200);
-      }
-    });
+    }
+    $('#contests').addEventListener('click', ctClick);
+    $('#card-account').addEventListener('click', ctClick);
     // Strzałki w podzakładkach eventów.
     $('#contests').addEventListener('keydown', (event) => {
       const tab = event.target.closest('[data-ct]');
@@ -15169,7 +15256,9 @@
 
     async function contestsInit(initial) {
       if (PREVIEW || EMBED) return;
-      if (initial.startsWith('polacz=')) await ctLink(initial.slice(7));
+      // Powrót z logowania przez Discord (?code=…) albo link z /polacz (#polacz=…).
+      if (await ctOAuthReturn()) {}
+      else if (initial.startsWith('polacz=')) await ctLink(initial.slice(7));
       else if (initial === 'eventy') ct.open = true;
       await loadContests();
       setInterval(ctTick, 1000);

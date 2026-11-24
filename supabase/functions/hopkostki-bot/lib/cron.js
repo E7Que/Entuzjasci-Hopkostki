@@ -13,7 +13,7 @@ import { autoRoleSweep, ensureIntentFlags } from './members.js';
 import { bumpReminderTick, bumpScan } from './bump.js';
 import { seedMemberProfiles } from './logs.js';
 import { ensureInviteSnapshot } from './invites.js';
-import { contestsCleanupTick } from './contests.js';
+import { OAUTH_REDIRECT, contestsCleanupTick, contestsTick } from './contests.js';
 import { sendDueReminders, finishDueGiveaways } from './community.js';
 import { pruneBannerAssets } from './serverInfo.js';
 import { voiceXpTick, highlightsTick, firstPlaceTick, levelProfilesTick, levelAccentTick, xpEventsTick, winnersArchiveTick } from './levels.js';
@@ -73,6 +73,9 @@ export async function ensureSetup(bot, { force = false } = {}) {
     endpoint,
     endpointError,
     intents,
+    // Logowanie przez Discord na stronie rankingu działa, gdy jej adres jest na liście Redirects aplikacji
+    // (Discord nie pozwala dopisać go przez API). null = Discord nie podał listy.
+    oauthRedirect: Array.isArray(app.redirect_uris) ? app.redirect_uris.includes(OAUTH_REDIRECT) : null,
   };
   await bot.store.setState('setup', setup);
   return setup;
@@ -158,6 +161,7 @@ export async function runCron(bot, { force = false } = {}) {
     report.winners = await step('winners', () => winnersArchiveTick(bot));
     report.levelHighlights = await step('levelHighlights', () => highlightsTick(bot));
     report.xpEvents = await step('xpEvents', () => xpEventsTick(bot));
+    report.contests = await step('contests', () => contestsTick(bot));
     report.firstPlace = await step('firstPlace', () => firstPlaceTick(bot));
     report.levelProfiles = await step('levelProfiles', () => levelProfilesTick(bot));
     report.levelAccents = await step('levelAccents', () => levelAccentTick(bot));

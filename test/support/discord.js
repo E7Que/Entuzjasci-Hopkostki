@@ -91,7 +91,20 @@ export function fakeDiscord({ dmFails = false, banError = null, endpoint = null 
   };
 
   const routes = [
-    ['GET', /^\/applications\/@me$/, () => ({ id: 'app', name: 'Hopkostki', verify_key: state.verifyKey ?? 'aa', bot: users.get('bot'), interactions_endpoint_url: state.endpoint, flags: state.appFlags })],
+    ['GET', /^\/applications\/@me$/, () => ({ id: 'app', name: 'Hopkostki', verify_key: state.verifyKey ?? 'aa', bot: users.get('bot'), interactions_endpoint_url: state.endpoint, flags: state.appFlags, redirect_uris: state.redirectUris })],
+    // OAuth2 (logowanie przez Discord): state.oauthCodes = { kod: { userId, verifier } } — kod działa raz.
+    ['POST', /^\/oauth2\/token$/, (m, body, opts) => {
+      const grant = state.oauthCodes?.[opts.form?.code];
+      const challengeOk = grant && grant.verifier === opts.form?.code_verifier && opts.auth === null && opts.form?.client_id === 'app';
+      if (!challengeOk) throw new DiscordError(400, { error: 'invalid_grant' });
+      delete state.oauthCodes[opts.form.code];
+      return { access_token: `at-${grant.userId}`, token_type: 'Bearer', expires_in: 604800, scope: grant.scope ?? 'identify' };
+    }],
+    ['GET', /^\/users\/@me$/, (m, body, opts) => {
+      const id = /^Bearer at-(\w+)$/.exec(opts.auth ?? '')?.[1];
+      if (!id) throw new DiscordError(401, { message: '401: Unauthorized' });
+      return users.get(id) ?? { id, username: `u${id}`, avatar: null };
+    }],
     ['PATCH', /^\/applications\/@me$/, (m, body) => {
       if ('interactions_endpoint_url' in body) state.endpoint = body.interactions_endpoint_url;
       if ('flags' in body) state.appFlags = body.flags;

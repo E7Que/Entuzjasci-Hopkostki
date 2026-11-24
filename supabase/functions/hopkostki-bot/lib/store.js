@@ -54,6 +54,7 @@ const mapContestEntry = (r) => ({
   hidden: Boolean(r.hidden),
   score: Number(r.score ?? 0),
   createdAt: ms(r.created_at),
+  qualifiedAt: ms(r.qualified_at),
 });
 
 // Bez skrótu tokenu — ten zostaje w bazie.
@@ -1002,35 +1003,44 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       await query('update bot.invite_joins set left_at = now() where user_id = $1::text and left_at is null', [userId]);
     },
 
-    // ---------- Eventy (konkursy) ----------
-    // Zaproszenia w evencie: osoby, które weszły z zaproszenia w czasie [start, end), nadal są na serwerze, nie były
-    // tu wcześniej (powroty się nie liczą) i w chwili wejścia miały konto starsze niż minAccountMs.
-    // inviterIds = null → wszyscy zapraszający. Zwraca Map(inviterId → liczba osób).
-    async contestInvites({ start, end, minAccountMs = 0, inviterIds = null }) {
+    // ---------- Eventy ----------
+    // Zapisani do eventu z postępem. Zaproszenia (invites = true) liczą się od chwili zapisu (najwcześniej od startu)
+    // do końca: osoby, które weszły z zaproszenia tej osoby, nadal są na serwerze, nie były tu wcześniej (wcześniejsze
+    // wejście albo profil sprzed wejścia) i w chwili wejścia miały konto starsze niż minAccountMs. Wiadomości —
+    // licznik z contest_scores (store.awardXp liczy je tylko zapisanym).
+    async contestProgress(contestId, { start, end, invites = false, minAccountMs = 0 }) {
       const rows = await query(
-        `select j.inviter_id, count(distinct j.user_id)::int as n
-         from bot.invite_joins j
-         where j.inviter_id is not null and j.inviter_id <> j.user_id
-           and j.joined_at >= $1::timestamptz and j.joined_at < $2::timestamptz
-           and j.left_at is null
-           and (case when j.user_id ~ '^[0-9]{15,19}$' then (j.user_id::bigint >> 22) + 1420070400000 else 0 end)
-               <= (extract(epoch from j.joined_at) * 1000)::bigint - $3::bigint
-           and not exists (select 1 from bot.invite_joins p where p.user_id = j.user_id and p.joined_at < $1::timestamptz)
-           and ($4::text is null or j.inviter_id in (select jsonb_array_elements_text($4::text::jsonb)))
-         group by j.inviter_id`,
-        [new Date(start).toISOString(), new Date(end).toISOString(), Math.max(0, Math.floor(minAccountMs)), inviterIds ? JSON.stringify(inviterIds) : null],
+        `select e.*, l.user_tag as l_tag, l.display_name as l_name, l.avatar as l_avatar, l.guild_avatar as l_guild_avatar,
+                coalesce(l.hidden, false) as hidden, coalesce(s.messages, 0) as progress_messages,
+                case when $4::boolean then (
+                  select count(distinct j.user_id)::int from bot.invite_joins j
+                  where j.inviter_id = e.user_id and j.user_id <> e.user_id
+                    and j.joined_at >= greatest($2::timestamptz, e.created_at) and j.joined_at < $3::timestamptz
+                    and j.left_at is null
+                    and (case when j.user_id ~ '^[0-9]{15,19}$' then (j.user_id::bigint >> 22) + 1420070400000 else 0 end)
+                        <= (extract(epoch from j.joined_at) * 1000)::bigint - $5::bigint
+                    and not exists (select 1 from bot.invite_joins p where p.user_id = j.user_id and p.joined_at < j.joined_at)
+                    and not exists (select 1 from bot.member_profiles m where m.user_id = j.user_id and m.updated_at < j.joined_at - interval '1 minute')
+                ) else 0 end as progress_invites
+         from bot.contest_entries e
+         left join bot.levels l on l.user_id = e.user_id
+         left join bot.contest_scores s on s.contest_id = e.contest_id and s.user_id = e.user_id
+         where e.contest_id = $1::text order by e.created_at, e.user_id`,
+        [contestId, new Date(start).toISOString(), new Date(end).toISOString(), invites, Math.max(0, Math.floor(minAccountMs))],
       );
-      return new Map(rows.map((r) => [r.inviter_id, r.n]));
+      return rows.map((r) => ({ ...mapContestEntry(r), invites: Number(r.progress_invites ?? 0), messages: Number(r.progress_messages ?? 0) }));
     },
 
-    // Wiadomości policzone w evencie (userIds = null → wszystkich): Map(userId → liczba).
-    async contestMessages(contestId, userIds = null) {
+    // Osoby, które właśnie spełniły warunek → znacznik (tylko raz). Zwraca ID oznaczonych teraz.
+    async markContestQualified(contestId, userIds) {
+      if (!userIds?.length) return [];
       const rows = await query(
-        `select user_id, messages from bot.contest_scores where contest_id = $1::text
-           and ($2::text is null or user_id in (select jsonb_array_elements_text($2::text::jsonb)))`,
-        [contestId, userIds ? JSON.stringify(userIds) : null],
+        `update bot.contest_entries set qualified_at = now()
+         where contest_id = $1::text and qualified_at is null and user_id in (select jsonb_array_elements_text($2::text::jsonb))
+         returning user_id`,
+        [contestId, JSON.stringify(userIds)],
       );
-      return new Map(rows.map((r) => [r.user_id, r.messages]));
+      return rows.map((r) => r.user_id);
     },
 
     // Uczestnicy eventu (od najwcześniej zapisanych) — nazwa i avatar z rankingu poziomów, jeśli są świeższe.
@@ -1056,21 +1066,10 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return row ? mapContestEntry(row) : null;
     },
 
-    // Nazwy osób (z rankingu poziomów albo profili członków) — np. najlepsi spoza listy uczestników w panelu.
-    async userNames(userIds) {
-      if (!userIds?.length) return new Map();
-      const rows = await query(
-        `select u.id as user_id, coalesce(l.user_tag, p.username) as user_tag, coalesce(l.display_name, p.global_name) as display_name
-         from jsonb_array_elements_text($1::text::jsonb) u(id)
-         left join bot.levels l on l.user_id = u.id
-         left join bot.member_profiles p on p.user_id = u.id`,
-        [JSON.stringify(userIds)],
-      );
-      return new Map(rows.map((r) => [r.user_id, { userTag: r.user_tag ?? null, displayName: r.display_name ?? null }]));
-    },
-
+    // Usunięcie z eventu kasuje też policzone wiadomości — po ponownym zapisie postęp liczy się od nowa.
     async removeContestEntry(contestId, userId) {
       const rows = await query('delete from bot.contest_entries where contest_id = $1::text and user_id = $2::text returning user_id', [contestId, userId]);
+      await query('delete from bot.contest_scores where contest_id = $1::text and user_id = $2::text', [contestId, userId]);
       return rows.length > 0;
     },
 
@@ -1383,11 +1382,12 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
            where $13::text is not null and (select xp from given) > 0 and exists (select 1 from up)
            on conflict (event_id, user_id) do update set xp = e.xp + excluded.xp
          ),
-         -- Trwające eventy z wiadomościami (contests.js): policzona wiadomość = +1 w każdym z nich.
+         -- Trwające eventy z warunkiem wiadomości (contests.js): policzona wiadomość zapisanej osoby = +1.
          contest as (
            insert into bot.contest_scores as s (contest_id, user_id, messages)
-           select c, $1::text, 1 from jsonb_array_elements_text(coalesce($14::text, '[]')::jsonb) c
-           where exists (select 1 from up)
+           select e.contest_id, $1::text, 1 from bot.contest_entries e
+           where e.user_id = $1::text and e.contest_id in (select jsonb_array_elements_text(coalesce($14::text, '[]')::jsonb))
+             and exists (select 1 from up)
            on conflict (contest_id, user_id) do update set messages = s.messages + 1, updated_at = now()
          )
          select up.xp, up.level, (select xp from given) as granted from up`,

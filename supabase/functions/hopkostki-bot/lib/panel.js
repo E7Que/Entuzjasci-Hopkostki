@@ -18,7 +18,7 @@ import { activeXpEvent, changeXp, dayKey, importLevels, levelProgress, levelUpMe
 import { alertChannel, sendAlertTest } from './health.js';
 import { commandIdMap, fillServerInfoSections, saveBannerAsset, sendServerInfo, serverInfoContext, suggestServerInfoRoles } from './serverInfo.js';
 import { sanitizeConfig } from './configSchema.js';
-import { contestDetails } from './contests.js';
+import { contestDetails, oauthStatus } from './contests.js';
 import { discordCommandPermissions } from './discordCommandPerms.js';
 
 // Wersja kodu: funkcja na Supabase importuje bota z GitHuba pod adresem z pełnym SHA commita.
@@ -521,6 +521,7 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
   }
 
   // Eventy: uczestnicy z aktualnymi wynikami (i najlepsi spoza listy), usuwanie uczestnika (np. za oszustwo).
+  if (method === 'GET' && path === '/contests') return ok({ oauth: await oauthStatus(bot) });
   const contestMatch = /^\/contests\/([a-z0-9]{6,24})$/i.exec(path);
   if (method === 'GET' && contestMatch) {
     const details = await contestDetails(bot, contestMatch[1]);

@@ -1,12 +1,12 @@
-// Eventy (konkursy) na stronie rankingu — zakładka „Eventy” pokazuje się tylko wtedy, gdy jakiś event jest
-// zaplanowany, trwa albo skończył się w ostatnich 3 dniach (wyniki). Rodzaje:
-//   invites  — zaproszenia: liczą się osoby, które weszły z zaproszenia w czasie eventu, nadal są na serwerze,
-//              nie były na nim wcześniej i mają konto starsze niż minAccountDays dni,
-//   messages — wiadomości liczone tak jak do poziomów (cooldown, kanały bez XP, ochrona przed nabijaniem),
-//   mixed    — punkty: zaproszenie × points.invite + wiadomość × points.message.
-// Udział wymaga połączenia konta: /polacz daje jednorazowy link (15 minut), który na stronie zamienia się w sesję
-// przeglądarki (90 dni). Event bez progu: „Dołącz” — i jesteś w rankingu uczestników. Event z progiem (goal):
-// pasek postępu, a po jego osiągnięciu „Zgłoś się” — zgłoszenie trafia też na kanał wybrany w panelu.
+// Eventy na stronie rankingu — zakładka „Eventy” pokazuje się tylko wtedy, gdy jakiś event jest zaplanowany,
+// trwa albo skończył się w ostatnich 3 dniach. Każdy event ma warunek dostania się: zaprosić `invites` osób
+// i/lub napisać `messages` wiadomości (0 = bez tego warunku). Jak to działa dla osoby:
+//   1. łączy konto („Zaloguj przez Discord” na stronie albo link z /polacz) i klika „Zapisz się”,
+//   2. od chwili zapisu (najwcześniej od startu eventu) liczą się jej zaproszenia i wiadomości — pasek postępu,
+//   3. po spełnieniu warunku „Dostałeś się!” — bot ogłasza to na kanale wybranym w panelu.
+// Zaproszenia liczą się tylko za osoby, które weszły z zaproszenia, nadal są na serwerze, nie były na nim wcześniej
+// i mają konto starsze niż minAccountDays dni. Wiadomości liczą się tak jak do poziomów (cooldown, kanały bez XP,
+// ochrona przed nabijaniem).
 
 import { PANEL_SITE } from './access.js';
 import { DiscordError, avatarUrl } from './rest.js';
@@ -20,32 +20,33 @@ const LINK_TTL_MS = 15 * 60_000;
 const SESSION_TTL_MS = 90 * DAY;
 const SEEN_EVERY_MS = 60 * 60_000;
 const TOP = 100;
+// Strona rankingu — tu wraca też logowanie przez Discord (adres musi być na liście Redirects aplikacji w Developer Portal).
 export const CONTEST_SITE = `${PANEL_SITE}ranking.html`;
-export const CONTEST_TYPE_LABELS = { invites: 'Zaproszenia', messages: 'Wiadomości', mixed: 'Mieszany' };
-const UNITS = {
-  invites: ['zaproszenie', 'zaproszenia', 'zaproszeń'],
-  messages: ['wiadomość', 'wiadomości', 'wiadomości'],
-  mixed: ['punkt', 'punkty', 'punktów'],
-};
-// Dopełniacz („brakuje 1 zaproszenia / 2 zaproszeń”).
-const UNITS_OF = {
-  invites: ['zaproszenia', 'zaproszeń', 'zaproszeń'],
-  messages: ['wiadomości', 'wiadomości', 'wiadomości'],
-  mixed: ['punktu', 'punktów', 'punktów'],
-};
-const ZERO = Object.freeze({ invites: 0, messages: 0, score: 0 });
+export const OAUTH_REDIRECT = CONTEST_SITE;
+// Biernik („zaprosić 1 osobę / 2 osoby”, „napisać 1 wiadomość”).
+const UNITS = { invites: ['osobę', 'osoby', 'osób'], messages: ['wiadomość', 'wiadomości', 'wiadomości'] };
+// Dopełniacz („brakuje 1 osoby / 2 osób”).
+const UNITS_OF = { invites: ['osoby', 'osób', 'osób'], messages: ['wiadomości', 'wiadomości', 'wiadomości'] };
 
-// Brak połączenia albo wygasła sesja — API odpowiada 401 (strona prosi o ponowne /polacz).
+// Brak połączenia albo wygasła sesja — API odpowiada 401 (strona prosi o ponowne połączenie).
 export class MemberAuthError extends Error {}
-// Nie da się dołączyć (np. próg nieosiągnięty) — API odpowiada 400 z tym komunikatem.
+// Nie da się zapisać (np. event się skończył) — API odpowiada 400 z tym komunikatem.
 export class ContestError extends Error {}
 
 const pl = (n) => Number(n).toLocaleString('pl-PL');
-export const unitText = (type, n, { of = false } = {}) => `${pl(n)} ${plural(Math.abs(n), (of ? UNITS_OF : UNITS)[type] ?? UNITS.mixed)}`;
+export const unitText = (kind, n, { of = false } = {}) => `${pl(n)} ${plural(Math.abs(n), (of ? UNITS_OF : UNITS)[kind])}`;
 
 export function contestStatus(c, now = Date.now()) {
   if (now < Date.parse(c.startsAt)) return 'upcoming';
   return now < Date.parse(c.endsAt) ? 'live' : 'ended';
+}
+// Rodzaj do wyglądu (ikona, kolor): tylko zaproszenia, tylko wiadomości albo oba warunki.
+export const contestKind = (c) => (c.invites > 0 && c.messages > 0 ? 'mixed' : c.invites > 0 ? 'invites' : 'messages');
+export function requirementText(c) {
+  const parts = [];
+  if (c.invites > 0) parts.push(`zaprosić ${unitText('invites', c.invites)}`);
+  if (c.messages > 0) parts.push(`napisać ${unitText('messages', c.messages)}`);
+  return parts.join(' i ');
 }
 
 const contestsOn = (config) => config.contests?.enabled !== false;
@@ -54,53 +55,45 @@ const contestList = (config) => (contestsOn(config) ? (config.contests?.list ?? 
 // Widoczne na stronie: zaplanowane, trwające i zakończone w ostatnich 3 dniach.
 export const visibleContests = (config, now = Date.now()) => contestList(config).filter((c) => Date.parse(c.endsAt) + CONTEST_SHOW_AFTER_MS > now);
 export const liveContests = (config, now = Date.now()) => contestList(config).filter((c) => contestStatus(c, now) === 'live');
-const countsInvites = (c) => c.type !== 'messages';
-const countsMessages = (c) => c.type !== 'invites';
 
-// Eventy, w których liczy się teraz każda wiadomość (wiadomości i mieszane, w trakcie).
-export const messageContestIds = (config, now = Date.now()) => liveContests(config, now).filter(countsMessages).map((c) => c.id);
+// Trwające eventy z warunkiem wiadomości — policzona wiadomość zapisanej osoby to +1 (store.awardXp).
+export const messageContestIds = (config, now = Date.now()) => liveContests(config, now).filter((c) => c.messages > 0).map((c) => c.id);
 // Trwa event z zaproszeniami — bot musi sprawdzać, kto kogo zaprosił, nawet bez logów wejść.
-export const inviteContestLive = (config, now = Date.now()) => liveContests(config, now).some(countsInvites);
+export const inviteContestLive = (config, now = Date.now()) => liveContests(config, now).some((c) => c.invites > 0);
 // Event z zaproszeniami zaplanowany albo trwający — gateway potrzebuje wtedy wejść i wyjść z serwera.
-export const inviteContestPlanned = (config, now = Date.now()) => contestList(config).some((c) => countsInvites(c) && Date.parse(c.endsAt) > now);
+export const inviteContestPlanned = (config, now = Date.now()) => contestList(config).some((c) => c.invites > 0 && Date.parse(c.endsAt) > now);
 // Najwcześniejszy start trwającego eventu z zaproszeniami (stan zaproszeń sprzed niego trzeba odświeżyć).
 export function inviteContestStart(config, now = Date.now()) {
-  const starts = liveContests(config, now).filter(countsInvites).map((c) => Date.parse(c.startsAt));
+  const starts = liveContests(config, now).filter((c) => c.invites > 0).map((c) => Date.parse(c.startsAt));
   return starts.length ? Math.min(...starts) : null;
 }
 
-export function contestScore(c, { invites = 0, messages = 0 }) {
-  if (c.type === 'invites') return invites;
-  if (c.type === 'messages') return messages;
-  return invites * (c.points?.invite ?? 0) + messages * (c.points?.message ?? 0);
+// Czy warunek jest spełniony i jak daleko (0–1, średnia z warunków — do kolejności).
+export const meetsRequirement = (c, p) => (c.invites <= 0 || p.invites >= c.invites) && (c.messages <= 0 || p.messages >= c.messages);
+function progressRatio(c, p) {
+  const parts = [];
+  if (c.invites > 0) parts.push(Math.min(1, p.invites / c.invites));
+  if (c.messages > 0) parts.push(Math.min(1, p.messages / c.messages));
+  return parts.length ? parts.reduce((a, b) => a + b, 0) / parts.length : 0;
 }
 
-// Wyniki osób w evencie: Map(userId → { invites, messages, score }). userIds = null → wszyscy z jakimkolwiek wynikiem.
-export async function contestResults(bot, c, userIds = null) {
-  if (userIds && !userIds.length) return new Map();
-  const [invites, messages] = await Promise.all([
-    countsInvites(c)
-      ? bot.store.contestInvites({ start: Date.parse(c.startsAt), end: Date.parse(c.endsAt), minAccountMs: (c.minAccountDays ?? 0) * DAY, inviterIds: userIds })
-      : new Map(),
-    countsMessages(c) ? bot.store.contestMessages(c.id, userIds) : new Map(),
-  ]);
-  const ids = userIds ?? [...new Set([...invites.keys(), ...messages.keys()])];
-  return new Map(
-    ids.map((id) => {
-      const r = { invites: invites.get(id) ?? 0, messages: messages.get(id) ?? 0 };
-      return [id, { ...r, score: contestScore(c, r) }];
-    }),
-  );
-}
-
-// Dlaczego ta osoba nie może teraz dołączyć / się zgłosić (null = może).
-function joinBlocker(c, status, result) {
-  if (status === 'ended') return 'Ten event już się skończył.';
-  if (c.goal > 0) {
-    if (status === 'upcoming') return `Zgłoszenia ruszą razem z eventem — ${new Date(c.startsAt).toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}.`;
-    if (result.score < c.goal) return `Do zgłoszenia brakuje Ci jeszcze ${unitText(c.type, c.goal - result.score, { of: true })}.`;
-  }
-  return null;
+// Zapisani z postępem, w kolejności: najpierw ci, którzy się dostali (kto pierwszy, ten wyżej), potem wg postępu.
+async function standings(bot, c, now = Date.now()) {
+  const rows = await bot.store.contestProgress(c.id, {
+    start: Date.parse(c.startsAt),
+    end: Math.min(Date.parse(c.endsAt), now + 60_000),
+    invites: c.invites > 0,
+    minAccountMs: (c.minAccountDays ?? 0) * DAY,
+  });
+  return rows
+    .map((r) => ({ ...r, reached: contestStatus(c, now) !== 'upcoming' && meetsRequirement(c, r), ratio: progressRatio(c, r) }))
+    .sort(
+      (a, b) =>
+        Number(b.reached) - Number(a.reached) ||
+        (a.reached ? (a.qualifiedAt ?? Infinity) - (b.qualifiedAt ?? Infinity) : b.ratio - a.ratio) ||
+        a.createdAt - b.createdAt,
+    )
+    .map((r, i) => ({ ...r, rank: i + 1 }));
 }
 
 // ---------- Połączenie konta ze stroną ----------
@@ -125,6 +118,12 @@ export function describeMember(session) {
   };
 }
 
+async function newSession(bot, person) {
+  const token = randomToken();
+  const saved = await bot.store.addMemberLink({ kind: 'session', tokenHash: await sessionHash(token), ...person, ttlMs: SESSION_TTL_MS });
+  return { token, me: describeMember(saved) };
+}
+
 // /polacz: nowy jednorazowy link (poprzednie, jeszcze nieużyte, przestają działać).
 export async function issueMemberLink(bot, ix) {
   await bot.store.deleteMemberLinks({ userId: ix.user.id, kind: 'link' });
@@ -145,18 +144,42 @@ export async function issueMemberLink(bot, ix) {
 export async function exchangeMemberLink(bot, token) {
   const text = String(token ?? '');
   const row = /^[\w-]{20,100}$/.test(text) ? await bot.store.takeMemberLink(await linkHash(text)) : null;
-  if (!row || row.expiresAt <= Date.now()) throw new MemberAuthError('Link wygasł albo był już użyty — wpisz /polacz na serwerze jeszcze raz.');
-  const session = randomToken();
-  const saved = await bot.store.addMemberLink({
-    kind: 'session',
-    tokenHash: await sessionHash(session),
-    userId: row.userId,
-    userTag: row.userTag,
-    displayName: row.displayName,
-    avatar: row.avatar,
-    ttlMs: SESSION_TTL_MS,
-  });
-  return { token: session, me: describeMember(saved) };
+  if (!row || row.expiresAt <= Date.now()) throw new MemberAuthError('Link wygasł albo był już użyty — zaloguj się jeszcze raz.');
+  return newSession(bot, { userId: row.userId, userTag: row.userTag, displayName: row.displayName, avatar: row.avatar });
+}
+
+// Logowanie przez Discord (OAuth2, kod z PKCE — bez sekretu aplikacji). Gotowe, gdy adres strony jest na liście
+// Redirects aplikacji (bot sprawdza to przy konfiguracji: setup.oauthRedirect; null = Discord nie podał listy).
+export async function oauthInfo(bot) {
+  const setup = await bot.store.getState('setup');
+  if (!setup?.appId || setup.oauthRedirect === false) return null;
+  return { clientId: setup.appId, redirectUri: OAUTH_REDIRECT };
+}
+
+// Strona: kod z Discorda (+ code_verifier PKCE) → kto to jest → sesja przeglądarki.
+export async function exchangeOAuthCode(bot, { code, verifier }) {
+  const info = await oauthInfo(bot);
+  if (!info || !bot.discord) throw new ContestError('Logowanie przez Discord nie jest jeszcze włączone — połącz konto komendą /polacz.');
+  if (!/^[\w-]{10,200}$/.test(String(code ?? '')) || !/^[\w.~-]{43,128}$/.test(String(verifier ?? ''))) {
+    throw new MemberAuthError('Logowanie nie powiodło się — spróbuj jeszcze raz.');
+  }
+  let token;
+  try {
+    token = await bot.discord.post('/oauth2/token', undefined, {
+      auth: null,
+      form: { grant_type: 'authorization_code', code: String(code), redirect_uri: info.redirectUri, client_id: info.clientId, code_verifier: String(verifier) },
+    });
+  } catch (error) {
+    if (error instanceof DiscordError && error.status < 500) throw new MemberAuthError('Logowanie wygasło albo zostało przerwane — spróbuj jeszcze raz.');
+    throw error;
+  }
+  if (!String(token?.scope ?? '').split(' ').includes('identify')) throw new MemberAuthError('Discord nie podał, kim jesteś — spróbuj jeszcze raz.');
+  const user = await bot.discord.get('/users/@me', { auth: `Bearer ${token.access_token}` });
+  if (!user?.id || user.bot) throw new MemberAuthError('Logowanie nie powiodło się — spróbuj jeszcze raz.');
+  // Pseudonim na serwerze (jeśli tu jest) — tak jak w rankingu.
+  const gctx = await getGuildContext(bot).catch(() => null);
+  const member = gctx ? await bot.discord.get(`/guilds/${gctx.guild.id}/members/${user.id}`).catch(() => null) : null;
+  return newSession(bot, { userId: user.id, userTag: user.username ?? null, displayName: member?.nick ?? user.global_name ?? null, avatar: user.avatar ?? null });
 }
 
 // Sesja z nagłówka x-member-session. null = brak nagłówka.
@@ -164,7 +187,7 @@ export async function memberSession(bot, token) {
   if (!token) return null;
   const text = String(token);
   const session = /^[\w-]{20,100}$/.test(text) ? await bot.store.getMemberSession(await sessionHash(text)) : null;
-  if (!session) throw new MemberAuthError('Połączenie z kontem wygasło — połącz je jeszcze raz (/polacz na serwerze).');
+  if (!session) throw new MemberAuthError('Połączenie z kontem wygasło — zaloguj się jeszcze raz.');
   if (!session.lastSeenAt || Date.now() - session.lastSeenAt > SEEN_EVERY_MS) await bot.store.touchMemberSession(session.id).catch(() => {});
   return session;
 }
@@ -176,74 +199,53 @@ export async function endMemberSession(bot, token) {
 }
 
 // ---------- Widok eventów na stronie ----------
-function personView({ entry, result }, rank, c, session, gctx) {
-  const mine = session?.userId === entry.userId;
-  const base = {
-    rank,
-    score: result.score,
-    invites: result.invites,
-    messages: result.messages,
-    reached: c.goal > 0 ? result.score >= c.goal : null,
-    me: mine,
-    joinedAt: entry.createdAt,
-  };
-  // Osoba ukryta komendą /prywatnosc: miejsce i wynik zostają, bez nazwy, avatara i ID.
-  if (entry.hidden && !mine) return { ...base, hidden: true, userId: null, name: 'Ukryta osoba', displayName: null, avatar: null };
+function personView(p, session, gctx) {
+  const mine = session?.userId === p.userId;
+  const base = { rank: p.rank, invites: p.invites, messages: p.messages, reached: p.reached, me: mine, joinedAt: p.createdAt, qualifiedAt: p.qualifiedAt };
+  // Osoba ukryta komendą /prywatnosc: miejsce i postęp zostają, bez nazwy, avatara i ID.
+  if (p.hidden && !mine) return { ...base, hidden: true, userId: null, name: 'Ukryta osoba', displayName: null, avatar: null };
   return {
     ...base,
-    userId: entry.userId,
-    name: entry.userTag ?? 'Użytkownik',
-    displayName: entry.displayName && entry.displayName !== entry.userTag ? entry.displayName : null,
+    userId: p.userId,
+    name: p.userTag ?? 'Użytkownik',
+    displayName: p.displayName && p.displayName !== p.userTag ? p.displayName : null,
     avatar:
-      entry.guildAvatar && gctx
-        ? `https://cdn.discordapp.com/guilds/${gctx.guild.id}/users/${entry.userId}/avatars/${entry.guildAvatar}.png?size=64`
-        : avatarUrl({ id: entry.userId, avatar: entry.avatar }, 64),
+      p.guildAvatar && gctx
+        ? `https://cdn.discordapp.com/guilds/${gctx.guild.id}/users/${p.userId}/avatars/${p.guildAvatar}.png?size=64`
+        : avatarUrl({ id: p.userId, avatar: p.avatar }, 64),
   };
 }
 
 async function contestView(bot, c, { session, now, gctx }) {
   const status = contestStatus(c, now);
-  const entries = await bot.store.contestEntries(c.id);
-  const ids = entries.map((e) => e.userId);
-  if (session && !ids.includes(session.userId)) ids.push(session.userId);
-  const results = status === 'upcoming' ? new Map() : await contestResults(bot, c, ids);
-  const ranked = entries
-    .map((entry) => ({ entry, result: results.get(entry.userId) ?? ZERO }))
-    .sort((a, b) => b.result.score - a.result.score || a.entry.createdAt - b.entry.createdAt);
+  const people = await standings(bot, c, now);
   let me = null;
   if (session) {
-    const result = results.get(session.userId) ?? ZERO;
-    const place = ranked.findIndex((x) => x.entry.userId === session.userId);
-    const blocker = place >= 0 ? null : joinBlocker(c, status, result);
-    me = {
-      joined: place >= 0,
-      rank: place >= 0 ? place + 1 : null,
-      ...result,
-      reached: c.goal > 0 ? result.score >= c.goal : null,
-      canJoin: place < 0 && !blocker,
-      blocker,
-    };
+    const mine = people.find((p) => p.userId === session.userId);
+    me = mine
+      ? { joined: true, rank: mine.rank, invites: mine.invites, messages: mine.messages, reached: mine.reached, joinedAt: mine.createdAt, canJoin: false, blocker: null }
+      : { joined: false, rank: null, invites: 0, messages: 0, reached: false, joinedAt: null, canJoin: status !== 'ended', blocker: status === 'ended' ? 'Ten event już się skończył.' : null };
   }
   return {
     id: c.id,
     name: c.name,
     description: c.description,
     prize: c.prize,
-    type: c.type,
+    type: contestKind(c),
     status,
     startsAt: c.startsAt,
     endsAt: c.endsAt,
-    goal: c.goal,
-    points: c.type === 'mixed' ? c.points : null,
-    winners: c.winners,
-    minAccountDays: countsInvites(c) ? c.minAccountDays : null,
-    participants: entries.length,
-    entries: ranked.slice(0, TOP).map((x, i) => personView(x, i + 1, c, session, gctx)),
+    invites: c.invites,
+    messages: c.messages,
+    minAccountDays: c.invites > 0 ? c.minAccountDays : null,
+    participants: people.length,
+    qualified: people.filter((p) => p.reached).length,
+    entries: people.slice(0, TOP).map((p) => personView(p, session, gctx)),
     me,
   };
 }
 
-// GET /panel/public/contests — eventy na stronie (z wynikiem połączonej osoby, gdy jest sesja).
+// GET /panel/public/contests — eventy na stronie (z postępem połączonej osoby, gdy jest sesja).
 // Nieważna sesja nie psuje strony: expired = true, a strona prosi o ponowne połączenie.
 export async function publicContests(bot, { token = null, now = Date.now() } = {}) {
   const config = await bot.store.getConfig();
@@ -259,7 +261,7 @@ export async function publicContests(bot, { token = null, now = Date.now() } = {
   const gctx = list.length && bot.discord ? await getGuildContext(bot).catch(() => null) : null;
   const contests = [];
   for (const c of list) contests.push(await contestView(bot, c, { session, now, gctx }));
-  return { enabled: contestsOn(config), contests, me: session ? describeMember(session) : null, expired, now };
+  return { enabled: contestsOn(config), contests, me: session ? describeMember(session) : null, expired, oauth: await oauthInfo(bot), now };
 }
 
 async function stillMember(bot, userId) {
@@ -274,51 +276,62 @@ async function stillMember(bot, userId) {
   }
 }
 
-// POST /panel/public/contests/:id/join — dołączenie (event bez progu) albo zgłoszenie (po osiągnięciu progu).
+// POST /panel/public/contests/:id/join — zapis. Od tej chwili liczą się zaproszenia i wiadomości tej osoby.
 export async function joinContest(bot, { token, contestId, now = Date.now() }) {
   const session = await memberSession(bot, token);
-  if (!session) throw new MemberAuthError('Najpierw połącz konto — wpisz /polacz na serwerze.');
+  if (!session) throw new MemberAuthError('Najpierw połącz konto — zaloguj się przez Discord.');
   const config = await bot.store.getConfig();
   const c = visibleContests(config, now).find((x) => x.id === contestId);
   if (!c) throw new ContestError('Nie ma takiego eventu.');
-  const status = contestStatus(c, now);
-  if (!(await stillMember(bot, session.userId))) throw new ContestError('Nie ma Cię na serwerze — wróć na niego, żeby wziąć udział.');
-  const result = status === 'upcoming' ? ZERO : ((await contestResults(bot, c, [session.userId])).get(session.userId) ?? ZERO);
-  const entries = await bot.store.contestEntries(c.id);
-  if (!entries.some((e) => e.userId === session.userId)) {
-    const blocker = joinBlocker(c, status, result);
-    if (blocker) throw new ContestError(blocker);
-  }
+  if (contestStatus(c, now) === 'ended') throw new ContestError('Ten event już się skończył.');
+  if (!(await stillMember(bot, session.userId))) throw new ContestError('Nie ma Cię na serwerze — wróć na niego, żeby się zapisać.');
   const entry = await bot.store.addContestEntry({
     contestId: c.id,
     userId: session.userId,
     userTag: session.userTag,
     displayName: session.displayName,
     avatar: session.avatar,
-    score: result.score,
   });
-  if (entry && c.goal > 0) await logApplication(bot, config, c, session, result).catch((error) => console.warn(`[eventy] Zgłoszenie: ${error.message}`));
   return { joined: true, already: !entry };
 }
 
-// Zgłoszenie po osiągnięciu progu → kanał z panelu (z pingiem roli, jeśli ustawiona).
-async function logApplication(bot, config, c, session, result) {
+// ---------- Kto się dostał (cron) ----------
+// Trwające eventy (i te zakończone w ostatniej godzinie — ostatnie zaproszenia): osoby, które właśnie spełniły
+// warunek, dostają znacznik qualified_at, a bot ogłasza to na kanale z panelu.
+export async function contestsTick(bot, { now = Date.now() } = {}) {
+  const config = await bot.store.getConfig();
+  const list = contestList(config).filter((c) => Date.parse(c.startsAt) <= now && Date.parse(c.endsAt) + 60 * 60_000 > now);
+  let marked = 0;
+  for (const c of list) {
+    const fresh = (await standings(bot, c, now)).filter((p) => p.reached && !p.qualifiedAt);
+    if (!fresh.length) continue;
+    const ids = await bot.store.markContestQualified(c.id, fresh.map((p) => p.userId));
+    marked += ids.length;
+    for (const p of fresh.filter((x) => ids.includes(x.userId))) {
+      await logQualified(bot, config, c, p).catch((error) => console.warn(`[eventy] Ogłoszenie: ${error.message}`));
+    }
+  }
+  return marked;
+}
+
+async function logQualified(bot, config, c, p) {
   const { logChannelId, pingRoleId } = config.contests;
   if (!logChannelId || !bot.discord) return;
-  const parts = c.type === 'mixed' ? ` (${unitText('invites', result.invites)}, ${unitText('messages', result.messages)})` : '';
+  const done = [];
+  if (c.invites > 0) done.push(`zaprosił(a) **${unitText('invites', p.invites)}** (warunek: ${c.invites})`);
+  if (c.messages > 0) done.push(`napisał(a) **${unitText('messages', p.messages)}** (warunek: ${c.messages})`);
   await bot.discord.post(`/channels/${logChannelId}/messages`, {
     ...(pingRoleId ? { content: `<@&${pingRoleId}>`, allowed_mentions: { roles: [pingRoleId] } } : { allowed_mentions: { parse: [] } }),
     embeds: [
       {
-        color: embeds.COLORS.info,
-        title: `🎟️ Nowe zgłoszenie — ${c.name}`.slice(0, 256),
+        color: embeds.COLORS.success,
+        title: `✅ Dostał(a) się — ${c.name}`.slice(0, 256),
         description: [
-          `<@${session.userId}> osiągnął(-ęła) próg i zgłosił(a) się w evencie.`,
-          `**Wynik:** ${unitText(c.type, result.score)}${parts} · próg: ${unitText(c.type, c.goal)}`,
+          `<@${p.userId}> spełnił(a) warunek eventu: ${done.join(', ')}.`,
           ...(c.prize ? [`**Nagroda:** ${c.prize}`] : []),
           `**Koniec eventu:** ${discordTimestamp(Date.parse(c.endsAt), 'f')}`,
         ].join('\n'),
-        footer: { text: `ID: ${session.userId} • ${embeds.BRAND}` },
+        footer: { text: `ID: ${p.userId} • ${embeds.BRAND}` },
         timestamp: new Date().toISOString(),
       },
     ],
@@ -327,34 +340,30 @@ async function logApplication(bot, config, c, session, result) {
 }
 
 // ---------- Panel ----------
-// Uczestnicy eventu z wynikami (także osoby ukryte na stronie) + najlepsi spoza listy (np. kto najwięcej zaprosił).
+// Zapisani z postępem (także osoby ukryte na stronie).
 export async function contestDetails(bot, contestId, { now = Date.now() } = {}) {
   const config = await bot.store.getConfig();
   const c = (config.contests?.list ?? []).find((x) => x.id === contestId);
   if (!c) return null;
-  const entries = await bot.store.contestEntries(c.id);
-  const status = contestStatus(c, now);
-  const all = status === 'upcoming' ? new Map() : await contestResults(bot, c);
-  const joined = new Set(entries.map((e) => e.userId));
-  const people = entries
-    .map((e) => ({
-      userId: e.userId,
-      userTag: e.userTag,
-      displayName: e.displayName,
-      hidden: e.hidden,
-      joinedAt: e.createdAt,
-      scoreAtJoin: e.score,
-      ...(all.get(e.userId) ?? ZERO),
-    }))
-    .sort((a, b) => b.score - a.score || a.joinedAt - b.joinedAt)
-    .map((p, i) => ({ ...p, rank: i + 1, reached: c.goal > 0 ? p.score >= c.goal : null }));
-  const best = [...all.entries()]
-    .filter(([id, r]) => !joined.has(id) && r.score > 0)
-    .sort((a, b) => b[1].score - a[1].score)
-    .slice(0, 20);
-  const names = await bot.store.userNames(best.map(([id]) => id));
-  const others = best.map(([userId, r]) => ({ userId, ...(names.get(userId) ?? { userTag: null, displayName: null }), ...r, reached: c.goal > 0 ? r.score >= c.goal : null }));
-  return { contest: { ...c, status }, entries: people, others };
+  const people = (await standings(bot, c, now)).map((p) => ({
+    rank: p.rank,
+    userId: p.userId,
+    userTag: p.userTag,
+    displayName: p.displayName,
+    hidden: p.hidden,
+    invites: p.invites,
+    messages: p.messages,
+    reached: p.reached,
+    joinedAt: p.createdAt,
+    qualifiedAt: p.qualifiedAt,
+  }));
+  return { contest: { ...c, status: contestStatus(c, now) }, entries: people };
+}
+
+// Panel: czy logowanie przez Discord na stronie jest gotowe (adres strony na liście Redirects aplikacji).
+export async function oauthStatus(bot) {
+  const setup = await bot.store.getState('setup');
+  return { redirectUri: OAUTH_REDIRECT, registered: setup?.oauthRedirect ?? null, checkedAt: setup?.checkedAt ?? null };
 }
 
 export async function contestsCleanupTick(bot) {
@@ -367,14 +376,14 @@ export async function contestsCleanupTick(bot) {
 const polacz = {
   permission: null,
   defer: 'ephemeral',
-  data: { name: 'polacz', description: '🔗 Połącz konto ze stroną eventów (zakładka „Eventy” na stronie rankingu)', contexts: [0] },
+  data: { name: 'polacz', description: '🔗 Połącz konto ze stroną eventów (gdy logowanie przez Discord nie działa)', contexts: [0] },
   async execute(ix, bot) {
     const config = await bot.store.getConfig();
     if (!contestsOn(config)) throw new ActionError('Eventy są wyłączone — administrator może je włączyć w panelu (zakładka „Eventy”).');
     const { url, expiresAt } = await issueMemberLink(bot, ix);
     const live = visibleContests(config).filter((c) => contestStatus(c) !== 'ended');
     const list = live.length
-      ? live.map((c) => `• **${c.name}** — ${CONTEST_TYPE_LABELS[c.type].toLowerCase()}${contestStatus(c) === 'upcoming' ? `, start ${discordTimestamp(Date.parse(c.startsAt), 'R')}` : `, koniec ${discordTimestamp(Date.parse(c.endsAt), 'R')}`}`).join('\n')
+      ? live.map((c) => `• **${c.name}** — trzeba ${requirementText(c)}${contestStatus(c) === 'upcoming' ? `, start ${discordTimestamp(Date.parse(c.startsAt), 'R')}` : `, koniec ${discordTimestamp(Date.parse(c.endsAt), 'R')}`}`).join('\n')
       : 'Teraz nie trwa żaden event — połączenie i tak się przyda, gdy ruszy następny.';
     return ix.edit({
       embeds: [
@@ -382,7 +391,7 @@ const polacz = {
           color: embeds.COLORS.info,
           title: '🔗 Połącz konto ze stroną eventów',
           description: [
-            'Kliknij przycisk poniżej — strona rankingu otworzy się już połączona z Twoim kontem. Zobaczysz tam swój postęp w eventach i dołączysz do nich jednym kliknięciem.',
+            'Kliknij przycisk poniżej — strona rankingu otworzy się już połączona z Twoim kontem. Zapiszesz się tam do eventu i zobaczysz swój postęp.',
             '',
             list,
             '',

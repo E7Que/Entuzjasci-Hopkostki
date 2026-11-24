@@ -664,3 +664,8 @@ select.chip-add:hover { border-color: var(--blurple); }
 .log-item + .log-item { border-top: 1px solid var(--line); }
 .log-item:hover { background: var(--bg); }
 .log-item input { width: 16px; height: 16px; accent-color: var(--blurple); margin: 0; flex: none; }
+
+/* Eventy: czy działa „Zaloguj przez Discord” na stronie */
+.ct-oauth .banner { margin: .8rem 0 0; }
+.ct-oauth code.copyable { cursor: copy; user-select: all; word-break: break-all; }
+.ct-oauth-ok { margin: .6rem 0 0; color: var(--green); font-size: .9rem; }

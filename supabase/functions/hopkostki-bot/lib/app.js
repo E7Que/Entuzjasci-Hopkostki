@@ -17,7 +17,7 @@ import { levelProgress, monthKey, publicArchive, publicLook, publicProfile, rank
 import { AccessError, PANEL_SITE, PASSWORD_AUTH, authenticateSession, signIn } from './access.js';
 import { RateLimitError, clientIp, clientKey, guardLogin, loginFailed, loginOk } from './loginGuard.js';
 import { verifyDiscordRequest, ed25519Supported, safeEqual } from './verify.js';
-import { ContestError, MemberAuthError, endMemberSession, exchangeMemberLink, joinContest, publicContests } from './contests.js';
+import { ContestError, MemberAuthError, endMemberSession, exchangeMemberLink, exchangeOAuthCode, joinContest, publicContests } from './contests.js';
 
 // Supabase nie serwuje stron HTML z funkcji Edge (text/html zamienia na text/plain), więc sama strona
 // panelu stoi na GitHub Pages (PANEL_SITE w access.js), a tutaj zostaje jej API. Zapytania panelu bot
@@ -268,6 +268,8 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
       const member = request.headers.get('x-member-session');
       if (request.method === 'GET' && route === '/public/contests') return json(await publicContests(bot, { token: member }), 200, cors);
       if (request.method === 'POST' && route === '/public/link') return json(await exchangeMemberLink(bot, body?.token), 200, cors);
+      // „Zaloguj przez Discord”: kod z przekierowania + code_verifier (PKCE) → sesja.
+      if (request.method === 'POST' && route === '/public/oauth') return json(await exchangeOAuthCode(bot, { code: body?.code, verifier: body?.verifier }), 200, cors);
       if (request.method === 'POST' && route === '/public/unlink') return json({ ok: true, removed: await endMemberSession(bot, member) }, 200, cors);
       const join = /^\/public\/contests\/([a-z0-9]{6,24})\/join$/i.exec(route);
       if (request.method === 'POST' && join) return json(await joinContest(bot, { token: member, contestId: join[1] }), 200, cors);
