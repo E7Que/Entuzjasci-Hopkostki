@@ -360,7 +360,8 @@
     @keyframes ev-blink { 50% { opacity: 0.35; } }
 
     /* ---------- Nawigacja między stronami (ranking poziomów ↔ eventy) ---------- */
-    .head { align-items: flex-end; }
+    /* Ikona serwera i tytuł nad banerem (baner ma position: relative dla paska z kolorami eventu) */
+    .head { position: relative; z-index: 1; align-items: flex-end; }
     .site-nav { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 6px; }
     .nav-link {
       display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border: 1px solid var(--border); border-radius: 10px;
