@@ -8,7 +8,7 @@
   <script>
     // Adres bez .html (np. /event albo /ranking) → plik .html tej strony, z resztą adresu (#…, ?…).
     (function () {
-      var m = /^(.*\/)(event|ranking)\/?$/.exec(location.pathname);
+      var m = /^(.*\/)(event|ranking|panel)\/?$/.exec(location.pathname);
       if (m) location.replace(m[1] + m[2] + '.html' + location.search + location.hash);
     })();
   </script>
