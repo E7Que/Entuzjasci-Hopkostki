@@ -449,7 +449,7 @@
           <h1>Eventy serwera</h1>
         </div>
         <nav class="site-nav" aria-label="Strony serwera">
-          <a class="nav-link" href="ranking.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 16v5M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 6h2.5a2.5 2.5 0 0 1 0 5H17M7 6H4.5a2.5 2.5 0 0 0 0 5H7"/></svg>Ranking poziomów</a>
+          <a class="nav-link" href="ranking"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 16v5M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 6h2.5a2.5 2.5 0 0 1 0 5H17M7 6H4.5a2.5 2.5 0 0 0 0 5H7"/></svg>Ranking poziomów</a>
         </nav>
       </div>
     </header>
@@ -490,7 +490,7 @@
       </aside>
     </div>
 
-    <footer>Entuzjaści Hopkostki · <a href="ranking.html">Ranking poziomów</a></footer>
+    <footer>Entuzjaści Hopkostki · <a href="ranking">Ranking poziomów</a></footer>
   </main>
 
   <script>
@@ -777,7 +777,7 @@
       const banner = ct.flash ? `<div class="ct-flash ok" role="status">${esc(ct.flash)}</div>` : ct.error ? `<div class="ct-flash err" role="alert">${esc(ct.error)}</div>` : '';
       if (!list.length) {
         box.innerHTML = ct.loaded
-          ? `${banner}<div class="ct-empty"><b>${ct.data?.enabled === false ? 'Eventy są wyłączone' : 'Teraz nie ma żadnego eventu'}</b>Bot ogłosi następny na serwerze — wtedy zapiszesz się tutaj. Do tego czasu zajrzyj do <a href="ranking.html">rankingu poziomów</a>.</div>`
+          ? `${banner}<div class="ct-empty"><b>${ct.data?.enabled === false ? 'Eventy są wyłączone' : 'Teraz nie ma żadnego eventu'}</b>Bot ogłosi następny na serwerze — wtedy zapiszesz się tutaj. Do tego czasu zajrzyj do <a href="ranking">rankingu poziomów</a>.</div>`
           : `${banner}<div class="ct-loading">${ct.data === null && ct.failed ? 'Nie udało się wczytać eventów — spróbuj odświeżyć stronę.' : 'Wczytywanie eventów…'}</div>`;
         ctApplyTheme(null);
         return;
@@ -835,7 +835,7 @@
 
     // Link z /polacz (#polacz=…): token od razu znika z adresu, strona dostaje sesję tej osoby.
     async function ctLink(token) {
-      try { history.replaceState(null, '', `${location.pathname}${location.search}`); } catch {}
+      try { history.replaceState(null, '', `${cleanPath()}${location.search}`); } catch {}
       try {
         const res = await fetch(`${BASE}/link`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token }) });
         const data = await res.json().catch(() => ({}));
@@ -878,7 +878,7 @@
       } catch {}
       for (const k of ['code', 'state', 'iss', 'error', 'error_description']) qs.delete(k);
       const rest = qs.toString();
-      try { history.replaceState(null, '', `${location.pathname}${rest ? `?${rest}` : ''}${pending?.contest ? `#${pending.contest}` : ''}`); } catch {}
+      try { history.replaceState(null, '', `${cleanPath()}${rest ? `?${rest}` : ''}`); } catch {}
       if (error) {
         ctMessage('err', error === 'access_denied' ? 'Anulowano logowanie przez Discord.' : 'Logowanie przez Discord nie powiodło się — spróbuj jeszcze raz.');
         return true;
@@ -999,7 +999,6 @@
     function ctSelect(id) {
       ct.selected = id;
       saved.set(CT_KEY, id);
-      try { history.replaceState(null, '', `${location.pathname}${location.search}#${id}`); } catch {}
       renderContests();
     }
 
@@ -1049,11 +1048,23 @@
       next.src = src;
     }
 
+    // Czysty adres: /event — bez .html i bez #… (link do eventu, token z /polacz) — po odczytaniu od razu znika.
+    function cleanPath() {
+      return location.pathname.replace(/\/event\.html$/, '/event');
+    }
+    function ctCleanUrl() {
+      try { history.replaceState(null, '', `${cleanPath()}${location.search}`); } catch {}
+    }
+
     async function contestsInit(initial) {
       // Powrót z logowania przez Discord (?code=…), link z /polacz (#polacz=…) albo link do eventu (#id).
       if (await ctOAuthReturn()) {}
       else if (initial.startsWith('polacz=')) await ctLink(initial.slice(7));
-      else if (/^[a-z0-9]{6,24}$/i.test(initial)) ct.selected = initial;
+      else if (/^[a-z0-9]{6,24}$/i.test(initial)) {
+        ct.selected = initial;
+        saved.set(CT_KEY, initial);
+      }
+      ctCleanUrl();
       renderAccount();
       renderContests();
       await loadContests();
@@ -1066,10 +1077,12 @@
         if (hash.startsWith('polacz=')) {
           await ctLink(hash.slice(7));
           await loadContests();
-        } else if (/^[a-z0-9]{6,24}$/i.test(hash) && hash !== ct.selected && ct.data?.contests?.some((c) => c.id === hash)) {
+        } else if (/^[a-z0-9]{6,24}$/i.test(hash) && ct.data?.contests?.some((c) => c.id === hash)) {
           ct.selected = hash;
+          saved.set(CT_KEY, hash);
           renderContests();
         }
+        if (hash) ctCleanUrl();
       });
     }
 

@@ -1801,7 +1801,7 @@ function renderLevels() {
   $('#levels-cb-channel').innerHTML = channelOptions(state.guild.channels, '', '— kanał —', '#');
   if (!$('#levels-test-channel').options.length) $('#levels-test-channel').innerHTML = channelOptions(state.guild.channels, lv.levelUp.channelId ?? '', '— kanał testu —', '#');
   const link = $('#levels-public-link');
-  link.href = new URL('ranking.html', location.href).href;
+  link.href = new URL('ranking', location.href).href;
   renderXpEvents();
 }
 
@@ -1849,7 +1849,7 @@ function evSyncForm() {
   if ($('#ev-accent-on').checked && EV_HEX.test($('#ev-accent').value)) p.set('accent', $('#ev-accent').value.slice(1));
   const name = $('#ev-name').value.trim();
   if (name) p.set('name', name.slice(0, 80));
-  $('#ev-preview').href = `ranking.html?${p}`;
+  $('#ev-preview').href = `ranking?${p}`;
   evLiveUpdate();
 }
 // Podgląd efektu na żywo: strona rankingu w trybie osadzonym w ramce (ta sama domena), sterowana wiadomościami.
@@ -1881,7 +1881,7 @@ function evLiveStart() {
   const p = new URLSearchParams({ embed: '1', preview: e.theme, intensity: e.intensity, mult: String(e.multiplier), name: e.name });
   if (e.accent) p.set('accent', e.accent.slice(1));
   if (!e.floor) p.set('floor', '0');
-  frame.src = `ranking.html?${p}`;
+  frame.src = `ranking?${p}`;
 }
 window.addEventListener('message', (event) => {
   const frame = $('#ev-live');

@@ -11,7 +11,7 @@
   <meta property="og:title" content="Ranking poziomów — Entuzjaści Hopkostki">
   <meta property="og:description" content="Kto ma najwięcej XP na serwerze? Ranking ogólny, tygodniowy i miesięczny.">
   <meta property="og:image" content="https://e7que.github.io/Entuzjasci-Hopkostki/img/banner-og.jpg">
-  <meta property="og:url" content="https://e7que.github.io/Entuzjasci-Hopkostki/ranking.html">
+  <meta property="og:url" content="https://e7que.github.io/Entuzjasci-Hopkostki/ranking">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" type="image/png" href="img/favicon.png">
   <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
@@ -14725,7 +14725,6 @@
     function markPeriod(period) {
       state.period = period;
       document.querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.period === period)));
-      try { history.replaceState(null, '', `${location.pathname}${location.search}${period === 'all' ? '' : `#${period}`}`); } catch {}
     }
     function selectPeriod(period) {
       if (period === state.period) return;
@@ -14811,6 +14810,11 @@
     }
 
     const initial = location.hash.slice(1);
+    // Czysty adres: /ranking — bez .html i bez #okresu. Stare linki (ranking.html, #week, #event) działają dalej:
+    // okres odczytany wyżej, a adres w pasku przeglądarki od razu się czyści.
+    if (!PREVIEW && !EMBED) {
+      try { history.replaceState(null, '', `${location.pathname.replace(/\/ranking\.html$/, '/ranking')}${location.search}`); } catch {}
+    }
     if (PREVIEW) setEvents({ current: previewEvent() });
     if (EMBED) embedBridge();
     else {
