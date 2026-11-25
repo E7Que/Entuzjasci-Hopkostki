@@ -1,0 +1,1298 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel — Entuzjaści Hopkostki</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%235865f2'/><text x='50' y='66' font-size='46' font-weight='700' font-family='sans-serif' text-anchor='middle' fill='white'>EH</text></svg>">
+  <!-- ?v= zmienia się przy każdej publikacji, żeby telefony nie trzymały starej wersji z pamięci -->
+  <link rel="stylesheet" href="style.css?v=dev">
+</head>
+<body>
+  <div id="login-gate" class="login-gate">
+    <div class="login-card">
+      <div class="logo-badge big">EH</div>
+      <h2>Panel — Entuzjaści Hopkostki</h2>
+      <form id="login-mod-form">
+        <p class="muted">Moderacja: login i hasło dostajesz komendą <code>/login</code> na kanale do logowania na Discordzie (widzisz je tylko Ty).</p>
+        <input type="text" id="login-name" placeholder="Login" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="40" required>
+        <input type="password" id="login-mod-password" placeholder="Hasło z /login" autocomplete="current-password" maxlength="20" required>
+        <button type="submit" class="btn primary" id="login-mod-submit">Zaloguj się</button>
+      </form>
+      <div class="login-or"><span>albo hasłem panelu (właściciel)</span></div>
+      <form id="login-form">
+        <input type="password" id="login-password" placeholder="Hasło panelu" autocomplete="current-password" required>
+        <button type="submit" class="btn" id="login-submit">Zaloguj hasłem</button>
+      </form>
+      <p class="error-text" id="login-error"></p>
+    </div>
+  </div>
+
+  <div id="app" class="layout hidden">
+    <aside class="sidebar">
+      <div class="brand">
+        <img id="bot-avatar" class="avatar" alt="" hidden>
+        <span id="bot-logo" class="logo-badge">EH</span>
+        <div>
+          <strong id="bot-name">Hopkostki Bot</strong>
+          <small id="bot-state" class="state offline">łączenie…</small>
+        </div>
+      </div>
+      <!-- Telefon: przycisk z nazwą otwartej części, rozwija menu ze wszystkimi zakładkami -->
+      <button type="button" class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="side-menu">
+        <span id="nav-current">Pulpit</span>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <div class="side-menu" id="side-menu">
+      <div class="side-search" role="search">
+        <input type="search" id="settings-search" placeholder="Szukaj ustawień…" autocomplete="off" spellcheck="false" aria-label="Szukaj ustawień (skrót: /)" aria-controls="search-results" aria-expanded="false" aria-autocomplete="list">
+        <div class="search-results hidden" id="search-results" role="listbox" aria-label="Wyniki wyszukiwania"></div>
+      </div>
+      <nav id="nav">
+        <a href="#pulpit" data-view="pulpit"><span>Pulpit</span></a>
+        <a href="#ustawienia" data-view="ustawienia"><span>Ustawienia</span></a>
+        <a href="#uprawnienia" data-view="uprawnienia"><span>Uprawnienia</span></a>
+        <a href="#czlonkowie" data-view="czlonkowie"><span>Nowe osoby</span></a>
+        <a href="#logi" data-view="logi"><span>Logi serwera</span></a>
+        <a href="#bump" data-view="bump"><span>Bump</span></a>
+        <a href="#spolecznosc" data-view="spolecznosc"><span>Społeczność</span></a>
+        <a href="#automod" data-view="automod"><span>Automoderacja</span></a>
+        <a href="#poziomy" data-view="poziomy"><span>Poziomy</span></a>
+        <a href="#eventy" data-view="eventy"><span>Eventy</span></a>
+        <a href="#tickety" data-view="tickety"><span>Tickety</span></a>
+        <a href="#glosowe" data-view="glosowe"><span>Kanały głosowe</span></a>
+        <a href="#wiadomosci" data-view="wiadomosci"><span>Wiadomości</span></a>
+        <a href="#serwerinfo" data-view="serwerinfo"><span>Serwer info</span></a>
+        <a href="#embedy" data-view="embedy"><span>Wygląd embedów</span></a>
+        <a href="#ostrzezenia" data-view="ostrzezenia"><span>Ostrzeżenia</span></a>
+        <a href="#sprawy" data-view="sprawy"><span>Sprawy</span></a>
+        <a href="#bany" data-view="bany"><span>Tymczasowe bany</span></a>
+        <a href="#dostep" data-view="dostep"><span>Dostęp do panelu</span></a>
+      </nav>
+      <div id="me-chip" class="me-chip hidden"></div>
+      <a class="side-link" id="supabase-link" href="https://supabase.com/dashboard/project/ucjmbdogtzztrkorqzjq" target="_blank" rel="noopener">Supabase</a>
+      <button type="button" class="side-link" id="logout-btn">Wyloguj</button>
+      </div>
+    </aside>
+
+    <main>
+      <div id="conn-error" class="banner hidden"></div>
+      <!-- PULPIT -->
+      <section id="view-pulpit" class="view">
+        <header class="view-head">
+          <h2>Pulpit</h2>
+          <p class="muted">Szybki podgląd bota i serwera.</p>
+        </header>
+        <div class="card hidden" id="access-card">
+          <h3>Twój dostęp do panelu</h3>
+          <div id="access-summary"></div>
+        </div>
+        <div class="grid two">
+          <div class="card row-card">
+            <img id="guild-icon" class="avatar lg" alt="" hidden>
+            <div>
+              <div class="label">Serwer</div>
+              <div id="guild-name" class="big-text">—</div>
+              <div id="guild-members" class="muted"></div>
+            </div>
+          </div>
+          <div class="card row-card">
+            <div>
+              <div class="label">Bot na Supabase</div>
+              <div id="status-text" class="big-text">—</div>
+              <div id="status-extra" class="muted"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" id="health-card">
+          <div class="card-head"><h3>Stan bota</h3><span class="muted small" id="health-version"></span></div>
+          <div id="health-issues"></div>
+          <div class="health-grid" id="health-grid"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3>Połączenie z Discordem</h3>
+            <button type="button" class="btn ghost small" id="setup-run">Sprawdź i zarejestruj komendy</button>
+          </div>
+          <ul class="checklist" id="setup-list"></ul>
+        </div>
+        <div id="stats" class="stats"></div>
+        <div class="card">
+          <h3>Ostatnie sprawy</h3>
+          <div class="table-wrap"><table class="table" id="recent-table"></table></div>
+        </div>
+      </section>
+
+      <!-- USTAWIENIA -->
+      <section id="view-ustawienia" class="view">
+        <header class="view-head">
+          <h2>Ustawienia</h2>
+          <p class="muted">Zmiany zapisujesz przyciskiem na dole ekranu. Działają od razu, bez restartu bota.</p>
+        </header>
+        <div class="grid two">
+          <div class="card">
+            <h3>Kanały</h3>
+            <label class="field">
+              <span>Kanał logów moderacji</span>
+              <select data-path="modLogChannelId" data-channel-select="none"></select>
+              <small>Pełne szczegóły każdej akcji: punkty, status DM, link do wiadomości.</small>
+            </label>
+            <label class="field">
+              <span>Kanał ogłoszeń o karach</span>
+              <select data-path="announceChannelId" data-channel-select="command"></select>
+              <small>Domyślnie embed pojawia się tam, gdzie użyto komendy.</small>
+            </label>
+          </div>
+          <div class="card">
+            <h3>Alerty o awarii bota</h3>
+            <p class="muted small">Bot sam napisze, gdy przestanie łączyć się z Discordem, komendy nie będą docierać albo jakieś zadanie ciągle się psuje. Osobny strażnik w bazie wyśle alarm nawet wtedy, gdy cała funkcja bota przestanie działać (przez webhook na tym kanale). Po naprawie przychodzi wiadomość „działa”.</p>
+            <label class="toggle"><input type="checkbox" data-path="alerts.enabled"><span></span>Włączone</label>
+            <label class="field"><span>Kanał alertów</span><select data-path="alerts.channelId" data-channel-select="modlog"></select></label>
+            <label class="field"><span>Rola oznaczana przy alercie</span><select data-path="alerts.pingRoleId" data-role-select="none"></select></label>
+            <label class="field"><span>Po ilu minutach problemu wysłać alert (3–120)</span><input type="number" min="3" max="120" data-path="alerts.minutes"></label>
+            <div class="card-actions"><button type="button" class="btn ghost small" id="alerts-test">Wyślij test</button></div>
+          </div>
+          <div class="card">
+            <h3>Role moderatorów</h3>
+            <p class="muted small">Te role są oznaczane przy alertach o przekroczeniu progu ostrzeżeń i dostają komendy moderacyjne przy ustawianiu uprawnień od nowa. O tym, kto może używać której komendy, decyduje zakładka <a href="#uprawnienia">Uprawnienia</a>.</p>
+            <div data-picker-slot="cfg:modRoleIds"></div>
+          </div>
+          <div class="card">
+            <h3>Wiadomości</h3>
+            <label class="toggle"><input type="checkbox" data-path="mentionTarget"><span></span>Oznaczaj ukaranego użytkownika na kanale</label>
+            <label class="toggle"><input type="checkbox" data-path="dmUsers"><span></span>Wysyłaj DM do ukaranego użytkownika</label>
+            <label class="toggle"><input type="checkbox" data-path="dmShowModerator"><span></span>Pokazuj w DM, kto nałożył karę</label>
+            <label class="field">
+              <span>Dopisek w DM (np. jak się odwołać)</span>
+              <textarea data-path="appealText" rows="3" maxlength="1500"></textarea>
+            </label>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Odwołania od kar</h3><label class="toggle small"><input type="checkbox" data-path="appeals.enabled"><span></span>Włączone</label></div>
+            <p class="muted small">Pod wiadomością prywatną o banie, wyrzuceniu, timeoucie i ostrzeżeniu pojawia się przycisk <b>Odwołaj się</b>. Odwołanie trafia na kanał moderacji z przyciskami <b>Przyjmij</b> / <b>Odrzuć</b>: przyjęcie zdejmuje bana albo timeout i usuwa ostrzeżenie, a osoba dostaje odpowiedź w DM. Jedno odwołanie na karę. Lista odwołań jest w zakładce <a href="#sprawy">Sprawy</a>.</p>
+            <label class="field"><span>Kanał odwołań (tylko dla moderacji)</span><select data-path="appeals.channelId" data-channel-select="modlog"></select></label>
+            <div class="grid two tight">
+              <label class="field"><span>Rola oznaczana przy nowym odwołaniu</span><select data-path="appeals.pingRoleId" data-role-select="none"></select></label>
+              <label class="field"><span>Dni na odwołanie (1–90)</span><input type="number" min="1" max="90" data-path="appeals.days"></label>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Reakcja na odpowiedzi</h3>
+            <p class="muted small">Gdy ktoś odpowie (reply) na wiadomość bota o karze, bot doda pod jego odpowiedzią tę reakcję.</p>
+            <label class="toggle"><input type="checkbox" data-path="replyReaction.enabled"><span></span>Włączone</label>
+            <label class="field">
+              <span>Emoji (zwykłe lub własne emoji serwera)</span>
+              <div class="emoji-own"><input type="text" data-path="replyReaction.emoji" maxlength="100"><button type="button" class="btn ghost small emoji-btn" data-emoji-open data-emoji-path="replyReaction.emoji">Wybierz emoji</button></div>
+            </label>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3>Status i opisy bota</h3>
+            <span class="muted small" id="gateway-line"></span>
+          </div>
+          <p class="muted small">Bot łączy się z Discordem co minutę (gateway), dzięki czemu świeci na zielono i pokazuje poniższe opisy — zmieniają się co ustawioną liczbę sekund.</p>
+          <div class="grid two tight">
+            <label class="field"><span>Status</span>
+              <select data-path="presence.status">
+                <option value="online">Dostępny</option>
+                <option value="idle">Zaraz wracam</option>
+                <option value="dnd">Nie przeszkadzać</option>
+              </select>
+            </label>
+            <label class="field"><span>Zmiana opisu co (sekundy, min. 15)</span><input type="number" min="15" max="3600" data-path="presence.rotateSeconds"></label>
+          </div>
+          <label class="toggle"><input type="checkbox" data-path="presence.enabled"><span></span>Pokazuj opisy w statusie</label>
+          <div class="table-wrap"><table class="table compact" id="activities-table"></table></div>
+          <div class="placeholders">
+            <button type="button" class="btn ghost" id="add-activity">+ Dodaj opis</button>
+            <span class="muted small">Zmienne:</span>
+            <div class="chips" id="presence-chips"></div>
+          </div>
+        </div>
+        <div id="backup-section">
+          <h3 class="section-title">Kopia i historia ustawień</h3>
+          <div class="grid two">
+            <div class="card">
+              <h3>Kopia ustawień</h3>
+              <p class="muted small">Plik JSON ze wszystkimi ustawieniami bota (bez haseł i tokenów — tych nie ma w ustawieniach). Wczytana kopia trafia do edycji: sprawdź zmiany i kliknij <b>Zapisz</b> na dole ekranu.</p>
+              <div class="bulk-row">
+                <button type="button" class="btn ghost" id="backup-export">Pobierz kopię</button>
+                <button type="button" class="btn ghost" id="backup-import">Wczytaj kopię…</button>
+                <input type="file" id="backup-file" accept="application/json,.json" hidden>
+              </div>
+            </div>
+            <div class="card">
+              <h3>Ostatnie zmiany</h3>
+              <p class="muted small">Każdy zapis z panelu: kiedy, kto i które części. <b>Cofnij</b> wstawia do edycji poprzednią wersję tych części — potem zapisz.</p>
+              <div id="history-list" class="history-list"><span class="muted small">Wczytywanie…</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" id="password-card">
+          <h3>Hasło panelu</h3>
+          <p class="muted small" id="password-status">—</p>
+          <form id="password-form" class="grid two tight">
+            <label class="field"><span>Nowe hasło (min. 8 znaków)</span><input type="password" id="password-new" autocomplete="new-password" minlength="8"></label>
+            <label class="field"><span>Powtórz nowe hasło</span><input type="password" id="password-repeat" autocomplete="new-password" minlength="8"></label>
+            <button type="submit" class="btn primary" id="password-submit">Zmień hasło</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- UPRAWNIENIA -->
+      <section id="view-uprawnienia" class="view">
+        <header class="view-head">
+          <h2>Uprawnienia</h2>
+          <p class="muted">Każda komenda ma własną listę ról, które mogą jej używać. Dodajesz rolę przez „+ Dodaj rolę”, usuwasz krzyżykiem. Pusta lista oznacza „tylko właściciel serwera”.</p>
+        </header>
+        <div class="banner warn"><strong>Właściciel serwera</strong> zawsze może użyć każdej komendy — dzięki temu serwer nigdy się nie zablokuje. <strong>Role z uprawnieniem Administrator</strong> też podlegają tym listom: bez roli z listy komendy nie użyje nawet administrator.</div>
+        <div class="card" id="discord-perms-card">
+          <div class="card-head">
+            <h3>Ustawienia w Discordzie (Integracje)</h3>
+            <button type="button" class="btn ghost small" id="discord-perms-refresh">Sprawdź ponownie</button>
+          </div>
+          <p class="muted small">Discord ma własne uprawnienia komend bota (<em>Ustawienia serwera → Integracje → bot</em>) — dla całego bota albo pojedynczych komend, dla ról, osób i kanałów. Działają niezależnie od list poniżej i mogą je przebić: komenda zablokowana tam roli albo kanałowi znika z listy komend, choć lista bota na nią pozwala. Bot może je tylko odczytać, zmienia się je w Discordzie.</p>
+          <div id="discord-perms"><span class="muted small">Sprawdzam ustawienia w Discordzie…</span></div>
+        </div>
+        <div class="card">
+          <h3>Szybkie zmiany</h3>
+          <div class="bulk-row">
+            <select id="perm-bulk-role" aria-label="Rola"></select>
+            <select id="perm-bulk-scope" aria-label="Zakres">
+              <option value="mod">do komend moderacyjnych</option>
+              <option value="all">do wszystkich komend</option>
+            </select>
+            <button type="button" class="btn ghost" id="perm-bulk-add">Dodaj</button>
+            <button type="button" class="btn ghost" id="perm-bulk-remove">Usuń ze wszystkich</button>
+          </div>
+          <p class="muted small">Komendy bota widzi w Discordzie każdy, a o tym, kto może ich użyć, decydują listy poniżej — chyba że ktoś ograniczył je w <em>Ustawienia serwera → Integracje → bot</em> (zobacz ramkę „Ustawienia w Discordzie” wyżej).
+            <button type="button" class="link-btn" id="perm-reset">Ustaw wszystkie listy od nowa według uprawnień Discorda</button></p>
+        </div>
+        <div class="card">
+          <h3>Komendy</h3>
+          <div id="permission-commands" class="perm-commands"></div>
+        </div>
+        <div class="card">
+          <h3>Kto może użyć jakiej komendy — podgląd na żywo</h3>
+          <p class="muted small">Liczone z list powyżej (również niezapisanych), tak samo dla ról z uprawnieniem Administrator. Właściciela serwera tu nie ma — ma dostęp do każdej komendy zawsze.</p>
+          <p class="muted small mobile-only">Przesuń tabelę w bok, żeby zobaczyć wszystkie komendy — kolumna z rolami zostaje na miejscu.</p>
+          <div class="table-wrap"><table class="table compact" id="permission-matrix"></table></div>
+        </div>
+        <div class="card" id="role-perms-card">
+          <h3>Uprawnienia ról w Discordzie</h3>
+          <p class="muted small">To ustawienia samego Discorda, a nie bota — działają też bez komend bota (np. rola z „Wyrzucaniem” może wyrzucać z serwera prawym przyciskiem myszy). Zmiana od razu zapisuje się na serwerze. Rozwiń rolę, żeby zobaczyć jej uprawnienia. Role z uprawnieniem Administrator mają wszystko, a role wyżej niż rola bota zmienisz tylko w ustawieniach serwera.</p>
+          <div id="role-perms-list" class="role-perms"></div>
+        </div>
+      </section>
+
+      <!-- NOWE OSOBY -->
+      <section id="view-czlonkowie" class="view">
+        <header class="view-head">
+          <h2>Nowe osoby</h2>
+          <p class="muted">Automatyczne role po wejściu na serwer, powitanie i pożegnanie (log wejść i wyjść jest w zakładce Logi serwera). Zmienne w tekstach: <code>{uzytkownik}</code> (oznaczenie), <code>{nick}</code>, <code>{serwer}</code>, <code>{liczba}</code> (liczba członków).</p>
+        </header>
+        <div id="members-warning" class="banner warn hidden"></div>
+        <div class="grid two">
+          <div class="card">
+            <h3>Automatyczne role</h3>
+            <label class="toggle"><input type="checkbox" data-path="members.autoRole.enabled"><span></span>Dawaj role osobom, które dołączą</label>
+            <div class="field"><span>Role dla nowych osób</span><div data-picker-slot="cfg:members.autoRole.roleIds" data-assignable></div></div>
+            <div class="field"><span>Role dla nowych botów</span><div data-picker-slot="cfg:members.autoRole.botRoleIds" data-assignable></div></div>
+            <p class="muted small">Jeśli serwer wymaga zaakceptowania regulaminu, rola przychodzi po jego akceptacji. Na liście są tylko role, które bot może nadać.</p>
+          </div>
+          <div class="card">
+            <h3>Log wejść i wyjść</h3>
+            <p class="muted small">Wejścia i wyjścia (z wiekiem konta — konta młodsze niż 7 dni są oznaczone) są teraz częścią logów serwera. Ustawisz je w zakładce <a href="#logi" data-view-link="logi">Logi serwera</a>.</p>
+          </div>
+        </div>
+        <div class="grid two">
+          <div class="card">
+            <h3>Powitanie</h3>
+            <label class="toggle"><input type="checkbox" data-path="members.welcome.enabled"><span></span>Witaj nowe osoby</label>
+            <label class="field"><span>Kanał</span><select data-path="members.welcome.channelId" data-channel-select="pick"></select></label>
+            <label class="field"><span>Tytuł</span><input type="text" data-path="members.welcome.title" maxlength="200"></label>
+            <label class="field"><span>Wiadomość</span><textarea id="welcome-message" data-path="members.welcome.message" rows="3" maxlength="1500"></textarea></label>
+            <div class="chips" data-insert-into="welcome-message"></div>
+            <label class="field"><span>Kolor</span>
+              <div class="color-row"><input type="color" data-color-for="members.welcome.color"><input type="text" data-path="members.welcome.color" maxlength="7"></div>
+            </label>
+          </div>
+          <div class="card">
+            <h3>Pożegnanie</h3>
+            <label class="toggle"><input type="checkbox" data-path="members.goodbye.enabled"><span></span>Pisz, gdy ktoś wyjdzie</label>
+            <label class="field"><span>Kanał</span><select data-path="members.goodbye.channelId" data-channel-select="pick"></select></label>
+            <label class="field"><span>Wiadomość</span><textarea id="goodbye-message" data-path="members.goodbye.message" rows="3" maxlength="1500"></textarea></label>
+            <div class="chips" data-insert-into="goodbye-message"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- LOGI SERWERA -->
+      <section id="view-logi" class="view">
+        <header class="view-head">
+          <h2>Logi serwera</h2>
+          <p class="muted">Jak w Carl-bocie: każda grupa zdarzeń może iść na własny kanał, a puste pole oznacza kanał domyślny. Zmiany z dziennika zdarzeń Discorda pokazują też, kto je zrobił.</p>
+        </header>
+        <div id="logs-warning" class="banner warn hidden"></div>
+        <div class="grid two">
+          <div class="card">
+            <h3>Kanały logów</h3>
+            <label class="toggle"><input type="checkbox" data-path="logs.enabled"><span></span>Włącz logi serwera</label>
+            <label class="field"><span>Domyślny kanał logów</span><select data-path="logs.channelId" data-channel-select="none"></select></label>
+            <label class="field"><span>Kanał logów członków</span><select data-path="logs.membersChannelId" data-channel-select="inherit"></select></label>
+            <label class="field"><span>Kanał logów serwera</span><select data-path="logs.serverChannelId" data-channel-select="inherit"></select></label>
+            <label class="field"><span>Kanał logów głosowych</span><select data-path="logs.voiceChannelId" data-channel-select="inherit"></select></label>
+            <label class="field"><span>Kanał logów wiadomości</span><select data-path="logs.messagesChannelId" data-channel-select="inherit"></select></label>
+            <label class="field"><span>Kanał wejść i wyjść</span><select data-path="logs.joinLeaveChannelId" data-channel-select="inherit"></select></label>
+            <div class="field"><span>Pomijane kanały</span><div data-channel-picker-slot="logs.ignoredChannelIds"></div></div>
+            <label class="toggle"><input type="checkbox" data-path="logs.ignoreBots"><span></span>Pomijaj boty</label>
+            <p class="muted small">Treść usuniętych wiadomości bot pamięta przez 7 dni. Kary nałożone komendami bota są w logach moderacji (Ustawienia), więc tu się nie dublują.</p>
+          </div>
+          <div class="card">
+            <h3>Zdarzenia serwera</h3>
+            <div data-log-group="server"></div>
+          </div>
+        </div>
+        <div class="grid two">
+          <div class="card">
+            <h3>Wiadomości</h3>
+            <div data-log-group="messages"></div>
+          </div>
+          <div class="card">
+            <h3>Zdarzenia członków</h3>
+            <div data-log-group="members"></div>
+          </div>
+        </div>
+        <div class="grid two">
+          <div class="card">
+            <h3>Wejścia i wyjścia</h3>
+            <div data-log-group="joinLeave"></div>
+            <h4>Nowe konta</h4>
+            <p class="muted small">Gdy wejdzie ktoś z kontem młodszym niż wybrany próg (tak często wyglądają multikonta), log wejścia jest żółty i może oznaczyć moderację.</p>
+            <label class="toggle"><input type="checkbox" data-path="logs.newAccount.ping"><span></span>Oznaczaj przy nowym koncie</label>
+            <div class="grid two tight">
+              <label class="field"><span>Nowe konto = młodsze niż</span>
+                <select data-path="logs.newAccount.days" data-number>
+                  <option value="1">1 dzień</option>
+                  <option value="3">3 dni</option>
+                  <option value="7">tydzień</option>
+                  <option value="14">2 tygodnie</option>
+                  <option value="30">30 dni</option>
+                </select>
+              </label>
+              <label class="field"><span>Kogo oznaczyć</span>
+                <select data-path="logs.newAccount.mention">
+                  <option value="here">@here (osoby online)</option>
+                  <option value="everyone">@everyone</option>
+                  <option value="roles">Wybrane role</option>
+                </select>
+              </label>
+            </div>
+            <div class="field" id="new-account-roles"><span>Role do oznaczenia</span><div data-picker-slot="cfg:logs.newAccount.roleIds"></div></div>
+          </div>
+          <div class="card">
+            <h3>Kanały głosowe</h3>
+            <div data-log-group="voice"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BUMP -->
+      <section id="view-bump" class="view">
+        <header class="view-head">
+          <h2>Przypominajka o bumpie</h2>
+          <p class="muted">Jak Fibo: gdy ktoś podbije serwer komendą <code>/bump</code> bota DISBOARD, bot odpowiada na tę wiadomość podziękowaniem, a po 2 godzinach przypomina „Czas na Bump!” (odpowiedzią na ostatni bump) i oznacza wybrane role.</p>
+        </header>
+        <div id="bump-warning" class="banner warn hidden"></div>
+        <div class="grid two">
+          <div class="card">
+            <h3>Ustawienia</h3>
+            <label class="toggle"><input type="checkbox" data-path="bump.enabled"><span></span>Włącz przypominajkę o bumpie</label>
+            <label class="field"><span>Kanał przypomnień</span><select data-path="bump.channelId" data-channel-select="bump"></select></label>
+            <div class="field"><span>Kogo oznaczyć w przypomnieniu</span><div data-picker-slot="cfg:bump.roleIds"></div></div>
+            <label class="field"><span>Przypomnienie po (minutach)</span><input type="number" min="30" max="1440" data-path="bump.intervalMinutes"></label>
+            <p class="muted small">DISBOARD pozwala na bump co 120 minut. Gdy wybierzesz kanał, bot co 2 minuty sprawdza też jego ostatnie wiadomości — bump nie przepadnie nawet w chwili przerwy połączenia.</p>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Statystyki</h3><button type="button" class="btn ghost small" id="bump-refresh">Odśwież</button></div>
+            <p id="bump-last" class="muted"></p>
+            <div class="table-wrap"><table class="table compact" id="bump-ranking"></table></div>
+          </div>
+        </div>
+        <div class="grid two">
+          <div class="card">
+            <h3>Podziękowanie</h3>
+            <label class="toggle"><input type="checkbox" data-path="bump.thanks.enabled"><span></span>Dziękuj za bump</label>
+            <label class="toggle"><input type="checkbox" data-path="bump.thanks.reply"><span></span>Jako odpowiedź na wiadomość z bumpem</label>
+            <label class="field"><span>Tytuł</span><input type="text" data-path="bump.thanks.title" maxlength="200"></label>
+            <label class="field"><span>Wiadomość</span><textarea id="bump-thanks-message" data-path="bump.thanks.message" rows="3" maxlength="1500"></textarea></label>
+            <div class="chips" data-insert-into="bump-thanks-message" data-vars="bump"></div>
+            <label class="field"><span>Kolor</span>
+              <div class="color-row"><input type="color" data-color-for="bump.thanks.color"><input type="text" data-path="bump.thanks.color" maxlength="7"></div>
+            </label>
+          </div>
+          <div class="card">
+            <h3>Przypomnienie</h3>
+            <label class="toggle"><input type="checkbox" data-path="bump.reminder.reply"><span></span>Jako odpowiedź na ostatni bump</label>
+            <label class="field"><span>Tytuł</span><input type="text" data-path="bump.reminder.title" maxlength="200"></label>
+            <label class="field"><span>Wiadomość</span><textarea id="bump-reminder-message" data-path="bump.reminder.message" rows="3" maxlength="1500"></textarea></label>
+            <div class="chips" data-insert-into="bump-reminder-message" data-vars="bumpReminder"></div>
+            <label class="field"><span>Kolor</span>
+              <div class="color-row"><input type="color" data-color-for="bump.reminder.color"><input type="text" data-path="bump.reminder.color" maxlength="7"></div>
+            </label>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Podgląd</h3>
+          <div id="bump-preview" class="preview"></div>
+        </div>
+      </section>
+
+      <!-- AUTOMODERACJA -->
+      <section id="view-automod" class="view">
+        <header class="view-head">
+          <h2>Automoderacja</h2>
+          <p class="muted">Bot sam usuwa reklamy, spam i wulgaryzmy oraz pilnuje rajdów. Administracja i moderacja są domyślnie pomijane (patrz „Wyjątki”). Ostrzeżenia z automoderacji liczą się do progów z zakładki <a href="#ostrzezenia">Ostrzeżenia</a>.</p>
+        </header>
+        <div class="grid two">
+          <div class="card">
+            <h3>Ogólne</h3>
+            <label class="toggle"><input type="checkbox" data-path="automod.enabled"><span></span>Automoderacja włączona</label>
+            <label class="field"><span>Kanał logów automoderacji</span><select data-path="automod.logChannelId" data-channel-select="modlog"></select></label>
+            <label class="toggle"><input type="checkbox" data-path="automod.notify"><span></span>Krótka informacja na kanale (znika po kilku sekundach)</label>
+            <div class="grid two tight">
+              <label class="field"><span>Timeout (minuty)</span><input type="number" min="1" max="40320" data-path="automod.timeoutMinutes"></label>
+              <label class="field"><span>Punkty za ostrzeżenie</span><input type="number" min="1" max="100" data-path="automod.warnPoints"></label>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Wyjątki</h3>
+            <label class="toggle"><input type="checkbox" data-path="automod.exemptStaff"><span></span>Pomijaj administrację i moderację</label>
+            <p class="muted small">Właściciel, role moderatorów z Ustawień i osoby z uprawnieniem do usuwania wiadomości, timeoutów albo administratora. <b>Test z takiego konta nic nie da</b> — wyłącz to na chwilę albo poproś kogoś bez tych ról.</p>
+            <label class="toggle"><input type="checkbox" data-path="automod.exemptTickets"><span></span>Pomijaj tickety</label>
+            <p class="muted small">Wszystkie tickety (zgłoszenia, partnerstwa…), otwarte i zamknięte — można w nich wklejać np. linki do serwerów.</p>
+            <div class="field"><span>Role pomijane przez automoderację</span><div data-picker-slot="cfg:automod.exemptRoleIds"></div></div>
+            <div class="field"><span>Kanały pomijane</span><div data-channel-picker-slot="automod.exemptChannelIds"></div></div>
+          </div>
+          <div class="card">
+            <h3>Zaproszenia do innych serwerów</h3>
+            <label class="toggle"><input type="checkbox" data-path="automod.invites.enabled"><span></span>Włączone</label>
+            <label class="toggle"><input type="checkbox" data-path="automod.invites.allowOwn"><span></span>Zaproszenia na nasz serwer są dozwolone</label>
+            <label class="field"><span>Kara</span><select data-path="automod.invites.action"><option value="delete">Usuń wiadomość</option><option value="warn">Usuń + ostrzeżenie</option><option value="timeout">Usuń + timeout</option></select></label>
+          </div>
+          <div class="card">
+            <h3>Masowe oznaczenia</h3>
+            <label class="toggle"><input type="checkbox" data-path="automod.mentions.enabled"><span></span>Włączone</label>
+            <label class="field"><span>Od ilu oznaczeń w jednej wiadomości (osoby, role, @everyone)</span><input type="number" min="2" max="50" data-path="automod.mentions.limit"></label>
+            <label class="field"><span>Kara</span><select data-path="automod.mentions.action"><option value="delete">Usuń wiadomość</option><option value="warn">Usuń + ostrzeżenie</option><option value="timeout">Usuń + timeout</option></select></label>
+          </div>
+          <div class="card">
+            <h3>Spam</h3>
+            <label class="toggle"><input type="checkbox" data-path="automod.spam.enabled"><span></span>Włączone</label>
+            <div class="grid two tight">
+              <label class="field"><span>Wiadomości (0 = wył.)</span><input type="number" min="0" max="50" data-path="automod.spam.messages"></label>
+              <label class="field"><span>w ciągu (sekundy)</span><input type="number" min="2" max="60" data-path="automod.spam.seconds"></label>
+            </div>
+            <label class="field"><span>Ta sama wiadomość ile razy w minutę (0 = wył.)</span><input type="number" min="0" max="20" data-path="automod.spam.duplicates"></label>
+            <label class="field"><span>Kara (usuwa całą serię)</span><select data-path="automod.spam.action"><option value="delete">Usuń wiadomość</option><option value="warn">Usuń + ostrzeżenie</option><option value="timeout">Usuń + timeout</option></select></label>
+          </div>
+          <div class="card">
+            <h3>Pisanie wielkimi literami</h3>
+            <label class="toggle"><input type="checkbox" data-path="automod.caps.enabled"><span></span>Włączone</label>
+            <div class="grid two tight">
+              <label class="field"><span>Od ilu % wielkich liter</span><input type="number" min="50" max="100" data-path="automod.caps.percent"></label>
+              <label class="field"><span>Minimum liter w wiadomości</span><input type="number" min="5" max="500" data-path="automod.caps.minLength"></label>
+            </div>
+            <label class="field"><span>Kara</span><select data-path="automod.caps.action"><option value="delete">Usuń wiadomość</option><option value="warn">Usuń + ostrzeżenie</option><option value="timeout">Usuń + timeout</option></select></label>
+          </div>
+          <div class="card">
+            <h3>Zakazane słowa</h3>
+            <label class="toggle"><input type="checkbox" data-path="automod.words.enabled"><span></span>Włączone</label>
+            <label class="field"><span>Lista — słowa po przecinku albo w osobnych liniach</span><textarea id="automod-words" data-path="automod.words.list" data-lines data-split rows="6" maxlength="60000" placeholder="np. słowo, fraza z kilku słów, *środek*, początek*, *koniec"></textarea>
+              <small>Format jak w AutoModzie Discorda — możesz wkleić listę skopiowaną z „Własnych słów”. <code>słowo</code> = całe słowo, <code>słowo*</code> = początek, <code>*słowo</code> = koniec, <code>*słowo*</code> = w środku innego słowa. Wielkość liter, polskie znaki, cyfry zamiast liter (k0rwa) i r o z s t r z e l e n i e nie pomagają w obejściu.</small></label>
+            <div class="words-tools"><button type="button" class="btn ghost small" id="automod-words-fix">Dostosuj do bota</button><span class="muted small" id="automod-words-count"></span></div>
+            <label class="field"><span>Kara</span><select data-path="automod.words.action"><option value="delete">Usuń wiadomość</option><option value="warn">Usuń + ostrzeżenie</option><option value="timeout">Usuń + timeout</option></select></label>
+          </div>
+          <div class="card">
+            <h3>Anty-rajd</h3>
+            <label class="toggle"><input type="checkbox" data-path="automod.raid.enabled"><span></span>Włączone</label>
+            <div class="grid two tight">
+              <label class="field"><span>Wejść na serwer</span><input type="number" min="3" max="200" data-path="automod.raid.joins"></label>
+              <label class="field"><span>w ciągu (sekundy)</span><input type="number" min="5" max="600" data-path="automod.raid.seconds"></label>
+            </div>
+            <label class="field"><span>Co robić</span><select data-path="automod.raid.action"><option value="alert">Tylko alert (z pingiem roli z „Alertów o awarii”)</option><option value="kick">Alert + wyrzucanie nowych kont</option></select></label>
+            <div class="grid two tight">
+              <label class="field"><span>Tryb anty-rajdu trwa (minuty)</span><input type="number" min="1" max="240" data-path="automod.raid.minutes"></label>
+              <label class="field"><span>Nowe konto = młodsze niż (dni, 0 = każde)</span><input type="number" min="0" max="365" data-path="automod.raid.accountAgeDays"></label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- POZIOMY -->
+      <section id="view-poziomy" class="view">
+        <header class="view-head">
+          <h2>Poziomy</h2>
+          <p class="muted">Leveling jak w Arcane (ze wszystkimi funkcjami premium): XP za wiadomości, kanały głosowe i reakcje, wiadomość o awansie, role za poziomy, rola za 1. miejsce, boostery, cotygodniowe i comiesięczne rankingi, karta poziomu (<code>/rank</code>), ranking (<code>/ranking</code>), zmiany XP (<code>/xp</code>) i import z Arcane. Gdy włączysz poziomy tutaj, wyłącz leveling w Arcane — inaczej każdy awans będzie ogłaszany dwa razy.</p>
+        </header>
+        <div class="card">
+          <label class="toggle"><input type="checkbox" data-path="levels.enabled"><span></span>Włącz poziomy</label>
+        </div>
+
+        <h3 class="section-title">XP</h3>
+        <div class="grid two">
+          <div class="card">
+            <h3>Formuła</h3>
+            <p class="muted small">Ile XP potrzeba na każdy poziom. „Liniowa” to dokładnie formuła Arcane (100 × poziom + 75 XP na kolejny poziom), więc przeniesione poziomy się zgadzają.</p>
+            <div class="grid three tight">
+              <label class="field"><span>Krzywa</span>
+                <select data-path="levels.formula.curve">
+                  <option value="linear">Liniowa (jak Arcane)</option>
+                  <option value="standard">Standardowa (jak MEE6)</option>
+                  <option value="flat">Stała (zawsze 100 XP)</option>
+                </select>
+              </label>
+              <label class="field"><span>Mnożnik</span><input type="number" min="0.1" max="10" step="0.1" data-path="levels.formula.multiplier" data-number></label>
+              <label class="field"><span>Maks. poziom (0 = bez limitu)</span><input type="number" min="0" max="1000" data-path="levels.formula.maxLevel"></label>
+            </div>
+            <p class="muted small" id="levels-formula-preview"></p>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>XP za wiadomości</h3><label class="toggle small"><input type="checkbox" data-path="levels.message.enabled"><span></span>Włączone</label></div>
+            <p class="muted small">Losowe XP za wiadomość albo XP za słowa (1 XP za słowo, między minimum a maksimum). Cooldown: ile sekund musi minąć, zanim kolejna wiadomość da XP.</p>
+            <div class="grid four tight">
+              <label class="field"><span>Tryb</span><select data-path="levels.message.mode"><option value="random">Losowo</option><option value="perWord">Za słowa</option></select></label>
+              <label class="field"><span>Min</span><input type="number" min="0" max="10000" data-path="levels.message.min"></label>
+              <label class="field"><span>Max</span><input type="number" min="0" max="10000" data-path="levels.message.max"></label>
+              <label class="field"><span>Cooldown (s)</span><input type="number" min="0" max="86400" data-path="levels.message.cooldown"></label>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>XP za kanały głosowe</h3><label class="toggle small"><input type="checkbox" data-path="levels.voice.enabled"><span></span>Włączone</label></div>
+            <p class="muted small">Co „cooldown” sekund każda osoba na kanale głosowym dostaje losowe XP — o ile na kanale jest co najmniej tyle osób (bez botów). Anty-AFK pomija wyciszonych, ogłuszonych i kanał AFK, a ogłuszonych nie liczy też do minimum osób.</p>
+            <div class="grid three tight">
+              <label class="field"><span>Min</span><input type="number" min="0" max="10000" data-path="levels.voice.min"></label>
+              <label class="field"><span>Max</span><input type="number" min="0" max="10000" data-path="levels.voice.max"></label>
+              <label class="field"><span>Cooldown (s)</span><input type="number" min="0" max="86400" data-path="levels.voice.cooldown"></label>
+              <label class="field"><span>Minimum osób</span><input type="number" min="1" max="99" data-path="levels.voice.minMembers"></label>
+            </div>
+            <label class="toggle"><input type="checkbox" data-path="levels.voice.antiAfk"><span></span>Anty-AFK</label>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>XP za reakcje</h3><label class="toggle small"><input type="checkbox" data-path="levels.reaction.enabled"><span></span>Włączone</label></div>
+            <p class="muted small">XP za dodanie reakcji i/lub za reakcję pod swoją wiadomością.</p>
+            <div class="grid four tight">
+              <label class="field"><span>Kto dostaje</span><select data-path="levels.reaction.awards"><option value="both">Obie strony</option><option value="giver">Dający reakcję</option><option value="receiver">Autor wiadomości</option></select></label>
+              <label class="field"><span>Min</span><input type="number" min="0" max="10000" data-path="levels.reaction.min"></label>
+              <label class="field"><span>Max</span><input type="number" min="0" max="10000" data-path="levels.reaction.max"></label>
+              <label class="field"><span>Cooldown (s)</span><input type="number" min="0" max="86400" data-path="levels.reaction.cooldown"></label>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="section-title">Ochrona przed nabijaniem</h3>
+        <div class="card">
+          <p class="muted small">Dzienny limit liczy całe XP z wiadomości, głosowych i reakcji w ciągu doby (czas polski). Po jego osiągnięciu statystyki (wiadomości, minuty) dalej rosną, ale XP już nie. W czasie wydarzenia XP limit rośnie razem z mnożnikiem. 0 = bez limitu.</p>
+          <div class="grid three tight">
+            <label class="field"><span>Dzienny limit XP</span><input type="number" min="0" max="1000000" data-path="levels.antiFarm.dailyCap"></label>
+            <label class="field"><span>Min. długość wiadomości (znaki)</span><input type="number" min="0" max="200" data-path="levels.antiFarm.minChars"></label>
+          </div>
+          <label class="toggle"><input type="checkbox" data-path="levels.antiFarm.ignoreRepeats"><span></span>Powtórzona wiadomość nie daje XP (ta sama co poprzednia nagrodzona — bez względu na wielkość liter, znaki i „przeciągnięte” litery)</label>
+          <p class="muted small">Wiadomości krótsze niż minimum nie dają XP, chyba że mają załącznik albo naklejkę.</p>
+        </div>
+
+        <h3 class="section-title">Wydarzenia XP</h3>
+        <div class="grid two">
+          <div class="card" id="ev-form">
+            <h3 id="ev-form-title">Nowe wydarzenie</h3>
+            <p class="muted small">W tym czasie XP jest mnożone — np. podwójne XP na weekend. Bot ogłasza początek i koniec (z najlepszymi osobami wydarzenia), a strona rankingu pokazuje odliczanie, animację i osobny ranking wydarzenia.</p>
+            <div class="grid two tight">
+              <label class="field"><span>Nazwa</span><input type="text" id="ev-name" maxlength="80" placeholder="Podwójne XP na weekend"></label>
+              <div class="field"><span>Mnożnik XP (od ×1,1 do ×10)</span>
+                <div class="ev-mult-row"><b class="ev-x">×</b><input type="number" id="ev-mult" min="1.1" max="10" step="0.05" value="2" inputmode="decimal" aria-label="Mnożnik XP"></div>
+                <div class="ev-presets" id="ev-presets"><button type="button" data-m="1.5">×1,5</button><button type="button" data-m="2" class="on">×2</button><button type="button" data-m="2.5">×2,5</button><button type="button" data-m="3">×3</button><button type="button" data-m="4">×4</button><button type="button" data-m="5">×5</button><button type="button" data-m="10">×10</button></div>
+              </div>
+              <label class="field"><span>Początek</span><input type="datetime-local" id="ev-start"></label>
+              <label class="field"><span>Koniec</span><input type="datetime-local" id="ev-end"></label>
+              <label class="field"><span>Efekt na stronie rankingu</span>
+                <select id="ev-theme">
+                  <option value="confetti">🎉 Konfetti</option><option value="fire">🔥 Ogień</option><option value="snow">❄️ Śnieg</option><option value="stars">✨ Gwiazdy</option><option value="neon">⚡ Neon</option>
+                  <option value="hearts">💖 Serduszka</option><option value="halloween">🎃 Halloween</option><option value="leaves">🍂 Jesienne liście</option><option value="sakura">🌸 Sakura</option>
+                  <option value="coins">🪙 Złote monety</option><option value="storm">⛈️ Burza</option><option value="bubbles">🫧 Bąbelki</option><option value="matrix">💚 Matrix</option>
+                </select>
+              </label>
+              <label class="field"><span>Intensywność efektów</span>
+                <select id="ev-intensity"><option value="none">Wyłączone (sam baner)</option><option value="low">Subtelne</option><option value="medium" selected>Normalne</option><option value="high">Mocne</option></select>
+              </label>
+              <div class="field"><span>Własny kolor (opcjonalnie)</span>
+                <div class="ev-color-row"><input type="color" id="ev-accent" value="#ff4fa3" aria-label="Kolor wydarzenia"><label class="toggle small"><input type="checkbox" id="ev-accent-on"><span></span>Użyj własnego koloru zamiast koloru efektu</label></div>
+              </div>
+              <div class="field" id="ev-floor-field" hidden><span>Ogień na dole ekranu</span>
+                <label class="toggle small"><input type="checkbox" id="ev-floor" checked><span></span>Płomienie wzdłuż dołu strony (z gaśnicą w rogu)</label>
+              </div>
+            </div>
+            <div class="ev-live">
+              <div class="ev-live-head"><span>Podgląd na żywo</span><button type="button" class="btn ghost small" id="ev-live-burst" title="Pokaż wybuch efektu (jak po kliknięciu mnożnika na stronie)">Wybuch</button></div>
+              <iframe id="ev-live" title="Podgląd efektu wydarzenia na stronie rankingu" tabindex="-1"></iframe>
+              <p class="muted small">Tak baner i efekty wyglądają na stronie rankingu, gdy wydarzenie trwa. Kliknięcie mnożnika w podglądzie też odpala wybuch.</p>
+            </div>
+            <div class="ev-kinds">
+              <label class="toggle small"><input type="checkbox" id="ev-k-message" checked><span></span>Wiadomości</label>
+              <label class="toggle small"><input type="checkbox" id="ev-k-voice" checked><span></span>Głosowe</label>
+              <label class="toggle small"><input type="checkbox" id="ev-k-reaction" checked><span></span>Reakcje</label>
+            </div>
+            <div class="bulk-row">
+              <button type="button" class="btn ghost" id="ev-add">Dodaj wydarzenie</button>
+              <button type="button" class="btn ghost" id="ev-cancel" hidden>Anuluj edycję</button>
+              <a class="btn ghost" id="ev-preview" href="ranking?preview=confetti" target="_blank" rel="noopener">Podgląd na stronie</a>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Wydarzenia</h3>
+            <div id="ev-list" class="ev-list"></div>
+            <div class="card-head"><h3>Ogłoszenia na Discordzie</h3><label class="toggle small"><input type="checkbox" data-path="levels.eventsAnnounce.enabled"><span></span>Włączone</label></div>
+            <div class="grid two tight">
+              <label class="field"><span>Kanał</span><select data-path="levels.eventsAnnounce.channelId" data-channel-select="levelup"></select></label>
+              <label class="field"><span>Rola z pingiem na start</span><select data-path="levels.eventsAnnounce.roleId" data-role-select="none"></select></label>
+            </div>
+            <p class="muted small">Gdy w czasie wydarzenia działa dzienny limit XP, rośnie on razem z mnożnikiem.</p>
+          </div>
+        </div>
+
+        <h3 class="section-title">Awans</h3>
+        <div class="card">
+          <div class="card-head"><h3>Wiadomość o awansie</h3><label class="toggle small"><input type="checkbox" data-path="levels.levelUp.enabled"><span></span>Włączona</label></div>
+          <div class="grid two tight">
+            <label class="field"><span>Gdzie</span>
+              <select data-path="levels.levelUp.target">
+                <option value="current">Na kanale, na którym ktoś napisał</option>
+                <option value="channel">Na wybranym kanale</option>
+                <option value="dm">W wiadomości prywatnej (DM)</option>
+              </select>
+            </label>
+            <label class="field"><span>Kanał (dla „wybranego” — i dla XP z głosowych i reakcji)</span><select data-path="levels.levelUp.channelId" data-channel-select="pick"></select></label>
+          </div>
+          <label class="field"><span>Treść</span><textarea id="levels-levelup-message" data-path="levels.levelUp.message" rows="3" maxlength="1500"></textarea></label>
+          <div class="chips" data-insert-into="levels-levelup-message" data-vars="levelUp"></div>
+          <p class="muted small"><code>{earned: …}</code> — ten tekst pojawia się tylko wtedy, gdy awans dał rolę; w środku <code>{name}</code> to nazwa roli, a <code>{mention}</code> jej oznaczenie.</p>
+          <label class="toggle"><input type="checkbox" data-path="levels.levelUp.card"><span></span>Dołącz kartę poziomu</label>
+          <div class="bulk-row">
+            <select id="levels-test-channel" aria-label="Kanał testu"></select>
+            <button type="button" class="btn ghost" id="levels-test">Wyślij test</button>
+          </div>
+        </div>
+
+        <h3 class="section-title">Nagrody za poziomy</h3>
+        <div class="grid two">
+          <div class="card">
+            <h3>Role za poziomy</h3>
+            <label class="toggle"><input type="checkbox" data-path="levels.stackRewards"><span></span>Kumuluj nagrody (zostają role za niższe poziomy)</label>
+            <div id="levels-rewards" class="levels-list"></div>
+            <div class="bulk-row">
+              <input type="number" min="1" max="1000" id="levels-reward-level" placeholder="Poziom" aria-label="Poziom">
+              <select id="levels-reward-role" aria-label="Rola"></select>
+              <button type="button" class="btn ghost" id="levels-reward-add">Dodaj nagrodę</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Rola za 1. miejsce</h3>
+            <p class="muted small">Osoba z największym XP dostaje tę rolę (sprawdzane co godzinę), a poprzedni lider ją traci.</p>
+            <label class="field"><span>Rola</span><select data-path="levels.firstPlaceRoleId" data-role-select="none"></select></label>
+          </div>
+        </div>
+
+        <h3 class="section-title">Boostery XP</h3>
+        <div class="grid two">
+          <div class="card">
+            <h3>Ogólne</h3>
+            <label class="toggle"><input type="checkbox" data-path="levels.boosters.stack"><span></span>Sumuj boostery (wyłączone = liczy się tylko największy)</label>
+            <div class="card-head"><h3>Booster „wysiłku”</h3><label class="toggle small"><input type="checkbox" data-path="levels.boosters.effort.enabled"><span></span>Włączony</label></div>
+            <p class="muted small">Premia za długą wiadomość (co najmniej tyle słów) albo wiadomość z co najmniej tyloma obrazkami.</p>
+            <div class="grid three tight">
+              <label class="field"><span>Słowa</span><input type="number" min="0" max="10000" data-path="levels.boosters.effort.words"></label>
+              <label class="field"><span>Obrazki</span><input type="number" min="0" max="10000" data-path="levels.boosters.effort.images"></label>
+              <label class="field"><span>Premia (%)</span><input type="number" min="1" max="1000" data-path="levels.boosters.effort.percent"></label>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Boostery ról i kanałów</h3>
+            <p class="muted small">Osoby z rolą albo piszące na kanale (także jego wątkach) dostają więcej XP.</p>
+            <div id="levels-role-boosters" class="levels-list"></div>
+            <div class="bulk-row">
+              <input type="number" min="1" max="1000" id="levels-rb-percent" placeholder="%" aria-label="Procent">
+              <select id="levels-rb-role" aria-label="Rola"></select>
+              <button type="button" class="btn ghost" id="levels-rb-add">Dodaj booster roli</button>
+            </div>
+            <div id="levels-channel-boosters" class="levels-list"></div>
+            <div class="bulk-row">
+              <input type="number" min="1" max="1000" id="levels-cb-percent" placeholder="%" aria-label="Procent">
+              <select id="levels-cb-channel" aria-label="Kanał"></select>
+              <button type="button" class="btn ghost" id="levels-cb-add">Dodaj booster kanału</button>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="section-title">Rankingi tygodnia i miesiąca</h3>
+        <div class="card">
+          <p class="muted small">Raz w tygodniu (niedziela 00:00 UTC) i raz w miesiącu (1. dnia 00:00 UTC) bot wysyła ranking 10 osób, które w tym czasie zdobyły najwięcej XP. Wybrana rola dostaje ping przy każdym nowym rankingu.</p>
+          <div class="grid three tight">
+            <div>
+              <label class="toggle"><input type="checkbox" data-path="levels.highlights.weekly.enabled"><span></span>Ranking tygodnia</label>
+              <label class="field"><span>Kanał</span><select data-path="levels.highlights.weekly.channelId" data-channel-select="pick"></select></label>
+            </div>
+            <div>
+              <label class="toggle"><input type="checkbox" data-path="levels.highlights.monthly.enabled"><span></span>Ranking miesiąca</label>
+              <label class="field"><span>Kanał</span><select data-path="levels.highlights.monthly.channelId" data-channel-select="pick"></select></label>
+            </div>
+            <label class="field"><span>Rola pingowana przy rankingu</span><select data-path="levels.highlights.roleId" data-role-select="none"></select></label>
+          </div>
+        </div>
+
+        <h3 class="section-title">Karta poziomu, zarządzanie i ograniczenia</h3>
+        <div class="grid two">
+          <div class="card">
+            <h3>Wygląd embedów (<code>/rank</code>, awans, rankingi)</h3>
+            <label class="toggle"><input type="checkbox" data-path="levels.card.autoColor"><span></span>Kolor zależny od poziomu (kolor roli za poziom)</label>
+            <label class="field"><span>Kolor stały — gdy powyższe jest wyłączone</span>
+              <div class="color-row"><input type="color" data-color-for="levels.card.color"><input type="text" data-path="levels.card.color" maxlength="7"></div>
+            </label>
+            <label class="toggle"><input type="checkbox" data-path="levels.card.userBanner"><span></span>Baner osoby z Discorda jako obrazek (jeśli go ma)</label>
+            <label class="field"><span>Obrazek zapasowy — link https (link do zdjęcia z Discorda bot sam odświeża)</span><input type="url" data-path="levels.card.image" maxlength="500" placeholder="https://…"></label>
+          </div>
+          <div class="card">
+            <h3>Zarządzanie XP</h3>
+            <label class="toggle"><input type="checkbox" data-path="levels.management.lockXpCommand"><span></span><code>/xp</code> tylko dla właściciela serwera</label>
+            <label class="toggle"><input type="checkbox" data-path="levels.management.lockReset"><span></span>Resetowanie XP tylko dla właściciela serwera</label>
+            <label class="toggle"><input type="checkbox" data-path="levels.autoReset"><span></span>Auto reset: wyjście z serwera zeruje XP i poziom (statystyki zostają)</label>
+            <label class="toggle"><input type="checkbox" data-path="levels.publicLeaderboard"><span></span>Publiczny ranking na stronie</label>
+            <p class="muted small"><a id="levels-public-link" target="_blank" rel="noopener">Otwórz publiczny ranking</a> · <code>/xp</code> i reset wymagają uprawnienia „Zarządzanie serwerem”.</p>
+          </div>
+          <div class="card">
+            <h3>Gdzie nie ma XP</h3>
+            <label class="field"><span>Kanały</span>
+              <select data-path="levels.restrictions.channelMode">
+                <option value="deny">Bez XP na wybranych kanałach</option>
+                <option value="allow">XP tylko na wybranych kanałach</option>
+              </select>
+            </label>
+            <div class="field"><span>Wybrane kanały (kategoria obejmuje swoje kanały)</span><div data-channel-picker-slot="levels.restrictions.channelIds"></div></div>
+            <div class="field"><span>Role bez XP</span><div data-picker-slot="cfg:levels.restrictions.roleIds"></div></div>
+          </div>
+          <div class="card">
+            <h3>Rodzaje kanałów</h3>
+            <label class="toggle"><input type="checkbox" data-path="levels.restrictions.threads"><span></span>XP w wątkach</label>
+            <label class="toggle"><input type="checkbox" data-path="levels.restrictions.forums"><span></span>XP na forach</label>
+            <label class="toggle"><input type="checkbox" data-path="levels.restrictions.voiceText"><span></span>XP na czacie kanałów głosowych</label>
+            <label class="toggle"><input type="checkbox" data-path="levels.restrictions.slashCommands"><span></span>XP za komendy slash (dowolnego bota)</label>
+          </div>
+        </div>
+
+        <h3 class="section-title">Ranking</h3>
+        <div class="card">
+          <div class="card-head">
+            <h3>Ranking poziomów</h3>
+            <div class="card-actions">
+              <input type="search" id="levels-search" placeholder="Szukaj nicku lub ID" aria-label="Szukaj">
+              <button type="button" class="btn ghost small" id="levels-refresh">Odśwież</button>
+              <button type="button" class="btn danger small" id="levels-reset-all">Resetuj wszystkich</button>
+            </div>
+          </div>
+          <div class="table-wrap"><table class="table" id="levels-table"></table></div>
+          <div class="bulk-row"><button type="button" class="btn ghost small" id="levels-prev">◀</button><span id="levels-page" class="muted small"></span><button type="button" class="btn ghost small" id="levels-next">▶</button></div>
+        </div>
+        <div class="card">
+          <h3>Import z Arcane</h3>
+          <p class="muted small">Wklej ranking — jedna osoba w linii: <code>nazwa poziom xp [wiadomości] [reakcje]</code>, np. <code>@dfgbh65 31 49.7K 4.3K 1</code>. Bot dopasuje nazwy do członków serwera i ustawi XP tak, żeby poziom wyszedł taki sam jak w Arcane (większego XP nie zmniejsza).</p>
+          <textarea id="levels-import-text" rows="6" placeholder="@dfgbh65 31 49.7K 4.3K 1&#10;@ins4nee 29 43.9K 5.7K"></textarea>
+          <div class="bulk-row"><button type="button" class="btn" id="levels-import">Importuj</button><span id="levels-import-result" class="muted small"></span></div>
+        </div>
+      </section>
+
+      <!-- SPOŁECZNOŚĆ -->
+      <section id="view-eventy" class="view">
+        <header class="view-head">
+          <h2>Eventy</h2>
+          <p class="muted">Eventy mają własną stronę — <a id="ct-site-link" href="event" target="_blank" rel="noopener">strona eventów</a> (/event): osoba loguje się przez Discord, klika <strong>„Zapisz się”</strong>, a potem musi spełnić warunek — np. <strong>zaprosić 3 osoby</strong> i/lub <strong>napisać 50 wiadomości</strong> (liczy się od chwili zapisu). Pasek postępu pokazuje, ile brakuje; po spełnieniu warunku „Dostałeś się!”, a bot ogłasza to na kanale poniżej. Na stronie widać eventy zaplanowane, trwające i zakończone w ostatnich 3 dniach (przy kilku — podzakładki); ranking poziomów pokazuje wtedy pasek z linkiem. Każdy event może mieć własny wygląd: kolory (gradient) i baner.</p>
+        </header>
+        <div class="card">
+          <label class="toggle"><input type="checkbox" data-path="contests.enabled"><span></span>Włącz eventy</label>
+          <div class="grid two tight">
+            <label class="field"><span>Kanał ogłoszeń (ktoś się dostał)</span><select data-path="contests.logChannelId" data-channel-select="none"></select></label>
+            <label class="field"><span>Rola z pingiem przy ogłoszeniu</span><select data-path="contests.pingRoleId" data-role-select="none"></select></label>
+          </div>
+          <div class="banner warn hidden" id="ct-warning"></div>
+          <div class="ct-oauth" id="ct-oauth"></div>
+        </div>
+
+        <div class="grid two">
+          <div class="card" id="ct-form">
+            <h3 id="ct-form-title">Nowy event</h3>
+            <div class="grid two tight">
+              <label class="field"><span>Nazwa</span><input type="text" id="ct-name" maxlength="80" placeholder="Zaproś znajomych"></label>
+              <label class="field"><span>Nagroda (opcjonalnie)</span><input type="text" id="ct-prize" maxlength="200" placeholder="Nitro Classic na miesiąc"></label>
+              <label class="field"><span>Początek</span><input type="datetime-local" id="ct-start"></label>
+              <label class="field"><span>Koniec</span><input type="datetime-local" id="ct-end"></label>
+              <label class="field"><span>Warunek: zaprosić osób (0 = bez)</span><input type="number" id="ct-invites" min="0" max="1000" value="3" inputmode="numeric"></label>
+              <label class="field"><span>Warunek: napisać wiadomości (0 = bez)</span><input type="number" id="ct-messages" min="0" max="1000000" value="0" inputmode="numeric"></label>
+              <label class="field" id="ct-age-field"><span>Zaproszone konto ma co najmniej (dni)</span><input type="number" id="ct-age" min="0" max="365" value="7" inputmode="numeric"></label>
+              <label class="field"><span>Losowanie nagród</span>
+                <select id="ct-draw-mode"><option value="none">Bez losowania</option><option value="manual">Ręcznie — przycisk „Losuj” w panelu</option><option value="auto">Samo po końcu eventu</option></select>
+              </label>
+              <label class="field" id="ct-draw-winners-field"><span>Ilu zwycięzców</span><input type="number" id="ct-draw-winners" min="1" max="50" value="1" inputmode="numeric"></label>
+            </div>
+            <div class="field"><span>Opis (opcjonalnie) — formatowanie jak na Discordzie</span>
+              <div class="md-tools" id="ct-desc-tools" role="toolbar" aria-label="Formatowanie opisu">
+                <button type="button" data-md="**" title="Pogrubienie (**tekst**)"><b>B</b></button>
+                <button type="button" data-md="*" title="Kursywa (*tekst*)"><i>I</i></button>
+                <button type="button" data-md="__" title="Podkreślenie (__tekst__)"><u>U</u></button>
+                <button type="button" data-md="~~" title="Przekreślenie (~~tekst~~)"><s>S</s></button>
+                <button type="button" data-md="||" title="Spoiler (||tekst||)">▒</button>
+                <button type="button" data-md="`" title="Kod (`tekst`)">&lt;/&gt;</button>
+                <button type="button" data-md-line="# " title="Nagłówek (# tekst)">H</button>
+                <button type="button" data-md-line="- " title="Lista (- tekst)">•</button>
+                <button type="button" data-md-line="> " title="Cytat (> tekst)">❝</button>
+                <button type="button" data-md-line="-# " title="Mały tekst — stopka (-# tekst)"><small>-#</small></button>
+                <button type="button" data-md-link title="Link ([tekst](https://…))">🔗</button>
+              </div>
+              <textarea id="ct-desc" rows="4" maxlength="1500" placeholder="Zasady i nagrody — widać je na stronie nad postępem. Zaznacz tekst i kliknij przycisk powyżej, żeby go sformatować. Emoji z serwera: wklej np. <:nazwa:123…>."></textarea>
+              <div class="md-preview rich" id="ct-desc-preview" hidden></div>
+            </div>
+            <div class="field ct-theme"><span>Wygląd na stronie eventów — kolory (gradient) i baner w nagłówku; ikona zostaje</span>
+              <div class="ct-tp" id="ct-tp">
+                <div class="ct-tp-banner"><img id="ct-tp-img" src="img/banner.webp" alt="" width="1600" height="500"></div>
+                <div class="ct-tp-hero"><span class="ct-tp-dot"></span><div><small id="ct-tp-kind">Event · Zaproszenia</small><b id="ct-tp-name">Nazwa eventu</b></div></div>
+                <div class="ct-tp-bar"><i></i></div>
+              </div>
+              <div class="ct-theme-row">
+                <label class="ct-color" title="Kolor główny — nagłówek eventu, akcenty, początek paska postępu"><input type="color" id="ct-color" value="#8b7bff"><span>Kolor główny</span></label>
+                <label class="ct-color" title="Drugi kolor — koniec gradientu (pasek postępu, poświata)"><input type="color" id="ct-color2" value="#cfc7ff"><span>Drugi kolor</span></label>
+                <button type="button" class="btn ghost small" id="ct-theme-reset" title="Kolory typu eventu (zaproszenia — fiolet, wiadomości — turkus, oba — pomarańcz)">Domyślne kolory</button>
+              </div>
+              <div class="ct-theme-row">
+                <label class="btn ghost small" id="ct-banner-btn">Wgraj baner<input type="file" id="ct-banner-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden></label>
+                <button type="button" class="btn ghost small" id="ct-banner-del" hidden>Usuń baner</button>
+                <span class="muted small">Szeroki obrazek, najlepiej 1600×500 px (PNG, JPG, WebP, GIF do 3 MB). Bez banera — baner serwera.</span>
+              </div>
+            </div>
+            <p class="muted small" id="ct-hint"></p>
+            <div class="bulk-row">
+              <button type="button" class="btn ghost" id="ct-add">Dodaj event</button>
+              <button type="button" class="btn ghost" id="ct-cancel" hidden>Anuluj edycję</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Eventy</h3>
+            <div id="ct-list" class="ev-list"></div>
+          </div>
+        </div>
+
+        <div class="card" id="ct-people-card" hidden>
+          <div class="card-head"><h3 id="ct-people-title">Zapisani</h3><div class="bulk-row"><button type="button" class="btn small" id="ct-draw-btn" hidden>🎲 Losuj zwycięzców</button><button type="button" class="btn ghost small" id="ct-people-refresh">Odśwież</button></div></div>
+          <p class="muted small" id="ct-draw-note" hidden></p>
+          <p class="muted small" id="ct-people-note"></p>
+          <div class="table-wrap"><table class="table compact form-cards" id="ct-people"></table></div>
+          <div id="ct-others"></div>
+        </div>
+      </section>
+
+      <section id="view-spolecznosc" class="view">
+        <header class="view-head">
+          <h2>Społeczność</h2>
+          <p class="muted">Komendy na co dzień (jak w Carl-bocie, ProBocie i StartIT). Kto może ich używać, ustawisz w zakładce Uprawnienia.</p>
+        </header>
+        <div id="community-warning" class="banner warn hidden"></div>
+        <div class="grid two">
+          <div class="card">
+            <h3>Propozycje</h3>
+            <label class="toggle"><input type="checkbox" data-path="suggestions.enabled"><span></span>Włącz <code>/propozycja</code></label>
+            <label class="field"><span>Kanał propozycji</span><select data-path="suggestions.channelId" data-channel-select="pick"></select></label>
+            <label class="toggle"><input type="checkbox" data-path="suggestions.thread"><span></span>Twórz wątek do dyskusji pod każdą propozycją</label>
+            <p class="muted small">Propozycja trafia na kanał jako embed z reakcjami do głosowania.</p>
+          </div>
+          <div class="card">
+            <h3>Komendy</h3>
+            <ul class="command-list">
+              <li><code>/ankieta</code> — ankieta Discorda (odpowiedzi rozdzielone średnikiem, można dodać emoji)</li>
+              <li><code>/konkurs start · zakoncz · losuj · lista</code> — konkursy z przyciskiem „Weź udział”</li>
+              <li><code>/przypomnij dodaj · lista · usun</code> — przypomnienia na kanale albo w DM</li>
+              <li><code>/afk</code> — status AFK, oznaczenie takiej osoby dostaje odpowiedź</li>
+              <li><code>/propozycja</code> — propozycja z głosowaniem</li>
+              <li><code>/snipe</code> — ostatnio usunięta wiadomość (wymaga logów wiadomości)</li>
+              <li><code>/powiedz</code> — wiadomość jako bot, także jako odpowiedź na czyjąś wiadomość</li>
+              <li><code>/emoji dodaj · info</code> — emoji z innego serwera albo z linku</li>
+              <li><code>/profil</code> · <code>/rolainfo</code> · <code>/czlonkowie</code> · <code>/losuj</code> · <code>/bumpy</code></li>
+              <li><code>/clear</code> — teraz z filtrami: boty, ludzie, linki, załączniki, tekst</li>
+            </ul>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Konkursy</h3><button type="button" class="btn ghost small" id="giveaways-refresh">Odśwież</button></div>
+          <div class="table-wrap"><table class="table" id="giveaways-table"></table></div>
+        </div>
+      </section>
+
+      <!-- TICKETY -->
+      <section id="view-tickety" class="view">
+        <header class="view-head">
+          <h2>Tickety</h2>
+          <p class="muted">Osoba wybiera rodzaj ticketu w panelu (np. Zgłoszenie albo Partnerstwo), wypełnia formularz, a bot tworzy prywatny kanał widoczny tylko dla niej i obsługi (bez pingowania roli — obsługa i tak go widzi). W tickecie są przyciski Zamknij, Przejmij i Dodaj osobę. Po zamknięciu kanał NIE jest usuwany — trafia do archiwum i znika dla wszystkich poza obsługą (nawet dla autora), a zapis rozmowy trafia od razu do logów, w DM do autora i na sam kanał (z przyciskiem „Usuń kanał z archiwum” dla obsługi).</p>
+        </header>
+        <div id="tickets-warning" class="banner warn hidden"></div>
+        <div class="grid two">
+          <div class="card">
+            <h3>Ustawienia</h3>
+            <label class="toggle"><input type="checkbox" data-path="tickets.enabled"><span></span>Włącz tickety</label>
+            <label class="field"><span>Kategoria dla ticketów</span><select data-path="tickets.categoryId" data-channel-select="category"></select></label>
+            <label class="field"><span>Kategoria dla zamkniętych ticketów (archiwum)</span><select data-path="tickets.archiveCategoryId" data-channel-select="archiveCategory"></select></label>
+            <label class="field"><span>Kanał logów ticketów (zapisy rozmów)</span><select data-path="tickets.logChannelId" data-channel-select="none"></select></label>
+            <div class="field"><span>Obsługa (widzi wszystkie tickety)</span><div data-picker-slot="cfg:tickets.supportRoleIds"></div></div>
+            <div class="grid two tight">
+              <label class="field"><span>Nazwa kanału ({numer}, {nick}, {typ})</span><input type="text" data-path="tickets.nameTemplate" maxlength="90"></label>
+              <label class="field"><span>Otwartych naraz na osobę</span><input type="number" min="1" max="5" data-path="tickets.maxOpen"></label>
+            </div>
+            <label class="toggle"><input type="checkbox" data-path="tickets.dmTranscript"><span></span>Wysyłaj zapis rozmowy autorowi w DM</label>
+            <label class="field"><span>Powitanie w tickecie</span><textarea id="ticket-welcome" data-path="tickets.welcome" rows="3" maxlength="1500"></textarea></label>
+            <div class="chips" data-insert-into="ticket-welcome" data-vars="ticket"></div>
+          </div>
+          <div class="card">
+            <h3>Panel ticketów</h3>
+            <p class="muted small">Wiadomość z przyciskami, którą bot wysyła na wybrany kanał. Każdy przycisk to osobny rodzaj ticketu (np. Zgłoszenie i Partnerstwo) z własnym formularzem — do 5 pól, które osoba wypełnia w okienku przed otwarciem ticketu. Pole „Link do serwera Discord” musi być działającym zaproszeniem, a obsługa dostaje w tickecie nazwę i prawdziwą liczbę członków tego serwera; pole „Liczba” przyjmuje tylko liczbę. Po zmianach zapisz i kliknij „Wyślij panel”, żeby zaktualizować wiadomość.</p>
+            <label class="field"><span>Tytuł</span><input type="text" data-path="tickets.panel.title" maxlength="200"></label>
+            <label class="field"><span>Opis</span><textarea data-path="tickets.panel.description" rows="3" maxlength="1500"></textarea></label>
+            <label class="field"><span>Kolor</span>
+              <div class="color-row"><input type="color" data-color-for="tickets.panel.color"><input type="text" data-path="tickets.panel.color" maxlength="7"></div>
+            </label>
+            <div class="field"><span>Przyciski (rodzaje ticketów)</span><div id="ticket-types"></div></div>
+            <button type="button" class="btn ghost" id="add-ticket-type">Dodaj przycisk</button>
+            <div class="bulk-row">
+              <select id="ticket-panel-channel" aria-label="Kanał panelu ticketów"></select>
+              <button type="button" class="btn success" id="ticket-panel-send">Wyślij panel</button>
+            </div>
+            <p class="muted small" id="ticket-panel-info"></p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3>Ostatnie tickety</h3>
+            <button type="button" class="btn ghost small" id="tickets-refresh">Odśwież</button>
+          </div>
+          <div class="table-wrap"><table class="table" id="tickets-table"></table></div>
+        </div>
+      </section>
+
+      <!-- KANAŁY GŁOSOWE -->
+      <section id="view-glosowe" class="view">
+        <header class="view-head">
+          <h2>Kanały głosowe na żądanie</h2>
+          <p class="muted">Gdy ktoś wejdzie na wybrany „kanał do dołączenia”, bot tworzy mu osobny kanał głosowy i od razu go tam przenosi. Pusty kanał znika sam. Właściciel zarządza nim przyciskami na czacie kanału.</p>
+        </header>
+        <div id="voice-warning" class="banner warn hidden"></div>
+        <div class="card">
+          <label class="toggle"><input type="checkbox" data-path="tempVoice.enabled"><span></span>Włącz kanały na żądanie</label>
+          <h3>Kanały do dołączenia</h3>
+          <p class="muted small">W nazwie możesz użyć <code>{nick}</code> (nazwa osoby) i <code>{numer}</code> (kolejny numer kanału). „Prywatny” oznacza, że nowy kanał od razu jest zamknięty dla innych — właściciel może to zmienić przyciskiem.</p>
+          <div class="table-wrap"><table class="table compact form-cards" id="generators-table"></table></div>
+          <button type="button" class="btn ghost" id="add-generator">Dodaj kanał do dołączenia</button>
+        </div>
+        <div class="card">
+          <h3>Panel na czacie kanału</h3>
+          <label class="toggle"><input type="checkbox" data-path="tempVoice.dashboard.enabled"><span></span>Wysyłaj panel z przyciskami na czat nowego kanału</label>
+          <div class="grid two tight">
+            <label class="field"><span>Tytuł</span><input type="text" data-path="tempVoice.dashboard.title" maxlength="200"></label>
+            <label class="field"><span>Kolor paska</span>
+              <div class="color-row"><input type="color" id="dashboard-color-picker"><input type="text" data-path="tempVoice.dashboard.color" maxlength="7"></div>
+            </label>
+          </div>
+          <label class="field"><span>Opis</span><textarea data-path="tempVoice.dashboard.description" rows="2" maxlength="1000"></textarea></label>
+          <p class="muted small">Przyciski w panelu: Ustaw jako prywatny/publiczny, Dodaj osoby, Zmień nazwę, Zmień właściciela, Zmień limit, Zbanuj, Wyrzuć. Osoby wybiera się z listy, a nazwę i limit wpisuje w okienku — bez ID i komend.</p>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3>Aktywne kanały</h3>
+            <button type="button" class="btn ghost small" id="voice-refresh">Odśwież</button>
+          </div>
+          <div class="table-wrap"><table class="table" id="voice-table"></table></div>
+        </div>
+      </section>
+
+      <!-- WIADOMOŚCI -->
+      <section id="view-wiadomosci" class="view">
+        <header class="view-head">
+          <h2>Wiadomości</h2>
+          <p class="muted">Wyślij wiadomość na wybrany kanał. Możesz dodać przyciski („kliknij, żeby dostać rolę”, drugie kliknięcie ją zdejmuje) albo listę wyboru ról — tak jak lista przy usuwaniu ostrzeżeń.</p>
+        </header>
+        <div id="roles-warning" class="banner warn hidden"></div>
+        <div class="grid editor">
+          <div class="card">
+            <div class="card-head">
+              <h3 id="msg-editor-title">Nowa wiadomość</h3>
+              <button type="button" class="btn ghost small hidden" id="msg-cancel">Anuluj edycję</button>
+            </div>
+            <label class="field"><span>Kanał</span><select id="msg-channel"></select></label>
+            <label class="field"><span>Treść</span><textarea id="msg-content" rows="3" maxlength="2000"></textarea></label>
+            <label class="toggle"><input type="checkbox" id="msg-embed-enabled"><span></span>Dodaj embed</label>
+            <div id="msg-embed-fields" class="hidden">
+              <div class="grid two tight">
+                <label class="field"><span>Tytuł</span><input type="text" id="msg-embed-title" maxlength="256"></label>
+                <label class="field"><span>Kolor</span>
+                  <div class="color-row"><input type="color" id="msg-embed-color-picker"><input type="text" id="msg-embed-color" maxlength="7"></div>
+                </label>
+              </div>
+              <label class="field"><span>Opis</span><textarea id="msg-embed-description" rows="4" maxlength="4000"></textarea></label>
+              <div class="grid two tight">
+                <label class="field"><span>Obrazek (link https://)</span><input type="text" id="msg-embed-image" maxlength="500"></label>
+                <label class="field"><span>Stopka</span><input type="text" id="msg-embed-footer" maxlength="200"></label>
+              </div>
+            </div>
+            <h4>Wybór ról</h4>
+            <div class="segmented" id="msg-role-mode">
+              <label><input type="radio" name="role-mode" value="none"><span>Bez wyboru</span></label>
+              <label><input type="radio" name="role-mode" value="buttons"><span>Przyciski</span></label>
+              <label><input type="radio" name="role-mode" value="select"><span>Lista wyboru</span></label>
+            </div>
+            <div id="msg-roles" class="hidden">
+              <div id="msg-select-options" class="grid two tight hidden">
+                <label class="field"><span>Tekst na zamkniętej liście</span><input type="text" id="msg-placeholder" maxlength="150" placeholder="Wybierz role"></label>
+                <label class="toggle"><input type="checkbox" id="msg-multiple"><span></span>Można wybrać kilka ról</label>
+              </div>
+              <div class="table-wrap"><table class="table compact form-cards" id="msg-items"></table></div>
+              <button type="button" class="btn ghost" id="msg-add-item">Dodaj rolę</button>
+              <p class="muted small">Na liście są tylko role, które bot może nadać (niższe niż jego rola i bez uprawnień administratora).</p>
+            </div>
+            <div class="actions"><button type="button" class="btn success" id="msg-send">Wyślij</button></div>
+          </div>
+          <div class="previews">
+            <div class="preview-label">Podgląd</div>
+            <div class="discord" id="msg-preview"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Wysłane wiadomości</h3>
+          <div class="table-wrap"><table class="table" id="msg-sent"></table></div>
+        </div>
+      </section>
+
+      <!-- SERWER INFO -->
+      <section id="view-serwerinfo" class="view">
+        <header class="view-head">
+          <h2>Serwer info</h2>
+          <p class="muted">Wiadomość z informacjami dla społeczności: od góry role, potem role za poziomy, na końcu komendy. Każda sekcja to osobny embed, a nad nim może być baner. Zmiany zapisujesz paskiem na dole — na Discord trafiają dopiero po kliknięciu „Wyślij na kanał”.</p>
+        </header>
+        <div class="grid editor">
+          <div class="si-editor">
+            <div class="card">
+              <div class="card-head"><h3>Wiadomość</h3></div>
+              <div class="grid two tight">
+                <label class="field"><span>Kanał</span><select data-path="serverInfo.channelId" data-channel-select="pick"></select></label>
+                <label class="field"><span>Kolor embedów</span>
+                  <div class="color-row"><input type="color" data-color-for="serverInfo.color"><input type="text" data-path="serverInfo.color" maxlength="7"></div>
+                </label>
+              </div>
+              <div class="grid two tight">
+                <label class="field"><span>Znaczek przed rolą i komendą</span>
+                  <div class="emoji-own"><input type="text" data-path="serverInfo.bullet" maxlength="100"><button type="button" class="btn ghost small emoji-btn" data-emoji-open data-emoji-path="serverInfo.bullet">Wybierz emoji</button></div>
+                </label>
+                <label class="field"><span>Stopka (pod ostatnią sekcją)</span><input type="text" data-path="serverInfo.footer" maxlength="200"></label>
+              </div>
+              <p class="muted small">W opisach wpisz <code>{/rank}</code>, a w wiadomości będzie klikalna komenda. Działa markdown Discorda: <code>**pogrubienie**</code>, <code>*kursywa*</code>, emoji serwera.</p>
+              <div class="si-posted" id="si-posted"></div>
+              <div class="actions si-actions">
+                <button type="button" class="btn ghost" id="si-fill" title="Dopisuje role serwera, których jeszcze nie ma w sekcjach „Role” i „Role za poziomy” (z propozycją opisu)">Uzupełnij role z serwera</button>
+                <button type="button" class="btn ghost hidden" id="si-send-new">Wyślij jako nową</button>
+                <button type="button" class="btn success" id="si-send">Wyślij na kanał</button>
+              </div>
+            </div>
+            <div id="si-sections"></div>
+            <div class="si-add-section"><button type="button" class="btn ghost" id="si-add-section">Dodaj sekcję</button></div>
+            <datalist id="si-command-list"></datalist>
+          </div>
+          <div class="previews si-previews">
+            <div class="preview-label">Podgląd <span id="si-counter" class="si-stats"></span></div>
+            <div id="si-problems" class="banner warn hidden"></div>
+            <div class="discord" id="si-preview"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- EMBEDY -->
+      <section id="view-embedy" class="view">
+        <header class="view-head">
+          <h2>Wygląd embedów</h2>
+          <p class="muted">Każda komenda ma własny styl. Podgląd odświeża się na żywo.</p>
+        </header>
+        <div class="tabs" id="embed-tabs"></div>
+        <div class="grid editor">
+          <div class="card">
+            <div class="grid two tight">
+              <label class="field"><span>Kolor</span>
+                <div class="color-row"><input type="color" id="embed-color-picker"><input type="text" data-embed-field="color" maxlength="7"></div>
+              </label>
+              <label class="field"><span>Emoji</span><input type="text" data-embed-field="emoji" maxlength="100"></label>
+            </div>
+            <h4>Na kanale</h4>
+            <label class="field"><span>Tytuł</span><input type="text" data-embed-field="title" maxlength="250"></label>
+            <label class="field"><span>Opis</span><textarea data-embed-field="description" rows="2"></textarea></label>
+            <h4>Wiadomość prywatna (DM)</h4>
+            <label class="field"><span>Tytuł</span><input type="text" data-embed-field="dmTitle" maxlength="250"></label>
+            <label class="field"><span>Opis</span><textarea data-embed-field="dmDescription" rows="2"></textarea></label>
+            <div class="placeholders">
+              <span class="muted small">Kliknij, żeby wstawić zmienną:</span>
+              <div class="chips" id="placeholder-chips"></div>
+            </div>
+            <button type="button" class="btn ghost" id="embed-reset">Przywróć domyślny wygląd tej akcji</button>
+          </div>
+          <div class="previews">
+            <div class="preview-label">Podgląd na kanale</div>
+            <div class="discord" id="preview-channel"></div>
+            <div class="preview-label">Podgląd w DM</div>
+            <div class="discord" id="preview-dm"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- OSTRZEŻENIA -->
+      <section id="view-ostrzezenia" class="view">
+        <header class="view-head">
+          <h2>Ostrzeżenia</h2>
+          <p class="muted">Punkty widzi tylko moderacja. Każde ostrzeżenie ma własne odliczanie do wygaśnięcia.</p>
+        </header>
+        <div class="grid two">
+          <div class="card">
+            <h3>Ustawienia ostrzeżeń</h3>
+            <label class="field"><span>Domyślna liczba punktów za ostrzeżenie</span><input type="number" min="1" max="100" data-path="warns.defaultPoints"></label>
+            <label class="field"><span>Po ilu dniach ostrzeżenie wygasa (0 = nigdy)</span><input type="number" min="0" max="3650" data-path="warns.expiryDays">
+              <small>Dotyczy nowych ostrzeżeń — już nadane zachowują swoje odliczanie.</small></label>
+            <label class="toggle"><input type="checkbox" data-path="warns.showPointsToUser"><span></span>Pokazuj punkty ukaranemu (kanał + DM)</label>
+          </div>
+          <div class="card">
+            <h3>Automatyczne kary</h3>
+            <label class="toggle"><input type="checkbox" data-path="escalation.enabled"><span></span>Włącz automatyczne kary po przekroczeniu progu</label>
+            <p class="muted small">„Alert” tylko pinguje role moderatorów na kanale logów — decyzję podejmujecie sami.</p>
+            <div class="table-wrap"><table class="table compact form-cards" id="rules-table"></table></div>
+            <button type="button" class="btn ghost" id="add-rule">+ Dodaj próg</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3>Aktywne ostrzeżenia</h3>
+            <input type="search" id="warn-search" placeholder="Szukaj po nicku lub ID…">
+          </div>
+          <div id="warn-users"></div>
+        </div>
+      </section>
+
+      <!-- SPRAWY -->
+      <section id="view-sprawy" class="view">
+        <header class="view-head">
+          <h2>Sprawy</h2>
+          <p class="muted">Historia wszystkich akcji moderacyjnych.</p>
+        </header>
+        <div class="card" id="appeals-card">
+          <div class="card-head">
+            <h3>Odwołania od kar <span class="appeal-count" id="appeals-pending" hidden></span></h3>
+            <select id="appeal-status" aria-label="Które odwołania"><option value="">Wszystkie</option><option value="pending">Czekające</option><option value="accepted">Przyjęte</option><option value="rejected">Odrzucone</option></select>
+          </div>
+          <p class="muted small">Decyzje zapadają przyciskami <b>Przyjmij</b> / <b>Odrzuć</b> pod odwołaniem na kanale odwołań w Discordzie. Włączysz je w <a href="#ustawienia">Ustawieniach</a>.</p>
+          <div class="table-wrap"><table class="table" id="appeals-table"></table></div>
+        </div>
+        <div class="card">
+          <div class="filters">
+            <input type="search" id="case-search" placeholder="Nick lub ID użytkownika…">
+            <select id="case-type">
+              <option value="">Wszystkie typy</option>
+              <option value="ban">Bany</option>
+              <option value="unban">Unbany</option>
+              <option value="kick">Kicki</option>
+              <option value="timeout">Timeouty</option>
+              <option value="untimeout">Zdjęcia timeoutu</option>
+              <option value="warn">Ostrzeżenia</option>
+            </select>
+          </div>
+          <div class="table-wrap"><table class="table" id="cases-table"></table></div>
+          <div class="pager" id="cases-pager"></div>
+        </div>
+      </section>
+
+      <!-- TYMCZASOWE BANY -->
+      <section id="view-bany" class="view">
+        <header class="view-head">
+          <h2>Tymczasowe bany</h2>
+          <p class="muted">Bot sam zdejmie bana, gdy skończy się odliczanie.</p>
+        </header>
+        <div class="card">
+          <div class="table-wrap"><table class="table" id="bans-table"></table></div>
+        </div>
+      </section>
+
+      <!-- DOSTĘP DO PANELU -->
+      <section id="view-dostep" class="view">
+        <header class="view-head">
+          <h2>Dostęp do panelu</h2>
+          <p class="muted">Każda osoba z moderacji ma własny login: wpisuje <code>/login</code> na wybranym kanale, a bot odpowiada loginem i hasłem widocznymi tylko dla niej. Bot czyta jej aktualne role i odblokowuje te części panelu, które przypiszesz tym rolom poniżej — resztę widzi tylko podglądowo (z kłódką). Role sprawdza na bieżąco (co kilka minut), więc po odebraniu roli dostęp znika sam. Login wygasa po ustawionym czasie (wtedy /login daje nowy), a <code>/login nowy:True</code> albo przycisk poniżej wymusza nowe hasło wcześniej. Pełny dostęp do wszystkiego (także do tej zakładki) mają tylko właściciel serwera i hasło panelu — role z uprawnieniem Administrator też podlegają listom poniżej.</p>
+        </header>
+        <div class="grid two">
+          <div class="card">
+            <h3>Logowanie komendą /login</h3>
+            <label class="toggle"><input type="checkbox" data-path="panelAccess.enabled"><span></span>Włącz logowanie moderacji przez Discorda</label>
+            <label class="field"><span>Kanał, na którym działa /login</span><select data-path="panelAccess.channelId" data-channel-select="pick"></select></label>
+            <label class="field"><span>Login wygasa (ze względów bezpieczeństwa)</span>
+              <select data-path="panelAccess.loginDays" data-number>
+                <option value="7">co tydzień (7 dni)</option>
+                <option value="14">co 2 tygodnie (14 dni)</option>
+                <option value="30">co miesiąc (30 dni)</option>
+              </select>
+            </label>
+            <p class="muted small">Najlepiej wybierz kanał widoczny tylko dla moderacji — na innych kanałach /login odmówi. Hasło bot pokazuje tylko raz (w bazie jest tylko jego skrót); zmiana czasu wygasania dotyczy nowych loginów.</p>
+          </div>
+          <div class="card">
+            <h3>Które role odblokowują które części panelu</h3>
+            <div class="access-roles">
+              <div class="field"><span>Ustawienia</span><div data-picker-slot="cfg:panelAccess.roles.ustawienia"></div></div>
+              <div class="field"><span>Uprawnienia komend</span><div data-picker-slot="cfg:panelAccess.roles.uprawnienia"></div></div>
+              <div class="field"><span>Nowe osoby</span><div data-picker-slot="cfg:panelAccess.roles.czlonkowie"></div></div>
+              <div class="field"><span>Logi serwera</span><div data-picker-slot="cfg:panelAccess.roles.logi"></div></div>
+              <div class="field"><span>Bump</span><div data-picker-slot="cfg:panelAccess.roles.bump"></div></div>
+              <div class="field"><span>Społeczność</span><div data-picker-slot="cfg:panelAccess.roles.spolecznosc"></div></div>
+              <div class="field"><span>Tickety</span><div data-picker-slot="cfg:panelAccess.roles.tickety"></div></div>
+              <div class="field"><span>Kanały głosowe</span><div data-picker-slot="cfg:panelAccess.roles.glosowe"></div></div>
+              <div class="field"><span>Wiadomości</span><div data-picker-slot="cfg:panelAccess.roles.wiadomosci"></div></div>
+              <div class="field"><span>Wygląd embedów</span><div data-picker-slot="cfg:panelAccess.roles.embedy"></div></div>
+              <div class="field"><span>Ostrzeżenia</span><div data-picker-slot="cfg:panelAccess.roles.ostrzezenia"></div></div>
+              <div class="field"><span>Sprawy</span><div data-picker-slot="cfg:panelAccess.roles.sprawy"></div></div>
+              <div class="field"><span>Tymczasowe bany</span><div data-picker-slot="cfg:panelAccess.roles.bany"></div></div>
+              <div class="field"><span>Poziomy</span><div data-picker-slot="cfg:panelAccess.roles.poziomy"></div></div>
+              <div class="field"><span>Eventy</span><div data-picker-slot="cfg:panelAccess.roles.eventy"></div></div>
+              <div class="field"><span>Automoderacja</span><div data-picker-slot="cfg:panelAccess.roles.automod"></div></div>
+              <div class="field"><span>Serwer info</span><div data-picker-slot="cfg:panelAccess.roles.serwerinfo"></div></div>
+            </div>
+            <p class="muted small">„Uprawnienia komend” i „Ustawienia” pozwalają zmieniać, kto może używać komend (także /ban) i kto liczy się jako moderacja — dawaj je tylko zaufanym rolom.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3>Loginy moderacji</h3>
+            <div class="card-actions">
+              <button type="button" class="btn ghost small" id="logins-refresh">Odśwież</button>
+              <button type="button" class="btn danger small" id="logins-revoke-all">Wymuś nowe loginy dla wszystkich</button>
+            </div>
+          </div>
+          <p class="muted small">„Wymuś nowy login” unieważnia hasło i wylogowuje wszystkie przeglądarki tej osoby — żeby wrócić, wpisuje /login jeszcze raz.</p>
+          <div class="table-wrap"><table class="table" id="logins-table"></table></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="savebar" class="savebar hidden">
+    <span>Masz niezapisane zmiany</span>
+    <div>
+      <button type="button" class="btn ghost" id="discard">Odrzuć</button>
+      <button type="button" class="btn success" id="save">Zapisz zmiany</button>
+    </div>
+  </div>
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js?v=dev"></script>
+</body>
+</html>

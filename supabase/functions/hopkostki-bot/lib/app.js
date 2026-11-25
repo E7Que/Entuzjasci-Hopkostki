@@ -14,7 +14,7 @@ import { handlePanel, describeAuth } from './panel.js';
 import { getApp, getGuildContext } from './moderation.js';
 import { avatarUrl, guildIconUrl } from './rest.js';
 import { levelProgress, monthKey, publicArchive, publicLook, publicProfile, rankedXpEvent, weekKey, xpEventsOverview } from './levels.js';
-import { AccessError, PANEL_SITE, PASSWORD_AUTH, SITE_ORIGINS, authenticateSession, signIn } from './access.js';
+import { AccessError, PANEL_SITE, PANEL_URL, PASSWORD_AUTH, SITE_ORIGINS, authenticateSession, signIn } from './access.js';
 import { RateLimitError, clientIp, clientKey, guardLogin, loginFailed, loginOk } from './loginGuard.js';
 import { verifyDiscordRequest, ed25519Supported, safeEqual } from './verify.js';
 import { ContestError, MemberAuthError, endMemberSession, exchangeMemberLink, exchangeOAuthCode, joinContest, leaveContest, publicContests } from './contests.js';
@@ -315,7 +315,7 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
       }
       if (path === '/cron' && request.method === 'POST') return await cron(request, url);
       if (path === '/gateway' && request.method === 'POST') return await gateway(request);
-      if ((path === '/panel' || path === '/panel/') && request.method === 'GET') return Response.redirect(PANEL_SITE, 302);
+      if ((path === '/panel' || path === '/panel/') && request.method === 'GET') return Response.redirect(PANEL_URL, 302);
       if (path.startsWith('/panel/')) {
         if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
         return await panel(request, url, path, cors);

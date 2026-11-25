@@ -22,7 +22,7 @@ import { VIEWS, renderView } from './views.js';
 import { COMMUNITY_COMMANDS } from './communityCommands.js';
 import { LEVEL_COMMANDS } from './levelCommands.js';
 import { CONTEST_COMMANDS } from './contests.js';
-import { PANEL_SECTIONS, PANEL_SITE, issueLogin } from './access.js';
+import { PANEL_SECTIONS, PANEL_URL, issueLogin } from './access.js';
 
 // ---------- Budowanie opcji ----------
 const T = { SUB: 1, STRING: 3, INTEGER: 4, BOOLEAN: 5, USER: 6, CHANNEL: 7, ROLE: 8 };
@@ -901,7 +901,7 @@ const login = {
       components: [
         {
           type: 1,
-          components: [{ type: 2, style: 5, label: password ? 'Zaloguj się do panelu' : 'Otwórz panel', url: `${PANEL_SITE}#${fragment}` }],
+          components: [{ type: 2, style: 5, label: password ? 'Zaloguj się do panelu' : 'Otwórz panel', url: `${PANEL_URL}#${fragment}` }],
         },
       ],
     });

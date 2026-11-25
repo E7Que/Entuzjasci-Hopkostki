@@ -14,6 +14,8 @@ import { safeEqual } from './verify.js';
 // Strona panelu (GitHub Pages). Adres zależy od nazwy konta na GitHubie — po zmianie NotKairo → E7Que
 // strona przeniosła się na e7que.github.io (bez przekierowania ze starego adresu).
 export const PANEL_SITE = 'https://e7que.github.io/Entuzjasci-Hopkostki/';
+// Sam panel (strona dla moderacji) — /panel; strona główna prowadzi do rankingu poziomów.
+export const PANEL_URL = `${PANEL_SITE}panel`;
 // Strony bota stoją na GitHub Pages; własna domena (enho.pl) wskazuje na to samo — po jej podpięciu w Pages adres
 // github.io przekierowuje na nią. Bot przyjmuje zapytania stron z obu adresów.
 export const GITHUB_SITE = 'https://e7que.github.io/Entuzjasci-Hopkostki/';

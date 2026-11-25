@@ -4,6 +4,7 @@ import { createTestStore } from './support/db.js';
 import { fakeDiscord, makeBot, commandPayload, ROLES } from './support/discord.js';
 import { handleInteraction } from '../supabase/functions/hopkostki-bot/lib/interactions.js';
 import { createHandler, PANEL_SITE } from '../supabase/functions/hopkostki-bot/lib/app.js';
+import { PANEL_URL } from '../supabase/functions/hopkostki-bot/lib/access.js';
 import { P } from '../supabase/functions/hopkostki-bot/lib/permissions.js';
 
 const LOGIN_CHANNEL = '100000000000000095';
@@ -80,7 +81,7 @@ test('/login: tylko na wybranym kanale i z rolą; login i hasło widzi tylko ta 
   assert.match(text, /✅ \*\*Możesz zmieniać:\*\* Tickety/);
   assert.match(text, /🔒 \*\*Tylko podgląd:\*\* Ustawienia, Uprawnienia komend/);
   assert.match(text, /\*\*Ważny do:\*\* <t:\d+:f>/);
-  assert.equal(first.reply.components[0].components[0].url, `${PANEL_SITE}#login=dfgbh65&haslo=${password}`);
+  assert.equal(first.reply.components[0].components[0].url, `${PANEL_URL}#login=dfgbh65&haslo=${password}`);
 
   // W bazie tylko skrót hasła.
   const rows = await s.store.query('select kind, login, token_hash from bot.panel_sessions');
@@ -91,7 +92,7 @@ test('/login: tylko na wybranym kanale i z rolą; login i hasło widzi tylko ta 
   const again = await slash(s);
   assert.match(again.reply.embeds[0].description, /Masz już aktywny login \*\*`dfgbh65`\*\*/);
   assert.equal(credentials(again).password, undefined);
-  assert.equal(again.reply.components[0].components[0].url, `${PANEL_SITE}#login=dfgbh65`);
+  assert.equal(again.reply.components[0].components[0].url, `${PANEL_URL}#login=dfgbh65`);
   assert.equal((await signIn(s, login, password)).status, 200, 'stare hasło dalej działa');
 
   // nowy:True — nowe hasło, stare i jego zalogowania przestają działać.

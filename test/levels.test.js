@@ -351,7 +351,7 @@ test('wydarzenia XP: ta sama lista efektów w bocie, panelu i na stronie ranking
   const { readFile } = await import('node:fs/promises');
   const panel = await readFile(new URL('../panel/public/app.js', import.meta.url), 'utf8');
   const page = await readFile(new URL('../panel/public/ranking.html', import.meta.url), 'utf8');
-  const html = await readFile(new URL('../panel/public/index.html', import.meta.url), 'utf8');
+  const html = await readFile(new URL('../panel/public/panel.html', import.meta.url), 'utf8');
   const panelThemes = [...panel.match(/const EV_THEMES = \{([\s\S]*?)\};/)[1].matchAll(/(\w+): '/g)].map((m) => m[1]);
   const pageThemes = JSON.parse(page.match(/const EV_THEMES = (\[[^\]]*\]);/)[1].replaceAll("'", '"'));
   const formThemes = [...html.match(/<select id="ev-theme">([\s\S]*?)<\/select>/)[1].matchAll(/value="(\w+)"/g)].map((m) => m[1]);

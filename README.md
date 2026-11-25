@@ -45,10 +45,12 @@ na żądanie rola bota potrzebuje też **Łączenie** i **Przenoszenie członkó
 Nic nie instalujesz, wystarczy otworzyć w przeglądarce:
 
 ```
-https://e7que.github.io/Entuzjasci-Hopkostki/
+https://enho.pl/panel
 ```
 
-Stary adres `…/functions/v1/hopkostki-bot/panel/` przekierowuje tutaj. Supabase nie pozwala funkcjom Edge
+Strona główna (`enho.pl`) prowadzi do rankingu poziomów, a panel jest pod `/panel`. Stare adresy panelu
+(`https://e7que.github.io/Entuzjasci-Hopkostki/`, także z `#sekcją` albo linkiem z `/login`) i
+`…/functions/v1/hopkostki-bot/panel/` przekierowują tutaj. Supabase nie pozwala funkcjom Edge
 wyświetlać stron HTML (zamienia je na zwykły tekst), więc sama strona leży na GitHub Pages (gałąź `gh-pages`,
 publikowana automatycznie z `panel/public/` po każdej zmianie na `main`), a dane i hasło obsługuje API bota
 na Supabase — strona tylko je woła.
@@ -62,7 +64,9 @@ w przeglądarce od razu się czyści.
    → `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153` (zamiast `213.186.33.5` — to strona
    „w budowie” OVH), **CNAME** `www` → `e7que.github.io.` (z kropką), bez starych rekordów A/TXT „w budowie”.
 2. GitHub → repo → **Settings → Pages → Custom domain**: `enho.pl` → Save, a gdy certyfikat będzie gotowy —
-   **Enforce HTTPS**. Adres github.io zacznie wtedy sam przekierowywać na `enho.pl`.
+   **Enforce HTTPS**. Adres github.io zacznie wtedy sam przekierowywać na `enho.pl`. Plik `panel/public/CNAME`
+   (`enho.pl`) trzyma domenę przy każdej publikacji — workflow nadpisuje całą gałąź `gh-pages`, a bez tego pliku
+   GitHub odpiąłby domenę.
 3. Discord Developer Portal → OAuth2 → **Redirects**: dodać `https://enho.pl/event`.
 4. W bocie: `PANEL_SITE` w `access.js` na `https://enho.pl/` (linki w wiadomościach). Bot już przyjmuje zapytania
    stron z `enho.pl` (`SITE_ORIGINS`), a logowanie przez Discord działa też przez stary adres w Redirects.

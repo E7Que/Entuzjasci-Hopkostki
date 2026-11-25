@@ -16,6 +16,8 @@ export const DEFAULT_BOT_URL = 'https://ucjmbdogtzztrkorqzjq.supabase.co/functio
 const STATIC_FILES = new Set([
   '',
   'index.html',
+  'panel.html',
+  'panel',
   'app.js',
   'style.css',
   'ranking.html',
@@ -72,7 +74,8 @@ function readBody(req) {
 }
 
 function serveStatic(res, name) {
-  let file = path.join(PUBLIC_DIR, name === '' ? 'index.html' : name);
+  // Lokalnie „/” otwiera od razu panel (na stronie publicznej „/” prowadzi do rankingu, a panel jest pod /panel).
+  let file = path.join(PUBLIC_DIR, name === '' ? 'panel.html' : name);
   // Jak GitHub Pages: /event → event.html (strona eventów), /ranking → ranking.html.
   if (!fs.existsSync(file) && !path.extname(file) && fs.existsSync(`${file}.html`)) file = `${file}.html`;
   if (!fs.existsSync(file)) return sendText(res, 404, 'text/plain; charset=utf-8', 'Nie znaleziono');

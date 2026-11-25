@@ -4,6 +4,7 @@ import http from 'node:http';
 import { createTestStore } from './support/db.js';
 import { fakeDiscord, makeBot } from './support/discord.js';
 import { createHandler, PANEL_SITE } from '../supabase/functions/hopkostki-bot/lib/app.js';
+import { PANEL_URL } from '../supabase/functions/hopkostki-bot/lib/access.js';
 import { createPanelServer } from '../panel/server.js';
 
 const BASE = 'https://x.supabase.co/functions/v1/hopkostki-bot/panel';
@@ -95,7 +96,7 @@ test('adres panelu w funkcji przekierowuje na GitHub Pages, a API wpuszcza tylko
   for (const url of ['https://x.supabase.co/functions/v1/hopkostki-bot/panel', `${BASE}/`]) {
     const res = await s.handle(new Request(url));
     assert.equal(res.status, 302);
-    assert.equal(res.headers.get('location'), PANEL_SITE);
+    assert.equal(res.headers.get('location'), PANEL_URL, 'panel jest pod /panel (strona główna prowadzi do rankingu)');
   }
 
   const origin = new URL(PANEL_SITE).origin;
