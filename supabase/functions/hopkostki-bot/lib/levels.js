@@ -636,7 +636,7 @@ export function xpEventStartEmbed(config, event, guild = null) {
     `Zdobywasz **${multiplierText(event.multiplier)} XP** za ${listText(event.kinds.map((k) => XP_KIND_NAMES[k]))}!`,
     `Koniec <t:${end}:R> (<t:${end}:f>).`,
     cap ? `Dzienny limit XP w tym czasie: **${pl(cap)} XP**.` : null,
-    config.publicLeaderboard ? `\n[Ranking wydarzenia na żywo](${PANEL_SITE}ranking.html#event)` : null,
+    config.publicLeaderboard ? `\n[Ranking wydarzenia na żywo](${PANEL_SITE}ranking#event)` : null,
   ];
   return {
     color: style.color,
@@ -664,7 +664,7 @@ export function xpEventEndEmbed(config, event, top, summary, guild = null) {
   return {
     color: style.color,
     title: `🏁 Koniec wydarzenia XP: ${event.name}`,
-    description: description + (config.publicLeaderboard && top.length ? `\n\n[Pełne wyniki](${PANEL_SITE}ranking.html#event)` : ''),
+    description: description + (config.publicLeaderboard && top.length ? `\n\n[Pełne wyniki](${PANEL_SITE}ranking#event)` : ''),
     ...(thumb ? { thumbnail: { url: thumb } } : {}),
     footer: eventFooter(guild),
     timestamp: new Date(eventTime(event, 'endsAt')).toISOString(),
@@ -1014,7 +1014,7 @@ export async function rankCardEmbed(bot, config, user, { self = false } = {}) {
       (p.maxed
         ? `${progressBar(1, 1)} maksymalny poziom`
         : `${progressBar(p.current, p.needed)} **${pct}%**\n${pl(p.current)} / ${pl(p.needed)} XP do poziomu ${p.level + 1}`) +
-      (config.publicLeaderboard && row.xp > 0 && !row.hidden ? `\n[Zobacz na stronie rankingu](${PANEL_SITE}ranking.html?u=${user.id}${self ? '&me=1' : ''})` : ''),
+      (config.publicLeaderboard && row.xp > 0 && !row.hidden ? `\n[Zobacz na stronie rankingu](${PANEL_SITE}ranking?u=${user.id}${self ? '&me=1' : ''})` : ''),
     fields: [
       { name: 'Łącznie XP', value: pl(row.xp), inline: true },
       { name: 'Wiadomości', value: pl(row.messages), inline: true },

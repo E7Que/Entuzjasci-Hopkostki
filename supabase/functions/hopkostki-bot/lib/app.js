@@ -14,16 +14,16 @@ import { handlePanel, describeAuth } from './panel.js';
 import { getApp, getGuildContext } from './moderation.js';
 import { avatarUrl, guildIconUrl } from './rest.js';
 import { levelProgress, monthKey, publicArchive, publicLook, publicProfile, rankedXpEvent, weekKey, xpEventsOverview } from './levels.js';
-import { AccessError, PANEL_SITE, PASSWORD_AUTH, authenticateSession, signIn } from './access.js';
+import { AccessError, PANEL_SITE, PASSWORD_AUTH, SITE_ORIGINS, authenticateSession, signIn } from './access.js';
 import { RateLimitError, clientIp, clientKey, guardLogin, loginFailed, loginOk } from './loginGuard.js';
 import { verifyDiscordRequest, ed25519Supported, safeEqual } from './verify.js';
 import { ContestError, MemberAuthError, endMemberSession, exchangeMemberLink, exchangeOAuthCode, joinContest, leaveContest, publicContests } from './contests.js';
 
 // Supabase nie serwuje stron HTML z funkcji Edge (text/html zamienia na text/plain), więc sama strona
-// panelu stoi na GitHub Pages (PANEL_SITE w access.js), a tutaj zostaje jej API. Zapytania panelu bot
-// przyjmuje tylko z tej domeny.
+// panelu stoi na GitHub Pages (PANEL_SITE w access.js), a tutaj zostaje jej API. Zapytania stron bot
+// przyjmuje tylko z ich domen (github.io i własna domena — SITE_ORIGINS).
 export { PANEL_SITE };
-const PANEL_ORIGINS = new Set([new URL(PANEL_SITE).origin]);
+const PANEL_ORIGINS = new Set([new URL(PANEL_SITE).origin, ...SITE_ORIGINS]);
 
 const json = (body, status = 200, headers = {}) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', ...headers } });

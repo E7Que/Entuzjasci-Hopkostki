@@ -438,3 +438,17 @@ test('motyw eventu: kolory (gradient) i baner wgrany w panelu — walidacja, wid
   assert.deepEqual(left, [up.body.url.split('/').pop()]);
   assert.ok(!left.includes(unused.body.id));
 });
+
+test('własna domena: bot przyjmuje zapytania stron z github.io i enho.pl (CORS), obcych — nie', async () => {
+  const s = await setup();
+  const handle = createHandler(s.bot);
+  const ask = async (origin) => (await handle(new Request(`${BASE}/public/contests`, { headers: { origin } }))).headers.get('access-control-allow-origin');
+  assert.equal(await ask('https://e7que.github.io'), 'https://e7que.github.io');
+  assert.equal(await ask('https://enho.pl'), 'https://enho.pl');
+  assert.equal(await ask('https://www.enho.pl'), 'https://www.enho.pl');
+  assert.equal(await ask('https://zly.example'), null);
+  assert.equal(await ask('https://enho.pl.zly.example'), null);
+  // Logowanie: dawny adres strony rankingu na github.io dalej obsługiwany (jest w Redirects aplikacji).
+  assert.ok(OAUTH_REDIRECTS.includes('https://e7que.github.io/Entuzjasci-Hopkostki/ranking.html'));
+  assert.equal(OAUTH_REDIRECTS[0], OAUTH_REDIRECT, 'strona eventów na pierwszym miejscu');
+});

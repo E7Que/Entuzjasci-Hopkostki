@@ -53,6 +53,20 @@ wyświetlać stron HTML (zamienia je na zwykły tekst), więc sama strona leży 
 publikowana automatycznie z `panel/public/` po każdej zmianie na `main`), a dane i hasło obsługuje API bota
 na Supabase — strona tylko je woła.
 
+Strony publiczne mają czyste adresy (bez `.html` i `#`): ranking poziomów — `…/ranking`, eventy serwera —
+`…/event`. Stare linki (`ranking.html`, `#week`, `#eventy`, `event.html`, `event#…`) działają dalej, a adres
+w przeglądarce od razu się czyści.
+
+**Własna domena (enho.pl).** Strony zostają na GitHub Pages — domena tylko na nie wskazuje:
+1. OVH → Web Cloud → Nazwy domen → `enho.pl` → **Strefa DNS**: rekordy **A** dla `enho.pl` (pole subdomeny puste)
+   → `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153` (zamiast `213.186.33.5` — to strona
+   „w budowie” OVH), **CNAME** `www` → `e7que.github.io.` (z kropką), bez starych rekordów A/TXT „w budowie”.
+2. GitHub → repo → **Settings → Pages → Custom domain**: `enho.pl` → Save, a gdy certyfikat będzie gotowy —
+   **Enforce HTTPS**. Adres github.io zacznie wtedy sam przekierowywać na `enho.pl`.
+3. Discord Developer Portal → OAuth2 → **Redirects**: dodać `https://enho.pl/event`.
+4. W bocie: `PANEL_SITE` w `access.js` na `https://enho.pl/` (linki w wiadomościach). Bot już przyjmuje zapytania
+   stron z `enho.pl` (`SITE_ORIGINS`), a logowanie przez Discord działa też przez stary adres w Redirects.
+
 Moderacja loguje się własnym loginem i hasłem z komendy `/login` — patrz „Logowanie moderacji do panelu”
 niżej. Właściciel może też użyć **hasła panelu**: przy pierwszym wejściu panel zapyta o **hasło**. Hasło
 zmienione w zakładce **Ustawienia → Hasło panelu** ma pierwszeństwo; dopóki go nie zmienisz, działa

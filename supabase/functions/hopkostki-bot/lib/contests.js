@@ -10,7 +10,7 @@
 // i mają konto starsze niż minAccountDays dni. Wiadomości liczą się tak jak do poziomów (cooldown, kanały bez XP,
 // ochrona przed nabijaniem).
 
-import { PANEL_SITE } from './access.js';
+import { GITHUB_SITE, PANEL_SITE } from './access.js';
 import { DiscordError, avatarUrl } from './rest.js';
 import { ActionError, getGuildContext } from './moderation.js';
 import * as embeds from './embeds.js';
@@ -29,8 +29,8 @@ export const CONTEST_SITE = `${PANEL_SITE}event`;
 // strona obsłuży — pierwszy z nich obecny na liście wygrywa. Strona rankingu przekazuje powrót z Discorda dalej
 // (zgodność z adresem dodanym, zanim eventy dostały własną stronę).
 export const OAUTH_REDIRECT = CONTEST_SITE;
-const LEGACY_REDIRECT = `${PANEL_SITE}ranking.html`;
-export const OAUTH_REDIRECTS = [CONTEST_SITE, `${PANEL_SITE}event.html`, LEGACY_REDIRECT];
+const LEGACY_REDIRECT = `${GITHUB_SITE}ranking.html`;
+export const OAUTH_REDIRECTS = [...new Set([CONTEST_SITE, `${PANEL_SITE}event.html`, `${GITHUB_SITE}event`, `${GITHUB_SITE}event.html`, LEGACY_REDIRECT])];
 // Lista Redirects z Discorda → adres do logowania; undefined = Discord nie podał listy.
 export function pickOAuthRedirect(uris) {
   if (!Array.isArray(uris)) return undefined;

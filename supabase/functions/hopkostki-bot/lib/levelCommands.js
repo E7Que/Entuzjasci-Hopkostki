@@ -69,7 +69,7 @@ const ranking = {
       const xp = period === 'wszystko' ? r.xp : r.periodXp;
       return `**${r.rank}.** <@${r.userId}> — poziom **${levelProgress(r.xp, config.formula).level}** · ${pl(xp)} XP`;
     });
-    const link = config.publicLeaderboard ? `\n\n[Pełny ranking](${PANEL_SITE}ranking.html)` : '';
+    const link = config.publicLeaderboard ? `\n\n[Pełny ranking](${PANEL_SITE}ranking)` : '';
     return ix.edit({
       embeds: [
         {
@@ -162,7 +162,7 @@ const prywatnosc = {
   async execute(ix, bot) {
     const hidden = ix.opt('strona-rankingu') === 'ukryj';
     await bot.store.setLevelHidden(ix.user.id, hidden);
-    const site = `${PANEL_SITE}ranking.html`;
+    const site = `${PANEL_SITE}ranking`;
     return ix.edit({
       embeds: [
         embeds.successEmbed(
