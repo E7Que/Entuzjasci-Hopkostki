@@ -11,16 +11,15 @@ import { getGuildContext } from './moderation.js';
 import { DiscordError, avatarUrl } from './rest.js';
 import { safeEqual } from './verify.js';
 
-// Strona panelu (GitHub Pages). Adres zależy od nazwy konta na GitHubie — po zmianie NotKairo → E7Que
-// strona przeniosła się na e7que.github.io (bez przekierowania ze starego adresu).
-export const PANEL_SITE = 'https://e7que.github.io/Entuzjasci-Hopkostki/';
+// Strony bota: własna domena enho.pl (GitHub Pages z podpiętą domeną — plik panel/public/CNAME). Dawny adres
+// e7que.github.io/Entuzjasci-Hopkostki/ GitHub sam przekierowuje tutaj, więc stare linki działają.
+export const PANEL_SITE = 'https://enho.pl/';
 // Sam panel (strona dla moderacji) — /panel; strona główna prowadzi do rankingu poziomów.
 export const PANEL_URL = `${PANEL_SITE}panel`;
-// Strony bota stoją na GitHub Pages; własna domena (enho.pl) wskazuje na to samo — po jej podpięciu w Pages adres
-// github.io przekierowuje na nią. Bot przyjmuje zapytania stron z obu adresów.
+// Dawny adres stron na GitHub Pages — zostaje na liście Redirects logowania przez Discord i w CORS (stare karty).
+// (Po zmianie nazwy konta NotKairo → E7Que stary notkairo.github.io nie jest wpuszczany — mógłby go zająć ktoś inny.)
 export const GITHUB_SITE = 'https://e7que.github.io/Entuzjasci-Hopkostki/';
-// http:// — zanim GitHub wyda certyfikat i włączy „Enforce HTTPS”, przekierowuje na http://enho.pl; potem nieużywane.
-export const SITE_ORIGINS = ['https://e7que.github.io', 'https://enho.pl', 'https://www.enho.pl', 'http://enho.pl', 'http://www.enho.pl'];
+export const SITE_ORIGINS = ['https://enho.pl', 'https://www.enho.pl', 'https://e7que.github.io'];
 
 // Części panelu, które można odblokować rolami (kolejność jak w menu panelu).
 export const PANEL_SECTIONS = {

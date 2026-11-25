@@ -76,7 +76,7 @@ test('event zaproszeń: zapis najpierw, potem liczą się prawdziwe zaproszenia 
 
   const link = await connect(s);
   assert.equal(link.out.response.data.flags, 64, 'link widzi tylko ta osoba');
-  assert.match(link.url, /^https:\/\/e7que\.github\.io\/Entuzjasci-Hopkostki\/event#polacz=[\w-]{40,}$/, 'eventy mają własną stronę (/event)');
+  assert.match(link.url, /^https:\/\/enho\.pl\/event#polacz=[\w-]{40,}$/, 'eventy mają własną stronę (enho.pl/event)');
   assert.match(link.reply.embeds[0].description, /Zaproś znajomych\*\* — trzeba zaprosić 3 osoby, koniec <t:\d+:R>/);
   assert.equal((await s.call('/public/link', { method: 'POST', body: { token: link.token } })).status, 401, 'link działa tylko raz');
 
@@ -446,7 +446,7 @@ test('własna domena: bot przyjmuje zapytania stron z github.io i enho.pl (CORS)
   assert.equal(await ask('https://e7que.github.io'), 'https://e7que.github.io');
   assert.equal(await ask('https://enho.pl'), 'https://enho.pl');
   assert.equal(await ask('https://www.enho.pl'), 'https://www.enho.pl');
-  assert.equal(await ask('http://enho.pl'), 'http://enho.pl', 'zanim GitHub wyda certyfikat HTTPS');
+  assert.equal(await ask('http://enho.pl'), null, 'po włączeniu HTTPS tylko https');
   assert.equal(await ask('https://zly.example'), null);
   assert.equal(await ask('https://enho.pl.zly.example'), null);
   // Logowanie: dawny adres strony rankingu na github.io dalej obsługiwany (jest w Redirects aplikacji).

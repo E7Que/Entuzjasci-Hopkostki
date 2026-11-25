@@ -116,9 +116,11 @@ test('adres panelu w funkcji przekierowuje na GitHub Pages, a API wpuszcza tylko
   const stranger = await s.handle(new Request(`${BASE}/status`, { headers: { origin: 'https://evil.example', 'x-panel-password': 'tajne' } }));
   assert.equal(stranger.headers.get('access-control-allow-origin'), null);
 
-  // Konto na GitHubie zmieniło nazwę (NotKairo → E7Que): strona jest teraz na e7que.github.io, a starą
-  // domenę może zająć ktoś inny, więc nie jest już wpuszczana.
-  assert.equal(origin, 'https://e7que.github.io');
+  // Strony stoją pod własną domeną (enho.pl); dawny adres e7que.github.io dalej wpuszczony (stare karty), a jeszcze
+  // starszy notkairo.github.io (sprzed zmiany nazwy konta) już nie — tę domenę może zająć ktoś inny.
+  assert.equal(origin, 'https://enho.pl');
+  const github = await s.handle(new Request(`${BASE}/status`, { headers: { origin: 'https://e7que.github.io', 'x-panel-password': 'tajne' } }));
+  assert.equal(github.headers.get('access-control-allow-origin'), 'https://e7que.github.io');
   const old = await s.handle(new Request(`${BASE}/status`, { headers: { origin: 'https://notkairo.github.io', 'x-panel-password': 'tajne' } }));
   assert.equal(old.headers.get('access-control-allow-origin'), null);
 });

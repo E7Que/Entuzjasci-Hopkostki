@@ -1,4 +1,4 @@
-# Publikuje panel/public na gałęzi gh-pages (GitHub Pages: https://e7que.github.io/Entuzjasci-Hopkostki/).
+# Publikuje panel/public na gałęzi gh-pages (GitHub Pages z domeną enho.pl — plik CNAME musi zostać w panel/public).
 name: Panel na GitHub Pages
 
 on:

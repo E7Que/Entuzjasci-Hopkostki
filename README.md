@@ -170,7 +170,7 @@ Komendy dla wszystkich: `/rank` (karta poziomu) i `/ranking` (łącznie, w tym t
 
 ### Eventy serwera (strona /event)
 
-Eventy serwera mają **własną stronę**: `https://e7que.github.io/Entuzjasci-Hopkostki/event` (plik `event.html`).
+Eventy serwera mają **własną stronę**: `https://enho.pl/event` (plik `event.html`).
 To co innego niż **wydarzenia XP** (mnożniki XP z efektami) — te należą do poziomów i zostają na stronie rankingu.
 Zakładka **Eventy** w panelu tworzy eventy; strona pokazuje te zaplanowane, trwające i zakończone w ostatnich 3 dniach
 (przy kilku — podzakładki, a wybrany event ma swój adres: `/event#<id>`). Gdy jakiś event jest zaplanowany albo trwa,
@@ -204,7 +204,7 @@ przepada, a ponowny zapis liczy od nowa); po końcu eventu i po wylosowaniu już
 
 **Logowanie przez Discord** (OAuth2 z PKCE — bez sekretu aplikacji) wymaga jednorazowego dodania adresu strony
 w [Discord Developer Portal](https://discord.com/developers/applications) → aplikacja bota → **OAuth2 → Redirects**:
-najlepiej `https://e7que.github.io/Entuzjasci-Hopkostki/event`. Działa też dodany wcześniej adres strony rankingu
+najlepiej `https://enho.pl/event`. Działa też dodany wcześniej adres strony rankingu na github.io
 (`…/ranking.html`) — ranking od razu przekazuje powrót z Discorda na `/event`. Discord nie pozwala dopisać adresu
 przez API. Po dopisaniu wystarczy kliknąć **„Sprawdź teraz”** w panelu (Eventy) — logowanie włącza się od razu,
 a sama strona wykrywa je najpóźniej po minucie. Do tego czasu działa `/polacz`.
