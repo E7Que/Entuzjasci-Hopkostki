@@ -446,6 +446,7 @@ test('własna domena: bot przyjmuje zapytania stron z github.io i enho.pl (CORS)
   assert.equal(await ask('https://e7que.github.io'), 'https://e7que.github.io');
   assert.equal(await ask('https://enho.pl'), 'https://enho.pl');
   assert.equal(await ask('https://www.enho.pl'), 'https://www.enho.pl');
+  assert.equal(await ask('http://enho.pl'), 'http://enho.pl', 'zanim GitHub wyda certyfikat HTTPS');
   assert.equal(await ask('https://zly.example'), null);
   assert.equal(await ask('https://enho.pl.zly.example'), null);
   // Logowanie: dawny adres strony rankingu na github.io dalej obsługiwany (jest w Redirects aplikacji).
