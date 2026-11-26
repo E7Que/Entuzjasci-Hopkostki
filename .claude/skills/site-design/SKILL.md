@@ -75,12 +75,12 @@ default effect (sensible defaults), peak-end rule (end pages on a strong call to
 
 ```css
 :root {
-  --bg: #0f141b;        /* page */
-  --surface: #151c25;   /* sections, cards */
-  --raised: #1c2531;    /* inputs, secondary buttons, hovered rows */
+  --bg: #171b23;        /* page, graphite */
+  --surface: #1e232d;   /* sections, cards */
+  --raised: #262c38;    /* inputs, secondary buttons, hovered rows */
   --text: #e5eaf1;
-  --muted: #98a4b5;
-  --faint: #828fa1;    /* 4.7:1 or better on every surface */
+  --muted: #9aa6b7;
+  --faint: #8d99ab;    /* 4.85:1 or better on every surface */
   --accent: #4cc3c8;    /* cyan from the server banner, muted for dark mode */
   --accent-hover: #63d0d4;
   --on-accent: #06282a; /* text on accent */
@@ -92,16 +92,27 @@ default effect (sensible defaults), peak-end rule (end pages on a strong call to
 }
 ```
 
-Type: Oxanium (600, 700) for headings and big figures, Figtree (400, 500, 600, 700) for everything else,
+Type (owner's choice): Manrope (700 section headings, 800 main heading) and Inter (400 text, 600 buttons),
 both from Google Fonts with `latin-ext` for Polish letters. Headline line height 1.15, body 1.55.
 
-Background: one only, the square-dot grid (2 px squares every 22 px in `#1f2936` on `--bg`).
-Do not add a second background treatment anywhere.
+Background: one only, dynamic speckled graphite on `#171b23`, kept subtle: static specks in `site.css`
+(`--speckle`, SVG noise) and a matte grain layer (`html::before`, `--grain`) that jumps four times a
+second with `steps(4)` (techniques from chrislemke/website_designs and sarathsaleem/grained).
+No animation under reduced motion. Do not add a second background treatment anywhere.
 
 Layout: content column max 1120 px, 16 px side gutter on phones, nothing scrolls sideways.
 Elevation comes from `--surface`/`--raised` plus layered shadows, never from borders.
 Focus is always visible (`outline: 2px solid var(--accent); outline-offset: 2px`).
 Respect `prefers-reduced-motion`.
+
+## Page frame
+
+- Top banner runs the full width of the viewport (`.bleed`); no big server icon over it (the small
+  logo in the top bar is enough).
+- One scroll animation per site, on the landing page only: GSAP ScrollTrigger + Lenis
+  (`panel/public/vendor`). The full-width banner scrubs into the content column, the hero title
+  rises word by word on load, the tagline lights up word by word while scrolling. Everything is
+  visible without JavaScript and static under `prefers-reduced-motion`.
 
 ## Copy
 

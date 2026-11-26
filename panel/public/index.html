@@ -9,7 +9,7 @@
   </script>
   <title>Entuzjaści Hopkostki, serwer na Discordzie</title>
   <meta name="description" content="Serwer na Discordzie, na którym za aktywność dostajesz XP i kolejne poziomy. Ranking tygodnia co tydzień startuje od zera, a w eventach są nagrody.">
-  <meta name="theme-color" content="#0f141b">
+  <meta name="theme-color" content="#171b23">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Entuzjaści Hopkostki">
   <meta property="og:title" content="Entuzjaści Hopkostki, serwer na Discordzie">
@@ -22,15 +22,30 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://ucjmbdogtzztrkorqzjq.supabase.co" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Oxanium:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="site.css?v=dev">
+  <link rel="stylesheet" href="vendor/lenis.css">
   <style>
     /* Strona główna. Zasady: .claude/skills/site-design; struktura: hero, hasło, teraz na serwerze, najaktywniejsi, jak dołączyć, pytania, zaproszenie. */
-    .hero { margin-top: var(--sp-1); }
-    .hero-banner { display: block; width: 100%; height: auto; aspect-ratio: 16 / 6; object-fit: cover; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); outline: 1px solid var(--img-edge); outline-offset: -1px; }
-    .hero-body { padding: 0 var(--sp-2); }
-    .hero-icon { position: relative; display: block; width: 104px; height: 104px; margin-top: -52px; border-radius: 50%; background: var(--surface); box-shadow: 0 0 0 6px var(--bg), var(--shadow); }
-    .hero h1 { max-width: 680px; margin-top: var(--sp-6); font-size: var(--fs-4xl); font-weight: 700; line-height: 1.1; }
+    /* Baner przez całą szerokość ekranu. Jedyny efekt przewijania na stronie: przy przewijaniu krawędzie
+       zjeżdżają do kolumny treści, rogi się zaokrąglają, a obraz lekko się oddala (--p od 0 do 1, liczone w JS). */
+    .hero { margin-top: 0; }
+    .hero-media {
+      --p: 0;
+      --zoom: 0.1;
+      position: relative; width: 100vw; margin-left: calc(50% - 50vw); height: clamp(300px, 56vw, 78vh); overflow: hidden; background: var(--surface);
+      --intro: 0;
+      clip-path: inset(0 calc(var(--p) * var(--gut, 24px)) calc(var(--intro) * 100%) calc(var(--p) * var(--gut, 24px)) round calc(var(--p) * var(--r)));
+    }
+    .hero-banner { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 42%; transform: scale(calc(1 + var(--zoom) * (1 - var(--p)))); transform-origin: 50% 40%; }
+    .hero-media.scrub, .hero-media.scrub .hero-banner { will-change: clip-path, transform; }
+    /* Nazwa serwera: słowa wyjeżdżają spod maski raz, po wczytaniu (meng-masked-reveal, React Bits MaskedHeading).
+       Ukryte tylko, gdy działa GSAP (klasa has-motion), więc bez JS wszystko widać od razu. */
+    .hero h1 .mask { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: 0.08em; }
+    .hero h1 .word { display: inline-block; }
+    html.has-motion .hero .lead, html.has-motion .hero .cta-row, html.has-motion .hero .members { visibility: hidden; }
+    .hero-body { padding: 0; }
+    .hero h1 { max-width: 680px; margin-top: var(--sp-10); font-size: var(--fs-4xl); font-weight: 800; line-height: 1.1; }
     .lead { max-width: 680px; margin: var(--sp-4) 0 var(--sp-8); color: var(--muted); font-size: var(--fs-lg); line-height: 1.55; }
     .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); }
     .members { min-height: 24px; margin: var(--sp-4) 0 0; color: var(--muted); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
@@ -40,9 +55,7 @@
     /* Hasło: słowa rozjaśniają się po kolei, gdy sekcja wjeżdża na ekran (bez JS i przy ograniczonym ruchu od razu w pełnym kolorze). */
     .tagline { margin-top: var(--sp-24); padding: var(--sp-8) var(--sp-2); }
     .tagline p { max-width: 760px; margin: 0; font-family: var(--display); font-size: var(--fs-3xl); font-weight: 600; line-height: 1.2; text-wrap: balance; }
-    .tagline.armed .w { color: rgb(229 234 241 / 0.3); transition: color 600ms var(--ease); }
-    .tagline.armed .w.on { color: var(--text); }
-    .tagline .w.hl.on { color: var(--accent); }
+    .tagline.armed .w { color: rgb(229 234 241 / 0.28); }
 
     .block { margin-top: var(--sp-24); }
     .block > h2 { margin-bottom: var(--sp-6); font-size: var(--fs-3xl); }
@@ -111,8 +124,7 @@
       .tagline p { font-size: var(--fs-5xl); }
     }
     @media (max-width: 640px) {
-      .hero-body { padding: 0; }
-      .hero-icon { width: 84px; height: 84px; margin-top: -42px; margin-left: var(--sp-3); }
+      .hero-media { --zoom: 0.04; height: auto; aspect-ratio: 16 / 9; }
       .block, .tagline, .end { margin-top: var(--sp-16); }
       .card { padding: var(--sp-4); }
       .top-list { padding: var(--sp-2); }
@@ -136,16 +148,16 @@
       <ul class="site-links">
         <li><a href="ranking"><svg class="i" aria-hidden="true"><use href="icons.svg#trophy"></use></svg>Ranking</a></li>
         <li><a href="event"><svg class="i" aria-hidden="true"><use href="icons.svg#calendar-dots"></use></svg>Eventy</a></li>
+        <li><a class="nav-join" href="https://discord.gg/FuqNCJhVYs" rel="noopener">Dołącz</a></li>
       </ul>
     </div>
   </header>
 
-  <main class="wrap" id="tresc">
+  <main class="wrap" id="tresc" tabindex="-1">
     <section class="hero">
-      <img class="hero-banner" src="img/banner.webp" alt="Baner serwera Entuzjaści Hopkostki" width="1600" height="900" fetchpriority="high">
+      <div class="hero-media" id="hero-media"><img class="hero-banner" src="img/banner.webp" alt="Baner serwera Entuzjaści Hopkostki" width="1600" height="900" fetchpriority="high"></div>
       <div class="hero-body">
-        <img class="hero-icon" src="img/icon.webp" alt="" width="104" height="104">
-        <h1 translate="no">Entuzjaści Hopkostki</h1>
+        <h1 translate="no" id="hero-title">Entuzjaści Hopkostki</h1>
         <p class="lead">Serwer na Discordzie, na którym za aktywność dostajesz XP i wbijasz kolejne poziomy. Ranking tygodnia co tydzień startuje od zera, a w eventach są nagrody.</p>
         <div class="cta-row">
           <a class="btn btn-primary btn-big" href="https://discord.gg/FuqNCJhVYs" rel="noopener">
@@ -243,6 +255,9 @@
     </div>
   </footer>
 
+  <script src="vendor/gsap.min.js"></script>
+  <script src="vendor/ScrollTrigger.min.js"></script>
+  <script src="vendor/lenis.min.js"></script>
   <script>
     'use strict';
     const BASE = ['localhost', '127.0.0.1'].includes(location.hostname)
@@ -400,44 +415,95 @@
       }
     }
 
-    // Hasło: każde słowo zapala się, gdy przekroczy linię 60% wysokości ekranu.
-    function armTagline() {
-      const box = $('#tagline');
-      const p = box.querySelector('p');
-      if (reduceMotion.matches || !('IntersectionObserver' in window)) return;
+    // ---------- Ruch: GSAP + ScrollTrigger + Lenis (meng-cinematic-gsap-lenis-motion-system) ----------
+    // Jeden efekt przewijania: baner na całą szerokość zjeżdża do kolumny treści. Do tego wjazd hero po wczytaniu
+    // i hasło, którego słowa zapalają się w rytm przewijania. Przy ograniczonym ruchu albo bez bibliotek: wszystko statyczne.
+    const MOTION = !reduceMotion.matches && window.gsap && window.ScrollTrigger;
+
+    function splitWords(el, cls) {
       const words = [];
-      const wrap = (node, hl) => {
+      const walk = (node, hl) => {
         for (const child of [...node.childNodes]) {
           if (child.nodeType === Node.TEXT_NODE) {
             const frag = document.createDocumentFragment();
             for (const part of child.textContent.split(/(\s+)/)) {
               if (!part) continue;
               if (/^\s+$/.test(part)) { frag.append(part); continue; }
-              const span = document.createElement('span');
-              span.className = hl ? 'w hl' : 'w';
-              span.textContent = part;
-              words.push(span);
-              frag.append(span);
+              const word = document.createElement('span');
+              word.className = hl ? `${cls} hl` : cls;
+              word.textContent = part;
+              words.push(word);
+              if (cls === 'word') {
+                const mask = document.createElement('span');
+                mask.className = 'mask';
+                mask.append(word);
+                frag.append(mask);
+              } else {
+                frag.append(word);
+              }
             }
             child.replaceWith(frag);
           } else if (child.nodeType === Node.ELEMENT_NODE) {
-            wrap(child, hl || child.classList.contains('hl'));
+            walk(child, hl || child.classList.contains('hl'));
           }
         }
       };
-      wrap(p, false);
-      box.classList.add('armed');
-      const io = new IntersectionObserver((entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          entry.target.classList.add('on');
-          io.unobserve(entry.target);
-        }
-      }, { rootMargin: '0px 0px -40% 0px' });
-      words.forEach((w) => io.observe(w));
+      el.setAttribute('aria-label', el.textContent.replace(/\s+/g, ' ').trim());
+      walk(el, false);
+      el.querySelectorAll('.mask, .w').forEach((x) => x.setAttribute('aria-hidden', 'true'));
+      return words;
     }
 
-    armTagline();
+    function initMotion() {
+      if (!MOTION) return;
+      gsap.registerPlugin(ScrollTrigger);
+      gsap.defaults({ ease: 'power3.out', duration: 0.85 });
+      document.documentElement.classList.add('has-motion');
+
+      // Płynne przewijanie, zsynchronizowane z ScrollTriggerem. Klawiatura i kotwice działają jak zwykle.
+      if (window.Lenis) {
+        const lenis = new Lenis({ lerp: 0.08, smoothWheel: true, wheelMultiplier: 0.9, anchors: true });
+        lenis.on('scroll', ScrollTrigger.update);
+        gsap.ticker.add((time) => lenis.raf(time * 1000));
+        gsap.ticker.lagSmoothing(0);
+        $('.skip').addEventListener('click', () => $('#tresc').focus({ preventScroll: true }));
+      }
+
+      // Baner: szerokość kolumny treści liczona przy każdym odświeżeniu ScrollTriggera (zmiana rozmiaru okna).
+      const media = $('#hero-media');
+      const measure = () => {
+        const column = $('main.wrap');
+        const cs = getComputedStyle(column);
+        const inner = column.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        media.style.setProperty('--gut', `${Math.max(0, (media.clientWidth - inner) / 2)}px`);
+      };
+      measure();
+      ScrollTrigger.addEventListener('refreshInit', measure);
+      gsap.to(media, {
+        '--p': 1,
+        ease: 'none',
+        scrollTrigger: { trigger: media, start: 'top top', end: 'bottom 30%', scrub: 1 },
+      });
+
+      // Wjazd hero: najpierw baner, potem słowa nazwy spod maski, opis, przyciski.
+      const words = splitWords($('#hero-title'), 'word');
+      gsap.timeline({ delay: 0.1 })
+        .fromTo(media, { '--intro': 1 }, { '--intro': 0, duration: 1, ease: 'power4.out' })
+        .fromTo(words, { yPercent: 110 }, { yPercent: 0, duration: 1.1, ease: 'power4.out', stagger: 0.09 }, 0.35)
+        .fromTo('.hero .lead', { y: 24, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.8 }, 0.75)
+        .fromTo('.hero .cta-row, .hero .members', { y: 24, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.8, stagger: 0.08 }, 0.9);
+
+      // Hasło: słowa zapalają się po kolei, gdy przewijasz przez sekcję (w obie strony).
+      const box = $('#tagline');
+      const lit = splitWords(box.querySelector('p'), 'w');
+      box.classList.add('armed');
+      const tl = gsap.timeline({ scrollTrigger: { trigger: box, start: 'top 75%', end: 'bottom 45%', scrub: 1 } });
+      lit.forEach((w, i) => tl.to(w, { color: w.classList.contains('hl') ? '#4cc3c8' : '#e5eaf1', duration: 1, ease: 'none' }, i * 0.6));
+
+      addEventListener('load', () => ScrollTrigger.refresh());
+    }
+
+    initMotion();
     (async () => {
       const [board, contests] = await Promise.all([
         get('leaderboard?period=week&limit=3').catch(() => null),
@@ -447,6 +513,7 @@
       renderNow(contests, board);
       renderFaq(board);
       await renderTop(board);
+      if (MOTION) ScrollTrigger.refresh();
     })();
   </script>
 </body>

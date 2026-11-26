@@ -6,19 +6,20 @@ Projekt ma ustalony styl. Kolejne ekrany biorą te wartości, a nie wymyślają 
 ## Kierunek
 - Teza: serwer na Discordzie z rankingiem XP i eventami. Strona pokazuje prawdziwe dane (osoby, eventy, ranking), a nie opisy.
 - Nastrój: technical, ciemny. Akcent to cyjan z banera serwera.
-- Tło: jedno, siatka kwadratowych kropek (2 px co 22 px, `#1f2936`).
+- Tło: jedno, dynamiczny grafit na #171b23: drobinki SVG + matowe ziarno przeskakujące `steps(4)` (chrislemke/website_designs, sarathsaleem/grained), czysty CSS.
+- Baner na całą szerokość ekranu, bez dużej ikony serwera.
 - Nie wolno: pigułki, etykiety nad nagłówkami, WERSALIKI, ramki na kontenerach, gradientowe tła i teksty, squircle, emoji, pauzy, kropki-separatory, strzałki doklejone do przycisków.
 
 ## Kolory (kontrakt, sprawdzony `taste-tastemaker/scripts/check_contrast.py --matrix`)
 | Rola | Hex |
 | --- | --- |
-| bg | #0f141b |
-| surface | #151c25 |
-| raised | #1c2531 |
+| bg | #171b23 (grafit) |
+| surface | #1e232d |
+| raised | #262c38 |
 | text | #e5eaf1 |
-| muted | #98a4b5 |
-| faint | #828fa1 (podniesiony z #6c788a: 3.45:1 na raised nie przechodził) |
-| field-border | #5f6b7c |
+| muted | #9aa6b7 |
+| faint | #8d99ab (4.85:1 na raised) |
+| field-border | #69768a (3.42:1 na surface) |
 | accent | #4cc3c8 |
 | on-accent | #06282a |
 | ok / warn / danger | #5bbf8a / #d9a64e / #e06c70 |
@@ -28,7 +29,7 @@ UI (>= 3:1): field-border/bg 3.42, field-border/surface 3.17.
 Tylko ozdobnie: bg/surface 1.08 (różnica powierzchni nigdy nie jest jedynym sygnałem stanu).
 
 ## Typografia
-- Oxanium 600/700: nagłówki i duże liczby. Figtree 400/500/600/700: reszta.
+- Manrope 700/800: nagłówki i duże liczby. Inter 400/500/600/700: tekst i przyciski (wybór właściciela, wygrywa z zakazem Intera w elaya-landing-page-design).
 - Skala (rem): 12, 14, 16, 18, 20, 24, 30, 36, 48, 60. Interlinia: nagłówki 1.1-1.2, tekst 1.5.
 - `text-wrap: balance` w nagłówkach, `pretty` w akapitach, `tabular-nums` w liczbach. Pola tekstowe 16 px.
 - Bez ujemnego odstępu liter (wymaganie właściciela, wygrywa z `jakub-better-typography`).
@@ -45,6 +46,7 @@ Tylko ozdobnie: bg/surface 1.08 (różnica powierzchni nigdy nie jest jedynym sy
 
 ## Ruch
 - Krzywa `cubic-bezier(0.22, 1, 0.36, 1)`, zmiany koloru 200 ms.
+- Jeden efekt przewijania: strona główna, GSAP 3.15.1 ScrollTrigger (`scrub: 1`) + Lenis 1.3.29 (`lerp` 0.08, kotwice natywne), baner zjeżdża do kolumny treści.
 - Uzasadnione dłuższe animacje: pasek postępu eventu (700 ms, transform), hasło na stronie głównej (słowo po słowie, 600 ms na słowo), szkielety ładowania.
 - Efekty wydarzeń XP w rankingu to osobna warstwa artystyczna i zostają.
 - Zawsze `prefers-reduced-motion`: hasło od razu w pełnym kolorze, bez pulsowania.

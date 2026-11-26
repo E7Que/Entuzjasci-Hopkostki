@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Eventy serwera - Entuzjaści Hopkostki</title>
   <meta name="description" content="Eventy serwera Entuzjaści Hopkostki: zapisz się, zaproś znajomych albo pisz na serwerze, śledź postęp i wyniki losowań.">
-  <meta name="theme-color" content="#0f141b">
+  <meta name="theme-color" content="#171b23">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Entuzjaści Hopkostki">
   <meta property="og:title" content="Eventy serwera - Entuzjaści Hopkostki">
@@ -17,7 +17,7 @@
   <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Oxanium:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="site.css?v=dev">
   <style>
     [hidden] { display: none !important; }
@@ -27,12 +27,11 @@
     html { scrollbar-color: #2a3644 var(--bg); }
 
     /* ---------- Nagłówek: baner (albo baner eventu), ikona serwera, tytuł ---------- */
-    .banner { position: relative; aspect-ratio: 16 / 5; overflow: hidden; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); }
+    .banner { position: relative; height: clamp(220px, 30vw, 440px); overflow: hidden; background: var(--surface); }
     .banner img { width: 100%; height: 100%; object-fit: cover; object-position: center 45%; outline: 1px solid var(--img-edge); outline-offset: -1px; transition: opacity 300ms var(--ease); }
     .banner img.swap { opacity: 0; }
-    .head { position: relative; z-index: 1; display: flex; align-items: flex-end; gap: 16px; padding: 0 24px; }
-    .server-icon { width: 92px; height: 92px; margin-top: -46px; border-radius: 50%; background: var(--surface); object-fit: cover; flex: none; box-shadow: 0 0 0 6px var(--bg), var(--shadow); }
-    h1 { padding-bottom: 8px; font-size: var(--fs-3xl); }
+    .head { position: relative; z-index: 1; display: flex; align-items: flex-end; gap: 16px; padding: var(--sp-8) 0 0; }
+    h1 { font-size: var(--fs-4xl); }
 
     .layout { display: grid; gap: 32px; margin-top: 40px; }
     @media (min-width: 980px) { .layout { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; } }
@@ -209,10 +208,9 @@
 
     /* ---------- Telefony ---------- */
     @media (max-width: 720px) {
-      .banner { aspect-ratio: 16 / 7; }
-      .head { gap: 16px; padding: 0 8px; }
-      .server-icon { width: 76px; height: 76px; margin-top: -38px; }
-      h1 { font-size: 1.6rem; }
+      .banner { height: clamp(170px, 44vw, 260px); }
+      .head { padding: var(--sp-6) 0 0; }
+      h1 { font-size: var(--fs-3xl); }
       .layout { margin-top: 32px; }
       .ct-tabs { margin: 0 -16px; padding: 2px 16px 8px; scroll-padding-inline: 16px; }
       .ct-hero { grid-template-columns: auto minmax(0, 1fr); gap: 12px 16px; padding: 24px 16px 4px; }
@@ -249,9 +247,8 @@
 
   <main class="wrap" id="tresc">
     <header>
-      <div class="banner"><img id="banner-img" src="img/banner.webp" alt="" width="1600" height="900"></div>
+      <div class="banner bleed"><img id="banner-img" src="img/banner.webp" alt="" width="1600" height="900"></div>
       <div class="head">
-        <img class="server-icon" src="img/icon.webp" alt="" width="92" height="92">
         <h1>Eventy serwera</h1>
       </div>
     </header>
