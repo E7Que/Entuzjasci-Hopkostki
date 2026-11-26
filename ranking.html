@@ -18,14 +18,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="site.css?v=45c286e">
+  <link rel="stylesheet" href="site.css?v=9525a15">
   <link rel="stylesheet" href="vendor/lenis.css">
   <style>
     /* Kolory, fonty, tło i górny pasek: site.css. Tu tylko nazwy używane przez tę stronę. */
     :root {
       --surface-2: var(--raised);
       --hover: var(--raised-hover);
-      --border: #2c333f;
+      --border: #1c2c48;
       --radius: 10px;
     }
     body { font-variant-numeric: tabular-nums; }
@@ -35,7 +35,7 @@
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     ::selection { background: #24505a; color: #fff; }
-    html { scrollbar-color: #2a3644 var(--bg); }
+    html { scrollbar-color: #1f3150 var(--bg); }
 
     main { position: relative; z-index: 1; max-width: var(--wrap); margin: 0 auto; padding: 4px 24px 24px; }
 
@@ -54,8 +54,8 @@
 
     /* ---------- Pasek ---------- */
     .toolbar {
-      position: sticky; top: 8px; z-index: 5; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-      margin: 32px 0 24px; padding: 8px; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow);
+      position: sticky; top: 72px; z-index: 5; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      margin: 32px 0 24px; padding: 8px; border: 1px solid var(--panel-edge); border-radius: var(--r); background: color-mix(in srgb, var(--surface) 88%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: var(--panel-shadow);
     }
     .tabs { display: flex; gap: 4px; flex: 1 1 auto; }
     .tab { min-height: 40px; padding: 0 16px; border: 0; border-radius: var(--r-sm); background: none; color: var(--muted); font-weight: 500; cursor: pointer; }
@@ -221,7 +221,7 @@
     @keyframes crown-drop { from { opacity: 0; transform: translateY(-26px) rotate(-24deg) scale(0.6); } }
 
     /* ---------- Lista ---------- */
-    .table { border-radius: var(--radius); background: var(--surface); overflow: hidden; box-shadow: var(--shadow); }
+    .table { border: 1px solid var(--panel-edge); border-radius: var(--radius); background: var(--panel); overflow: hidden; box-shadow: var(--panel-shadow); }
     .cols, .row { display: grid; grid-template-columns: 44px minmax(0, 1fr) 96px 112px 92px 48px; align-items: center; gap: 12px; padding: 0 16px; }
     .cols { height: 44px; color: var(--faint); font-size: var(--fs-sm); font-weight: 500; white-space: nowrap; }
     .cols span:first-child { text-align: center; }
@@ -342,11 +342,11 @@
 
     /* ---------- Boczny panel ---------- */
     .side { display: grid; gap: 16px; }
-    @media (min-width: 980px) { .side { position: sticky; top: 80px; } }
+    @media (min-width: 980px) { .side { position: sticky; top: 144px; } }
     .info { display: grid; gap: 16px; }
-    .card { padding: 24px 24px; border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+    .card { padding: 24px 24px; border: 1px solid var(--panel-edge); border-radius: var(--radius); background: var(--panel); box-shadow: var(--panel-shadow); }
     .card h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; font-size: var(--fs-base); }
-    .card h2 svg { flex: none; width: 18px; height: 18px; color: var(--accent); }
+    .card h2 .i { width: 20px; height: 20px; color: var(--accent); }
     .card p { margin: 0; color: var(--muted); font-size: var(--fs-sm); }
     .kv { display: grid; gap: 8px; margin: 0 0 12px; font-size: var(--fs-sm); }
     .kv div { display: flex; justify-content: space-between; gap: 12px; }
@@ -971,12 +971,15 @@
 </head>
 <body>
   <a class="skip" href="#tresc">Przejdź do treści</a>
+  <!-- Tło rankingu: promienie światła z góry jak reflektory nad podium (React Bits LightRays). -->
+  <div class="page-bg" aria-hidden="true" data-rb="LightRays" data-props='{"raysOrigin":"top-center","raysColor":"#8ff3f6","raysSpeed":0.8,"lightSpread":0.7,"rayLength":2.4,"glow":0.7,"haze":0.3,"intensity":0.9,"followMouse":true,"mouseInfluence":0.08,"clickPulse":true,"opacity":0.9}'></div>
   <header class="site-nav">
     <div class="wrap">
       <a class="site-brand" href="./" translate="no"><img src="img/icon.webp" alt="" width="32" height="32"><span>Entuzjaści Hopkostki</span></a>
       <ul class="site-links">
         <li><a href="ranking" aria-current="page"><svg class="i" aria-hidden="true"><use href="icons.svg#trophy-fill"></use></svg>Ranking</a></li>
         <li><a href="event"><svg class="i" aria-hidden="true"><use href="icons.svg#calendar-dots"></use></svg>Eventy</a></li>
+        <li><a class="nav-join" href="https://discord.gg/FuqNCJhVYs" rel="noopener">Dołącz</a></li>
       </ul>
     </div>
   </header>
@@ -1041,12 +1044,12 @@
         <section class="profile" id="profile" hidden aria-label="Profil"></section>
         <div class="info">
           <section class="card" id="card-highlights" hidden>
-            <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M8 2.5v4M16 2.5v4M3 10h18"/></svg>Rankingi tygodnia i miesiąca</h2>
+            <h2><svg class="i" aria-hidden="true"><use href="icons.svg#calendar-dots"></use></svg>Rankingi tygodnia i miesiąca</h2>
             <dl class="kv" id="countdowns"></dl>
             <p id="highlights-text"></p>
           </section>
           <section class="card" id="card-archive" hidden>
-            <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 16v5M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 6h2.5a2.5 2.5 0 0 1 0 5H17M7 6H4.5a2.5 2.5 0 0 0 0 5H7"/></svg>Poprzedni zwycięzcy</h2>
+            <h2><svg class="i" aria-hidden="true"><use href="icons.svg#trophy"></use></svg>Poprzedni zwycięzcy</h2>
             <div class="seg" role="tablist" aria-label="Archiwum">
               <button type="button" role="tab" data-archive="weeks" aria-selected="true">Tygodnie</button>
               <button type="button" role="tab" data-archive="months" aria-selected="false">Miesiące</button>
@@ -1055,15 +1058,15 @@
             <ol class="archive" id="archive-list"></ol>
           </section>
           <section class="card" id="card-xp" hidden>
-            <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H13z"/></svg>Jak zdobywać XP</h2>
+            <h2><svg class="i" aria-hidden="true"><use href="icons.svg#lightning"></use></svg>Jak zdobywać XP</h2>
             <ul class="ways" id="ways"></ul>
           </section>
           <section class="card" id="card-rewards" hidden>
-            <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4.5" rx="1"/><path d="M5 12.5V21h14v-8.5M12 8v13"/><path d="M12 8c-1.5-3-5.5-4.5-6-2s3 2 6 2zM12 8c1.5-3 5.5-4.5 6-2s-3 2-6 2z"/></svg>Nagrody za poziomy</h2>
+            <h2><svg class="i" aria-hidden="true"><use href="icons.svg#gift"></use></svg>Nagrody za poziomy</h2>
             <ul class="rewards" id="rewards"></ul>
           </section>
           <section class="card">
-            <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3.5" width="18" height="17" rx="4"/><path d="m10 16 4-8"/></svg>Na Discordzie</h2>
+            <h2><svg class="i" aria-hidden="true"><use href="icons.svg#terminal-window"></use></svg>Na Discordzie</h2>
             <div class="cmds">
               <div><code translate="no">/rank</code>Twoja karta poziomu</div>
               <div><code translate="no">/ranking</code>ranking na serwerze</div>
@@ -1071,7 +1074,7 @@
             </div>
           </section>
           <section class="card">
-            <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.1 7.5 9.5 4.4-1.4 7.5-4.9 7.5-9.5V6z"/><path d="m9 12 2.2 2.2L15.5 10"/></svg>Prywatność</h2>
+            <h2><svg class="i" aria-hidden="true"><use href="icons.svg#shield-check"></use></svg>Prywatność</h2>
             <p>Strona pokazuje pseudonim, avatar i statystyki aktywności osób, które zdobyły XP na serwerze. Nie chcesz tu być? Wpisz na serwerze <code translate="no">/prywatnosc</code> i wybierz <b>Ukryj mnie</b> - Twoje miejsce zostanie jako „Ukryta osoba”, bez pseudonimu, avatara i profilu.</p>
           </section>
         </div>
@@ -1081,9 +1084,11 @@
 
   </main>
 
+  <!-- Dół strony: fale ze skanera React Bits (plik „tło 4”) w kolorach strony, od nad stopką do samego końca. -->
+  <div class="page-scan" aria-hidden="true" data-rb="Scanner" data-from=".site-foot" data-lift="380" data-props='{"color1":"var(--accent)","color2":"var(--accent-2)","color3":"#e6fdff","speed":0.5,"sweepSpeed":0.25,"sweepWidth":1.6,"trail":0.5,"ripple":0.22,"bandDensity":11,"glow":0.8,"brightness":1.3,"scanDirection":"vertical","colorSpread":0.7,"scanline":true,"scanlineIntensity":0.5,"mouseInteraction":true,"clickEffect":"ping","dpr":1.5}'></div>
   <footer class="site-foot">
     <div class="wrap">
-      <span>Entuzjaści Hopkostki</span>
+      <span translate="no">© <span data-year>2026</span> Entuzjaści Hopkostki</span>
       <nav aria-label="Strony">
         <a href="./">Strona główna</a>
         <a href="event">Eventy serwera</a>
@@ -14730,7 +14735,7 @@
   <script src="vendor/gsap.min.js"></script>
   <script src="vendor/ScrollTrigger.min.js"></script>
   <script src="vendor/lenis.min.js"></script>
-  <script src="motion.js?v=45c286e"></script>
+  <script src="motion.js?v=9525a15"></script>
   <script>
     // Ruch jak na stronie głównej (motion.js): baner zwija się do kolumny przy przewijaniu, tytuł wjeżdża
     // słowo po słowie, liczby w nagłówku odliczają, lista i karty z boku wjeżdżają od dołu (React Bits).
@@ -14742,6 +14747,8 @@
       spot: '.side .card, .ct-strip',
     });
   </script>
-  <script src="particles.js?v=45c286e" defer></script>
+  <script src="rb.js?v=9525a15" defer></script>
+  <script src="rb-lightrays.js?v=9525a15" defer></script>
+  <script src="rb-scanner.js?v=9525a15" defer></script>
 </body>
 </html>

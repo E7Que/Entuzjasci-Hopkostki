@@ -2,17 +2,17 @@
   color-scheme: dark;
   /* Te same kolory co strony publiczne (site.css): grafit, szarości z niebieskim odcieniem, akcent cyjan.
      --blurple zostaje tylko w podglądach wiadomości Discorda. */
-  --bg: #171b23;
-  --bg-2: #1e232d;
-  --bg-3: #131720;
-  --bg-hover: #262c38;
-  --line: #2f3643;
-  --text: #dfe5ee;
-  --text-strong: #f2f5f9;
-  --muted: #9aa6b7;
-  --accent: #4cc3c8;
-  --accent-hover: #63d0d4;
-  --on-accent: #06282a;
+  --bg: #060b17;
+  --bg-2: #0c1628;
+  --bg-3: #040812;
+  --bg-hover: #13213a;
+  --line: #1c2c48;
+  --text: #dde6f6;
+  --text-strong: #f0f8fa;
+  --muted: #99aac4;
+  --accent: #2fd9e0;
+  --accent-hover: #63e5ea;
+  --on-accent: #03272a;
   --blurple: #5865f2;
   --blurple-hover: #4752c4;
   --green: #5bbf8a;

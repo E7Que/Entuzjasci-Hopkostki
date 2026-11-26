@@ -323,7 +323,16 @@
     const containerRef = { current: host };
     const canvasRef = { current: surface };
     const wakeRef = { current: null };
-    const settingsRef = { current: settingsFrom(options) };
+    // Kolory podane jako "var(--accent)" biorą barwy strony i zmieniają się razem z nimi (zdarzenie rb:theme).
+    const cssColor = (v) => {
+      const m = /^var\((--[\w-]+)\)$/.exec(String(v).trim());
+      if (!m) return v;
+      const el = document.documentElement;
+      return el.style.getPropertyValue(m[1]).trim() || getComputedStyle(el).getPropertyValue(m[1]).trim() || '#ffffff';
+    };
+    const themed = () => settingsFrom({ ...options, particleColors: (options.particleColors ?? []).map(cssColor) });
+    const settingsRef = { current: themed() };
+    document.addEventListener('rb:theme', () => { settingsRef.current = themed(); wakeRef.current?.(); });
   const container = containerRef.current;
   const canvas = canvasRef.current;
   const gl = canvas?.getContext('webgl2', {
@@ -862,7 +871,7 @@
   // Na małym ekranie to samo pole 3D mieści się na mniejszej powierzchni, więc mniej punktów (min. połowa).
   const area = (window.innerWidth * window.innerHeight) / (1440 * 900);
   mountParticles(box, canvas, {
-    particleColors: ['#ffffff', '#ffffff', '#cdeff1', '#4cc3c8'],
+    particleColors: ['#ffffff', '#ffffff', 'var(--accent-hover)', 'var(--accent)', 'var(--accent-2)'],
     particleCount: Math.round(220 * Math.min(1, Math.max(0.5, area))),
     particleSpread: 12,
     speed: 0.1,

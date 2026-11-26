@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://ucjmbdogtzztrkorqzjq.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="site.css?v=45c286e">
+  <link rel="stylesheet" href="site.css?v=9525a15">
   <link rel="stylesheet" href="vendor/lenis.css">
   <style>
     /* Strona główna. Zasady: .claude/skills/site-design; struktura: hero, hasło, teraz na serwerze, najaktywniejsi, jak dołączyć, pytania, zaproszenie. */
@@ -31,17 +31,16 @@
        zjeżdżają do kolumny treści, rogi się zaokrąglają, a obraz lekko się oddala (--p od 0 do 1, liczone w JS). */
     .hero { margin-top: 0; }
     .hero-media {
-      --p: 0;
-      --zoom: 0.1;
       position: relative; width: 100vw; margin-left: calc(50% - 50vw); height: clamp(300px, 56vw, 78vh); overflow: hidden; background: var(--surface);
-      --intro: 0;
-      clip-path: inset(0 calc(var(--p) * var(--gut, 24px)) calc(var(--intro) * 100%) calc(var(--p) * var(--gut, 24px)) round calc(var(--p) * var(--r)));
     }
-    .hero-banner { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 42%; transform: scale(calc(1 + var(--zoom) * (1 - var(--p)))); transform-origin: 50% 40%; }
-    .hero-media.scrub, .hero-media.scrub .hero-banner { will-change: clip-path, transform; }
+    .hero-banner { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 42%; transform-origin: 50% 40%; }
+    /* Baner powoli „oddycha” (osobne właściwości scale/translate, więc nie gryzie się z efektem przewijania). */
+    .hero-banner { animation: breathe 22s ease-in-out infinite alternate; }
+    @keyframes breathe { to { scale: 1.06; translate: 0 -1.5%; } }
+    @media (prefers-reduced-motion: reduce) { .hero-banner { animation: none; } }
     /* Nazwa serwera wyjeżdża słowo po słowie spod maski (motion.js, React Bits MaskedHeading). */
     .hero-body { padding: 0; }
-    .hero h1 { max-width: 680px; margin-top: var(--sp-10); font-size: var(--fs-4xl); font-weight: 800; line-height: 1.1; }
+    .hero h1 { max-width: 760px; margin-top: var(--sp-12); font-size: clamp(2.25rem, 4.6vw, 3.75rem); font-weight: 800; line-height: 1.05; }
     .lead { max-width: 680px; margin: var(--sp-4) 0 var(--sp-8); color: var(--muted); font-size: var(--fs-lg); line-height: 1.55; }
     .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); }
     .members { min-height: 24px; margin: var(--sp-4) 0 0; color: var(--muted); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
@@ -49,14 +48,16 @@
     .online { display: inline-block; width: 8px; height: 8px; margin: 0 var(--sp-2) 1px var(--sp-1); border-radius: 50%; background: var(--ok); }
 
     /* Hasło: słowa rozjaśniają się po kolei, gdy sekcja wjeżdża na ekran (bez JS i przy ograniczonym ruchu od razu w pełnym kolorze). */
-    .tagline { margin-top: var(--sp-24); padding: var(--sp-8) var(--sp-2); }
-    .tagline p { max-width: 760px; margin: 0; font-family: var(--display); font-size: var(--fs-3xl); font-weight: 600; line-height: 1.2; text-wrap: balance; }
-    .tagline.armed .w { color: rgb(229 234 241 / 0.28); }
+    /* Odstępy między sekcjami: jeden rytm (--section) na całej stronie. */
+    main { --section: clamp(64px, 9vw, 112px); }
+    .tagline { margin-top: var(--section); padding: 0; }
+    .tagline p { max-width: 800px; margin: 0; font-family: var(--display); font-size: clamp(1.75rem, 3.4vw, 2.75rem); font-weight: 700; line-height: 1.15; text-wrap: balance; transform-origin: 0% 50%; }
+    .tagline.armed .w { display: inline-block; color: rgb(230 241 245 / 0.18); filter: blur(5px); }
 
-    .block { margin-top: var(--sp-24); }
+    .block { margin-top: var(--section); }
     .block > h2 { margin-bottom: var(--sp-6); font-size: var(--fs-3xl); }
     .block-foot { margin-top: var(--sp-6); }
-    .card { padding: var(--sp-6); border: 1px solid transparent; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); }
+    .card { padding: var(--sp-6); border: 1px solid var(--panel-edge); border-radius: var(--r); background: var(--panel); box-shadow: var(--panel-shadow); }
 
     .now-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--sp-6); }
     .ev { display: flex; flex-direction: column; gap: var(--sp-4); }
@@ -90,7 +91,7 @@
     .sk-card .sk:nth-child(4) { width: 50%; height: 44px; }
 
     .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--sp-6); margin: 0; padding: 0; list-style: none; counter-reset: step; }
-    .steps li { counter-increment: step; }
+    .steps li { counter-increment: step; padding: var(--sp-6); border: 1px solid var(--panel-edge); border-radius: var(--r); background: var(--panel); box-shadow: var(--panel-shadow); }
     .steps li::before { content: counter(step); display: block; margin-bottom: var(--sp-3); color: var(--accent); font-family: var(--display); font-size: var(--fs-4xl); font-weight: 700; line-height: 1; }
     .steps h3 { margin-bottom: var(--sp-2); font-size: var(--fs-xl); }
     .steps p { margin: 0; color: var(--muted); }
@@ -107,13 +108,11 @@
     .faq .answer b { color: var(--text); font-weight: 600; }
     .faq .answer ul { margin: 0 0 var(--sp-2); padding-left: 1.2em; }
 
-    .end { margin-top: var(--sp-24); padding: var(--sp-10) var(--sp-10) var(--sp-12); }
-    .end-band { position: relative; margin-top: var(--sp-24); padding: var(--sp-24) 0; }
-    .end-chrome { position: absolute; inset: 0; -webkit-mask-image: linear-gradient(transparent, #000 20%, #000 80%, transparent); mask-image: linear-gradient(transparent, #000 20%, #000 80%, transparent); }
-    .end-inner { position: relative; max-width: var(--wrap); margin: 0 auto; padding: 0 var(--sp-6); }
-    .end-band .end { max-width: 600px; margin-top: 0; }
-    .end h2 { font-size: var(--fs-3xl); }
-    .end p { max-width: 52ch; margin: var(--sp-3) 0 var(--sp-6); color: var(--muted); }
+    .end { margin-top: var(--section); padding: var(--sp-12) var(--sp-10); }
+    /* Końcowe zaproszenie na środku karty: jedna rzecz do zrobienia na koniec strony. */
+    .end { text-align: center; }
+    .end h2 { font-size: clamp(1.875rem, 3.2vw, 2.5rem); }
+    .end p { max-width: 52ch; margin: var(--sp-3) auto var(--sp-8); color: var(--muted); }
 
     @media (hover: hover) {
       .top-list li:hover { background: var(--raised); }
@@ -124,7 +123,7 @@
       .tagline p { font-size: var(--fs-5xl); }
     }
     @media (max-width: 640px) {
-      .hero-media { --zoom: 0.04; height: auto; aspect-ratio: 16 / 9; }
+      .hero-media { height: auto; aspect-ratio: 16 / 9; }
       .block, .tagline, .end { margin-top: var(--sp-16); }
       .card { padding: var(--sp-4); }
       .top-list { padding: var(--sp-2); }
@@ -160,10 +159,10 @@
         <h1 translate="no" id="hero-title">Entuzjaści Hopkostki</h1>
         <p class="lead">Serwer na Discordzie, na którym za aktywność dostajesz XP i wbijasz kolejne poziomy. Ranking tygodnia co tydzień startuje od zera, a w eventach są nagrody.</p>
         <div class="cta-row">
-          <a class="btn btn-primary btn-big" href="https://discord.gg/FuqNCJhVYs" rel="noopener">
+          <span class="star"><i class="star-t"></i><i class="star-b"></i><a class="btn btn-primary btn-big" href="https://discord.gg/FuqNCJhVYs" rel="noopener">
             <svg class="discord" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.6 5.3A16.6 16.6 0 0 0 15.5 4l-.5 1a15.4 15.4 0 0 0-6 0L8.5 4a16.6 16.6 0 0 0-4.1 1.3C1.8 9.2 1.1 13 1.4 16.7a16.7 16.7 0 0 0 5.1 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a11.9 11.9 0 0 0 11.4 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a16.6 16.6 0 0 0 5.1-2.6c.4-4.3-.7-8.1-3-11.4zM8.7 14.4c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>
             Dołącz do serwera
-          </a>
+          </a></span>
           <a class="btn btn-big btn-quiet" href="ranking">Zobacz ranking</a>
         </div>
         <p class="members" id="members" aria-live="polite"></p>
@@ -234,25 +233,21 @@
       </details>
     </section>
 
-    <!-- Koniec strony: zaproszenie na pasie z płynnym chromem (React Bits LiquidChrome, „tło 2”). Kursor zostawia w nim ślad. -->
-    <section class="end-band bleed" aria-labelledby="end-h">
-      <div class="end-chrome" data-chrome='{"exposure":0.95}'></div>
-      <div class="end-inner">
-          <div class="card end">
-            <h2 id="end-h">Wpadnij na serwer</h2>
-            <p>Zaproszenie otworzy się w aplikacji Discord albo w przeglądarce. Dołączenie nic nie kosztuje.</p>
-            <a class="btn btn-primary btn-big" href="https://discord.gg/FuqNCJhVYs" rel="noopener">
-              <svg class="discord" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.6 5.3A16.6 16.6 0 0 0 15.5 4l-.5 1a15.4 15.4 0 0 0-6 0L8.5 4a16.6 16.6 0 0 0-4.1 1.3C1.8 9.2 1.1 13 1.4 16.7a16.7 16.7 0 0 0 5.1 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a11.9 11.9 0 0 0 11.4 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a16.6 16.6 0 0 0 5.1-2.6c.4-4.3-.7-8.1-3-11.4zM8.7 14.4c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>
-              Dołącz do serwera
-            </a>
-          </div>
-      </div>
+    <section class="card end" aria-labelledby="end-h">
+      <h2 id="end-h">Wpadnij na serwer</h2>
+      <p>Zaproszenie otworzy się w aplikacji Discord albo w przeglądarce. Dołączenie nic nie kosztuje.</p>
+      <span class="star"><i class="star-t"></i><i class="star-b"></i><a class="btn btn-primary btn-big" href="https://discord.gg/FuqNCJhVYs" rel="noopener">
+        <svg class="discord" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.6 5.3A16.6 16.6 0 0 0 15.5 4l-.5 1a15.4 15.4 0 0 0-6 0L8.5 4a16.6 16.6 0 0 0-4.1 1.3C1.8 9.2 1.1 13 1.4 16.7a16.7 16.7 0 0 0 5.1 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a11.9 11.9 0 0 0 11.4 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a16.6 16.6 0 0 0 5.1-2.6c.4-4.3-.7-8.1-3-11.4zM8.7 14.4c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>
+        Dołącz do serwera
+      </a></span>
     </section>
   </main>
 
+  <!-- Dół strony: skaner z React Bits (plik „tło 4”) od nad kartą z zaproszeniem do samego końca strony. -->
+  <div class="page-scan" aria-hidden="true" data-rb="Scanner" data-from=".card.end" data-lift="240" data-props='{"color1":"var(--accent)","color2":"var(--accent-2)","color3":"#e6fdff","speed":0.5,"sweepSpeed":0.25,"sweepWidth":1.6,"trail":0.5,"ripple":0.22,"bandDensity":11,"glow":0.8,"brightness":1.3,"scanDirection":"vertical","colorSpread":0.7,"scanline":true,"scanlineIntensity":0.5,"mouseInteraction":true,"clickEffect":"ping","dpr":1.5}'></div>
   <footer class="site-foot">
     <div class="wrap">
-      <span translate="no">Entuzjaści Hopkostki</span>
+      <span translate="no">© <span data-year>2026</span> Entuzjaści Hopkostki</span>
       <nav aria-label="Strony">
         <a href="ranking">Ranking poziomów</a>
         <a href="event">Eventy serwera</a>
@@ -264,7 +259,7 @@
   <script src="vendor/gsap.min.js"></script>
   <script src="vendor/ScrollTrigger.min.js"></script>
   <script src="vendor/lenis.min.js"></script>
-  <script src="motion.js?v=45c286e"></script>
+  <script src="motion.js?v=9525a15"></script>
   <script>
     'use strict';
     const BASE = ['localhost', '127.0.0.1'].includes(location.hostname)
@@ -433,8 +428,9 @@
       intro: '.hero .lead, .hero .cta-row, .hero .members',
       headings: '.block > h2, .end h2',
       reveal: '.block > :not(h2), .card.end',
-      spot: '.now-grid > .card:not(.sk-card), .top-list, .faq summary, .card.end',
-      magnet: '.btn-big.btn-primary',
+      spot: '.now-grid > .card:not(.sk-card), .top-list, .steps > li, .faq summary, .card.end',
+      magnet: '.star',
+      tilt: '.now-grid > .card:not(.sk-card), .steps > li',
     });
 
     // Hasło: słowa zapalają się po kolei, gdy przewijasz przez sekcję (w obie strony).
@@ -442,8 +438,10 @@
       const box = $('#tagline');
       const lit = Motion.splitWords(box.querySelector('p'), 'w');
       box.classList.add('armed');
-      const tl = gsap.timeline({ scrollTrigger: { trigger: box, start: 'top 75%', end: 'bottom 45%', scrub: 1 } });
-      lit.forEach((w, i) => tl.to(w, { color: w.classList.contains('hl') ? '#4cc3c8' : '#e5eaf1', duration: 1, ease: 'none' }, i * 0.6));
+      // React Bits ScrollReveal: słowa wyostrzają się (blur 5 px -> 0) i rozjaśniają po kolei, a cały blok prostuje się z 3°.
+      const tl = gsap.timeline({ scrollTrigger: { trigger: box, start: 'top 80%', end: 'bottom 40%', scrub: 1 } });
+      tl.fromTo(box.querySelector('p'), { rotate: 3 }, { rotate: 0, ease: 'none', duration: lit.length * 0.6 }, 0);
+      lit.forEach((w, i) => tl.to(w, { color: w.classList.contains('hl') ? 'var(--accent)' : 'var(--text)', filter: 'blur(0px)', duration: 1, ease: 'none' }, i * 0.6));
     }
     (async () => {
       const [board, contests] = await Promise.all([
@@ -457,7 +455,8 @@
       window.Motion?.refresh();
     })();
   </script>
-  <script src="particles.js?v=45c286e" defer></script>
-  <script src="chrome.js?v=45c286e" defer></script>
+  <script src="particles.js?v=9525a15" defer></script>
+  <script src="rb.js?v=9525a15" defer></script>
+  <script src="rb-scanner.js?v=9525a15" defer></script>
 </body>
 </html>
