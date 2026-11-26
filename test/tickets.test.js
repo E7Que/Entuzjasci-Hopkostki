@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createTestStore } from './support/db.js';
-import { fakeDiscord, makeBot, GUILD } from './support/discord.js';
+import { fakeDiscord, makeBot, GUILD, snowflake } from './support/discord.js';
 import { handleInteraction } from '../supabase/functions/hopkostki-bot/lib/interactions.js';
 import { createHandler } from '../supabase/functions/hopkostki-bot/lib/app.js';
-import { ticketPanelMessage } from '../supabase/functions/hopkostki-bot/lib/tickets.js';
+import { onMessageTicketClaim, ticketPanelMessage } from '../supabase/functions/hopkostki-bot/lib/tickets.js';
 import { P } from '../supabase/functions/hopkostki-bot/lib/permissions.js';
 
 const SUPPORT = '100000000000000080';
@@ -374,4 +374,46 @@ test('obsługa ticketów = lista „Obsługa” z panelu i właściciel serwera;
   assert.match((await run(s.bot, click(`tk|delete|${ticket.id}`, { user: 'owner' }))).response.data.content, /Na pewno usunąć/);
   assert.match((await run(s.bot, click(`tk|delete|${ticket.id}`, { user: 'mod', roles: [SUPPORT] }))).response.data.content, /Na pewno usunąć/);
   assert.deepEqual(s.discord.state.deletedChannels, []);
+});
+
+test('ticket: pierwsza odpowiedź obsługi przejmuje go sama (bez klikania); autor, boty i inni — nie; można wyłączyć', async () => {
+  const s = await setup({ types: [{ label: 'Pomoc', style: 'niebieski', question: '' }] });
+  await run(s.bot, click('tk|open|0'));
+  const channel = s.discord.state.createdChannels[0];
+  const ticket = (await s.store.listTickets())[0];
+  const msg = (channelId, author, roles = [], extra = {}) => ({
+    id: snowflake(), guild_id: GUILD, channel_id: channelId, type: 0, content: 'hej',
+    author: { id: author, username: author }, member: { roles }, ...extra,
+  });
+
+  // Autor ticketu (nawet z rolą obsługi), ktoś spoza obsługi, bot i webhook — bez przejęcia.
+  assert.equal(await onMessageTicketClaim(s.bot, msg(channel.id, 'target', [SUPPORT])), null);
+  assert.equal(await onMessageTicketClaim(s.bot, msg(channel.id, 'obcy')), null);
+  assert.equal(await onMessageTicketClaim(s.bot, msg(channel.id, 'robot', [SUPPORT], { author: { id: 'robot', bot: true } })), null);
+  assert.equal(await onMessageTicketClaim(s.bot, msg(channel.id, 'hook', [SUPPORT], { webhook_id: '1' })), null);
+  assert.equal((await s.store.getTicket(ticket.id)).claimedBy, null);
+
+  // Pierwsza odpowiedź obsługi: przejęty, przycisk „Przejęty” w powitaniu, informacja w kanale.
+  const claimed = await onMessageTicketClaim(s.bot, msg(channel.id, 'mod', [SUPPORT]));
+  assert.equal(claimed?.claimedBy, 'mod');
+  assert.equal((await s.store.getTicket(ticket.id)).claimedBy, 'mod');
+  const messages = s.discord.state.channels.get(channel.id);
+  const welcome = messages.find((m) => JSON.stringify(m.components ?? []).includes(`tk|claim|${ticket.id}`));
+  const edit = s.discord.state.editedMessages.find((e) => e.channel === channel.id && e.id === welcome.id);
+  assert.deepEqual([edit?.body.components[0].components[1].label, edit?.body.components[0].components[1].disabled], ['Przejęty', true], 'przycisk w powitaniu: „Przejęty”');
+  assert.match(messages.at(-1).embeds[0].description, /Ticket przejęty przez <@mod> — pierwsza odpowiedź obsługi/);
+  // Kolejna osoba z obsługi już nie przejmuje (ani nie pisze drugi raz).
+  const before = messages.length;
+  assert.equal(await onMessageTicketClaim(s.bot, msg(channel.id, 'mod2', [SUPPORT])), null);
+  assert.equal((await s.store.getTicket(ticket.id)).claimedBy, 'mod');
+  assert.equal(s.discord.state.channels.get(channel.id).length, before);
+  // Zwykły kanał (nie ticket) — nic.
+  assert.equal(await onMessageTicketClaim(s.bot, msg('100000000000000099', 'mod', [SUPPORT])), null);
+
+  // Wyłączone w panelu → bez przejęcia (przycisk dalej działa).
+  await s.store.updateConfig({ tickets: { autoClaim: false } });
+  await run(s.bot, click('tk|open|0', { user: 'drugi' }));
+  const second = (await s.store.listTickets()).find((t) => t.userId === 'drugi');
+  assert.equal(await onMessageTicketClaim(s.bot, msg(second.channelId, 'mod', [SUPPORT])), null);
+  assert.equal((await s.store.getTicket(second.id)).claimedBy, null);
 });

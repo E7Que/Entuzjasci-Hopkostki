@@ -952,6 +952,7 @@
               <label class="field"><span>Otwartych naraz na osobę</span><input type="number" min="1" max="5" data-path="tickets.maxOpen"></label>
             </div>
             <label class="toggle"><input type="checkbox" data-path="tickets.dmTranscript"><span></span>Wysyłaj zapis rozmowy autorowi w DM</label>
+            <label class="toggle"><input type="checkbox" data-path="tickets.autoClaim"><span></span>Pierwsza odpowiedź kogoś z obsługi przejmuje ticket (bez klikania „Przejmij”)</label>
             <label class="field"><span>Powitanie w tickecie</span><textarea id="ticket-welcome" data-path="tickets.welcome" rows="3" maxlength="1500"></textarea></label>
             <div class="chips" data-insert-into="ticket-welcome" data-vars="ticket"></div>
           </div>

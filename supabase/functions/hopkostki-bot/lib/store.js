@@ -823,6 +823,21 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return row ? mapTicket(row) : null;
     },
 
+    // Otwarty ticket na tym kanale (null = to nie ticket albo już zamknięty).
+    async openTicketByChannel(channelId) {
+      const row = await one(`select * from bot.tickets where channel_id = $1::text and status = 'open' order by id desc limit 1`, [channelId]);
+      return row ? mapTicket(row) : null;
+    },
+
+    // Przejęcie tylko wolnego, otwartego ticketu — przy dwóch odpowiedziach naraz wygrywa pierwsza (null = już zajęty).
+    async claimTicketIfFree(id, userId) {
+      const row = await one(
+        `update bot.tickets set claimed_by = $2::text where id = $1::int and claimed_by is null and status = 'open' returning *`,
+        [id, userId],
+      );
+      return row ? mapTicket(row) : null;
+    },
+
     // Czy to kanał jakiegokolwiek ticketu (otwartego albo zamkniętego)?
     async isTicketChannel(channelId) {
       return Boolean(await one('select 1 as hit from bot.tickets where channel_id = $1::text limit 1', [channelId]));

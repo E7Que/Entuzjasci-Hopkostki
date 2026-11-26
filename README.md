@@ -236,6 +236,8 @@ tickecie byłoby tylko spamem powiadomień), z przyciskami **Zamknij** (trzeba p
 uznawane są tylko role z listy obsługi (rodzaju ticketu albo ogólnej) i właściciel serwera — samo uprawnienie
 Administrator czy „Zarządzanie kanałami” nie wystarcza, więc administrację, która ma obsługiwać tickety,
 dopisz do listy.
+Ticket przejmuje też sama **pierwsza odpowiedź kogoś z obsługi** (role „Obsługa” albo właściciel serwera) — bez
+klikania „Przejmij”; autor ticketu, boty i kolejne osoby z obsługi go nie przejmują. Można to wyłączyć w panelu (Tickety).
 
 Zamknięty ticket **nie jest usuwany** — zostaje jako archiwum:
 - kanał przenosi się do **kategorii dla zamkniętych ticketów** (osobne pole w ustawieniach, puste = zostaje

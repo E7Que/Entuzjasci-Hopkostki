@@ -93,6 +93,8 @@ export const DEFAULT_CONFIG = {
     maxOpen: 1,
     nameTemplate: 'ticket-{numer}',
     dmTranscript: true,
+    // Pierwsza wiadomość kogoś z obsługi w nieprzejętym tickecie przejmuje go (jak przycisk „Przejmij”).
+    autoClaim: true,
     welcome: 'Cześć {uzytkownik}! Opisz dokładnie swoją sprawę — ktoś z obsługi zaraz odpowie.',
     panel: {
       title: 'Pomoc i zgłoszenia',

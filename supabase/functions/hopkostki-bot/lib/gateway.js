@@ -13,6 +13,7 @@ import { onBumpMessage } from './bump.js';
 import { onMessageAfk } from './community.js';
 import { onMessageLevels, onReactionLevels, onMemberLeaveLevels } from './levels.js';
 import { onMessageAutomod, onMemberJoinAutomod } from './automod.js';
+import { onMessageTicketClaim } from './tickets.js';
 
 const QUERY = '/?v=10&encoding=json';
 // GUILDS (lista osób na kanałach głosowych przy logowaniu) + GUILD_VOICE_STATES (wejścia/wyjścia z kanałów)
@@ -295,6 +296,7 @@ async function connectOnce(bot, { WebSocketImpl, deadline, margin, status }) {
             track(onMessageCreateLog(bot, packet.d));
             track(onBumpMessage(bot, packet.d));
             track(onMessageAfk(bot, packet.d));
+            track(onMessageTicketClaim(bot, packet.d));
             // Wiadomość ukarana przez automoderację nie daje XP.
             track(onMessageAutomod(bot, packet.d).then((hit) => (hit ? null : onMessageLevels(bot, packet.d))));
           } else if (packet.t === 'MESSAGE_UPDATE') {

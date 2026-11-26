@@ -424,6 +424,46 @@ async function archiveTicketChannel(bot, ticket, eff) {
   return channel;
 }
 
+// ---------- Przejęcie pierwszą odpowiedzią ----------
+// Pierwsza wiadomość kogoś z obsługi (te same role co przy przycisku „Przejmij” albo właściciel serwera)
+// w otwartym, nieprzejętym tickecie przejmuje go — bez klikania (można wyłączyć w panelu: tickets.autoClaim).
+// Autor ticketu, boty i webhooki się nie liczą. Kanały, które nie są wolnymi ticketami, bot pamięta przez
+// chwilę, żeby nie pytać bazy przy każdej wiadomości na serwerze.
+const CLAIM_SKIP_MS = 30 * 60_000;
+export async function onMessageTicketClaim(bot, message) {
+  if (!message?.guild_id || !message.author || message.author.bot || message.webhook_id) return null;
+  if (![0, 19].includes(message.type ?? 0)) return null;
+  const key = `ticketClaim:${message.channel_id}`;
+  const hit = bot.cache.get(key);
+  if (hit && Date.now() - hit.at < CLAIM_SKIP_MS) return null;
+  const { tickets } = await bot.store.getConfig();
+  if (!tickets.enabled || tickets.autoClaim === false) return null;
+  const ticket = await bot.store.openTicketByChannel(message.channel_id);
+  if (!ticket || ticket.claimedBy) {
+    bot.cache.set(key, { at: Date.now() });
+    return null;
+  }
+  if (ticket.userId === message.author.id) return null;
+  const eff = typeSettings(tickets, ticket.type);
+  if (!(await isSupport(bot, { ...message.member, id: message.author.id }, eff))) return null;
+  const claimed = await bot.store.claimTicketIfFree(ticket.id, message.author.id);
+  if (!claimed) return null;
+  bot.cache.set(key, { at: Date.now() });
+  // Przycisk „Przejmij” w wiadomości powitalnej ticketu → „Przejęty” (jak po kliknięciu).
+  try {
+    const recent = await bot.discord.get(`/channels/${ticket.channelId}/messages`, { query: { limit: 50 } });
+    const welcome = (recent ?? []).find((m) => JSON.stringify(m.components ?? []).includes(`"tk|claim|${ticket.id}"`));
+    if (welcome) await bot.discord.patch(`/channels/${ticket.channelId}/messages/${welcome.id}`, { components: ticketButtons(claimed) });
+  } catch (error) {
+    console.warn(`[tickety] Przycisk po przejęciu: ${error.message}`);
+  }
+  await bot.discord.post(`/channels/${ticket.channelId}/messages`, {
+    embeds: [{ color: COLORS.success, description: `Ticket przejęty przez <@${message.author.id}> — pierwsza odpowiedź obsługi.` }],
+    allowed_mentions: { parse: [] },
+  });
+  return claimed;
+}
+
 // ---------- Przyciski, listy i okna ----------
 
 export const isTicketCustomId = (customId) => /^tk[ms]?\|/.test(String(customId ?? ''));
