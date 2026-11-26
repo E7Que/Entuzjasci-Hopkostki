@@ -721,6 +721,7 @@ function casesTable(items) {
 
 // ---------- Formularze konfiguracji ----------
 function renderConfigUi() {
+  renderSiteLook();
   renderChannelSelects();
   renderRoles();
   renderRules();
@@ -3610,6 +3611,74 @@ async function sendServerInfoMessage(asNew) {
 }
 $('#si-send').addEventListener('click', () => sendServerInfoMessage(false));
 $('#si-send-new').addEventListener('click', () => sendServerInfoMessage(true));
+
+// ---------- Ustawienia → Wygląd strony (ikona i banery stron enho.pl) ----------
+// Obrazek idzie do bota w pełnej jakości: plik do 3 MB bez zmian; większy przeliczamy do WebP (najwyżej 3840 px szerokości).
+const SITE_DEFAULTS = { icon: 'img/icon.webp', bannerHome: 'img/banner.webp', bannerRanking: 'img/banner.webp', bannerEvents: 'img/banner.webp' };
+const SITE_MIN = { icon: [256, 256], bannerHome: [1920, 1080], bannerRanking: [1920, 1080], bannerEvents: [1920, 1080] };
+async function siteImageData(file, key) {
+  if (!/^image\/(png|jpeg|webp)$/.test(file.type)) throw new Error('Wybierz obrazek PNG, JPG albo WebP.');
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    throw new Error('Nie da się odczytać tego obrazka.');
+  }
+  const [minW, minH] = SITE_MIN[key];
+  const small = bitmap.width < minW || bitmap.height < minH;
+  if (file.size <= SI_BANNER_MAX && bitmap.width <= 3840) {
+    bitmap.close?.();
+    return { data: await readAsDataUrl(file), small };
+  }
+  const scale = Math.min(1, 3840 / bitmap.width);
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close?.();
+  for (const quality of [0.95, 0.9, 0.85, 0.8]) {
+    const url = canvas.toDataURL('image/webp', quality);
+    if (url.startsWith('data:image/webp;') && (url.length - url.indexOf(',') - 1) * 0.75 <= SI_BANNER_MAX) return { data: url, small };
+  }
+  throw new Error('Obrazek jest za duży nawet jako WebP (maks. 3 MB).');
+}
+function renderSiteLook() {
+  const site = state.draft?.site ?? {};
+  document.querySelectorAll('#site-look [data-site-key]').forEach((slot) => {
+    const key = slot.dataset.siteKey;
+    slot.querySelector('[data-site-img]').src = site[key] || SITE_DEFAULTS[key];
+    slot.querySelector('[data-site-reset]').hidden = !site[key];
+  });
+}
+document.getElementById('site-look').addEventListener('change', async (event) => {
+  const input = event.target.closest('[data-site-file]');
+  const slot = input?.closest('[data-site-key]');
+  const file = input?.files?.[0];
+  if (!slot || !file) return;
+  const key = slot.dataset.siteKey;
+  slot.classList.add('busy');
+  try {
+    const { data, small } = await siteImageData(file, key);
+    const { url } = await api('/site/image', { method: 'POST', body: JSON.stringify({ data }) });
+    state.draft.site = { ...(state.draft.site ?? {}), [key]: url };
+    const [minW, minH] = SITE_MIN[key];
+    toast(small ? `Wgrano, ale obrazek jest mniejszy niż ${minW} × ${minH} px - na dużym ekranie może być rozmyty. Zapisz zmiany.` : 'Wgrano - zapisz zmiany, żeby pojawił się na stronie.');
+  } catch (error) {
+    toast(error.message, 'error');
+  } finally {
+    input.value = '';
+    slot.classList.remove('busy');
+    renderSiteLook();
+    markDirty();
+  }
+});
+document.getElementById('site-look').addEventListener('click', (event) => {
+  const slot = event.target.closest('[data-site-reset]')?.closest('[data-site-key]');
+  if (!slot) return;
+  state.draft.site = { ...(state.draft.site ?? {}), [slot.dataset.siteKey]: '' };
+  renderSiteLook();
+  markDirty();
+});
 
 // ---------- Zapis ----------
 function isDirty() {

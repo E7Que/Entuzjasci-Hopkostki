@@ -2,28 +2,30 @@
    Zasady: .claude/skills/site-design, kontrakt kolorów: .tastemaker/style-lock.md */
 :root {
   color-scheme: dark;
-  /* Granat i niebieski z neonowym cyjanem z banera. Na stronie eventów --accent, --accent-2, --glow-* i --tint
-     przejmują kolory wybranego eventu (Motion.paint w motion.js); pozostałe strony zostają w tych kolorach. */
-  --bg: #060b17;
-  --surface: #0c1628;
-  --raised: #13213a;
-  --raised-hover: #1a2b4a;
-  --text: #e6eefb;
-  --muted: #99aac4;
-  --faint: #8396b3;
-  --field-border: #5a7099;
-  --accent: #2fd9e0;
-  --accent-hover: #63e5ea;
-  --on-accent: #03272a;
-  --accent-2: #5b9cff;
-  --glow-1: #19c8e6;
-  --glow-2: #2f6bff;
-  --glow-3: #1d3f9e;
-  --tint: #0b1d40;
-  /* Tło sekcji i kart: lekko podświetlone od góry kolorem akcentu, cienka krawędź, cień warstwowy. */
-  --panel: linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, var(--surface)) 0%, var(--surface) 60%);
-  --panel-edge: color-mix(in srgb, var(--accent) 20%, rgb(255 255 255 / 0.05));
-  --panel-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 1px 2px rgb(0 2 8 / 0.5), 0 14px 34px -14px rgb(0 2 8 / 0.75);
+  /* Kolory wzięte z pikseli banera: prawie czarny z turkusowo-zielonym odcieniem, neonowy cyjan #28E9EA
+     i morska zieleń. Na stronie eventów --accent, --accent-2 i --glow-* przejmują kolory wybranego eventu
+     (Motion.paint w motion.js); pozostałe strony zostają w tych kolorach. */
+  --bg: #050b0b;
+  --surface: #0b1716;
+  --raised: #11221f;
+  --raised-hover: #163029;
+  --text: #e4f4f2;
+  --muted: #93b3ae;
+  --faint: #7fa19b;
+  --field-border: #56807a;
+  --accent: #28e9ea;
+  --accent-hover: #6ff1f2;
+  --on-accent: #032a2a;
+  --accent-2: #2ccf98;
+  --glow-1: #1fd6d8;
+  --glow-2: #0f6b5a;
+  --glow-3: #166f94;
+  --tint: #071312;
+  /* Karty i sekcje: zwykłe, jednolite tło i cień (bez gradientu i obwódki). */
+  --panel: var(--surface);
+  --panel-edge: transparent;
+  --panel-shadow: var(--shadow);
+  /* Medale i stany (ranking, eventy, panel). */
   --gold: #d8b35c;
   --silver: #a9b4c2;
   --bronze: #c38a5e;
@@ -67,14 +69,14 @@
 }
 
 /* Zarejestrowane kolory: przy zmianie eventu przechodzą płynnie zamiast przeskakiwać. */
-@property --accent { syntax: '<color>'; inherits: true; initial-value: #2fd9e0; }
-@property --accent-hover { syntax: '<color>'; inherits: true; initial-value: #63e5ea; }
-@property --on-accent { syntax: '<color>'; inherits: true; initial-value: #03272a; }
-@property --accent-2 { syntax: '<color>'; inherits: true; initial-value: #5b9cff; }
-@property --glow-1 { syntax: '<color>'; inherits: true; initial-value: #19c8e6; }
-@property --glow-2 { syntax: '<color>'; inherits: true; initial-value: #2f6bff; }
-@property --glow-3 { syntax: '<color>'; inherits: true; initial-value: #1d3f9e; }
-@property --tint { syntax: '<color>'; inherits: true; initial-value: #0b1d40; }
+@property --accent { syntax: '<color>'; inherits: true; initial-value: #28e9ea; }
+@property --accent-hover { syntax: '<color>'; inherits: true; initial-value: #6ff1f2; }
+@property --on-accent { syntax: '<color>'; inherits: true; initial-value: #032a2a; }
+@property --accent-2 { syntax: '<color>'; inherits: true; initial-value: #2ccf98; }
+@property --glow-1 { syntax: '<color>'; inherits: true; initial-value: #1fd6d8; }
+@property --glow-2 { syntax: '<color>'; inherits: true; initial-value: #0f6b5a; }
+@property --glow-3 { syntax: '<color>'; inherits: true; initial-value: #166f94; }
+@property --tint { syntax: '<color>'; inherits: true; initial-value: #071312; }
 :root { transition: --accent 700ms var(--ease), --accent-hover 700ms var(--ease), --on-accent 700ms var(--ease), --accent-2 700ms var(--ease), --tint 700ms var(--ease), --glow-1 1400ms var(--ease), --glow-2 1400ms var(--ease), --glow-3 1400ms var(--ease); }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -134,15 +136,18 @@ p, li, dd { text-wrap: pretty; }
 .skip:focus-visible { transform: none; }
 
 /* Górny pasek: serwer po lewej, strony po prawej. Aktywna strona: wypełniona ikona. */
-/* Ten sam pasek na każdej stronie: przyklejony u góry, półprzezroczysty z rozmyciem, ten sam zestaw linków. */
-html { scroll-padding-top: 80px; }
-.site-nav { position: sticky; top: 0; z-index: 40; background: color-mix(in srgb, var(--tint) 82%, transparent); -webkit-backdrop-filter: saturate(1.6) blur(16px); backdrop-filter: saturate(1.6) blur(16px); box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--accent) 35%, transparent), 0 12px 30px -18px rgb(0 2 8 / 0.9); }
-.site-nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); min-height: 64px; }
+/* Ten sam pasek na każdej stronie: pływa 12 px od góry nad banerem, przyciemnione szkło z rozmyciem,
+   bez kolorowych teł i kresek. Aktywna strona: jaśniejszy tekst i wypełniona ikona w kolorze akcentu. */
+html { scroll-padding-top: 96px; }
+.site-nav { position: fixed; top: 12px; left: 0; right: 0; z-index: 40; padding: 0 var(--sp-4); pointer-events: none; }
+.site-nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); max-width: calc(var(--wrap) + 2 * var(--sp-3)); min-height: 60px; padding: 0 var(--sp-2) 0 var(--sp-4); border-radius: 16px; background: rgb(5 12 12 / 0.62); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07), 0 16px 40px -16px rgb(0 0 0 / 0.8); pointer-events: auto; }
+/* Strony bez banera u góry (404) zostawiają miejsce na pasek. */
+.below-nav { padding-top: 96px; }
 .site-brand { display: inline-flex; align-items: center; gap: var(--sp-3); color: var(--text); text-decoration: none; font-family: var(--display); font-weight: 600; font-size: var(--fs-base); }
 .site-brand img { width: 32px; height: 32px; border-radius: 50%; outline: 1px solid var(--img-edge); outline-offset: -1px; }
 .site-links { display: flex; align-items: center; gap: var(--sp-1); margin: 0; padding: 0; list-style: none; }
 .site-links a { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: 40px; padding: 0 var(--sp-4); border-radius: var(--r-sm); color: var(--muted); font-weight: 500; text-decoration: none; transition: background-color 200ms var(--ease), color 200ms var(--ease); }
-.site-links a[aria-current='page'] { color: var(--text); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.site-links a[aria-current='page'] { color: var(--text); }
 .site-links a[aria-current='page'] .i { color: var(--accent); }
 .site-links .nav-join { min-height: 40px; margin-left: var(--sp-2); padding: 0 var(--sp-4); background: var(--accent); color: var(--on-accent); font-size: var(--fs-sm); font-weight: 600; }
 

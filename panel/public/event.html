@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pl">
+<html lang="pl" data-page="events">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -25,7 +25,7 @@
     button { font: inherit; color: inherit; }
     img { display: block; }
     ::selection { background: #24505a; color: #fff; }
-    html { scrollbar-color: #1f3150 var(--bg); }
+    html { scrollbar-color: #1d3a35 var(--bg); }
 
     /* ---------- Nagłówek: baner (albo baner eventu), ikona serwera, tytuł ---------- */
     .banner { position: relative; height: clamp(220px, 30vw, 440px); overflow: hidden; background: var(--surface); }
@@ -237,7 +237,7 @@
 <body>
   <a class="skip" href="#tresc">Przejdź do treści</a>
   <!-- Tło eventów: zorza w kolorach wybranego eventu (React Bits Aurora; kolory zmienia ctPaintPage). -->
-  <div class="page-bg" aria-hidden="true" data-rb="Aurora" data-props='{"colorStops":["#2fd9e0","#2f6bff","#1d3f9e"],"amplitude":1,"blend":0.5,"speed":0.8,"height":0.5,"glow":0.6,"opacity":0.8}'></div>
+  <div class="page-bg" aria-hidden="true" data-rb="Aurora" data-props='{"colorStops":["#28e9ea","#2ccf98","#166f94"],"amplitude":1,"blend":0.5,"speed":0.8,"height":0.5,"glow":0.6,"opacity":0.8}'></div>
   <header class="site-nav">
     <div class="wrap">
       <a class="site-brand" href="./" translate="no"><img src="img/icon.webp" alt="" width="32" height="32"><span>Entuzjaści Hopkostki</span></a>
@@ -799,12 +799,23 @@
       const t = ctTheme(c);
       return `--c:${t.c1};--c2:${t.tint};--cg:${t.cg}`;
     };
-    const DEFAULT_BANNER = 'img/banner.webp';
-    const DEFAULT_SRCSET = document.getElementById('banner-img').getAttribute('srcset');
+    // Domyślny baner (gdy event nie ma własnego): plik strony albo baner eventów ustawiony w panelu (Wygląd strony).
+    let DEFAULT_BANNER = 'img/banner.webp';
+    let DEFAULT_SRCSET = document.getElementById('banner-img').getAttribute('srcset');
+    document.addEventListener('site:look', (event) => {
+      const url = event.detail?.banners?.events;
+      if (!url || !/^https:\/\/[^\s"'<>\\()]+$/.test(url) || url === DEFAULT_BANNER) return;
+      const img = document.getElementById('banner-img');
+      const showingDefault = !img.dataset.src || img.dataset.src === DEFAULT_BANNER;
+      DEFAULT_BANNER = url;
+      DEFAULT_SRCSET = null;
+      // Inny niż nowy domyślny, żeby ctApplyTheme podmienił obrazek.
+      if (showingDefault) { img.dataset.src = 'img/banner.webp'; renderContests(); }
+    });
     const safeImage = (url) => (/^https:\/\/[^\s"'<>\\()]+$/.test(String(url ?? '')) ? url : null);
     // Kolory eventu obejmują całą stronę (Motion.paint w motion.js): akcent, pasek u góry, karty, fale na dole,
     // a zorza w tle bierze kolory eventu.
-    const AURORA_DEFAULT = ['#2fd9e0', '#2f6bff', '#1d3f9e'];
+    const AURORA_DEFAULT = ['#28e9ea', '#2ccf98', '#166f94'];
     function ctPaintPage(c) {
       const colors = c ? window.Motion?.eventColors(c) : null;
       window.Motion?.paint(colors ?? null);
@@ -834,13 +845,13 @@
         if (img.dataset.src !== src) return;
         img.classList.add('swap');
         setTimeout(() => {
-          if (own) img.removeAttribute('srcset');
+          if (own || !DEFAULT_SRCSET) img.removeAttribute('srcset');
           else img.setAttribute('srcset', DEFAULT_SRCSET);
           img.src = src;
           img.classList.remove('swap');
         }, reduceMotion.matches ? 0 : 220);
       };
-      if (!own) { next.sizes = '100vw'; next.srcset = DEFAULT_SRCSET; }
+      if (!own && DEFAULT_SRCSET) { next.sizes = '100vw'; next.srcset = DEFAULT_SRCSET; }
       next.src = src;
     }
 

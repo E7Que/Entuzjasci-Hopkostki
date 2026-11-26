@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pl">
+<html lang="pl" data-page="404">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -30,7 +30,7 @@
     .lost .cta-row { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
     .site-foot { margin-top: 0; }
     /* Ciemna warstwa nad terminalem w tle trzyma czytelność tekstu. */
-    .lost-bg::after { content: ''; position: absolute; inset: 0; background: rgb(6 11 23 / 0.45); }
+    .lost-bg::after { content: ''; position: absolute; inset: 0; background: rgb(5 11 11 / 0.45); }
     @media (max-width: 640px) {
       .lost h1 { font-size: var(--fs-4xl); }
       .lost .cta-row .btn { flex: 1 1 100%; }
@@ -52,7 +52,7 @@
     </div>
   </header>
 
-  <main class="wrap" id="tresc" tabindex="-1">
+  <main class="wrap below-nav" id="tresc" tabindex="-1">
     <section class="lost" aria-labelledby="lost-h">
       <h1 id="lost-h">Nie ma takiej strony</h1>
       <p class="lead">Link mógł się zmienić albo ktoś wkleił go z literówką. Wszystko, co jest na stronie, znajdziesz tutaj:</p>

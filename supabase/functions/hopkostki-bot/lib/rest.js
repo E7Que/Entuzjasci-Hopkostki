@@ -1,5 +1,6 @@
 // Minimalny klient REST API Discorda (fetch) z obsługą limitów zapytań (429).
 
+import { plainDashes } from './dashes.js';
 const API = 'https://discord.com/api/v10';
 
 export class DiscordError extends Error {
@@ -17,7 +18,10 @@ export function createRest(token, { fetchImpl = fetch, base = API } = {}) {
   // files: [{ name, content, type? }] - wysyłane jako multipart (np. zapis ticketu w .txt).
   // form: pola formularza (application/x-www-form-urlencoded - endpointy OAuth2), auth: własny nagłówek
   // Authorization (np. „Bearer …” użytkownika) albo null = bez nagłówka (wymiana kodu OAuth2 z PKCE).
-  async function request(method, path, { body, reason, query, files, form, auth } = {}) {
+  async function request(method, path, { body: raw, reason: why, query, files, form, auth } = {}) {
+    // Każda wiadomość i edycja bota: zwykłe myślniki zamiast pauz i półpauz (dashes.js).
+    const body = plainDashes(raw);
+    const reason = plainDashes(why);
     const url = new URL(base + path);
     for (const [key, value] of Object.entries(query ?? {})) {
       if (value !== undefined && value !== null) url.searchParams.set(key, String(value));

@@ -62,6 +62,7 @@ const ROUTE_SECTIONS = [
   [/^\/bump$/, 'bump'],
   [/^\/giveaways(\/|$)/, 'spolecznosc'],
   [/^\/(setup|alerts\/test)$/, 'ustawienia'],
+  [/^\/site\//, 'ustawienia'],
   [/^\/voice(\/|$)/, 'glosowe'],
   [/^\/messages(\/|$)/, 'wiadomosci'],
   [/^\/(cases|appeals)$/, 'sprawy'],
@@ -445,6 +446,10 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
     return attempt(async () => saveBannerAsset(bot, body?.data));
   }
   if (method === 'POST' && path === '/contests/banner') {
+    return attempt(async () => saveBannerAsset(bot, body?.data));
+  }
+  // Ikona i banery stron WWW (Ustawienia → Wygląd strony) - ten sam magazyn obrazków co banery Serwer info.
+  if (method === 'POST' && path === '/site/image') {
     return attempt(async () => saveBannerAsset(bot, body?.data));
   }
 

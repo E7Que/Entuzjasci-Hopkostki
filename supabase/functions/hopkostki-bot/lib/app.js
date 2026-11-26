@@ -7,6 +7,7 @@
 //   POST /panel/login logowanie moderatora loginem i hasłem z /login → sesja przeglądarki
 //   GET  /health      szybka diagnostyka bez sekretów
 
+import { plainDashes } from './dashes.js';
 import { handleInteraction } from './interactions.js';
 import { runCron } from './cron.js';
 import { runGatewaySession } from './gateway.js';
@@ -86,7 +87,8 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
 
     const { response, task } = await handleInteraction(JSON.parse(raw), bot);
     if (task) waitUntil(task());
-    return json(response);
+    // Odpowiedzi na komendy też bez pauz i półpauz (dashes.js).
+    return json(plainDashes(response));
   }
 
   async function cronAllowed(request) {
@@ -255,6 +257,12 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
         const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
         const headers = { ...cors, 'Content-Type': file.contentType, 'Content-Length': String(bytes.length), 'Cache-Control': 'public, max-age=31536000, immutable' };
         return new Response(request.method === 'HEAD' ? null : bytes, { status: 200, headers });
+      }
+      // Wygląd stron (ikona i banery z panelu) - strony podmieniają nim domyślne pliki.
+      if (request.method === 'GET' && route === '/public/site') {
+        const site = (await bot.store.getConfig()).site ?? {};
+        const look = { icon: site.icon || '', banners: { home: site.bannerHome || '', ranking: site.bannerRanking || '', events: site.bannerEvents || '' } };
+        return json(look, 200, { ...cors, 'Cache-Control': 'public, max-age=60' });
       }
       if (request.method === 'GET' && route === '/public/archive') {
         return json((await publicArchive(bot)) ?? { enabled: false }, 200, cors);

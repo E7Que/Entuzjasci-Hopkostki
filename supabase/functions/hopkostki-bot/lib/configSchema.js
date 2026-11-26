@@ -369,6 +369,8 @@ function cleanValue(path, input, current, def) {
   }
   if (path === 'tickets.types') return cleanTicketTypes(input, current);
   if (path === 'contests.list') return cleanContests(input, current);
+  // Ikona i banery stron: tylko obrazki wgrane w panelu (adres bota …/panel/public/asset/…), pusty = domyślny plik.
+  if (path.startsWith('site.')) return input === '' || input === null ? '' : assetLink(input) || current;
   if (path.startsWith('panelAccess.roles.')) return Array.isArray(input) ? cleanRoleIds(input) : current;
   if (path.startsWith('levels.')) {
     const cleaned = cleanLevelValue(path, input, current);

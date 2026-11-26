@@ -1,6 +1,7 @@
 // Dostęp do bazy (schemat "bot" w Postgresie Supabase).
 // query(text, params) => Promise<wiersze> - w funkcji Edge to postgres.js, w testach PGlite.
 
+import { plainDashes } from './dashes.js';
 import { DEFAULT_CONFIG } from './defaults.js';
 import { mergeWithDefaults, sanitizeConfig } from './configSchema.js';
 
@@ -270,14 +271,15 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
     async getConfig() {
       if (configCache && Date.now() - configCache.at < configTtlMs) return configCache.value;
       const row = await one('select data from bot.config where id = 1');
-      const value = mergeWithDefaults(DEFAULT_CONFIG, row?.data);
+      // Stare teksty z pauzami i półpauzami (zapisane przed zmianą) czytamy już ze zwykłymi myślnikami.
+      const value = plainDashes(mergeWithDefaults(DEFAULT_CONFIG, row?.data));
       configCache = { at: Date.now(), value };
       return value;
     },
 
     async updateConfig(input) {
       configCache = null;
-      const next = sanitizeConfig(input, await store.getConfig());
+      const next = sanitizeConfig(plainDashes(input), await store.getConfig());
       await query(
         `insert into bot.config (id, data, updated_at) values (1, $1::text::jsonb, now())
          on conflict (id) do update set data = excluded.data, updated_at = now()`,

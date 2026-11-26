@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pl">
+<html lang="pl" data-page="ranking">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -25,7 +25,7 @@
     :root {
       --surface-2: var(--raised);
       --hover: var(--raised-hover);
-      --border: #1c2c48;
+      --border: #18302b;
       --radius: 10px;
     }
     body { font-variant-numeric: tabular-nums; }
@@ -35,7 +35,7 @@
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     ::selection { background: #24505a; color: #fff; }
-    html { scrollbar-color: #1f3150 var(--bg); }
+    html { scrollbar-color: #1d3a35 var(--bg); }
 
     main { position: relative; z-index: 1; max-width: var(--wrap); margin: 0 auto; padding: 4px 24px 24px; }
 
@@ -54,7 +54,7 @@
 
     /* ---------- Pasek ---------- */
     .toolbar {
-      position: sticky; top: 72px; z-index: 5; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      position: sticky; top: 84px; z-index: 5; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
       margin: 32px 0 24px; padding: 8px; border: 1px solid var(--panel-edge); border-radius: var(--r); background: color-mix(in srgb, var(--surface) 88%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: var(--panel-shadow);
     }
     .tabs { display: flex; gap: 4px; flex: 1 1 auto; }
@@ -342,7 +342,7 @@
 
     /* ---------- Boczny panel ---------- */
     .side { display: grid; gap: 16px; }
-    @media (min-width: 980px) { .side { position: sticky; top: 144px; } }
+    @media (min-width: 980px) { .side { position: sticky; top: 156px; } }
     .info { display: grid; gap: 16px; }
     .card { padding: 24px 24px; border: 1px solid var(--panel-edge); border-radius: var(--radius); background: var(--panel); box-shadow: var(--panel-shadow); }
     .card h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; font-size: var(--fs-base); }
@@ -972,7 +972,7 @@
 <body>
   <a class="skip" href="#tresc">Przejdź do treści</a>
   <!-- Tło rankingu: promienie światła z góry jak reflektory nad podium (React Bits LightRays). -->
-  <div class="page-bg" aria-hidden="true" data-rb="LightRays" data-props='{"raysOrigin":"top-center","raysColor":"#8ff3f6","raysSpeed":0.8,"lightSpread":0.7,"rayLength":2.4,"glow":0.7,"haze":0.3,"intensity":0.9,"followMouse":true,"mouseInfluence":0.08,"clickPulse":true,"opacity":0.9}'></div>
+  <div class="page-bg" aria-hidden="true" data-rb="LightRays" data-props='{"raysOrigin":"top-center","raysColor":"#9ff6f7","raysSpeed":1.1,"lightSpread":0.95,"rayLength":3,"glow":0.9,"haze":0.35,"intensity":1.35,"pulsating":true,"followMouse":true,"mouseInfluence":0.15,"clickPulse":true,"opacity":1}'></div>
   <header class="site-nav">
     <div class="wrap">
       <a class="site-brand" href="./" translate="no"><img src="img/icon.webp" alt="" width="32" height="32"><span>Entuzjaści Hopkostki</span></a>
@@ -1331,6 +1331,12 @@
         else article.removeAttribute(name);
       }
       article.querySelector('.pod-person').innerHTML = slot.html;
+      // XP na podium odlicza od zera (React Bits CountUp, motion.js).
+      const meta = article.querySelector('.pod-person .meta');
+      if (meta && / XP$/.test(meta.textContent.trim())) {
+        const xp = Number(meta.textContent.replace(/\D/g, ''));
+        if (xp) window.Motion?.count(meta, xp, (n) => `${fmt(n)} XP`, { duration: 1.6 });
+      }
       article.classList.toggle('sel', Boolean(state.selected) && article.dataset.id === state.selected);
       pod.shown[i] = slot;
     }
@@ -1562,9 +1568,11 @@
       $('#found').hidden = !state.search;
       if (state.search) $('#found').innerHTML = `Wyniki dla „${esc(state.search)}”: <b>${fmt(state.total)}</b>`;
       if (appended) {
+        const before = list.children.length;
         list.insertAdjacentHTML('beforeend', appended.map(rowHtml).join(''));
         table.hidden = false;
         applySamples(list);
+        window.Motion?.stagger([...list.children].slice(before));
         return;
       }
       if (!state.entries.length) {
@@ -1579,6 +1587,8 @@
       table.hidden = !list.children.length;
       top3.classList.toggle('alone', table.hidden);
       applySamples(list);
+      // Wiersze wjeżdżają po kolei (React Bits AnimatedList, motion.js).
+      window.Motion?.stagger(list.children);
     }
 
     async function load(append = false) {
@@ -14745,6 +14755,7 @@
       intro: '.totals > div',
       reveal: '.toolbar, .table, .side .info > .card:not([hidden])',
       spot: '.side .card, .ct-strip',
+      tilt: '.top3 .top',
     });
   </script>
   <script src="rb.js?v=dev" defer></script>

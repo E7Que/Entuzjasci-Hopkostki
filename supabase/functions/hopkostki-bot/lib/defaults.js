@@ -309,6 +309,15 @@ export const DEFAULT_CONFIG = {
   // trwa albo skończył się w ostatnich 3 dniach. Udział wymaga połączenia konta: /polacz na Discordzie daje link,
   // który loguje na stronie. list: eventy (contests.js), logChannelId: kanał, na który trafiają zgłoszenia osób,
   // które osiągnęły próg (puste = bez powiadomień), pingRoleId: rola oznaczana przy zgłoszeniu.
+  // Wygląd stron WWW (Ustawienia → Wygląd strony): ikona i osobne banery strony głównej, rankingu i eventów,
+  // wgrane w panelu (obrazki bota /panel/public/asset/…). Puste = domyślne pliki strony (img/icon.webp, img/banner.webp).
+  site: {
+    icon: '',
+    bannerHome: '',
+    bannerRanking: '',
+    bannerEvents: '',
+  },
+
   contests: {
     enabled: true,
     logChannelId: '',
