@@ -108,13 +108,18 @@
     el.innerHTML = '<span aria-hidden="true"></span><span class="sr-only"></span>';
     const [shown, spoken] = el.children;
     spoken.textContent = format(end);
+    // Szerokość końcowej liczby z góry, żeby tekst obok nie przesuwał się przy każdej nowej cyfrze.
+    shown.style.display = 'inline-block';
+    shown.style.textAlign = 'right';
+    shown.textContent = format(end);
+    shown.style.minWidth = `${Math.ceil(shown.getBoundingClientRect().width)}px`;
     shown.textContent = format(from);
     const run = () => {
       const t0 = performance.now();
       const step = (now) => {
         if (el._countFrom !== end) return; // przyszła nowsza wartość
         const t = Math.min(1, (now - t0) / (duration * 1000));
-        shown.textContent = format(from + (end - from) * easeOut(t));
+        shown.textContent = format(Math.round(from + (end - from) * easeOut(t)));
         if (t < 1) requestAnimationFrame(step);
         else el.textContent = format(end);
       };
@@ -214,22 +219,84 @@
     root.addEventListener('pointerleave', () => aim(null, null));
   }
 
-  // Baner przez całą szerokość: przy przewijaniu krawędzie zjeżdżają do kolumny treści, rogi się zaokrąglają,
-  // obraz lekko się oddala. Po wczytaniu baner odsłania się od góry.
-  function scrub(target, { column = 'main', intro = true } = {}) {
+  // TiltedCard: karta pod kursorem obraca się do 5° w jego stronę i lekko rośnie (tylko mysz, bez ograniczonego ruchu).
+  function tilt(selector, { max = 5, scale = 1.015 } = {}) {
+    if (!fine || reduce) return;
+    let card = null;
+    const rest = (el) => { if (el) { el.style.setProperty('--rx', '0deg'); el.style.setProperty('--ry', '0deg'); el.style.setProperty('--ts', '1'); } };
+    addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      const hit = e.target.closest?.(selector) ?? null;
+      if (hit !== card) { rest(card); card = hit; if (card) card.classList.add('tilt'); }
+      if (!card) return;
+      const r = card.getBoundingClientRect();
+      const nx = (e.clientX - r.left) / r.width - 0.5;
+      const ny = (e.clientY - r.top) / r.height - 0.5;
+      card.style.setProperty('--rx', `${(-ny * max * 2).toFixed(2)}deg`);
+      card.style.setProperty('--ry', `${(nx * max * 2).toFixed(2)}deg`);
+      card.style.setProperty('--ts', String(scale));
+    }, { passive: true });
+    root.addEventListener('pointerleave', () => { rest(card); card = null; });
+  }
+
+  // ClickSpark: 8 iskier w kolorze akcentu rozbiega się z miejsca kliknięcia (0,4 s).
+  function sparks({ count = 8, size = 10, radius = 18, duration = 400 } = {}) {
+    if (reduce || document.querySelector('.sparks')) return;
+    const canvas = document.createElement('canvas');
+    canvas.className = 'sparks';
+    canvas.setAttribute('aria-hidden', 'true');
+    document.body.append(canvas);
+    const ctx = canvas.getContext('2d');
+    const list = [];
+    let raf = 0;
+    const fit = () => {
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      canvas.width = innerWidth * dpr;
+      canvas.height = innerHeight * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    fit();
+    addEventListener('resize', fit);
+    const draw = (now) => {
+      raf = 0;
+      ctx.clearRect(0, 0, innerWidth, innerHeight);
+      const color = getComputedStyle(root).getPropertyValue('--accent').trim() || '#2fd9e0';
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      for (let i = list.length - 1; i >= 0; i--) {
+        const sp = list[i];
+        const t = (now - sp.start) / duration;
+        if (t >= 1) { list.splice(i, 1); continue; }
+        const eased = t * (2 - t);
+        const dist = eased * radius;
+        const len = size * (1 - eased);
+        const x1 = sp.x + dist * Math.cos(sp.angle);
+        const y1 = sp.y + dist * Math.sin(sp.angle);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x1 + len * Math.cos(sp.angle), y1 + len * Math.sin(sp.angle));
+        ctx.stroke();
+      }
+      if (list.length) raf = requestAnimationFrame(draw);
+    };
+    addEventListener('pointerdown', (e) => {
+      const now = performance.now();
+      for (let i = 0; i < count; i++) list.push({ x: e.clientX, y: e.clientY, angle: (2 * Math.PI * i) / count, start: now });
+      if (!raf) raf = requestAnimationFrame(draw);
+    }, { passive: true });
+  }
+
+  // Baner przez całą szerokość: przy przewijaniu obraz przesuwa się wolniej niż strona (paralaksa), lekko się oddala
+  // i ciemnieje; baner zostaje na całą szerokość. Po wczytaniu odsłania się od góry.
+  function scrub(target, { intro = true } = {}) {
     const el = $(target);
     if (!ON || !el) return null;
     el.classList.add('scrub');
-    const measure = () => {
-      const col = el.closest(column) ?? $(column);
-      if (!col) return;
-      const cs = getComputedStyle(col);
-      const inner = Math.min(col.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), el.clientWidth);
-      el.style.setProperty('--gut', `${Math.max(0, (el.clientWidth - inner) / 2)}px`);
-    };
-    measure();
-    ScrollTrigger.addEventListener('refreshInit', measure);
-    gsap.to(el, { '--p': 1, ease: 'none', scrollTrigger: { trigger: el, start: 'top top', end: 'bottom 30%', scrub: 1 } });
+    const img = el.querySelector('img');
+    const trigger = { trigger: el, start: 'top 64px', end: 'bottom 64px', scrub: true };
+    if (img) gsap.fromTo(img, { yPercent: 0, scale: 1.08 }, { yPercent: 24, scale: 1, ease: 'none', scrollTrigger: trigger });
+    gsap.fromTo(el, { '--shade': 0 }, { '--shade': 0.65, ease: 'none', scrollTrigger: { ...trigger } });
     return intro ? gsap.fromTo(el, { '--intro': 1 }, { '--intro': 0, duration: 1, ease: 'power4.out', delay: 0.1 }) : null;
   }
 
@@ -251,7 +318,7 @@
         const main = $('#tresc');
         if (skip && main) skip.addEventListener('click', () => main.focus({ preventScroll: true }));
       }
-      if (opts.banner) scrub(opts.banner, { column: opts.column ?? 'main' });
+      if (opts.banner) scrub(opts.banner);
       if (opts.title) rise(opts.title, { delay: opts.banner ? 0.35 : 0.1 });
       const intro = $$(opts.intro ?? []);
       if (intro.length) {
@@ -265,7 +332,62 @@
     }
     if (opts.spot) spotlight(opts.spot);
     if (opts.magnet) magnet(opts.magnet);
+    if (opts.tilt) tilt(opts.tilt);
+    sparks();
   }
 
-  window.Motion = { on: ON, init, rise, reveal, count, refresh, splitWords, spotlight, magnet, scrub, get lenis() { return lenis; } };
+  // ---------- Kolory eventu na całej stronie ----------
+  // Tylko strona eventów (/event): kolory wybranego eventu. Motion.paint([kolor1, kolor2]) przestawia akcent (przyciski, linki, ikony, krawędzie kart), drugi akcent,
+  // odcień paska u góry, plamy światła, punkty i fale w tle. Motion.paint(null) wraca do granatu i cyjanu.
+  // Akcent rozjaśniamy, aż tekst w tym kolorze ma kontrast co najmniej 4,5:1 na tle strony.
+  const TYPE_COLORS = { messages: ['#3cc3d6', '#a5ecf5'], invites: ['#8b7bff', '#cfc7ff'], mixed: ['#f5a524', '#ffd88f'] };
+  const hexRgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const rgbHex = (c) => `#${c.map((v) => Math.round(v).toString(16).padStart(2, '0')).join('')}`;
+  const mixRgb = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+  const isHex = (v) => /^#[0-9a-f]{6}$/i.test(String(v ?? ''));
+  const lum = (c) => {
+    const [r, g, b] = c.map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const ratio = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
+  const PAGE_BG = [6, 11, 23];
+  const readable = (hex) => {
+    const base = hexRgb(hex);
+    let c = base;
+    for (let t = 0.05; ratio(c, PAGE_BG) < 4.5 && t <= 1; t += 0.05) c = mixRgb(base, [255, 255, 255], t);
+    return c;
+  };
+  function eventColors(c) {
+    const [base, light] = TYPE_COLORS[c?.type] ?? TYPE_COLORS.mixed;
+    const c1 = isHex(c?.color) ? c.color : base;
+    const c2 = isHex(c?.color2) ? c.color2 : isHex(c?.color) ? rgbHex(mixRgb(hexRgb(c1), [255, 255, 255], 0.45)) : light;
+    return [c1, c2];
+  }
+  const PAINTED = ['--accent', '--accent-hover', '--on-accent', '--accent-2', '--tint', '--glow-1', '--glow-2', '--glow-3'];
+  function paint(colors) {
+    const st = root.style;
+    if (!colors || !isHex(colors[0])) {
+      PAINTED.forEach((k) => st.removeProperty(k));
+    } else {
+      const c1 = colors[0];
+      const c2 = isHex(colors[1]) ? colors[1] : c1;
+      const a = readable(c1);
+      const dark = mixRgb(a, [0, 0, 0], 0.82);
+      const light = mixRgb(a, [255, 255, 255], 0.92);
+      st.setProperty('--accent', rgbHex(a));
+      st.setProperty('--accent-hover', rgbHex(mixRgb(a, [255, 255, 255], 0.2)));
+      st.setProperty('--on-accent', rgbHex(ratio(dark, a) >= ratio(light, a) ? dark : light));
+      st.setProperty('--accent-2', rgbHex(readable(c2)));
+      st.setProperty('--tint', rgbHex(mixRgb(hexRgb(c1), PAGE_BG, 0.8)));
+      st.setProperty('--glow-1', c1);
+      st.setProperty('--glow-2', c2);
+      st.setProperty('--glow-3', rgbHex(mixRgb(hexRgb(c1), PAGE_BG, 0.55)));
+    }
+    document.dispatchEvent(new Event('rb:theme'));
+  }
+
+  // Rok w stopce („© 2026 Entuzjaści Hopkostki”) zawsze bieżący.
+  document.querySelectorAll('[data-year]').forEach((el) => { el.textContent = String(new Date().getFullYear()); });
+
+  window.Motion = { on: ON, init, rise, reveal, count, refresh, splitWords, spotlight, magnet, tilt, sparks, scrub, paint, eventColors, get lenis() { return lenis; } };
 })();

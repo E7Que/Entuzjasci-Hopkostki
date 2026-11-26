@@ -73,51 +73,41 @@ default effect (sensible defaults), peak-end rule (end pages on a strong call to
 
 ## Tokens (keep every page on these)
 
+Navy and blue with the banner's neon cyan (owner's pick: "niebieski i granat", darker page, no purple).
+The source of truth is `:root` in `panel/public/site.css`:
+
 ```css
-:root {
-  --bg: #171b23;        /* page, graphite */
-  --surface: #1e232d;   /* sections, cards */
-  --raised: #262c38;    /* inputs, secondary buttons, hovered rows */
-  --text: #e5eaf1;
-  --muted: #9aa6b7;
-  --faint: #8d99ab;    /* 4.85:1 or better on every surface */
-  --accent: #4cc3c8;    /* cyan from the server banner, muted for dark mode */
-  --accent-hover: #63d0d4;
-  --on-accent: #06282a; /* text on accent */
-  --gold: #d8b35c; --silver: #a9b4c2; --bronze: #c38a5e;
-  --ok: #5bbf8a; --warn: #d9a64e; --danger: #e06c70;
-  --shadow-sm: 0 1px 1px rgb(3 7 12 / .4), 0 2px 4px rgb(3 7 12 / .3);
-  --shadow: 0 1px 2px rgb(3 7 12 / .45), 0 4px 10px rgb(3 7 12 / .35), 0 14px 30px rgb(3 7 12 / .3);
-  --r-sm: 6px; --r: 10px;
-}
+--bg: #060b17; --surface: #0c1628; --raised: #13213a; --raised-hover: #1a2b4a;
+--text: #e6eefb; --muted: #99aac4; --faint: #8396b3; --field-border: #5a7099;
+--accent: #2fd9e0; --accent-hover: #63e5ea; --on-accent: #03272a; --accent-2: #5b9cff;
+--glow-1/2/3, --tint (top bar);  --panel / --panel-edge / --panel-shadow (card surfaces)
 ```
 
-Type (owner's choice): Manrope (700 section headings, 800 main heading) and Inter (400 text, 600 buttons),
-both from Google Fonts with `latin-ext` for Polish letters. Headline line height 1.15, body 1.55.
+Cards and sections use `--panel` (lit from the top by the accent), a thin `--panel-edge` and `--panel-shadow`.
+Only the events page (`/event`) recolours itself: `Motion.paint(Motion.eventColors(event))` swaps the accent,
+second accent, top bar tint, glows, the aurora and the waves to the selected event's colours. Other pages keep
+navy and cyan. Type: Manrope (700 sections, 800 main heading) and Inter (400 text, 600 buttons), `latin-ext`.
 
-Background (owner's picks, from React Bits files he sent): graphite `#171b23` with the React Bits **Particles**
-field (`particles.js`, WebGL2, owner's settings: 220 points, spread 12, glow 0.4, twinkle 0.2, cursor repels, points
-joined by lines, click sends a wave; site colours, slight scroll parallax, fewer points on phones, one still frame
-under reduced motion) over three soft drifting radial glows in the banner's colours (`.glow`). React Bits
-**LiquidChrome** (`chrome.js`, cyan-tinted chrome, cursor leaves a wake) is used only as a band behind the final call
-to action on the landing page and as the 404 background. Do not add another background treatment.
+## Backgrounds (one per page, all from React Bits, ported in `rb.js` + `rb-*.js` / `particles.js`)
 
-Layout: content column max 1120 px, 16 px side gutter on phones, nothing scrolls sideways.
-Elevation comes from `--surface`/`--raised` plus layered shadows, never from borders.
-Focus is always visible (`outline: 2px solid var(--accent); outline-offset: 2px`).
-Respect `prefers-reduced-motion`.
+- Landing: Particles (owner's "tło 1"), with drifting glows.
+- Ranking: LightRays from the top, like stage lights over the podium.
+- Events: Aurora in the selected event's colours.
+- 404: FaultyTerminal, dimmed under the text.
+- Bottom of every page: Scanner waves (owner's "tło 4") in `var(--accent)` / `var(--accent-2)`, from above the
+  last section down to the end of the page (`.page-scan`, `data-from`).
+Do not stack a second full-page background on a page.
 
 ## Page frame
 
-- Top banner runs the full width of the viewport (`.bleed`); no big server icon over it (the small
-  logo in the top bar is enough).
-- Every public page moves the same way (owner's request), through `motion.js` (GSAP ScrollTrigger + Lenis from
-  `panel/public/vendor`): the full-width banner scrubs into the content column while scrolling, the page title rises
-  word by word on load, section headings rise when they scroll in, sections slide up once (AnimatedContent), numbers
-  count up (CountUp), the card under the cursor gets a soft light and a brighter edge (SpotlightCard) and big primary
-  buttons pull slightly towards the cursor (Magnet). Call `Motion.init({...})` on a new page instead of writing new
-  motion code. Everything is visible without JavaScript and static under `prefers-reduced-motion`.
-- The banner is `img/banner.webp` (3840×2160 from the owner) served through `srcset` (960, 1600, 2400, 3840 px).
+- Same sticky top bar on every page (brand, Ranking, Eventy, "Dołącz" button), translucent `--tint` with blur.
+- Full-width banner (`img/banner.webp` 3840×2160 from the owner, `srcset` 960/1600/2400/3840). On scroll the image
+  moves slower than the page (parallax), zooms out slightly and darkens. It never shrinks into a box.
+- `motion.js` gives every public page the same motion: title words rise on load, section headings rise and
+  sections slide up once, numbers count up (whole numbers, fixed width), the card under the cursor gets a light
+  and tilts slightly, main buttons have a moving star border, a glare and a slight magnet pull, clicks spark.
+  Call `Motion.init({...})` on a new page. Everything is visible without JS and static under reduced motion.
+- Footer: "© <year> Entuzjaści Hopkostki" (year filled in by motion.js) and links.
 
 ## Copy
 

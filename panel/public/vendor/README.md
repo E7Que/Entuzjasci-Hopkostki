@@ -18,5 +18,11 @@ Przeniesione z Reacta, shadery i logika bez zmian:
 | Plik | Komponent | Gdzie |
 | --- | --- | --- |
 | `particles.js` | Particles („tło 1” od właściciela) | tło strony głównej, rankingu i eventów |
-| `chrome.js` | LiquidChrome („tło 2” od właściciela) | pas z zaproszeniem na końcu strony głównej, tło strony 404 |
-| `motion.js` | wzorce MaskedHeading, AnimatedContent, CountUp, SpotlightCard, Magnet | wszystkie strony publiczne |
+| `rb-scanner.js` | Scanner („tło 4” od właściciela) | dół strony głównej, od nad kartą z zaproszeniem do końca |
+| `rb-lightrays.js` | LightRays | tło rankingu (reflektory nad podium) |
+| `rb-aurora.js` | Aurora | tło eventów w kolorach wybranego eventu |
+| `rb-terminal.js` | FaultyTerminal | tło strony 404 |
+| `motion.js` | wzorce MaskedHeading, AnimatedContent, CountUp, SpotlightCard, Magnet, TiltedCard, ClickSpark, GlareHover, StarBorder, ScrollReveal | wszystkie strony publiczne |
+
+Pliki `rb-*.js` to oryginalny kod komponentów z JSX zamienionym na `RB.dom`; `rb.js` daje im potrzebne funkcje
+Reacta (useRef, useEffect, useState) i podpina je do elementów z `data-rb="Nazwa"` (ustawienia w `data-props`).
