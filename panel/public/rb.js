@@ -3,7 +3,8 @@
    to, czego potrzebują z Reacta (useRef, useEffect, useState...), i podpina je do elementów strony:
      <div class="page-bg" data-rb="LightRays" data-props='{"raysColor":"#7ff0f4"}'></div>
    Zmiana ustawień w locie: element.rb.update({ colorStops: [...] }).
-   data-from="selektor" (opcjonalnie): element zaczyna się nad tym miejscem strony i sięga do jej końca.
+   data-from="selektor" (opcjonalnie): element zaczyna się nad tym miejscem strony (z data-edge="bottom": pod jego
+   dolną krawędzią) i przesuwa się razem ze stroną.
    Kolory można podać jako "var(--accent)": biorą wtedy kolor strony i zmieniają się razem z nim
    (strona eventów po zmianie eventu wysyła zdarzenie „rb:theme”). */
 (() => {
@@ -107,7 +108,9 @@
     for (const host of spans) {
       const from = document.querySelector(host.dataset.from);
       if (!from) continue;
-      const top = from.getBoundingClientRect().top + window.scrollY - Number(host.dataset.lift || 0);
+      const box = from.getBoundingClientRect();
+      const edge = host.dataset.edge === 'bottom' ? box.bottom : box.top;
+      const top = edge + window.scrollY - Number(host.dataset.lift || 0);
       host.style.top = `${Math.max(0, Math.round(top))}px`;
     }
   }

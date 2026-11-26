@@ -19,9 +19,9 @@ Przeniesione z Reacta, shadery i logika bez zmian:
 | --- | --- | --- |
 | `particles.js` | Particles („tło 1” od właściciela) | tło strony głównej, rankingu i eventów |
 | `rb-scanner.js` | Scanner („tło 4” od właściciela) | dół strony głównej, od nad kartą z zaproszeniem do końca |
-| `rb-gridscan.js` | GridScan | tło rankingu (neonowa siatka 3D ze skanem; kamera wyłączona) |
+| `rb-pillar.js` | LightPillar (wybór właściciela) | tło rankingu (słup światła za podium) |
 | `rb-aurora.js` | Aurora | tło eventów w kolorach wybranego eventu |
-| `rb-terminal.js` | FaultyTerminal | tło strony 404 |
+| `rb-chrome.js` | LiquidChrome (wybór właściciela, „tło 2”) | tło strony 404 |
 | `motion.js` | wzorce MaskedHeading, AnimatedContent, CountUp, SpotlightCard, Magnet, TiltedCard, ClickSpark, GlareHover, StarBorder, ScrollReveal | wszystkie strony publiczne |
 
 Pliki `rb-*.js` to oryginalny kod komponentów z JSX zamienionym na `RB.dom`; `rb.js` daje im potrzebne funkcje

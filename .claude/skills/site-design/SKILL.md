@@ -91,10 +91,11 @@ panels as AI slop). Only the events page (`/event`) recolours itself with the se
 
 - Landing: Particles (owner's "tło 1"), stronger than the file (more points and links, calm cursor, no field
   rotation so it does not drift sideways), with drifting glows.
-- Ranking: GridScan, a neon 3D grid tunnel with a light scan, like a Geometry Dash level floor (webcam features
-  left off). LightRays and Galaxy were rejected by the owner.
-- Events: Aurora in the selected event's colours.
-- 404: FaultyTerminal, dimmed under the text.
+- Ranking: LightPillar (owner's pick), banner colours, shifted behind the podium on wide screens.
+  LightRays, Galaxy and GridScan were rejected.
+- Events: Aurora in shades of the selected event's main colour; it starts under the banner and scrolls with the
+  page. The whole page (background, cards, fields, accents) takes the event's hue. Owner may still swap the aurora.
+- 404: LiquidChrome (owner's pick, "tło 2") in the banner's cyan, darker on the left behind the text.
 - Bottom of every page: Scanner waves (owner's "tło 4") in `var(--accent)` / `var(--accent-2)`, from above the
   last section down to the end of the page (`.page-scan`, `data-from`).
 Do not stack a second full-page background on a page.

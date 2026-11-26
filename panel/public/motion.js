@@ -359,19 +359,20 @@
   };
   const ratio = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
   const PAGE_BG = [5, 11, 11];
-  const readable = (hex) => {
-    const base = hexRgb(hex);
-    let c = base;
-    for (let t = 0.05; ratio(c, PAGE_BG) < 4.5 && t <= 1; t += 0.05) c = mixRgb(base, [255, 255, 255], t);
-    return c;
-  };
   function eventColors(c) {
     const [base, light] = TYPE_COLORS[c?.type] ?? TYPE_COLORS.mixed;
     const c1 = isHex(c?.color) ? c.color : base;
     const c2 = isHex(c?.color2) ? c.color2 : isHex(c?.color) ? rgbHex(mixRgb(hexRgb(c1), [255, 255, 255], 0.45)) : light;
     return [c1, c2];
   }
-  const PAINTED = ['--accent', '--accent-hover', '--on-accent', '--accent-2', '--tint', '--glow-1', '--glow-2', '--glow-3'];
+  const PAINTED = ['--accent', '--accent-hover', '--on-accent', '--accent-2', '--tint', '--glow-1', '--glow-2', '--glow-3',
+    '--bg', '--surface', '--raised', '--raised-hover', '--text', '--muted', '--faint', '--field-border'];
+  // Kolor rozjaśniany, aż ma kontrast co najmniej min na danym tle.
+  const lift = (c, against, min) => {
+    let out = c;
+    for (let t = 0.05; ratio(out, against) < min && t <= 1; t += 0.05) out = mixRgb(c, [255, 255, 255], t);
+    return out;
+  };
   function paint(colors) {
     const st = root.style;
     if (!colors || !isHex(colors[0])) {
@@ -379,13 +380,27 @@
     } else {
       const c1 = colors[0];
       const c2 = isHex(colors[1]) ? colors[1] : c1;
-      const a = readable(c1);
+      // Ciemne tło i karty w odcieniu eventu (zamiast turkusowo-zielonych z ogólnej palety strony).
+      const hue = hexRgb(c1);
+      const ink = [3, 5, 8];
+      const bg = mixRgb(hue, ink, 0.93);
+      const surface = mixRgb(hue, ink, 0.86);
+      const raised = mixRgb(hue, ink, 0.79);
+      st.setProperty('--bg', rgbHex(bg));
+      st.setProperty('--surface', rgbHex(surface));
+      st.setProperty('--raised', rgbHex(raised));
+      st.setProperty('--raised-hover', rgbHex(mixRgb(hue, ink, 0.72)));
+      st.setProperty('--text', rgbHex(mixRgb([255, 255, 255], hue, 0.06)));
+      st.setProperty('--muted', rgbHex(lift(mixRgb([196, 202, 210], hue, 0.18), surface, 4.5)));
+      st.setProperty('--faint', rgbHex(lift(mixRgb([166, 174, 184], hue, 0.18), raised, 4.5)));
+      st.setProperty('--field-border', rgbHex(lift(mixRgb([118, 128, 140], hue, 0.3), surface, 3)));
+      const a = lift(hue, bg, 4.5);
       const dark = mixRgb(a, [0, 0, 0], 0.82);
       const light = mixRgb(a, [255, 255, 255], 0.92);
       st.setProperty('--accent', rgbHex(a));
       st.setProperty('--accent-hover', rgbHex(mixRgb(a, [255, 255, 255], 0.2)));
       st.setProperty('--on-accent', rgbHex(ratio(dark, a) >= ratio(light, a) ? dark : light));
-      st.setProperty('--accent-2', rgbHex(readable(c2)));
+      st.setProperty('--accent-2', rgbHex(lift(hexRgb(c2), bg, 4.5)));
       st.setProperty('--tint', rgbHex(mixRgb(hexRgb(c1), PAGE_BG, 0.8)));
       st.setProperty('--glow-1', c1);
       st.setProperty('--glow-2', c2);
