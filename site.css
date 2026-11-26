@@ -77,7 +77,10 @@
 @property --glow-2 { syntax: '<color>'; inherits: true; initial-value: #0f6b5a; }
 @property --glow-3 { syntax: '<color>'; inherits: true; initial-value: #166f94; }
 @property --tint { syntax: '<color>'; inherits: true; initial-value: #071312; }
-:root { transition: --accent 700ms var(--ease), --accent-hover 700ms var(--ease), --on-accent 700ms var(--ease), --accent-2 700ms var(--ease), --tint 700ms var(--ease), --glow-1 1400ms var(--ease), --glow-2 1400ms var(--ease), --glow-3 1400ms var(--ease); }
+@property --bg { syntax: '<color>'; inherits: true; initial-value: #050b0b; }
+@property --surface { syntax: '<color>'; inherits: true; initial-value: #0b1716; }
+@property --raised { syntax: '<color>'; inherits: true; initial-value: #11221f; }
+:root { transition: --bg 700ms var(--ease), --surface 700ms var(--ease), --raised 700ms var(--ease), --accent 700ms var(--ease), --accent-hover 700ms var(--ease), --on-accent 700ms var(--ease), --accent-2 700ms var(--ease), --tint 700ms var(--ease), --glow-1 1400ms var(--ease), --glow-2 1400ms var(--ease), --glow-3 1400ms var(--ease); }
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -140,7 +143,7 @@ p, li, dd { text-wrap: pretty; }
    bez kolorowych teł i kresek. Aktywna strona: jaśniejszy tekst i wypełniona ikona w kolorze akcentu. */
 html { scroll-padding-top: 96px; }
 .site-nav { position: fixed; top: 12px; left: 0; right: 0; z-index: 40; padding: 0 var(--sp-4); pointer-events: none; }
-.site-nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); max-width: calc(var(--wrap) + 2 * var(--sp-3)); min-height: 60px; padding: 0 var(--sp-2) 0 var(--sp-4); border-radius: 16px; background: rgb(5 12 12 / 0.62); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07), 0 16px 40px -16px rgb(0 0 0 / 0.8); pointer-events: auto; }
+.site-nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); max-width: calc(var(--wrap) + 2 * var(--sp-3)); min-height: 60px; padding: 0 var(--sp-2) 0 var(--sp-4); border-radius: 16px; background: color-mix(in srgb, var(--bg) 62%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07), 0 16px 40px -16px rgb(0 0 0 / 0.8); pointer-events: auto; }
 /* Strony bez banera u góry (404) zostawiają miejsce na pasek. */
 .below-nav { padding-top: 96px; }
 .site-brand { display: inline-flex; align-items: center; gap: var(--sp-3); color: var(--text); text-decoration: none; font-family: var(--display); font-weight: 600; font-size: var(--fs-base); }
@@ -268,6 +271,8 @@ html.embed .page-scan { display: none; }
 .page-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
 .page-bg > canvas, .page-scan > canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 html.embed .page-bg { display: none; }
+@media (min-width: 980px) { .page-bg.pillar { left: -13vw; right: 13vw; } }
+.page-bg.flow { position: absolute; inset: auto 0 auto 0; height: 130vh; -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); }
 
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 

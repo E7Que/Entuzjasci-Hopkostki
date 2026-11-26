@@ -2328,7 +2328,8 @@ $('#ct-theme-reset').addEventListener('click', () => {
   ctLook.color2 = '';
   ctSyncLook();
 });
-// Baner: zmniejszony w przeglądarce (jak w „Serwer info”) i wgrany do bota; event zapisuje jego adres.
+// Baner: w pełnej jakości (do 3 MB bez zmian, większy przeliczany do WebP, najwyżej 3840 px), wgrany do bota;
+// event zapisuje jego adres. GIF zostaje bez zmian (animacja).
 $('#ct-banner-file').addEventListener('change', async (event) => {
   const file = event.target.files?.[0];
   event.target.value = '';
@@ -2337,7 +2338,7 @@ $('#ct-banner-file').addEventListener('change', async (event) => {
   btn.classList.add('busy');
   btn.firstChild.textContent = 'Wgrywanie…';
   try {
-    const data = await siBannerData(file);
+    const data = file.type === 'image/gif' ? await siBannerData(file) : (await siteImageData(file, 'bannerEvents')).data;
     const { url } = await api('/contests/banner', { method: 'POST', body: JSON.stringify({ data }) });
     ctLook.banner = url;
     toast('Wgrano baner - kliknij „Dodaj event” / „Zapisz zmiany eventu”, a potem zapisz ustawienia.');
@@ -3615,7 +3616,7 @@ $('#si-send-new').addEventListener('click', () => sendServerInfoMessage(true));
 // ---------- Ustawienia → Wygląd strony (ikona i banery stron enho.pl) ----------
 // Obrazek idzie do bota w pełnej jakości: plik do 3 MB bez zmian; większy przeliczamy do WebP (najwyżej 3840 px szerokości).
 const SITE_DEFAULTS = { icon: 'img/icon.webp', bannerHome: 'img/banner.webp', bannerRanking: 'img/banner.webp', bannerEvents: 'img/banner.webp' };
-const SITE_MIN = { icon: [256, 256], bannerHome: [1920, 1080], bannerRanking: [1920, 600], bannerEvents: [1920, 600] };
+const SITE_MIN = { icon: [256, 256], bannerHome: [1920, 1080], bannerRanking: [1920, 600], bannerEvents: [1920, 800] };
 async function siteImageData(file, key) {
   if (!/^image\/(png|jpeg|webp)$/.test(file.type)) throw new Error('Wybierz obrazek PNG, JPG albo WebP.');
   let bitmap;

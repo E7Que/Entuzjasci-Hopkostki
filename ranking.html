@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="site.css?v=008a31c">
+  <link rel="stylesheet" href="site.css?v=9099342">
   <link rel="stylesheet" href="vendor/lenis.css">
   <style>
     /* Kolory, fonty, tło i górny pasek: site.css. Tu tylko nazwy używane przez tę stronę. */
@@ -971,8 +971,8 @@
 </head>
 <body>
   <a class="skip" href="#tresc">Przejdź do treści</a>
-  <!-- Tło rankingu: neonowa siatka 3D ze świetlnym skanem, jak podłoga poziomu w Geometry Dash (React Bits GridScan). -->
-  <div class="page-bg" aria-hidden="true" data-rb="GridScan" data-props='{"linesColor":"#1f6f69","scanColor":"#28e9ea","cells":10,"lineThickness":1.2,"depth":3.5,"depthFade":0.6,"parallax":1,"points":true,"reflection":0.35,"shading":0.7,"scanDuration":2.4,"scanDelay":1.4,"scanWidth":1.1,"trail":0.55,"glow":0.85,"autoScan":true,"interactive":true,"clickEffect":"ping","dpr":1.5}'></div>
+  <!-- Tło rankingu (wybór właściciela): słup światła w kolorach banera (React Bits LightPillar), przesunięty za podium. -->
+  <div class="page-bg pillar" aria-hidden="true" data-rb="LightPillar" data-props='{"topColor":"#28e9ea","bottomColor":"#166f94","intensity":0.9,"rotationSpeed":0.25,"flow":0.9,"interactive":true,"clickPulse":true,"glowAmount":0.002,"bloom":0.55,"pillarWidth":2.6,"pillarHeight":0.4,"pillarRotation":12,"twist":0.35,"detail":4,"noiseIntensity":0.4,"fade":0.15}'></div>
   <header class="site-nav">
     <div class="wrap">
       <a class="site-brand" href="./" translate="no"><img src="img/icon.webp" alt="" width="32" height="32"><span>Entuzjaści Hopkostki</span></a>
@@ -14745,7 +14745,7 @@
   <script src="vendor/gsap.min.js"></script>
   <script src="vendor/ScrollTrigger.min.js"></script>
   <script src="vendor/lenis.min.js"></script>
-  <script src="motion.js?v=008a31c"></script>
+  <script src="motion.js?v=9099342"></script>
   <script>
     // Ruch jak na stronie głównej (motion.js): baner zwija się do kolumny przy przewijaniu, tytuł wjeżdża
     // słowo po słowie, liczby w nagłówku odliczają, lista i karty z boku wjeżdżają od dołu (React Bits).
@@ -14759,8 +14759,8 @@
       tilt: '.top3 .top',
     });
   </script>
-  <script src="rb.js?v=008a31c" defer></script>
-  <script src="rb-gridscan.js?v=008a31c" defer></script>
-  <script src="rb-scanner.js?v=008a31c" defer></script>
+  <script src="rb.js?v=9099342" defer></script>
+  <script src="rb-pillar.js?v=9099342" defer></script>
+  <script src="rb-scanner.js?v=9099342" defer></script>
 </body>
 </html>
