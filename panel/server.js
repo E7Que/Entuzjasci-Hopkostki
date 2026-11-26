@@ -22,6 +22,8 @@ const STATIC_FILES = new Set([
   'style.css',
   'icons.svg',
   'site.css',
+  'particles.js',
+  'vendor/tsparticles.basic.bundle.min.js',
   'vendor/gsap.min.js',
   'vendor/ScrollTrigger.min.js',
   'vendor/lenis.min.js',

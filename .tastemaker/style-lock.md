@@ -6,7 +6,7 @@ Projekt ma ustalony styl. Kolejne ekrany biorą te wartości, a nie wymyślają 
 ## Kierunek
 - Teza: serwer na Discordzie z rankingiem XP i eventami. Strona pokazuje prawdziwe dane (osoby, eventy, ranking), a nie opisy.
 - Nastrój: technical, ciemny. Akcent to cyjan z banera serwera.
-- Tło: jedno, dynamiczny grafit na #171b23: drobinki SVG + matowe ziarno przeskakujące `steps(4)` (chrislemke/website_designs, sarathsaleem/grained), czysty CSS.
+- Tło: jedno, grafit #171b23 i drobne punkty tsParticles (particles.js), wybór właściciela po próbach z szumem grafitu i termowizją.
 - Baner na całą szerokość ekranu, bez dużej ikony serwera.
 - Nie wolno: pigułki, etykiety nad nagłówkami, WERSALIKI, ramki na kontenerach, gradientowe tła i teksty, squircle, emoji, pauzy, kropki-separatory, strzałki doklejone do przycisków.
 

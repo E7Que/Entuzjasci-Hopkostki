@@ -54,9 +54,6 @@
   --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --display: 'Manrope', 'Inter', system-ui, sans-serif;
   --wrap: 1120px;
-  /* Tło: grafit. Drobinki (statyczne) i matowe ziarno, które przeskakuje 4 razy na sekundę. */
-  --speckle: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27260%27 height=%27260%27%3E%3Cfilter id=%27g%27 x=%270%27 y=%270%27 width=%27100%25%27 height=%27100%25%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.92%27 numOctaves=%271%27 seed=%2711%27 stitchTiles=%27stitch%27/%3E%3CfeColorMatrix values=%270 0 0 0 0.66 0 0 0 0 0.71 0 0 0 0 0.80 0 0 0 11 -7.6%27/%3E%3C/filter%3E%3Cfilter id=%27d%27 x=%270%27 y=%270%27 width=%27100%25%27 height=%27100%25%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.7%27 numOctaves=%271%27 seed=%273%27 stitchTiles=%27stitch%27/%3E%3CfeColorMatrix values=%270 0 0 0 0.04 0 0 0 0 0.05 0 0 0 0 0.07 0 0 0 10 -6.6%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url%28%23d%29%27 opacity=%270.55%27/%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url%28%23g%29%27 opacity=%270.2%27/%3E%3C/svg%3E");
-  --grain: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27220%27 height=%27220%27%3E%3Cfilter id=%27n%27 x=%270%27 y=%270%27 width=%27100%25%27 height=%27100%25%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.8%27 numOctaves=%274%27 seed=%275%27 stitchTiles=%27stitch%27/%3E%3CfeColorMatrix values=%270.33 0.33 0.33 0 0 0.35 0.35 0.35 0 0 0.40 0.40 0.40 0 0 0 0 0 0 1%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url%28%23n%29%27/%3E%3C/svg%3E");
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -71,7 +68,6 @@ body {
   margin: 0;
   min-height: 100dvh;
   background-color: var(--bg);
-  background-image: var(--speckle);
   color: var(--text);
   font: 400 var(--fs-base) / 1.5 var(--font);
 }
@@ -171,25 +167,7 @@ body { overflow-x: clip; }
 .site-foot nav { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-6); }
 .site-foot a { color: var(--muted); text-decoration: none; }
 
-/* Ziarno grafitu: osobna warstwa za treścią. Przesuwa się skokowo (steps), więc animuje tylko transform. */
-html::before {
-  content: '';
-  position: fixed;
-  inset: -50%;
-  z-index: -1;
-  background-image: var(--grain);
-  opacity: 0.07;
-  pointer-events: none;
-  animation: grain 1s steps(4) infinite;
-}
-@keyframes grain {
-  0% { transform: translate(0, 0); }
-  25% { transform: translate(-3%, -4%); }
-  50% { transform: translate(4%, 2%); }
-  75% { transform: translate(-2%, 3%); }
-  100% { transform: translate(0, 0); }
-}
-html.embed::before { display: none; }
+/* Tło: grafit #171b23 i drobne punkty z tsParticles (particles.js), które powoli dryfują. */
 
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
@@ -208,5 +186,4 @@ html.embed::before { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .btn, .site-links a { transition: none; }
-  html::before { animation: none; }
 }

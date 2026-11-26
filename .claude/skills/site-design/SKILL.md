@@ -95,10 +95,10 @@ default effect (sensible defaults), peak-end rule (end pages on a strong call to
 Type (owner's choice): Manrope (700 section headings, 800 main heading) and Inter (400 text, 600 buttons),
 both from Google Fonts with `latin-ext` for Polish letters. Headline line height 1.15, body 1.55.
 
-Background: one only, dynamic speckled graphite on `#171b23`, kept subtle: static specks in `site.css`
-(`--speckle`, SVG noise) and a matte grain layer (`html::before`, `--grain`) that jumps four times a
-second with `steps(4)` (techniques from chrislemke/website_designs and sarathsaleem/grained).
-No animation under reduced motion. Do not add a second background treatment anywhere.
+Background: one only (owner's pick after trying graphite noise and thermal gradients): graphite
+`#171b23` with tsParticles (`vendor/tsparticles.basic.bundle.min.js`, config in `particles.js`):
+about 110 tiny dots in the site's blue-gray with a little cyan, drifting slowly and twinkling, 30 fps
+cap, paused off-screen, frozen under reduced motion. Do not add a second background treatment.
 
 Layout: content column max 1120 px, 16 px side gutter on phones, nothing scrolls sideways.
 Elevation comes from `--surface`/`--raised` plus layered shadows, never from borders.
