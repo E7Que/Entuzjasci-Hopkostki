@@ -33,7 +33,7 @@ Copy is Polish. Read `.claude/skills/frontend-design/SKILL.md` for general craft
 19. Gradient backgrounds (also glows and colour washes behind sections)
 20. Periods at the end of titles and buttons
 
-Also banned here: emoji in the interface (use icons from `icons.svg`, see the `icons` skill),
+Also banned here: emoji in the interface (use Phosphor icons from `icons.svg`, see the `icons` skill),
 em dashes and en dashes (write a normal hyphen `-`), an arrow glued to link or button text,
 meta strings joined with middle dots.
 
@@ -80,7 +80,7 @@ default effect (sensible defaults), peak-end rule (end pages on a strong call to
   --raised: #1c2531;    /* inputs, secondary buttons, hovered rows */
   --text: #e5eaf1;
   --muted: #98a4b5;
-  --faint: #6c788a;
+  --faint: #828fa1;    /* 4.7:1 or better on every surface */
   --accent: #4cc3c8;    /* cyan from the server banner, muted for dark mode */
   --accent-hover: #63d0d4;
   --on-accent: #06282a; /* text on accent */
@@ -92,7 +92,7 @@ default effect (sensible defaults), peak-end rule (end pages on a strong call to
 }
 ```
 
-Type: Oxanium (600, 700) for headings and big figures, Figtree (400, 500, 600) for everything else,
+Type: Oxanium (600, 700) for headings and big figures, Figtree (400, 500, 600, 700) for everything else,
 both from Google Fonts with `latin-ext` for Polish letters. Headline line height 1.15, body 1.55.
 
 Background: one only, the square-dot grid (2 px squares every 22 px in `#1f2936` on `--bg`).
@@ -109,6 +109,14 @@ Respect `prefers-reduced-motion`.
 - Polish quotes „…”, hyphen `-` for dashes, numbers with a space as thousands separator.
 - Say what happens: "Zaloguj się przez Discord", "Zapisz się na event", "Dołącz do serwera".
 - Empty states tell people what to do next and give them the button to do it.
+
+## Skills to run on UI work
+
+`meng-no-ai-design-slop` (quality gate), `jakub-better-ui`, `jakub-better-typography`,
+`vercel-web-design-guidelines`, `elaya-landing-page-design` (public pages), `taste-tastemaker`
+(style lock in `.tastemaker/style-lock.md`, scanners in its `scripts/`), `humanizer` for copy.
+The owner's rules above win wherever a skill disagrees (no negative tracking, no gradient text,
+no em or en dashes).
 
 ## Before you finish
 

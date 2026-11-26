@@ -1,0 +1,4 @@
+2026-11-26 pending-review surface=landing axis=structure choice="hero, hasło, teraz na serwerze, najaktywniejsi, 3 kroki, pytania, zaproszenie" reason="elaya-landing-page-design + taste-tastemaker: pokazywać prawdziwe dane zamiast list korzyści"
+2026-11-26 pending-review surface=all axis=icons choice="Phosphor bold zamiast Lucide" reason="elaya-landing-page-design B6, jakub-better-ui: grubość ikon do grubości tekstu"
+2026-11-26 pending-review surface=all axis=color choice="faint #828fa1" reason="check_contrast: #6c788a miał 3.45:1 na raised"
+2026-11-26 rejected-by-owner-rules surface=all axis=typography choice="ujemny tracking nagłówków, gradient w nagłówku hero, pauzy" reason="lista AI slop właściciela wygrywa z jakub-better-typography i elaya B5"

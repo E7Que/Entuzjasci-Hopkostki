@@ -7,13 +7,13 @@
     // Stare linki do panelu (był pod tym adresem): #sekcja albo #login=… z komendy /login idą na /panel z tym samym #.
     if (location.hash.length > 1) location.replace('panel' + location.search + location.hash);
   </script>
-  <title>Entuzjaści Hopkostki - serwer Discord</title>
-  <meta name="description" content="Serwer Discord Entuzjaści Hopkostki. Dołącz, zdobywaj poziomy w rankingu i bierz udział w eventach z nagrodami.">
+  <title>Entuzjaści Hopkostki, serwer na Discordzie</title>
+  <meta name="description" content="Serwer na Discordzie, na którym za aktywność dostajesz XP i kolejne poziomy. Ranking tygodnia co tydzień startuje od zera, a w eventach są nagrody.">
   <meta name="theme-color" content="#0f141b">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Entuzjaści Hopkostki">
-  <meta property="og:title" content="Entuzjaści Hopkostki - serwer Discord">
-  <meta property="og:description" content="Dołącz do serwera, zdobywaj poziomy i bierz udział w eventach z nagrodami.">
+  <meta property="og:title" content="Entuzjaści Hopkostki, serwer na Discordzie">
+  <meta property="og:description" content="Za aktywność dostajesz XP i kolejne poziomy. Ranking tygodnia co tydzień startuje od zera, a w eventach są nagrody.">
   <meta property="og:image" content="https://enho.pl/img/banner-og.jpg">
   <meta property="og:url" content="https://enho.pl/">
   <meta name="twitter:card" content="summary_large_image">
@@ -21,83 +21,132 @@
   <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Oxanium:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://ucjmbdogtzztrkorqzjq.supabase.co" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Oxanium:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="site.css?v=dev">
   <style>
-    .hero { margin-top: 4px; }
-    .hero-banner { display: block; width: 100%; height: auto; aspect-ratio: 16 / 6; object-fit: cover; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); }
-    .hero-body { padding: 0 8px; }
-    .hero-icon { display: block; width: 104px; height: 104px; margin-top: -52px; border-radius: 50%; background: var(--surface); box-shadow: 0 0 0 6px var(--bg), var(--shadow); position: relative; }
-    .hero h1 { margin-top: 20px; font-size: clamp(2.25rem, 1.3rem + 3.4vw, 3.5rem); font-weight: 700; line-height: 1.08; }
-    .lead { max-width: 54ch; margin: 14px 0 30px; color: var(--muted); font-size: 18px; }
-    .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-    .members { min-height: 24px; margin: 18px 0 0; color: var(--muted); font-size: 15px; font-variant-numeric: tabular-nums; }
+    /* Strona główna. Zasady: .claude/skills/site-design; struktura: hero, hasło, teraz na serwerze, najaktywniejsi, jak dołączyć, pytania, zaproszenie. */
+    .hero { margin-top: var(--sp-1); }
+    .hero-banner { display: block; width: 100%; height: auto; aspect-ratio: 16 / 6; object-fit: cover; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); outline: 1px solid var(--img-edge); outline-offset: -1px; }
+    .hero-body { padding: 0 var(--sp-2); }
+    .hero-icon { position: relative; display: block; width: 104px; height: 104px; margin-top: -52px; border-radius: 50%; background: var(--surface); box-shadow: 0 0 0 6px var(--bg), var(--shadow); }
+    .hero h1 { max-width: 680px; margin-top: var(--sp-6); font-size: var(--fs-4xl); font-weight: 700; line-height: 1.1; }
+    .lead { max-width: 680px; margin: var(--sp-4) 0 var(--sp-8); color: var(--muted); font-size: var(--fs-lg); line-height: 1.55; }
+    .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); }
+    .members { min-height: 24px; margin: var(--sp-4) 0 0; color: var(--muted); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
     .members b { color: var(--text); font-weight: 600; }
-    .online { display: inline-block; width: 8px; height: 8px; margin: 0 6px 1px 2px; border-radius: 50%; background: var(--ok); }
+    .online { display: inline-block; width: 8px; height: 8px; margin: 0 var(--sp-2) 1px var(--sp-1); border-radius: 50%; background: var(--ok); }
 
-    .block { margin-top: 80px; }
-    .block > h2 { margin-bottom: 20px; font-size: 26px; }
-    .block-foot { margin-top: 20px; }
-    .card { padding: 22px 26px; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); }
+    /* Hasło: słowa rozjaśniają się po kolei, gdy sekcja wjeżdża na ekran (bez JS i przy ograniczonym ruchu od razu w pełnym kolorze). */
+    .tagline { margin-top: var(--sp-24); padding: var(--sp-8) var(--sp-2); }
+    .tagline p { max-width: 760px; margin: 0; font-family: var(--display); font-size: var(--fs-3xl); font-weight: 600; line-height: 1.2; text-wrap: balance; }
+    .tagline.armed .w { color: rgb(229 234 241 / 0.3); transition: color 600ms var(--ease); }
+    .tagline.armed .w.on { color: var(--text); }
+    .tagline .w.hl.on { color: var(--accent); }
 
-    .now-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
-    .ev { display: flex; flex-direction: column; gap: 14px; }
-    .ev h3 { display: flex; align-items: flex-start; gap: 10px; font-size: 20px; }
+    .block { margin-top: var(--sp-24); }
+    .block > h2 { margin-bottom: var(--sp-6); font-size: var(--fs-3xl); }
+    .block-foot { margin-top: var(--sp-6); }
+    .card { padding: var(--sp-6); border: 1px solid transparent; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); }
+
+    .now-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--sp-6); }
+    .ev { display: flex; flex-direction: column; gap: var(--sp-4); }
+    .ev h3 { display: flex; align-items: flex-start; gap: var(--sp-3); font-size: var(--fs-xl); }
     .ev h3 .i { margin-top: 1px; color: var(--c, var(--accent)); }
-    .ev-when { display: flex; align-items: center; gap: 8px; margin: -6px 0 0; color: var(--muted); font-size: 15px; }
-    .facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0; font-size: 15px; }
+    .ev-when { display: flex; align-items: center; gap: var(--sp-2); margin: calc(var(--sp-2) * -1) 0 0; color: var(--muted); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+    .facts { display: grid; grid-template-columns: max-content 1fr; gap: var(--sp-2) var(--sp-4); margin: 0; font-size: var(--fs-sm); }
     .facts dt { color: var(--faint); }
-    .facts dd { margin: 0; }
+    .facts dd { margin: 0; overflow-wrap: anywhere; }
     .ev .btn { align-self: flex-start; margin-top: auto; }
-    .empty { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; }
+    .empty { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-4) var(--sp-6); }
     .empty p { max-width: 56ch; margin: 0; color: var(--muted); }
 
-    .top-list { margin: 0; padding: 10px 14px; list-style: none; }
-    .top-list li { display: grid; grid-template-columns: 28px 44px 1fr auto; align-items: center; gap: 14px; padding: 10px 12px; border-radius: var(--r-sm); }
-    .top-list li:hover { background: var(--raised); }
-    .pos { font-family: var(--display); font-weight: 700; font-size: 20px; text-align: center; }
-    .av { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: var(--raised); display: grid; place-items: center; color: var(--muted); font-weight: 600; }
+    .top-list { margin: 0; padding: var(--sp-3) var(--sp-4); list-style: none; }
+    .top-list li { display: grid; grid-template-columns: 24px 44px minmax(0, 1fr) auto; align-items: center; gap: var(--sp-4); padding: var(--sp-3); border-radius: var(--r-sm); }
+    .pos { font-family: var(--display); font-weight: 700; font-size: var(--fs-xl); text-align: center; }
+    .av { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: var(--raised); color: var(--muted); font-weight: 600; outline: 1px solid var(--img-edge); outline-offset: -1px; }
     .who { min-width: 0; }
     .who b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-    .who small { color: var(--faint); font-size: 14px; }
-    .xp { font-variant-numeric: tabular-nums; text-align: right; font-weight: 600; }
-    .xp small { color: var(--faint); font-weight: 400; font-size: 14px; }
+    .who small { color: var(--faint); font-size: var(--fs-sm); }
+    .xp { font-variant-numeric: tabular-nums; text-align: right; font-weight: 600; white-space: nowrap; }
+    .xp small { color: var(--faint); font-weight: 400; font-size: var(--fs-sm); }
 
-    .end { margin-top: 96px; padding: 40px 40px 44px; }
-    .end h2 { font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.25rem); }
-    .end p { max-width: 52ch; margin: 12px 0 26px; color: var(--muted); }
+    /* Szkielety w kształcie prawdziwych kart, zanim przyjdą dane. */
+    .sk { display: block; border-radius: var(--r-sm); background: var(--raised); animation: sk 1.2s var(--ease) infinite alternate; }
+    @keyframes sk { to { opacity: 0.45; } }
+    .sk-card { display: grid; gap: var(--sp-4); }
+    .sk-card .sk:nth-child(1) { width: 70%; height: 24px; }
+    .sk-card .sk:nth-child(2) { width: 45%; height: 16px; }
+    .sk-card .sk:nth-child(3) { width: 85%; height: 60px; }
+    .sk-card .sk:nth-child(4) { width: 50%; height: 44px; }
 
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--sp-6); margin: 0; padding: 0; list-style: none; counter-reset: step; }
+    .steps li { counter-increment: step; }
+    .steps li::before { content: counter(step); display: block; margin-bottom: var(--sp-3); color: var(--accent); font-family: var(--display); font-size: var(--fs-4xl); font-weight: 700; line-height: 1; }
+    .steps h3 { margin-bottom: var(--sp-2); font-size: var(--fs-xl); }
+    .steps p { margin: 0; color: var(--muted); }
+    .steps code, .faq code { padding: 1px 6px; border-radius: var(--r-xs); background: var(--raised); color: var(--text); font: 500 0.9em ui-monospace, 'SFMono-Regular', Menlo, monospace; }
+
+    .faq { max-width: 760px; }
+    .faq details + details { margin-top: var(--sp-2); }
+    .faq summary { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-4) var(--sp-6); border-radius: var(--r-sm); background: var(--surface); box-shadow: var(--shadow-sm); font-weight: 600; cursor: pointer; list-style: none; transition: background-color 200ms var(--ease); }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary .i { color: var(--faint); transition: transform 200ms var(--ease); }
+    .faq details[open] summary .i { transform: rotate(180deg); }
+    .faq .answer { padding: var(--sp-4) var(--sp-6) var(--sp-2); color: var(--muted); }
+    .faq .answer p { margin: 0 0 var(--sp-2); }
+    .faq .answer b { color: var(--text); font-weight: 600; }
+    .faq .answer ul { margin: 0 0 var(--sp-2); padding-left: 1.2em; }
+
+    .end { margin-top: var(--sp-24); padding: var(--sp-10) var(--sp-10) var(--sp-12); }
+    .end h2 { font-size: var(--fs-3xl); }
+    .end p { max-width: 52ch; margin: var(--sp-3) 0 var(--sp-6); color: var(--muted); }
+
+    @media (hover: hover) {
+      .top-list li:hover { background: var(--raised); }
+      .faq summary:hover { background: var(--raised); }
+    }
+    @media (min-width: 720px) {
+      .hero h1 { font-size: var(--fs-6xl); }
+      .tagline p { font-size: var(--fs-5xl); }
+    }
     @media (max-width: 640px) {
       .hero-body { padding: 0; }
-      .hero-icon { width: 84px; height: 84px; margin-top: -42px; margin-left: 12px; }
-      .lead { font-size: 17px; }
-      .block { margin-top: 64px; }
-      .card { padding: 18px 18px; }
-      .top-list { padding: 6px; }
-      .top-list li { grid-template-columns: 22px 40px 1fr auto; gap: 10px; padding: 10px 8px; }
+      .hero-icon { width: 84px; height: 84px; margin-top: -42px; margin-left: var(--sp-3); }
+      .block, .tagline, .end { margin-top: var(--sp-16); }
+      .card { padding: var(--sp-4); }
+      .top-list { padding: var(--sp-2); }
+      .top-list li { grid-template-columns: 20px 40px minmax(0, 1fr) auto; gap: var(--sp-3); padding: var(--sp-3) var(--sp-2); }
       .av { width: 40px; height: 40px; }
-      .end { padding: 28px 20px 30px; }
+      .faq summary { padding: var(--sp-4); }
+      .faq .answer { padding: var(--sp-3) var(--sp-4) var(--sp-2); }
+      .end { padding: var(--sp-8) var(--sp-6); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .sk { animation: none; }
+      .faq summary, .faq summary .i { transition: none; }
     }
   </style>
 </head>
 <body>
+  <a class="skip" href="#tresc">Przejdź do treści</a>
   <header class="site-nav">
     <div class="wrap">
-      <a class="site-brand" href="./"><img src="img/icon.webp" alt="" width="32" height="32"><span>Entuzjaści Hopkostki</span></a>
+      <a class="site-brand" href="./" translate="no"><img src="img/icon.webp" alt="" width="32" height="32"><span>Entuzjaści Hopkostki</span></a>
       <ul class="site-links">
         <li><a href="ranking"><svg class="i" aria-hidden="true"><use href="icons.svg#trophy"></use></svg>Ranking</a></li>
-        <li><a href="event"><svg class="i" aria-hidden="true"><use href="icons.svg#calendar-days"></use></svg>Eventy</a></li>
+        <li><a href="event"><svg class="i" aria-hidden="true"><use href="icons.svg#calendar-dots"></use></svg>Eventy</a></li>
       </ul>
     </div>
   </header>
 
-  <main class="wrap">
+  <main class="wrap" id="tresc">
     <section class="hero">
-      <img class="hero-banner" src="img/banner.webp" alt="" width="1600" height="900" fetchpriority="high">
+      <img class="hero-banner" src="img/banner.webp" alt="Baner serwera Entuzjaści Hopkostki" width="1600" height="900" fetchpriority="high">
       <div class="hero-body">
         <img class="hero-icon" src="img/icon.webp" alt="" width="104" height="104">
-        <h1>Entuzjaści Hopkostki</h1>
-        <p class="lead">Serwer na Discordzie, na którym się gada, zdobywa poziomy za aktywność i bierze udział w eventach z nagrodami.</p>
+        <h1 translate="no">Entuzjaści Hopkostki</h1>
+        <p class="lead">Serwer na Discordzie, na którym za aktywność dostajesz XP i wbijasz kolejne poziomy. Ranking tygodnia co tydzień startuje od zera, a w eventach są nagrody.</p>
         <div class="cta-row">
           <a class="btn btn-primary btn-big" href="https://discord.gg/FuqNCJhVYs" rel="noopener">
             <svg class="discord" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.6 5.3A16.6 16.6 0 0 0 15.5 4l-.5 1a15.4 15.4 0 0 0-6 0L8.5 4a16.6 16.6 0 0 0-4.1 1.3C1.8 9.2 1.1 13 1.4 16.7a16.7 16.7 0 0 0 5.1 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a11.9 11.9 0 0 0 11.4 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a16.6 16.6 0 0 0 5.1-2.6c.4-4.3-.7-8.1-3-11.4zM8.7 14.4c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>
@@ -105,16 +154,19 @@
           </a>
           <a class="btn btn-big btn-quiet" href="ranking">Zobacz ranking</a>
         </div>
-        <p class="members" id="members"></p>
+        <p class="members" id="members" aria-live="polite"></p>
       </div>
+    </section>
+
+    <section class="tagline" id="tagline" aria-label="Ranking tygodnia">
+      <p>Nie musisz być tu od początku. <span class="hl">Ranking tygodnia</span> co tydzień startuje od zera.</p>
     </section>
 
     <section class="block" aria-labelledby="now-h">
       <h2 id="now-h">Teraz na serwerze</h2>
-      <div class="now-grid" id="now">
-        <div class="card empty">
-          <p>Sprawdzam, co się dzieje na serwerze…</p>
-        </div>
+      <div class="now-grid" id="now" aria-live="polite" aria-busy="true">
+        <div class="card sk-card" aria-hidden="true"><span class="sk"></span><span class="sk"></span><span class="sk"></span><span class="sk"></span></div>
+        <div class="card sk-card" aria-hidden="true"><span class="sk"></span><span class="sk"></span><span class="sk"></span><span class="sk"></span></div>
       </div>
     </section>
 
@@ -124,9 +176,55 @@
       <div class="block-foot"><a class="btn" href="ranking">Zobacz cały ranking</a></div>
     </section>
 
+    <section class="block" aria-labelledby="join-h">
+      <h2 id="join-h">Jak dołączyć</h2>
+      <ol class="steps">
+        <li>
+          <h3>Kliknij zaproszenie</h3>
+          <p>Przycisk „Dołącz do serwera” otwiera zaproszenie w aplikacji Discord albo w przeglądarce.</p>
+        </li>
+        <li>
+          <h3>Przyjmij je</h3>
+          <p>Nie masz konta na Discordzie? Założysz je w tym samym oknie, zanim wejdziesz na serwer.</p>
+        </li>
+        <li>
+          <h3>Napisz pierwszą wiadomość</h3>
+          <p>Od niej liczy się Twoje XP. Swój poziom sprawdzisz na serwerze komendą <code translate="no">/rank</code>.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section class="block faq" aria-labelledby="faq-h">
+      <h2 id="faq-h">Pytania</h2>
+      <details>
+        <summary>Jak zdobywa się XP?<svg class="i" aria-hidden="true"><use href="icons.svg#caret-down"></use></svg></summary>
+        <div class="answer" id="faq-xp"><p>Za wiadomości na serwerze. Bot liczy je z limitem czasu, więc spam nic nie daje.</p></div>
+      </details>
+      <details>
+        <summary>Co dają kolejne poziomy?<svg class="i" aria-hidden="true"><use href="icons.svg#caret-down"></use></svg></summary>
+        <div class="answer" id="faq-rewards"><p>Wyższe miejsce w rankingu, a za niektóre poziomy role na serwerze. Pełna lista jest na stronie <a href="ranking">rankingu</a>.</p></div>
+      </details>
+      <details>
+        <summary>Jak działają eventy?<svg class="i" aria-hidden="true"><use href="icons.svg#caret-down"></use></svg></summary>
+        <div class="answer"><p>Logujesz się na <a href="event">stronie eventów</a> przez Discord i zapisujesz się. Od zapisu liczą się Twoje zaproszenia albo wiadomości, a po spełnieniu warunku bierzesz udział w losowaniu nagrody.</p></div>
+      </details>
+      <details>
+        <summary>Co widzi strona, gdy loguję się przez Discord?<svg class="i" aria-hidden="true"><use href="icons.svg#caret-down"></use></svg></summary>
+        <div class="answer"><p>Tylko Twoją nazwę i avatar. Strona nie ma dostępu do Twoich wiadomości ani listy serwerów.</p></div>
+      </details>
+      <details>
+        <summary>Czy mogę zniknąć z rankingu na stronie?<svg class="i" aria-hidden="true"><use href="icons.svg#caret-down"></use></svg></summary>
+        <div class="answer"><p>Tak. Wpisz na serwerze <code translate="no">/prywatnosc</code> i wybierz <b>Ukryj mnie</b>. Twoje miejsce zostaje, ale bez nicku i avatara.</p></div>
+      </details>
+      <details>
+        <summary>Ile kosztuje dołączenie?<svg class="i" aria-hidden="true"><use href="icons.svg#caret-down"></use></svg></summary>
+        <div class="answer"><p>Nic. Serwer jest darmowy i możesz z niego wyjść w każdej chwili.</p></div>
+      </details>
+    </section>
+
     <section class="card end" aria-labelledby="end-h">
       <h2 id="end-h">Wpadnij na serwer</h2>
-      <p>Zaproszenie otworzy się w aplikacji Discord albo w przeglądarce.</p>
+      <p>Zaproszenie otworzy się w aplikacji Discord albo w przeglądarce. Dołączenie nic nie kosztuje.</p>
       <a class="btn btn-primary btn-big" href="https://discord.gg/FuqNCJhVYs" rel="noopener">
         <svg class="discord" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.6 5.3A16.6 16.6 0 0 0 15.5 4l-.5 1a15.4 15.4 0 0 0-6 0L8.5 4a16.6 16.6 0 0 0-4.1 1.3C1.8 9.2 1.1 13 1.4 16.7a16.7 16.7 0 0 0 5.1 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a11.9 11.9 0 0 0 11.4 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a16.6 16.6 0 0 0 5.1-2.6c.4-4.3-.7-8.1-3-11.4zM8.7 14.4c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>
         Dołącz do serwera
@@ -136,7 +234,7 @@
 
   <footer class="site-foot">
     <div class="wrap">
-      <span>Entuzjaści Hopkostki</span>
+      <span translate="no">Entuzjaści Hopkostki</span>
       <nav aria-label="Strony">
         <a href="ranking">Ranking poziomów</a>
         <a href="event">Eventy serwera</a>
@@ -156,9 +254,10 @@
     const num = (n) => new Intl.NumberFormat('pl-PL').format(n);
     const plural = (n, one, few, many) => (n === 1 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? few : many);
     const icon = (name) => `<svg class="i" aria-hidden="true"><use href="icons.svg#${name}"></use></svg>`;
-    const XP_THEME_ICON = { confetti: 'party-popper', fire: 'flame', snow: 'snowflake', stars: 'sparkles', neon: 'zap', hearts: 'heart', halloween: 'ghost', leaves: 'leaf', sakura: 'flower-2', coins: 'coins', storm: 'cloud-lightning', bubbles: 'droplets', matrix: 'binary' };
-    const KIND_ICON = { invites: 'user-plus', messages: 'message-square', mixed: 'users' };
+    const XP_THEME_ICON = { confetti: 'confetti', fire: 'fire', snow: 'snowflake', stars: 'sparkle', neon: 'lightning', hearts: 'heart', halloween: 'ghost', leaves: 'leaf', sakura: 'flower', coins: 'coins', storm: 'cloud-lightning', bubbles: 'drop', matrix: 'binary' };
+    const KIND_ICON = { invites: 'user-plus', messages: 'chat-circle', mixed: 'users' };
     const XP_KINDS = { message: 'wiadomości', voice: 'czas na głosowych', reaction: 'reakcje' };
+    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
     async function get(path) {
       const ctrl = new AbortController();
@@ -181,6 +280,7 @@
       if (h) return `${h} h${min ? ` ${min} min` : ''}`;
       return `${min} min`;
     }
+    const seconds = (s) => (s % 60 === 0 && s >= 60 ? (s === 60 ? 'minutę' : `${s / 60} ${plural(s / 60, 'minutę', 'minuty', 'minut')}`) : `${s} s`);
 
     function task(c) {
       const inv = c.invites > 0 ? `zaproś ${c.invites} ${plural(c.invites, 'osobę', 'osoby', 'osób')}` : '';
@@ -198,7 +298,7 @@
         .join('');
       const color = /^#[0-9a-f]{6}$/i.test(c.color ?? '') ? ` style="--c:${c.color}"` : '';
       return `<article class="card ev"${color}>
-        <h3>${icon(KIND_ICON[c.type] ?? 'calendar-days')}<span>${esc(c.name)}</span></h3>
+        <h3>${icon(KIND_ICON[c.type] ?? 'calendar-dots')}<span>${esc(c.name)}</span></h3>
         <p class="ev-when">${icon('clock')}${when}</p>
         <dl class="facts">${facts}</dl>
         <a class="btn" href="event#${encodeURIComponent(c.id)}">${live ? 'Zobacz event i zapisz się' : 'Zobacz event'}</a>
@@ -212,7 +312,7 @@
         .map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`)
         .join('');
       return `<article class="card ev">
-        <h3>${icon(XP_THEME_ICON[e.theme] ?? 'sparkles')}<span>${esc(e.name)}</span></h3>
+        <h3>${icon(XP_THEME_ICON[e.theme] ?? 'sparkle')}<span>${esc(e.name)}</span></h3>
         <p class="ev-when">${icon('clock')}Koniec za ${timeLeft(Date.parse(e.endsAt) - now)}</p>
         <dl class="facts">${facts}</dl>
         <a class="btn" href="ranking">Zobacz ranking wydarzenia</a>
@@ -226,12 +326,14 @@
       const cards = list.slice(0, 3).map((c) => contestCard(c, now));
       const xp = board?.events?.current;
       if (xp) cards.unshift(xpCard(xp, now));
-      $('#now').innerHTML = cards.length
+      const box = $('#now');
+      box.innerHTML = cards.length
         ? cards.join('')
         : `<div class="card empty">
             <p>Teraz nie trwa żaden event. Nowe ogłaszamy na serwerze, więc dołącz, żeby nie przegapić następnego.</p>
             <a class="btn btn-primary" href="${INVITE}" rel="noopener">Dołącz do serwera</a>
           </div>`;
+      box.setAttribute('aria-busy', 'false');
     }
 
     function row(p, i, week) {
@@ -280,6 +382,62 @@
       $('#members').innerHTML = `<b>${num(g.memberCount)}</b> ${plural(g.memberCount, 'osoba', 'osoby', 'osób')} na serwerze${online}`;
     }
 
+    // Odpowiedzi w pytaniach z prawdziwych ustawień bota (stawki XP, role za poziomy).
+    function renderFaq(board) {
+      const r = board?.rates;
+      if (r) {
+        const parts = [];
+        if (r.message) parts.push(`<li>Za wiadomość od <b>${num(r.message.min)} do ${num(r.message.max)} XP</b>, najwyżej raz na ${seconds(r.message.cooldown)}.</li>`);
+        if (r.voice) parts.push(`<li>Za czas na kanale głosowym od <b>${num(r.voice.min)} do ${num(r.voice.max)} XP</b> co ${seconds(r.voice.cooldown)}${r.voice.minMembers > 1 ? `, gdy na kanale są co najmniej ${r.voice.minMembers} osoby` : ''}.</li>`);
+        if (r.reaction) parts.push(`<li>Za reakcje od <b>${num(r.reaction.min)} do ${num(r.reaction.max)} XP</b>, najwyżej raz na ${seconds(r.reaction.cooldown)}.</li>`);
+        if (parts.length) $('#faq-xp').innerHTML = `<p>Bot liczy aktywność z limitem czasu, więc spam nic nie daje.</p><ul>${parts.join('')}</ul>`;
+      }
+      const rewards = board?.rewards ?? [];
+      if (rewards.length) {
+        const items = rewards.slice(0, 8).map((x) => `<li>Poziom ${num(x.level)}: rola <b>${esc(x.name)}</b></li>`).join('');
+        const more = rewards.length > 8 ? `<p>Pozostałe role są na stronie <a href="ranking">rankingu</a>.</p>` : '';
+        $('#faq-rewards').innerHTML = `<p>Wyższe miejsce w rankingu i role na serwerze:</p><ul>${items}</ul>${more}`;
+      }
+    }
+
+    // Hasło: każde słowo zapala się, gdy przekroczy linię 60% wysokości ekranu.
+    function armTagline() {
+      const box = $('#tagline');
+      const p = box.querySelector('p');
+      if (reduceMotion.matches || !('IntersectionObserver' in window)) return;
+      const words = [];
+      const wrap = (node, hl) => {
+        for (const child of [...node.childNodes]) {
+          if (child.nodeType === Node.TEXT_NODE) {
+            const frag = document.createDocumentFragment();
+            for (const part of child.textContent.split(/(\s+)/)) {
+              if (!part) continue;
+              if (/^\s+$/.test(part)) { frag.append(part); continue; }
+              const span = document.createElement('span');
+              span.className = hl ? 'w hl' : 'w';
+              span.textContent = part;
+              words.push(span);
+              frag.append(span);
+            }
+            child.replaceWith(frag);
+          } else if (child.nodeType === Node.ELEMENT_NODE) {
+            wrap(child, hl || child.classList.contains('hl'));
+          }
+        }
+      };
+      wrap(p, false);
+      box.classList.add('armed');
+      const io = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add('on');
+          io.unobserve(entry.target);
+        }
+      }, { rootMargin: '0px 0px -40% 0px' });
+      words.forEach((w) => io.observe(w));
+    }
+
+    armTagline();
     (async () => {
       const [board, contests] = await Promise.all([
         get('leaderboard?period=week&limit=3').catch(() => null),
@@ -287,6 +445,7 @@
       ]);
       renderMembers(board);
       renderNow(contests, board);
+      renderFaq(board);
       await renderTop(board);
     })();
   </script>

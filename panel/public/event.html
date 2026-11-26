@@ -17,7 +17,7 @@
   <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Oxanium:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Oxanium:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="site.css?v=dev">
   <style>
     [hidden] { display: none !important; }
@@ -28,60 +28,60 @@
 
     /* ---------- Nagłówek: baner (albo baner eventu), ikona serwera, tytuł ---------- */
     .banner { position: relative; aspect-ratio: 16 / 5; overflow: hidden; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); }
-    .banner img { width: 100%; height: 100%; object-fit: cover; object-position: center 45%; transition: opacity 0.4s ease; }
+    .banner img { width: 100%; height: 100%; object-fit: cover; object-position: center 45%; outline: 1px solid var(--img-edge); outline-offset: -1px; transition: opacity 300ms var(--ease); }
     .banner img.swap { opacity: 0; }
-    .head { position: relative; z-index: 1; display: flex; align-items: flex-end; gap: 18px; padding: 0 20px; }
+    .head { position: relative; z-index: 1; display: flex; align-items: flex-end; gap: 16px; padding: 0 24px; }
     .server-icon { width: 92px; height: 92px; margin-top: -46px; border-radius: 50%; background: var(--surface); object-fit: cover; flex: none; box-shadow: 0 0 0 6px var(--bg), var(--shadow); }
-    h1 { padding-bottom: 6px; font-size: 2rem; }
+    h1 { padding-bottom: 8px; font-size: var(--fs-3xl); }
 
-    .layout { display: grid; gap: 28px; margin-top: 36px; }
+    .layout { display: grid; gap: 32px; margin-top: 40px; }
     @media (min-width: 980px) { .layout { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; } }
     .board { min-width: 0; }
-    .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--raised); object-fit: cover; flex: none; }
+    .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--raised); object-fit: cover; flex: none; outline: 1px solid var(--img-edge); outline-offset: -1px; }
 
     /* ---------- Boczny panel ---------- */
     .side { display: grid; gap: 16px; }
     @media (min-width: 980px) { .side { position: sticky; top: 24px; } }
-    .card { padding: 20px 22px; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); }
-    .card h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font-size: 17px; }
+    .card { padding: 24px 24px; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); }
+    .card h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; font-size: var(--fs-lg); }
     .card h2 .i { color: var(--accent); }
-    .card p { margin: 0; color: var(--muted); font-size: 15px; }
-    .card ol.how { display: grid; gap: 8px; margin: 0; padding-left: 20px; color: var(--muted); font-size: 15px; }
+    .card p { margin: 0; color: var(--muted); font-size: var(--fs-sm); }
+    .card ol.how { display: grid; gap: 8px; margin: 0; padding-left: 24px; color: var(--muted); font-size: var(--fs-sm); }
     .card ol.how b { color: var(--text); font-weight: 600; }
-    .cmds { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: baseline; gap: 8px 12px; color: var(--muted); font-size: 15px; }
+    .cmds { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: baseline; gap: 8px 12px; color: var(--muted); font-size: var(--fs-sm); }
     .cmds div { display: contents; }
     .cmds code { justify-self: start; }
-    code { padding: 1px 6px; border-radius: 4px; background: var(--raised); color: var(--text); font: 500 0.88em ui-monospace, 'SFMono-Regular', Menlo, monospace; }
+    code { padding: 1px 8px; border-radius: var(--r-xs); background: var(--raised); color: var(--text); font: 500 0.88em ui-monospace, 'SFMono-Regular', Menlo, monospace; }
     #card-account .acc { display: flex; align-items: center; gap: 12px; }
     #card-account .acc img { width: 38px; height: 38px; }
     #card-account .acc div { min-width: 0; }
     #card-account .acc b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-    #card-account .acc small { color: var(--muted); font-size: 13px; }
-    #card-account .btn { width: 100%; margin-top: 14px; }
+    #card-account .acc small { color: var(--muted); font-size: var(--fs-xs); }
+    #card-account .btn { width: 100%; margin-top: 16px; }
     #card-account p + p { margin-top: 8px; }
-    #card-account .acc-ok, #card-account .acc-err { margin: 0 0 12px; font-size: 15px; }
+    #card-account .acc-ok, #card-account .acc-err { margin: 0 0 12px; font-size: var(--fs-sm); }
     #card-account .acc-ok { color: #a9e3c2; }
     #card-account .acc-err { color: #f2b9bb; }
 
     /* ---------- Eventy ---------- */
     .contests { display: grid; gap: 16px; }
 
-    .ct-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; }
+    .ct-tabs { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; scrollbar-width: none; }
     .ct-tabs::-webkit-scrollbar { display: none; }
     .ct-tab {
       --c: var(--accent);
-      position: relative; display: inline-flex; align-items: center; gap: 10px; flex: none; min-height: 46px; padding: 0 18px; border: 0; border-radius: var(--r-sm);
+      position: relative; display: inline-flex; align-items: center; gap: 12px; flex: none; min-height: 46px; padding: 0 16px; border: 0; border-radius: var(--r-sm);
       background: transparent; color: var(--muted); font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color 0.15s, color 0.15s;
     }
-    .ct-tab:hover { color: var(--text); background: var(--surface); }
+    
     .ct-tab[aria-selected="true"] { color: var(--text); background: var(--surface); box-shadow: var(--shadow-sm); }
     .ct-tab[aria-selected="true"]::after { content: ''; position: absolute; left: 18px; right: 18px; bottom: 0; height: 2px; border-radius: 2px; background: var(--c); }
     .ct-tab i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
     .ct-tab.live i { background: var(--ok); }
     .ct-tab.upcoming i { background: var(--warn); }
-    .ct-tab small { color: var(--faint); font-size: 13px; font-weight: 400; }
+    .ct-tab small { color: var(--faint); font-size: var(--fs-xs); font-weight: 400; }
 
-    .ct-flash { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-radius: var(--r-sm); background: var(--surface); box-shadow: var(--shadow-sm); font-size: 15px; animation: ct-in 0.3s ease-out; }
+    .ct-flash { display: flex; align-items: center; gap: 12px; padding: 16px 24px; border-radius: var(--r-sm); background: var(--surface); box-shadow: var(--shadow-sm); font-size: var(--fs-sm); animation: ct-in 0.3s ease-out; }
     .ct-flash.ok { color: #a9e3c2; }
     .ct-flash.ok .i { color: var(--ok); }
     .ct-flash.err { color: #f2b9bb; }
@@ -89,21 +89,21 @@
     @keyframes ct-in { from { opacity: 0; transform: translateY(-4px); } }
 
     .ct-card { --c: var(--accent); --c2: var(--accent); --cg: var(--accent); border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); }
-    .ct-hero { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 18px; padding: 28px 30px 6px; }
+    .ct-hero { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 32px 32px 8px; }
     .ct-icon { display: grid; color: var(--c); }
     .ct-icon .i { width: 34px; height: 34px; stroke-width: 1.75; }
     .ct-title { min-width: 0; }
-    .ct-title h2 { font-size: 1.65rem; overflow-wrap: anywhere; }
-    .ct-meta { margin-top: 6px; color: var(--muted); font-size: 15px; }
+    .ct-title h2 { font-size: var(--fs-2xl); overflow-wrap: anywhere; }
+    .ct-meta { margin-top: 8px; color: var(--muted); font-size: var(--fs-sm); }
     .ct-st { font-weight: 600; }
     .ct-st.live { color: var(--ok); }
     .ct-st.upcoming { color: var(--warn); }
     .ct-st.ended { color: var(--faint); }
     .ct-clock { text-align: right; white-space: nowrap; }
-    .ct-clock small { display: block; color: var(--muted); font-size: 14px; }
-    .ct-clock b { font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .ct-clock small { display: block; color: var(--muted); font-size: var(--fs-sm); }
+    .ct-clock b { font-size: var(--fs-xl); font-weight: 600; font-variant-numeric: tabular-nums; }
 
-    .ct-body { display: grid; gap: 24px; padding: 20px 30px 30px; }
+    .ct-body { display: grid; gap: 24px; padding: 24px 32px 32px; }
     .ct-desc { max-width: 70ch; overflow-wrap: anywhere; line-height: 1.6; }
     .rich b { font-weight: 600; }
     .rich a { color: var(--accent); text-decoration: none; }
@@ -111,114 +111,123 @@
     .rich code { font-size: 0.88em; }
     .rich ul { margin: 4px 0; padding-left: 1.3em; }
     .rich li { margin: 2px 0; }
-    .rich .rt-h1, .rich .rt-h2, .rich .rt-h3 { display: block; margin: 14px 0 4px; font-family: var(--display); font-weight: 600; line-height: 1.2; }
+    .rich .rt-h1, .rich .rt-h2, .rich .rt-h3 { display: block; margin: 16px 0 4px; font-family: var(--display); font-weight: 600; line-height: 1.2; }
     .rich .rt-h1 { font-size: 1.3rem; }
     .rich .rt-h2 { font-size: 1.15rem; }
     .rich .rt-h3 { font-size: 1.02rem; }
     .rich .rt-quote { display: block; margin: 2px 0; padding-left: 12px; box-shadow: inset 3px 0 0 var(--raised-hover); color: var(--muted); }
     .rich .rt-sub { display: block; margin: 2px 0; color: var(--faint); font-size: 0.8em; line-height: 1.4; }
     .rich img.emoji { display: inline-block; width: 1.35em; height: 1.35em; vertical-align: -0.3em; object-fit: contain; }
-    .rich .spoiler { padding: 0 3px; border-radius: 4px; background: var(--raised-hover); color: transparent; cursor: pointer; transition: background-color 0.2s, color 0.2s; }
-    .rich .spoiler:hover { background: #2a3746; }
+    .rich .spoiler { padding: 0 3px; border-radius: var(--r-xs); background: var(--raised-hover); color: transparent; cursor: pointer; transition: background-color 0.2s, color 0.2s; }
+    
     .rich .spoiler.on { background: var(--raised); color: inherit; cursor: auto; }
     .rich .spoiler:not(.on) * { visibility: hidden; }
 
-    .ct-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px 28px; margin: 0; padding: 18px 22px; border-radius: var(--r-sm); background: var(--raised); }
+    .ct-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px 32px; margin: 0; padding: 16px 24px; border-radius: var(--r-sm); background: var(--raised); }
     .ct-facts div { min-width: 0; }
-    .ct-facts dt { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; }
+    .ct-facts dt { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: var(--fs-sm); }
     .ct-facts dt .i { color: var(--c); }
     .ct-facts .prize dt .i { color: var(--gold); }
     .ct-facts dd { margin: 4px 0 0; font-weight: 500; overflow-wrap: anywhere; }
-    .ct-rules { display: grid; gap: 6px; max-width: 75ch; margin: -10px 0 0; padding: 0; list-style: none; color: var(--faint); font-size: 14px; }
+    .ct-rules { display: grid; gap: 8px; max-width: 75ch; margin: -10px 0 0; padding: 0; list-style: none; color: var(--faint); font-size: var(--fs-sm); }
 
-    .ct-me { display: grid; gap: 18px; padding: 20px 22px; border-radius: var(--r-sm); background: var(--raised); }
-    .ct-connect b { font-size: 17px; font-weight: 600; }
-    .ct-sub { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
-    .ct-steps { display: grid; gap: 4px; margin: 6px 0 0; padding-left: 20px; color: var(--muted); font-size: 15px; }
+    .ct-me { display: grid; gap: 16px; padding: 24px 24px; border-radius: var(--r-sm); background: var(--raised); }
+    .ct-connect b { font-size: var(--fs-base); font-weight: 600; }
+    .ct-sub { margin: 4px 0 0; color: var(--muted); font-size: var(--fs-sm); }
+    .ct-steps { display: grid; gap: 4px; margin: 8px 0 0; padding-left: 24px; color: var(--muted); font-size: var(--fs-sm); }
     .ct-steps b { color: var(--text); font-weight: 600; }
     .ct-me code { background: var(--raised-hover); }
     .ct-who { display: flex; align-items: center; gap: 12px; }
     .ct-who img { width: 40px; height: 40px; }
-    .ct-who small { display: block; color: var(--muted); font-size: 13px; }
+    .ct-who small { display: block; color: var(--muted); font-size: var(--fs-xs); }
     .ct-who b { font-weight: 600; }
-    .ct-unlink, .ct-leave { min-height: 36px; margin-left: auto; padding: 0 12px; border: 0; border-radius: var(--r-sm); background: none; color: var(--muted); font-size: 14px; cursor: pointer; transition: background-color 0.15s, color 0.15s; }
-    .ct-unlink:hover { color: var(--text); background: var(--raised-hover); }
+    .ct-unlink, .ct-leave { min-height: 36px; margin-left: auto; padding: 0 12px; border: 0; border-radius: var(--r-sm); background: none; color: var(--muted); font-size: var(--fs-sm); cursor: pointer; transition: background-color 0.15s, color 0.15s; }
+    
     .ct-leave { color: var(--faint); }
-    .ct-leave:hover, .ct-leave:focus-visible { color: var(--danger); background: var(--raised-hover); }
+    .ct-leave:focus-visible { color: var(--danger); background: var(--raised-hover); }
     .ct-leave:disabled { opacity: 0.6; cursor: progress; }
 
     .ct-progress { display: grid; gap: 8px; }
-    .ct-progress-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 15px; }
-    .ct-progress-top b { color: var(--text); font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
-    .ct-bar { position: relative; height: 12px; overflow: hidden; border-radius: 6px; background: var(--bg); }
-    .ct-bar i { position: absolute; inset: 0 auto 0 0; width: var(--p, 0%); border-radius: inherit; background: linear-gradient(90deg, var(--c), var(--cg)); transition: width 1.1s cubic-bezier(0.2, 0.8, 0.2, 1); }
+    .ct-progress-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; color: var(--muted); font-size: var(--fs-sm); }
+    .ct-progress-top b { color: var(--text); font-size: var(--fs-base); font-weight: 600; font-variant-numeric: tabular-nums; }
+    .ct-bar { position: relative; height: 12px; overflow: hidden; border-radius: var(--r-sm); background: var(--bg); }
+    .ct-bar i { position: absolute; inset: 0; transform-origin: left center; transform: scaleX(var(--s, 0)); background: linear-gradient(90deg, var(--c), var(--cg)); transition: transform 700ms var(--ease); }
     .ct-bar.done i { background: var(--ok); }
     .ct-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 16px; }
     .ct-ok { display: inline-flex; align-items: center; gap: 8px; color: var(--ok); font-weight: 600; }
-    .ct-hint { color: var(--muted); font-size: 15px; }
+    .ct-hint { color: var(--muted); font-size: var(--fs-sm); }
     .ct-win { display: grid; gap: 4px; }
-    .ct-win b { display: flex; align-items: center; gap: 10px; color: var(--ok); font-family: var(--display); font-size: 1.2rem; font-weight: 600; }
-    .ct-win span { color: var(--muted); font-size: 15px; }
+    .ct-win b { display: flex; align-items: center; gap: 12px; color: var(--ok); font-family: var(--display); font-size: 1.2rem; font-weight: 600; }
+    .ct-win span { color: var(--muted); font-size: var(--fs-sm); }
     .ct-win.gold b { color: var(--gold); }
 
-    .ct-drawn { padding: 18px 22px; border-radius: var(--r-sm); background: var(--raised); }
-    .ct-drawn h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; font-size: 17px; }
+    .ct-drawn { padding: 16px 24px; border-radius: var(--r-sm); background: var(--raised); }
+    .ct-drawn h3 { display: flex; align-items: center; gap: 12px; margin: 0 0 16px; font-size: var(--fs-base); }
     .ct-drawn h3 .i { color: var(--gold); }
-    .ct-drawn-list { display: flex; flex-wrap: wrap; gap: 12px 28px; margin: 0; padding: 0; list-style: none; }
-    .ct-drawn-person { display: inline-flex; align-items: center; gap: 10px; }
+    .ct-drawn-list { display: flex; flex-wrap: wrap; gap: 12px 32px; margin: 0; padding: 0; list-style: none; }
+    .ct-drawn-person { display: inline-flex; align-items: center; gap: 12px; }
     .ct-drawn-person b { font-weight: 600; }
-    .ct-drawn-person small { display: block; color: var(--gold); font-size: 13px; }
+    .ct-drawn-person small { display: block; color: var(--gold); font-size: var(--fs-xs); }
 
-    .ct-board h3 { display: flex; align-items: baseline; gap: 10px; margin: 8px 0 10px; font-size: 18px; }
-    .ct-board h3 span { color: var(--faint); font-family: var(--font); font-size: 15px; font-weight: 400; }
+    .ct-board h3 { display: flex; align-items: baseline; gap: 12px; margin: 8px 0 12px; font-size: var(--fs-lg); }
+    .ct-board h3 span { color: var(--faint); font-family: var(--font); font-size: var(--fs-sm); font-weight: 400; }
     .ct-list { margin: 0 -10px; padding: 0; list-style: none; }
-    .ct-row { display: grid; grid-template-columns: 30px 38px minmax(0, 1fr) auto; align-items: center; gap: 14px; min-height: 60px; padding: 8px 10px; border-radius: var(--r-sm); }
+    .ct-row { display: grid; grid-template-columns: 30px 38px minmax(0, 1fr) auto; align-items: center; gap: 16px; min-height: 60px; padding: 8px 12px; border-radius: var(--r-sm); }
     .ct-row[data-id] { cursor: pointer; }
-    .ct-row[data-id]:hover, .ct-row.me { background: var(--raised); }
+    .ct-row.me { background: var(--raised); }
     .ct-row .rank { color: var(--muted); font-family: var(--display); font-weight: 600; text-align: center; }
     .ct-row.win .rank { color: var(--c); }
     .ct-row .avatar.ghost { display: block; }
     .ct-person { min-width: 0; }
-    .ct-person b { display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+    .ct-person b { display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
     .ct-person b em { color: var(--muted); font-style: normal; font-weight: 400; }
-    .ct-person small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--faint); font-size: 14px; }
-    .ct-mini { display: block; max-width: 220px; height: 4px; margin-top: 6px; overflow: hidden; border-radius: 2px; background: var(--bg); }
+    .ct-person small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--faint); font-size: var(--fs-sm); }
+    .ct-mini { display: block; max-width: 220px; height: 4px; margin-top: 8px; overflow: hidden; border-radius: 2px; background: var(--bg); }
     .ct-mini i { display: block; width: var(--p, 0%); height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--c), var(--cg)); }
     .ct-mini.done i { background: var(--ok); }
     .ct-score { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
-    .ct-score b { font-size: 17px; font-weight: 600; }
+    .ct-score b { font-size: var(--fs-base); font-weight: 600; }
     .ct-score b.in { display: inline-flex; color: var(--ok); }
-    .ct-score small { display: block; color: var(--faint); font-size: 13px; }
+    .ct-score small { display: block; color: var(--faint); font-size: var(--fs-xs); }
     .ct-trophy { color: var(--gold); }
-    .ct-more { margin: 8px 0 0; color: var(--faint); font-size: 14px; }
+    .ct-more { margin: 8px 0 0; color: var(--faint); font-size: var(--fs-sm); }
 
-    .ct-empty { display: grid; justify-items: start; gap: 6px; padding: 28px 30px; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); color: var(--muted); }
+    .ct-empty { display: grid; justify-items: start; gap: 8px; padding: 32px 32px; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); color: var(--muted); }
     .ct-empty b { color: var(--text); font-family: var(--display); font-size: 1.3rem; font-weight: 600; }
-    .ct-empty .ct-actions { margin-top: 14px; }
-    .ct-board .ct-empty { padding: 18px 22px; background: var(--raised); box-shadow: none; }
-    .ct-board .ct-empty b { font-family: var(--font); font-size: 16px; }
-    .ct-loading { padding: 40px 30px; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); color: var(--muted); }
+    .ct-empty .ct-actions { margin-top: 16px; }
+    .ct-board .ct-empty { padding: 16px 24px; background: var(--raised); box-shadow: none; }
+    .ct-board .ct-empty b { font-family: var(--font); font-size: var(--fs-base); }
+    .ct-loading { padding: 40px 32px; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); color: var(--muted); }
+
+    @media (hover: hover) {
+      .ct-tab:hover { color: var(--text); background: var(--surface); }
+      .ct-row[data-id]:hover { background: var(--raised); }
+      .ct-unlink:hover { color: var(--text); background: var(--raised-hover); }
+      .ct-leave:hover { color: var(--danger); background: var(--raised-hover); }
+      .rich .spoiler:hover { background: #2a3746; }
+    }
 
     /* ---------- Telefony ---------- */
     @media (max-width: 720px) {
       .banner { aspect-ratio: 16 / 7; }
-      .head { gap: 14px; padding: 0 8px; }
+      .head { gap: 16px; padding: 0 8px; }
       .server-icon { width: 76px; height: 76px; margin-top: -38px; }
       h1 { font-size: 1.6rem; }
-      .layout { margin-top: 28px; }
-      .ct-hero { grid-template-columns: auto minmax(0, 1fr); gap: 12px 14px; padding: 20px 18px 4px; }
+      .layout { margin-top: 32px; }
+      .ct-tabs { margin: 0 -16px; padding: 2px 16px 8px; scroll-padding-inline: 16px; }
+      .ct-hero { grid-template-columns: auto minmax(0, 1fr); gap: 12px 16px; padding: 24px 16px 4px; }
       .ct-icon .i { width: 28px; height: 28px; }
       .ct-title h2 { font-size: 1.3rem; }
       .ct-clock { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 8px; text-align: left; }
       .ct-clock small { display: inline; }
       .ct-clock b { font-size: 1.1rem; }
-      .ct-body { gap: 20px; padding: 16px 18px 22px; }
-      .ct-facts { padding: 16px 18px; }
-      .ct-me { padding: 18px; }
+      .ct-body { gap: 24px; padding: 16px 16px 24px; }
+      .ct-facts { padding: 16px 16px; }
+      .ct-me { padding: 16px; }
       .ct-connect .btn { width: 100%; }
-      .ct-row { grid-template-columns: 22px 34px minmax(0, 1fr) auto; gap: 10px; }
+      .ct-row { grid-template-columns: 22px 34px minmax(0, 1fr) auto; gap: 12px; }
       .ct-row .avatar { width: 34px; height: 34px; }
-      .ct-empty { padding: 22px 20px; }
+      .ct-empty { padding: 24px 24px; }
     }
     @media (prefers-reduced-motion: reduce) {
       .ct-bar i, .banner img, .ct-tab { transition: none; }
@@ -227,21 +236,22 @@
   </style>
 </head>
 <body>
+  <a class="skip" href="#tresc">Przejdź do treści</a>
   <header class="site-nav">
     <div class="wrap">
-      <a class="site-brand" href="./"><img src="img/icon.webp" alt="" width="32" height="32"><span>Entuzjaści Hopkostki</span></a>
+      <a class="site-brand" href="./" translate="no"><img src="img/icon.webp" alt="" width="32" height="32"><span>Entuzjaści Hopkostki</span></a>
       <ul class="site-links">
         <li><a href="ranking"><svg class="i" aria-hidden="true"><use href="icons.svg#trophy"></use></svg>Ranking</a></li>
-        <li><a href="event" aria-current="page"><svg class="i" aria-hidden="true"><use href="icons.svg#calendar-days"></use></svg>Eventy</a></li>
+        <li><a href="event" aria-current="page"><svg class="i" aria-hidden="true"><use href="icons.svg#calendar-dots-fill"></use></svg>Eventy</a></li>
       </ul>
     </div>
   </header>
 
-  <main class="wrap">
+  <main class="wrap" id="tresc">
     <header>
       <div class="banner"><img id="banner-img" src="img/banner.webp" alt="" width="1600" height="900"></div>
       <div class="head">
-        <img class="server-icon" src="img/icon.webp" alt="" width="256" height="256">
+        <img class="server-icon" src="img/icon.webp" alt="" width="92" height="92">
         <h1>Eventy serwera</h1>
       </div>
     </header>
@@ -266,16 +276,16 @@
           </ol>
         </section>
         <section class="card">
-          <h2><svg class="i" aria-hidden="true"><use href="icons.svg#terminal"></use></svg>Na Discordzie</h2>
+          <h2><svg class="i" aria-hidden="true"><use href="icons.svg#terminal-window"></use></svg>Na Discordzie</h2>
           <div class="cmds">
-            <div><code>/polacz</code>logowanie bez przeglądarki</div>
-            <div><code>/rank</code>Twoja karta poziomu</div>
-            <div><code>/ranking</code>ranking na serwerze</div>
+            <div><code translate="no">/polacz</code>logowanie bez przeglądarki</div>
+            <div><code translate="no">/rank</code>Twoja karta poziomu</div>
+            <div><code translate="no">/ranking</code>ranking na serwerze</div>
           </div>
         </section>
         <section class="card">
-          <h2><svg class="i" aria-hidden="true"><use href="icons.svg#shield"></use></svg>Prywatność</h2>
-          <p>Lista zapisanych pokazuje pseudonim, avatar i postęp. Osoby ukryte komendą <code>/prywatnosc</code> widać jako „Ukryta osoba”. Logowanie zostaje tylko w tej przeglądarce, a „Wyloguj” je kończy.</p>
+          <h2><svg class="i" aria-hidden="true"><use href="icons.svg#shield-check"></use></svg>Prywatność</h2>
+          <p>Lista zapisanych pokazuje pseudonim, avatar i postęp. Osoby ukryte komendą <code translate="no">/prywatnosc</code> widać jako „Ukryta osoba”. Logowanie zostaje tylko w tej przeglądarce, a „Wyloguj” je kończy.</p>
         </section>
       </aside>
     </div>
@@ -319,7 +329,7 @@
     const ct = { data: null, selected: saved.get(CT_KEY), session: saved.get(SESSION_KEY), busy: false, flash: null, error: null, shown: '', due: 0, msgTimer: 0, loaded: false };
     const CT_STATUS = { live: 'trwa', upcoming: 'wkrótce', ended: 'zakończony' };
     const icon = (name) => `<svg class="i" aria-hidden="true"><use href="icons.svg#${name}"></use></svg>`;
-    const CT_TYPES = { invites: { icon: icon('user-plus') }, messages: { icon: icon('message-square') }, mixed: { icon: icon('users') } };
+    const CT_TYPES = { invites: { icon: icon('user-plus') }, messages: { icon: icon('chat-circle') }, mixed: { icon: icon('users') } };
     // Formy: biernik („zaproś 3 osoby”), dopełniacz („brakuje 1 osoby”).
     const CT_UNITS = {
       invites: { to: ['osobę', 'osoby', 'osób'], of: ['osoby', 'osób', 'osób'] },
@@ -363,7 +373,8 @@
         renderAccount();
       }, 9000);
     }
-    const loginButton = () => `<button type="button" class="btn btn-primary" data-ct-login>${DISCORD_ICON}Zaloguj się przez Discord</button>`;
+    // Jeden główny przycisk logowania na ekranie: w karcie eventu; w bocznym panelu ten sam jako drugorzędny.
+    const loginButton = (primary = true) => `<button type="button" class="btn${primary ? ' btn-primary' : ''}" data-ct-login>${DISCORD_ICON}Zaloguj się przez Discord</button>`;
 
     // Stylizacja tekstu jak na Discordzie: **pogrubienie**, *kursywa*, __podkreślenie__, ~~przekreślenie~~,
     // ||spoiler||, `kod`, # nagłówek (## i ### mniejsze), -# mały tekst (stopka), - lista, > cytat, [tekst](https://…),
@@ -437,7 +448,7 @@
       const done = have >= need;
       return `<div class="ct-progress">
         <div class="ct-progress-top"><span>${label}</span><b>${fmt(Math.min(have, 1e9))} / ${fmt(need)}</b></div>
-        <div class="ct-bar${done ? ' done' : ''}" role="progressbar" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="${need}" aria-valuenow="${Math.min(have, need)}"><i style="--p:${animate ? 0 : p}%" data-p="${p}"></i></div>
+        <div class="ct-bar${done ? ' done' : ''}" role="progressbar" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="${need}" aria-valuenow="${Math.min(have, need)}"><i style="--s:${animate ? 0 : p / 100}" data-p="${p}"></i></div>
       </div>`;
     }
 
@@ -446,8 +457,8 @@
       const me = ct.data?.me;
       if (!me) {
         const login = ct.data?.oauth
-          ? `${loginButton()}<span class="ct-hint">albo wpisz <code>/polacz</code> na serwerze i kliknij link od bota</span>`
-          : '<ol class="ct-steps"><li>Wpisz <code>/polacz</code> na serwerze.</li><li>Kliknij <b>Połącz konto</b> w odpowiedzi bota. Wrócisz tutaj zalogowany(-a).</li></ol>';
+          ? `${loginButton()}<span class="ct-hint">albo wpisz <code translate="no">/polacz</code> na serwerze i kliknij link od bota</span>`
+          : '<ol class="ct-steps"><li>Wpisz <code translate="no">/polacz</code> na serwerze.</li><li>Kliknij <b>Połącz konto</b> w odpowiedzi bota. Wrócisz tutaj zalogowany(-a).</li></ol>';
         return `<section class="ct-me ct-connect">
           <div><b>Zaloguj się, żeby się zapisać</b><p class="ct-sub">Po zapisie od razu zobaczysz, ile brakuje Ci do warunku.</p></div>
           <div class="ct-actions">${login}</div>
@@ -466,7 +477,7 @@
       if (c.messages > 0) bars.push(ctBar('messages', 'Wiadomości', m.messages, c.messages, animate));
       let status;
       if (m.won) status = `<div class="ct-win gold"><b>${icon('trophy')}Wygrałeś w losowaniu</b><span>Administracja odezwie się w sprawie nagrody.</span></div>`;
-      else if (m.reached) status = `<div class="ct-win"><b>${icon('party-popper')}Dostałeś się</b><span>${c.draw?.done ? 'Warunek spełniony. Tym razem losowanie wygrał ktoś inny.' : c.draw?.winners ? 'Warunek spełniony, bierzesz udział w losowaniu.' : 'Warunek spełniony, administracja już to widzi.'}</span></div>`;
+      else if (m.reached) status = `<div class="ct-win"><b>${icon('confetti')}Dostałeś się</b><span>${c.draw?.done ? 'Warunek spełniony. Tym razem losowanie wygrał ktoś inny.' : c.draw?.winners ? 'Warunek spełniony, bierzesz udział w losowaniu.' : 'Warunek spełniony, administracja już to widzi.'}</span></div>`;
       else if (c.status === 'upcoming') status = `<span class="ct-ok">${icon('check')}Zapisano</span><span class="ct-hint">Liczenie ruszy razem z eventem.</span>`;
       else if (c.status === 'ended') status = '<span class="ct-hint">Event się skończył, warunek nie został spełniony.</span>';
       else {
@@ -496,7 +507,7 @@
             <span class="rank">${e.rank}</span>
             ${e.avatar ? `<img class="avatar" src="${esc(e.avatar)}" alt="" width="36" height="36" loading="lazy">` : '<span class="avatar ghost"></span>'}
             <span class="ct-person"><b>${e.won ? `<span class="ct-trophy" title="Wylosowany(-a)">${icon('trophy')}</span>` : ''}${esc(name)}${e.me ? ' <em>(Ty)</em>' : ''}</b><small>${esc(parts.join(', '))}</small><span class="ct-mini${e.reached ? ' done' : ''}"><i style="--p:${p}%"></i></span></span>
-            <span class="ct-score">${e.reached ? `<b class="in">${icon('circle-check')}</b><small>dostał(a) się</small>` : `<b>${p}%</b><small>postęp</small>`}</span>
+            <span class="ct-score">${e.reached ? `<b class="in">${icon('check-circle')}</b><small>dostał(a) się</small>` : `<b>${p}%</b><small>postęp</small>`}</span>
           </li>`;
         })
         .join('');
@@ -507,9 +518,9 @@
     // Wylosowani (po losowaniu w panelu albo samym po końcu eventu).
     function ctWinners(c) {
       if (!c.draw?.done) return '';
-      if (!c.winners?.length) return `<section class="ct-drawn"><h3>${icon('dices')}Losowanie</h3><p class="ct-hint">Nikt nie spełnił warunku, więc nie było kogo losować.</p></section>`;
+      if (!c.winners?.length) return `<section class="ct-drawn"><h3>${icon('dice-five')}Losowanie</h3><p class="ct-hint">Nikt nie spełnił warunku, więc nie było kogo losować.</p></section>`;
       const people = c.winners
-        .map((w) => `<li class="ct-drawn-person${w.me ? ' me' : ''}">${w.avatar ? `<img class="avatar" src="${esc(w.avatar)}" alt="" width="38" height="38">` : '<span class="avatar ghost"></span>'}<span><b>${esc(w.displayName ?? w.name)}</b>${w.me ? '<small>To Ty</small>' : ''}</span></li>`)
+        .map((w) => `<li class="ct-drawn-person${w.me ? ' me' : ''}">${w.avatar ? `<img class="avatar" src="${esc(w.avatar)}" alt="" width="38" height="38" loading="lazy">` : '<span class="avatar ghost"></span>'}<span><b>${esc(w.displayName ?? w.name)}</b>${w.me ? '<small>To Ty</small>' : ''}</span></li>`)
         .join('');
       return `<section class="ct-drawn"><h3>${icon('trophy')}${c.winners.length === 1 ? 'Wylosowany zwycięzca' : 'Wylosowani zwycięzcy'}</h3><ol class="ct-drawn-list">${people}</ol></section>`;
     }
@@ -542,7 +553,7 @@
     function renderContests() {
       const box = $('#contests');
       const list = ct.data?.contests ?? [];
-      const banner = ct.flash ? `<div class="ct-flash ok" role="status">${icon('circle-check')}${esc(ct.flash)}</div>` : ct.error ? `<div class="ct-flash err" role="alert">${icon('triangle-alert')}${esc(ct.error)}</div>` : '';
+      const banner = ct.flash ? `<div class="ct-flash ok" role="status">${icon('check-circle')}${esc(ct.flash)}</div>` : ct.error ? `<div class="ct-flash err" role="alert">${icon('warning')}${esc(ct.error)}</div>` : '';
       if (!list.length) {
         box.innerHTML = ct.loaded
           ? `${banner}<div class="ct-empty"><b>${ct.data?.enabled === false ? 'Eventy są wyłączone' : 'Teraz nie ma żadnego eventu'}</b>Bot ogłosi następny na serwerze i wtedy zapiszesz się tutaj.<div class="ct-actions"><a class="btn btn-primary" href="https://discord.gg/FuqNCJhVYs" rel="noopener">${DISCORD_ICON}Dołącz do serwera</a><a class="btn btn-quiet" href="ranking">Zobacz ranking</a></div></div>`
@@ -563,7 +574,7 @@
       const strip = box.querySelector('.ct-tabs');
       if (strip) strip.scrollLeft = scroll;
       // Paski postępu „rosną” przy pierwszym pokazaniu eventu.
-      if (animate) requestAnimationFrame(() => requestAnimationFrame(() => box.querySelectorAll('.ct-bar i[data-p]').forEach((i) => i.style.setProperty('--p', `${i.dataset.p}%`))));
+      if (animate) requestAnimationFrame(() => requestAnimationFrame(() => box.querySelectorAll('.ct-bar i[data-p]').forEach((i) => i.style.setProperty('--s', String(Number(i.dataset.p) / 100)))));
       ctApplyTheme(c);
       document.title = `${c.name} - Eventy serwera`;
     }
@@ -577,7 +588,7 @@
       const note = ct.error && !ct.data?.contests?.length ? `<p class="acc-err">${esc(ct.error)}</p>` : ct.flash && !ct.data?.contests?.length ? `<p class="acc-ok">${esc(ct.flash)}</p>` : '';
       $('#account-body').innerHTML = me
         ? `${note}<div class="acc"><img class="avatar" src="${esc(me.avatar)}" alt="" width="38" height="38"><div><b>${esc(me.name)}</b><small>zalogowano przez Discord</small></div><button type="button" class="ct-unlink" data-ct-unlink>Wyloguj</button></div>`
-        : `${note}<p>Zaloguj się, żeby zapisywać się na eventy i widzieć swój postęp.</p>${ct.data.oauth ? loginButton() : '<p>Wpisz <code>/polacz</code> na serwerze i kliknij link od bota.</p>'}`;
+        : `${note}<p>Zaloguj się, żeby zapisywać się na eventy i widzieć swój postęp.</p>${ct.data.oauth ? loginButton(!ct.data?.contests?.length) : '<p>Wpisz <code translate="no">/polacz</code> na serwerze i kliknij link od bota.</p>'}`;
     }
 
     async function loadContests() {
