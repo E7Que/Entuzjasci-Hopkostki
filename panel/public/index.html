@@ -39,11 +39,7 @@
     }
     .hero-banner { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 42%; transform: scale(calc(1 + var(--zoom) * (1 - var(--p)))); transform-origin: 50% 40%; }
     .hero-media.scrub, .hero-media.scrub .hero-banner { will-change: clip-path, transform; }
-    /* Nazwa serwera: słowa wyjeżdżają spod maski raz, po wczytaniu (meng-masked-reveal, React Bits MaskedHeading).
-       Ukryte tylko, gdy działa GSAP (klasa has-motion), więc bez JS wszystko widać od razu. */
-    .hero h1 .mask { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: 0.08em; }
-    .hero h1 .word { display: inline-block; }
-    html.has-motion .hero .lead, html.has-motion .hero .cta-row, html.has-motion .hero .members { visibility: hidden; }
+    /* Nazwa serwera wyjeżdża słowo po słowie spod maski (motion.js, React Bits MaskedHeading). */
     .hero-body { padding: 0; }
     .hero h1 { max-width: 680px; margin-top: var(--sp-10); font-size: var(--fs-4xl); font-weight: 800; line-height: 1.1; }
     .lead { max-width: 680px; margin: var(--sp-4) 0 var(--sp-8); color: var(--muted); font-size: var(--fs-lg); line-height: 1.55; }
@@ -112,6 +108,10 @@
     .faq .answer ul { margin: 0 0 var(--sp-2); padding-left: 1.2em; }
 
     .end { margin-top: var(--sp-24); padding: var(--sp-10) var(--sp-10) var(--sp-12); }
+    .end-band { position: relative; margin-top: var(--sp-24); padding: var(--sp-24) 0; }
+    .end-chrome { position: absolute; inset: 0; -webkit-mask-image: linear-gradient(transparent, #000 20%, #000 80%, transparent); mask-image: linear-gradient(transparent, #000 20%, #000 80%, transparent); }
+    .end-inner { position: relative; max-width: var(--wrap); margin: 0 auto; padding: 0 var(--sp-6); }
+    .end-band .end { max-width: 600px; margin-top: 0; }
     .end h2 { font-size: var(--fs-3xl); }
     .end p { max-width: 52ch; margin: var(--sp-3) 0 var(--sp-6); color: var(--muted); }
 
@@ -155,7 +155,7 @@
 
   <main class="wrap" id="tresc" tabindex="-1">
     <section class="hero">
-      <div class="hero-media" id="hero-media"><img class="hero-banner" src="img/banner.webp" alt="Baner serwera Entuzjaści Hopkostki" width="1600" height="900" fetchpriority="high"></div>
+      <div class="hero-media" id="hero-media"><img class="hero-banner" src="img/banner.webp" srcset="img/banner-960.webp 960w, img/banner-1600.webp 1600w, img/banner-2400.webp 2400w, img/banner-3840.webp 3840w" sizes="100vw" alt="Baner serwera Entuzjaści Hopkostki" width="1600" height="900" fetchpriority="high"></div>
       <div class="hero-body">
         <h1 translate="no" id="hero-title">Entuzjaści Hopkostki</h1>
         <p class="lead">Serwer na Discordzie, na którym za aktywność dostajesz XP i wbijasz kolejne poziomy. Ranking tygodnia co tydzień startuje od zera, a w eventach są nagrody.</p>
@@ -234,13 +234,19 @@
       </details>
     </section>
 
-    <section class="card end" aria-labelledby="end-h">
-      <h2 id="end-h">Wpadnij na serwer</h2>
-      <p>Zaproszenie otworzy się w aplikacji Discord albo w przeglądarce. Dołączenie nic nie kosztuje.</p>
-      <a class="btn btn-primary btn-big" href="https://discord.gg/FuqNCJhVYs" rel="noopener">
-        <svg class="discord" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.6 5.3A16.6 16.6 0 0 0 15.5 4l-.5 1a15.4 15.4 0 0 0-6 0L8.5 4a16.6 16.6 0 0 0-4.1 1.3C1.8 9.2 1.1 13 1.4 16.7a16.7 16.7 0 0 0 5.1 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a11.9 11.9 0 0 0 11.4 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a16.6 16.6 0 0 0 5.1-2.6c.4-4.3-.7-8.1-3-11.4zM8.7 14.4c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>
-        Dołącz do serwera
-      </a>
+    <!-- Koniec strony: zaproszenie na pasie z płynnym chromem (React Bits LiquidChrome, „tło 2”). Kursor zostawia w nim ślad. -->
+    <section class="end-band bleed" aria-labelledby="end-h">
+      <div class="end-chrome" data-chrome='{"exposure":0.95}'></div>
+      <div class="end-inner">
+          <div class="card end">
+            <h2 id="end-h">Wpadnij na serwer</h2>
+            <p>Zaproszenie otworzy się w aplikacji Discord albo w przeglądarce. Dołączenie nic nie kosztuje.</p>
+            <a class="btn btn-primary btn-big" href="https://discord.gg/FuqNCJhVYs" rel="noopener">
+              <svg class="discord" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.6 5.3A16.6 16.6 0 0 0 15.5 4l-.5 1a15.4 15.4 0 0 0-6 0L8.5 4a16.6 16.6 0 0 0-4.1 1.3C1.8 9.2 1.1 13 1.4 16.7a16.7 16.7 0 0 0 5.1 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a11.9 11.9 0 0 0 11.4 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a16.6 16.6 0 0 0 5.1-2.6c.4-4.3-.7-8.1-3-11.4zM8.7 14.4c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>
+              Dołącz do serwera
+            </a>
+          </div>
+      </div>
     </section>
   </main>
 
@@ -258,6 +264,7 @@
   <script src="vendor/gsap.min.js"></script>
   <script src="vendor/ScrollTrigger.min.js"></script>
   <script src="vendor/lenis.min.js"></script>
+  <script src="motion.js?v=dev"></script>
   <script>
     'use strict';
     const BASE = ['localhost', '127.0.0.1'].includes(location.hostname)
@@ -395,6 +402,7 @@
       if (!g?.memberCount) return;
       const online = g.onlineCount ? `, <span class="online" aria-hidden="true"></span><b>${num(g.onlineCount)}</b> teraz online` : '';
       $('#members').innerHTML = `<b>${num(g.memberCount)}</b> ${plural(g.memberCount, 'osoba', 'osoby', 'osób')} na serwerze${online}`;
+      document.querySelectorAll('#members b').forEach((b) => window.Motion?.count(b, Number(b.textContent.replace(/\D/g, '')), num));
     }
 
     // Odpowiedzi w pytaniach z prawdziwych ustawień bota (stawki XP, role za poziomy).
@@ -415,95 +423,28 @@
       }
     }
 
-    // ---------- Ruch: GSAP + ScrollTrigger + Lenis (meng-cinematic-gsap-lenis-motion-system) ----------
-    // Jeden efekt przewijania: baner na całą szerokość zjeżdża do kolumny treści. Do tego wjazd hero po wczytaniu
-    // i hasło, którego słowa zapalają się w rytm przewijania. Przy ograniczonym ruchu albo bez bibliotek: wszystko statyczne.
-    const MOTION = !reduceMotion.matches && window.gsap && window.ScrollTrigger;
+    // ---------- Ruch: motion.js (GSAP + ScrollTrigger + Lenis, wzorce z React Bits) ----------
+    // Baner zwija się do kolumny treści przy przewijaniu, nazwa wjeżdża słowo po słowie, potem opis i przyciski.
+    // Nagłówki sekcji wyjeżdżają spod maski, a treść sekcji wjeżdża od dołu, gdy pojawia się na ekranie.
+    const MOTION = !!window.Motion?.on;
+    window.Motion?.init({
+      banner: '#hero-media',
+      title: '#hero-title',
+      intro: '.hero .lead, .hero .cta-row, .hero .members',
+      headings: '.block > h2, .end h2',
+      reveal: '.block > :not(h2), .card.end',
+      spot: '.now-grid > .card:not(.sk-card), .top-list, .faq summary, .card.end',
+      magnet: '.btn-big.btn-primary',
+    });
 
-    function splitWords(el, cls) {
-      const words = [];
-      const walk = (node, hl) => {
-        for (const child of [...node.childNodes]) {
-          if (child.nodeType === Node.TEXT_NODE) {
-            const frag = document.createDocumentFragment();
-            for (const part of child.textContent.split(/(\s+)/)) {
-              if (!part) continue;
-              if (/^\s+$/.test(part)) { frag.append(part); continue; }
-              const word = document.createElement('span');
-              word.className = hl ? `${cls} hl` : cls;
-              word.textContent = part;
-              words.push(word);
-              if (cls === 'word') {
-                const mask = document.createElement('span');
-                mask.className = 'mask';
-                mask.append(word);
-                frag.append(mask);
-              } else {
-                frag.append(word);
-              }
-            }
-            child.replaceWith(frag);
-          } else if (child.nodeType === Node.ELEMENT_NODE) {
-            walk(child, hl || child.classList.contains('hl'));
-          }
-        }
-      };
-      el.setAttribute('aria-label', el.textContent.replace(/\s+/g, ' ').trim());
-      walk(el, false);
-      el.querySelectorAll('.mask, .w').forEach((x) => x.setAttribute('aria-hidden', 'true'));
-      return words;
-    }
-
-    function initMotion() {
-      if (!MOTION) return;
-      gsap.registerPlugin(ScrollTrigger);
-      gsap.defaults({ ease: 'power3.out', duration: 0.85 });
-      document.documentElement.classList.add('has-motion');
-
-      // Płynne przewijanie, zsynchronizowane z ScrollTriggerem. Klawiatura i kotwice działają jak zwykle.
-      if (window.Lenis) {
-        const lenis = new Lenis({ lerp: 0.08, smoothWheel: true, wheelMultiplier: 0.9, anchors: true });
-        lenis.on('scroll', ScrollTrigger.update);
-        gsap.ticker.add((time) => lenis.raf(time * 1000));
-        gsap.ticker.lagSmoothing(0);
-        $('.skip').addEventListener('click', () => $('#tresc').focus({ preventScroll: true }));
-      }
-
-      // Baner: szerokość kolumny treści liczona przy każdym odświeżeniu ScrollTriggera (zmiana rozmiaru okna).
-      const media = $('#hero-media');
-      const measure = () => {
-        const column = $('main.wrap');
-        const cs = getComputedStyle(column);
-        const inner = column.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-        media.style.setProperty('--gut', `${Math.max(0, (media.clientWidth - inner) / 2)}px`);
-      };
-      measure();
-      ScrollTrigger.addEventListener('refreshInit', measure);
-      gsap.to(media, {
-        '--p': 1,
-        ease: 'none',
-        scrollTrigger: { trigger: media, start: 'top top', end: 'bottom 30%', scrub: 1 },
-      });
-
-      // Wjazd hero: najpierw baner, potem słowa nazwy spod maski, opis, przyciski.
-      const words = splitWords($('#hero-title'), 'word');
-      gsap.timeline({ delay: 0.1 })
-        .fromTo(media, { '--intro': 1 }, { '--intro': 0, duration: 1, ease: 'power4.out' })
-        .fromTo(words, { yPercent: 110 }, { yPercent: 0, duration: 1.1, ease: 'power4.out', stagger: 0.09 }, 0.35)
-        .fromTo('.hero .lead', { y: 24, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.8 }, 0.75)
-        .fromTo('.hero .cta-row, .hero .members', { y: 24, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.8, stagger: 0.08 }, 0.9);
-
-      // Hasło: słowa zapalają się po kolei, gdy przewijasz przez sekcję (w obie strony).
+    // Hasło: słowa zapalają się po kolei, gdy przewijasz przez sekcję (w obie strony).
+    if (MOTION) {
       const box = $('#tagline');
-      const lit = splitWords(box.querySelector('p'), 'w');
+      const lit = Motion.splitWords(box.querySelector('p'), 'w');
       box.classList.add('armed');
       const tl = gsap.timeline({ scrollTrigger: { trigger: box, start: 'top 75%', end: 'bottom 45%', scrub: 1 } });
       lit.forEach((w, i) => tl.to(w, { color: w.classList.contains('hl') ? '#4cc3c8' : '#e5eaf1', duration: 1, ease: 'none' }, i * 0.6));
-
-      addEventListener('load', () => ScrollTrigger.refresh());
     }
-
-    initMotion();
     (async () => {
       const [board, contests] = await Promise.all([
         get('leaderboard?period=week&limit=3').catch(() => null),
@@ -513,10 +454,10 @@
       renderNow(contests, board);
       renderFaq(board);
       await renderTop(board);
-      if (MOTION) ScrollTrigger.refresh();
+      window.Motion?.refresh();
     })();
   </script>
-  <script src="vendor/tsparticles.basic.bundle.min.js" defer></script>
   <script src="particles.js?v=dev" defer></script>
+  <script src="chrome.js?v=dev" defer></script>
 </body>
 </html>

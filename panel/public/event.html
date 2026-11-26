@@ -19,6 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="site.css?v=dev">
+  <link rel="stylesheet" href="vendor/lenis.css">
   <style>
     [hidden] { display: none !important; }
     button { font: inherit; color: inherit; }
@@ -247,7 +248,7 @@
 
   <main class="wrap" id="tresc">
     <header>
-      <div class="banner bleed"><img id="banner-img" src="img/banner.webp" alt="" width="1600" height="900"></div>
+      <div class="banner bleed"><img id="banner-img" src="img/banner.webp" srcset="img/banner-960.webp 960w, img/banner-1600.webp 1600w, img/banner-2400.webp 2400w, img/banner-3840.webp 3840w" sizes="100vw" alt="" width="1600" height="900" fetchpriority="high"></div>
       <div class="head">
         <h1>Eventy serwera</h1>
       </div>
@@ -794,6 +795,7 @@
       return `--c:${t.c1};--c2:${t.tint};--cg:${t.cg}`;
     };
     const DEFAULT_BANNER = 'img/banner.webp';
+    const DEFAULT_SRCSET = document.getElementById('banner-img').getAttribute('srcset');
     const safeImage = (url) => (/^https:\/\/[^\s"'<>\\()]+$/.test(String(url ?? '')) ? url : null);
     function ctApplyTheme(c) {
       const body = document.body;
@@ -803,15 +805,20 @@
       if (img.dataset.src === src || (!img.dataset.src && src === DEFAULT_BANNER)) return;
       img.dataset.src = src;
       // Płynna zmiana: nowy baner pokazuje się dopiero, gdy się wczyta (zły adres - zostaje poprzedni).
+      // Domyślny baner ma kilka rozmiarów (srcset), własny baner eventu jest jednym plikiem.
+      const own = src !== DEFAULT_BANNER;
       const next = new Image();
       next.onload = () => {
         if (img.dataset.src !== src) return;
         img.classList.add('swap');
         setTimeout(() => {
+          if (own) img.removeAttribute('srcset');
+          else img.setAttribute('srcset', DEFAULT_SRCSET);
           img.src = src;
           img.classList.remove('swap');
         }, reduceMotion.matches ? 0 : 220);
       };
+      if (!own) { next.sizes = '100vw'; next.srcset = DEFAULT_SRCSET; }
       next.src = src;
     }
 
@@ -864,7 +871,20 @@
     // #id eventu albo #polacz=token - same litery, cyfry, - i _ (bez dekodowania: zły link nie psuje strony).
     contestsInit(location.hash.slice(1));
   </script>
-  <script src="vendor/tsparticles.basic.bundle.min.js" defer></script>
+  <script src="vendor/gsap.min.js"></script>
+  <script src="vendor/ScrollTrigger.min.js"></script>
+  <script src="vendor/lenis.min.js"></script>
+  <script src="motion.js?v=dev"></script>
+  <script>
+    // Ruch jak na stronie głównej (motion.js): baner zwija się do kolumny przy przewijaniu, tytuł wjeżdża
+    // słowo po słowie, eventy i karty z boku wjeżdżają od dołu, a karta pod kursorem dostaje światło (React Bits).
+    window.Motion?.init({
+      banner: '.banner.bleed',
+      title: 'main h1',
+      reveal: '.contests, .side > .card:not([hidden])',
+      spot: '.side .card, .ct-card',
+    });
+  </script>
   <script src="particles.js?v=dev" defer></script>
 </body>
 </html>

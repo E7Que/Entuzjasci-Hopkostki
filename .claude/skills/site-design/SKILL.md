@@ -95,12 +95,12 @@ default effect (sensible defaults), peak-end rule (end pages on a strong call to
 Type (owner's choice): Manrope (700 section headings, 800 main heading) and Inter (400 text, 600 buttons),
 both from Google Fonts with `latin-ext` for Polish letters. Headline line height 1.15, body 1.55.
 
-Background: one only (owner's pick after trying graphite noise and thermal gradients): graphite
-`#171b23` with tsParticles (`vendor/tsparticles.basic.bundle.min.js`, config in `particles.js`):
-about 110 tiny dots in the site's blue-gray with a little cyan, drifting slowly and twinkling, 30 fps
-cap, paused off-screen, frozen under reduced motion. Behind them, for colour (owner's request): three soft radial glows in the
-banner's colours (cyan, blue, magenta) drifting slowly (`.glow`, 38-54 s loops, no blur filter).
-The primary button carries a cyan glow shadow. Do not add a third background treatment.
+Background (owner's picks, from React Bits files he sent): graphite `#171b23` with the React Bits **Particles**
+field (`particles.js`, WebGL2, owner's settings: 220 points, spread 12, glow 0.4, twinkle 0.2, cursor repels, points
+joined by lines, click sends a wave; site colours, slight scroll parallax, fewer points on phones, one still frame
+under reduced motion) over three soft drifting radial glows in the banner's colours (`.glow`). React Bits
+**LiquidChrome** (`chrome.js`, cyan-tinted chrome, cursor leaves a wake) is used only as a band behind the final call
+to action on the landing page and as the 404 background. Do not add another background treatment.
 
 Layout: content column max 1120 px, 16 px side gutter on phones, nothing scrolls sideways.
 Elevation comes from `--surface`/`--raised` plus layered shadows, never from borders.
@@ -111,10 +111,13 @@ Respect `prefers-reduced-motion`.
 
 - Top banner runs the full width of the viewport (`.bleed`); no big server icon over it (the small
   logo in the top bar is enough).
-- One scroll animation per site, on the landing page only: GSAP ScrollTrigger + Lenis
-  (`panel/public/vendor`). The full-width banner scrubs into the content column, the hero title
-  rises word by word on load, the tagline lights up word by word while scrolling. Everything is
-  visible without JavaScript and static under `prefers-reduced-motion`.
+- Every public page moves the same way (owner's request), through `motion.js` (GSAP ScrollTrigger + Lenis from
+  `panel/public/vendor`): the full-width banner scrubs into the content column while scrolling, the page title rises
+  word by word on load, section headings rise when they scroll in, sections slide up once (AnimatedContent), numbers
+  count up (CountUp), the card under the cursor gets a soft light and a brighter edge (SpotlightCard) and big primary
+  buttons pull slightly towards the cursor (Magnet). Call `Motion.init({...})` on a new page instead of writing new
+  motion code. Everything is visible without JavaScript and static under `prefers-reduced-motion`.
+- The banner is `img/banner.webp` (3840×2160 from the owner) served through `srcset` (960, 1600, 2400, 3840 px).
 
 ## Copy
 

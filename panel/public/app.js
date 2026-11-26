@@ -1,5 +1,8 @@
 'use strict';
 
+// Ikona z panel/public/icons.svg (Phosphor, zobacz skill „icons”); emoji w interfejsie panelu nie używamy.
+const uiIcon = (name) => `<svg class="i" aria-hidden="true"><use href="icons.svg#${name}"></use></svg>`;
+
 // ---------- Stałe ----------
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -402,7 +405,7 @@ function renderAccessCard() {
     <ul class="access-list">${views
       .map((v) => {
         const ok = canEdit(v);
-        return `<li class="${ok ? 'ok' : 'locked'}"><span>${ok ? '✅' : '🔒'}</span><a href="#${v}">${esc(viewLabel(v))}</a><small>${ok ? 'możesz zmieniać' : 'tylko podgląd'}</small></li>`;
+        return `<li class="${ok ? 'ok' : 'locked'}"><span>${uiIcon(ok ? 'check-circle' : 'lock')}</span><a href="#${v}">${esc(viewLabel(v))}</a><small>${ok ? 'możesz zmieniać' : 'tylko podgląd'}</small></li>`;
       })
       .join('')}</ul>`;
 }
@@ -426,7 +429,7 @@ function applyViewLock(view) {
     banner.className = 'banner lock-banner';
     section.querySelector('.view-head').after(banner);
   }
-  banner.innerHTML = `🔒 <strong>Tylko podgląd</strong> - tej części panelu nie możesz zmieniać${DATA_VIEWS.includes(view) ? ', a jej dane są ukryte' : ''}. ${
+  banner.innerHTML = `${uiIcon('lock')}<strong>Tylko podgląd</strong> - tej części panelu nie możesz zmieniać${DATA_VIEWS.includes(view) ? ', a jej dane są ukryte' : ''}. ${
     roles.length ? `Odblokowują ją role: ${roles.map((n) => `<strong>${esc(n)}</strong>`).join(', ')}.` : 'Odblokowuje ją tylko administracja serwera.'
   }`;
   [...section.children].forEach((el) => el.toggleAttribute('inert', el !== banner && !el.classList.contains('view-head')));
@@ -919,7 +922,7 @@ async function loadDiscordCommandPerms({ fresh = false } = {}) {
 $('#discord-perms-refresh').addEventListener('click', () => loadDiscordCommandPerms({ fresh: true }));
 
 function discordPermChip(entry) {
-  return `<span class="role-chip static" title="${entry.allow ? 'Discord zezwala' : 'Discord blokuje'}"><span class="role-dot" style="background:${entry.allow ? 'var(--green)' : 'var(--red)'}"></span>${entry.allow ? '✓' : '✕'} ${esc(entry.name)}</span>`;
+  return `<span class="role-chip static" title="${entry.allow ? 'Discord zezwala' : 'Discord blokuje'}"><span class="role-dot" style="background:${entry.allow ? 'var(--green)' : 'var(--red)'}"></span>${uiIcon(entry.allow ? 'check' : 'x')}${esc(entry.name)}</span>`;
 }
 
 function discordPermsHelp(botName) {
@@ -927,8 +930,8 @@ function discordPermsHelp(botName) {
     <summary>Jak usunąć nadpisanie w Discordzie</summary>
     <ol class="small">
       <li>Otwórz <b>Ustawienia serwera → Integracje</b> i przy ${botName ? `<b>${esc(botName)}</b>` : 'bocie'} kliknij <b>Zarządzaj</b>.</li>
-      <li>Na górze są ustawienia <b>całej aplikacji</b> (dla wszystkich komend): „Role i członkowie” oraz „Kanały”. Żeby niczego nie blokować, przy <b>@everyone</b> i <b>Wszystkie kanały</b> ma być ✓ (zielony), bez blokad pojedynczych ról i kanałów.</li>
-      <li>Niżej jest lista komend. Komenda z własnymi nadpisaniami jest oznaczona jako niezsynchronizowana („Not Synced”) - kliknij ją (np. /powiedz) i usuń wpisy ról i kanałów albo przy <b>Wszystkie kanały</b> zaznacz ✓. Możesz też przywrócić jej ustawienia domyślne (takie jak dla całej aplikacji).</li>
+      <li>Na górze są ustawienia <b>całej aplikacji</b> (dla wszystkich komend): „Role i członkowie” oraz „Kanały”. Żeby niczego nie blokować, przy <b>@everyone</b> i <b>Wszystkie kanały</b> ma być zielony ptaszek, bez blokad pojedynczych ról i kanałów.</li>
+      <li>Niżej jest lista komend. Komenda z własnymi nadpisaniami jest oznaczona jako niezsynchronizowana („Not Synced”) - kliknij ją (np. /powiedz) i usuń wpisy ról i kanałów albo przy <b>Wszystkie kanały</b> zaznacz zielony ptaszek. Możesz też przywrócić jej ustawienia domyślne (takie jak dla całej aplikacji).</li>
       <li>Zapisz zmiany w Discordzie i kliknij tutaj <b>Sprawdź ponownie</b>.</li>
     </ol>
     <p class="muted small">Blokady ról i osób nie dotyczą właściciela serwera ani ról z uprawnieniem Administrator - ograniczenia kanałów dotyczą wszystkich. Bot nie zmieni tych ustawień sam: Discord pozwala na to tylko osobie z uprawnieniami Zarządzanie serwerem i Zarządzanie rolami. Kto blokuje? Gdy komendy nie ma na liście po wpisaniu „/”, blokuje ją Discord; gdy jest, a bot odpowiada „Nie masz uprawnień do tej komendy.”, decyduje lista bota poniżej.</p>
@@ -955,7 +958,7 @@ function renderDiscordCommandPerms() {
   }
   const conflicts = data.conflicts.length
     ? `<div class="health-alert"><strong>Discord blokuje to, na co pozwalają listy bota</strong><ul>${data.conflicts
-        .map((c) => `<li>${c.level === 'error' ? '⛔' : '⚠️'} ${esc(c.text)}<small class="note">Jak naprawić: ${esc(c.fix)}</small></li>`)
+        .map((c) => `<li>${uiIcon(c.level === 'error' ? 'prohibit' : 'warning')}${esc(c.text)}<small class="note">Jak naprawić: ${esc(c.fix)}</small></li>`)
         .join('')}</ul></div>`
     : '<div class="health-ok"><span class="dot ok"></span>Nadpisania w Discordzie nie kłócą się z listami bota - decydują listy poniżej.</div>';
   const scopeNote = { app: 'dotyczy wszystkich komend bez własnych nadpisań', command: 'nadpisania tylko tej komendy', unknown: 'komenda spoza listy bota' };
@@ -985,7 +988,7 @@ function channelBlocksHtml(blocks) {
     <ul>${limited
       .map((b) => `<li><b>${esc(b.name)}</b> - bez komend na ${b.blocked.length} z ${b.visible} widocznych kanałów: ${names(b.blocked)}</li>`)
       .join('')}</ul>
-    <small class="note">Jak naprawić: w Discordzie otwórz ustawienia kategorii albo kanału → Uprawnienia → wybierz rolę (np. | Moderator) → „Używanie komend aplikacji” ustaw na ✓. Najprościej zrobić to raz na całej kategorii.</small></div>`;
+    <small class="note">Jak naprawić: w Discordzie otwórz ustawienia kategorii albo kanału → Uprawnienia → wybierz rolę (np. | Moderator) → „Używanie komend aplikacji” ustaw na zielony ptaszek. Najprościej zrobić to raz na całej kategorii.</small></div>`;
 }
 
 // ---------- Uprawnienia komend ----------
@@ -1807,9 +1810,9 @@ function renderLevels() {
 
 // ---------- Wydarzenia XP ----------
 const EV_THEMES = {
-  confetti: '🎉 Konfetti', fire: '🔥 Ogień', snow: '❄️ Śnieg', stars: '✨ Gwiazdy', neon: '⚡ Neon',
-  hearts: '💖 Serduszka', halloween: '🎃 Halloween', leaves: '🍂 Jesienne liście', sakura: '🌸 Sakura',
-  coins: '🪙 Złote monety', storm: '⛈️ Burza', bubbles: '🫧 Bąbelki', matrix: '💚 Matrix',
+  confetti: 'Konfetti', fire: 'Ogień', snow: 'Śnieg', stars: 'Gwiazdy', neon: 'Neon',
+  hearts: 'Serduszka', halloween: 'Halloween', leaves: 'Jesienne liście', sakura: 'Sakura',
+  coins: 'Złote monety', storm: 'Burza', bubbles: 'Bąbelki', matrix: 'Matrix',
 };
 const EV_INTENSITY = { none: 'bez efektów', low: 'efekty subtelne', medium: 'efekty normalne', high: 'efekty mocne' };
 const EV_KINDS = { message: 'wiadomości', voice: 'głosowe', reaction: 'reakcje' };
@@ -2226,9 +2229,9 @@ function renderContests() {
           const id = esc(c.id);
           return `<div class="ev-item ${cls}${c.id === ctEditId ? ' editing' : ''}">
             <div class="ev-main">
-              <div><span class="ct-swatch" style="background:linear-gradient(90deg, ${ctColors(c).join(', ')})" title="Kolory eventu"></span><strong>${esc(c.name)}</strong> <span class="ev-status">${label}</span>${c.banner ? ' <span class="muted small" title="Własny baner na stronie eventów">🖼️ baner</span>' : ''}</div>
+              <div><span class="ct-swatch" style="background:linear-gradient(90deg, ${ctColors(c).join(', ')})" title="Kolory eventu"></span><strong>${esc(c.name)}</strong> <span class="ev-status">${label}</span>${c.banner ? ` <span class="muted small" title="Własny baner na stronie eventów">${uiIcon('image')}baner</span>` : ''}</div>
               <div class="muted small">${esc(evDate(Date.parse(c.startsAt)))} - ${esc(evDate(Date.parse(c.endsAt)))}</div>
-              <div class="muted small">🎯 Warunek: ${esc(ctRequirement(c))}${c.prize ? ` · 🎁 ${esc(c.prize)}` : ''}${c.drawWinners > 0 ? ` · 🎲 losowanie: ${c.drawWinners} ${plural(c.drawWinners, ['zwycięzca', 'zwycięzców', 'zwycięzców'])} (${c.drawMode === 'auto' ? 'samo po końcu' : 'ręcznie'})` : ''}</div>
+              <div class="muted small">${uiIcon('target')}Warunek: ${esc(ctRequirement(c))}${c.prize ? ` ${uiIcon('gift')}${esc(c.prize)}` : ''}${c.drawWinners > 0 ? ` ${uiIcon('dice-five')}losowanie: ${c.drawWinners} ${plural(c.drawWinners, ['zwycięzca', 'zwycięzców', 'zwycięzców'])} (${c.drawMode === 'auto' ? 'samo po końcu' : 'ręcznie'})` : ''}</div>
             </div>
             <div class="ev-actions">
               <button type="button" class="btn ghost small" data-ct-people="${id}">Zapisani</button>
@@ -2257,7 +2260,7 @@ async function loadContestOauth() {
   const steps = `Wejdź na <a href="https://discord.com/developers/applications" target="_blank" rel="noopener">Discord Developer Portal</a> → aplikacja bota → <strong>OAuth2</strong> → <strong>Redirects</strong> → <strong>Add Redirect</strong>, wklej <code class="copyable" title="Kliknij, żeby skopiować">${esc(o.redirectUri)}</code> i kliknij <strong>Save Changes</strong>. Potem kliknij <button type="button" class="btn small" data-oauth-recheck>Sprawdź teraz</button> - logowanie włączy się od razu (sama strona też to wykryje w ciągu minuty).`;
   const viaRanking = o.registered === true && o.using && !/\/event(\.html)?$/.test(o.using);
   box.innerHTML = o.registered === true
-    ? `<p class="ct-oauth-ok">✓ <strong>Logowanie przez Discord działa</strong> - na stronie eventów jest przycisk „Zaloguj przez Discord”.${viaRanking ? ` Discord wraca na adres strony rankingu, a ta od razu przekierowuje na eventy. Możesz dodać w Redirects też <code class="copyable" title="Kliknij, żeby skopiować">${esc(o.redirectUri)}</code> - wtedy Discord wróci prosto na stronę eventów.` : ''}</p>`
+    ? `<p class="ct-oauth-ok">${uiIcon('check-circle')}<strong>Logowanie przez Discord działa</strong> - na stronie eventów jest przycisk „Zaloguj przez Discord”.${viaRanking ? ` Discord wraca na adres strony rankingu, a ta od razu przekierowuje na eventy. Możesz dodać w Redirects też <code class="copyable" title="Kliknij, żeby skopiować">${esc(o.redirectUri)}</code> - wtedy Discord wróci prosto na stronę eventów.` : ''}</p>`
     : `<div class="banner warn"><strong>Logowanie przez Discord nie jest jeszcze włączone.</strong> Discord nie pozwala botowi dopisać adresu strony samemu - zrób to raz: ${steps}${o.registered === null ? ' (Bot nie mógł sprawdzić listy - jeśli adres już jest, wszystko działa.)' : ''} Do tego czasu osoby łączą konto komendą <code>/polacz</code>.</div>`;
 }
 
@@ -2280,7 +2283,7 @@ async function loadContestPeople(id) {
   const inCount = data.entries.filter((p) => p.reached).length;
   const drawBtn = $('#ct-draw-btn');
   drawBtn.hidden = !(ct.drawWinners > 0) || ct.status === 'upcoming';
-  drawBtn.textContent = data.draw ? '🎲 Losuj ponownie' : '🎲 Losuj zwycięzców';
+  drawBtn.innerHTML = uiIcon('dice-five') + (data.draw ? 'Losuj ponownie' : 'Losuj zwycięzców');
   drawBtn.dataset.redo = data.draw ? '1' : '';
   $('#ct-draw-note').hidden = !data.draw;
   if (data.draw) $('#ct-draw-note').textContent = `Ostatnie losowanie: ${shortDate(data.draw.at)} (${data.draw.by ? `losował(a): ${data.draw.by}` : 'samo po końcu eventu'}) - wśród ${data.draw.pool} ${data.draw.pool === 1 ? 'osoby, która się dostała' : `${plural(data.draw.pool, ['osoby', 'osób', 'osób'])}, które się dostały`}.`;
@@ -2293,9 +2296,9 @@ async function loadContestPeople(id) {
         .map(
           (p) => `<tr>
             <td data-label="#">${p.rank}</td>
-            <td data-label="Osoba">${p.won ? '🏆 ' : ''}${who(p)}</td>
+            <td data-label="Osoba">${p.won ? uiIcon('trophy') : ''}${who(p)}</td>
             <td data-label="Postęp">${progress(p)}</td>
-            <td data-label="Status">${p.won ? '🏆 wylosowany(-a)<br>' : ''}${p.reached ? `✅ dostał(a) się${p.qualifiedAt ? `<span class="note">${esc(shortDate(p.qualifiedAt))}</span>` : ''}` : ct.status === 'upcoming' ? '⏳ czeka na start' : '⏳ w trakcie'}</td>
+            <td data-label="Status">${p.won ? `${uiIcon('trophy')}wylosowany(-a)<br>` : ''}${p.reached ? `${uiIcon('check-circle')}dostał(a) się${p.qualifiedAt ? `<span class="note">${esc(shortDate(p.qualifiedAt))}</span>` : ''}` : ct.status === 'upcoming' ? `${uiIcon('hourglass')}czeka na start` : `${uiIcon('hourglass')}w trakcie`}</td>
             <td data-label="Zapisał(a) się">${esc(shortDate(p.joinedAt))}</td>
             <td><button type="button" class="btn danger small" data-ct-kick="${esc(p.userId)}" title="Usuń z eventu (np. za oszukiwanie)">Usuń</button></td>
           </tr>`,
@@ -2597,7 +2600,7 @@ async function loadLevels() {
             const pct = e.needed ? Math.floor((e.current / e.needed) * 100) : 100;
             return `<tr>
           <td>${e.rank}</td>
-          <td><strong>${esc(e.displayName || e.userTag || e.userId)}</strong>${e.hidden ? ' <span title="Ukryty(a) na publicznej stronie rankingu (/prywatnosc)">🔒</span>' : ''}${e.displayName && e.userTag && e.displayName !== e.userTag ? ` <small class="muted">(${esc(e.userTag)})</small>` : ''}<span class="note">${esc(e.userId)}</span></td>
+          <td><strong>${esc(e.displayName || e.userTag || e.userId)}</strong>${e.hidden ? ` <span title="Ukryty(a) na publicznej stronie rankingu (/prywatnosc)">${uiIcon('eye-slash')}</span>` : ''}${e.displayName && e.userTag && e.displayName !== e.userTag ? ` <small class="muted">(${esc(e.userTag)})</small>` : ''}<span class="note">${esc(e.userId)}</span></td>
           <td>${e.level}</td>
           <td class="xp-bar">${e.xp.toLocaleString('pl-PL')}<div class="xp-progress" title="${e.current} / ${e.needed} XP do kolejnego poziomu"><span style="width:${pct}%"></span></div></td>
           <td>${e.messages.toLocaleString('pl-PL')}</td>
@@ -3285,7 +3288,7 @@ function renderServerInfoPreview() {
   $('#si-counter').textContent = `${embeds.length}/${SI_LIMITS.embeds} embedów · ${total}/${SI_LIMITS.total} znaków`;
   $('#si-counter').classList.toggle('over', embeds.length > SI_LIMITS.embeds || total > SI_LIMITS.total);
   $('#si-problems').classList.toggle('hidden', !problems.length);
-  $('#si-problems').innerHTML = problems.map((p) => `<div>⚠️ ${esc(p)}</div>`).join('');
+  $('#si-problems').innerHTML = problems.map((p) => `<div>${uiIcon('warning')}${esc(p)}</div>`).join('');
   const blocks = embeds
     .map((e, i) => {
       const foot = i === embeds.length - 1 && footer ? `<div class="embed-footer">${esc(footer)} • Dzisiaj o ${time}</div>` : '';
@@ -3321,7 +3324,7 @@ function renderServerInfoPosted() {
   const link = si.guildId ? ` · <a href="https://discord.com/channels/${esc(si.guildId)}/${esc(p.channelId)}/${esc(p.messageId)}" target="_blank" rel="noopener">otwórz w Discordzie</a>` : '';
   const updated = p.updatedAt && p.updatedAt - p.sentAt > 5000 ? ` · zaktualizowano ${relTime(p.updatedAt)}` : '';
   const moved = sameChannel ? '' : `<span class="note">Wybrany jest inny kanał - „Wyślij na kanał” wyśle nową wiadomość, a stara zostanie na ${esc(siChannelName(p.channelId))}.</span>`;
-  $('#si-posted').innerHTML = `<p class="small">✅ Wysłano na <strong>${esc(siChannelName(p.channelId))}</strong> ${relTime(p.sentAt)}${updated}${link}</p>${moved}`;
+  $('#si-posted').innerHTML = `<p class="small">${uiIcon('check-circle')}Wysłano na <strong>${esc(siChannelName(p.channelId))}</strong> ${relTime(p.sentAt)}${updated}${link}</p>${moved}`;
 }
 
 function siRoleOptions(selected) {
@@ -3339,7 +3342,7 @@ function siItemRow(item, i, count) {
       <span class="si-kind">${item.kind === 'role' ? `<span class="role-dot" style="background:${esc(roleLabel(item.roleId).color)}"></span>` : ''}${SI_ITEMS[item.kind] ?? ''}</span>
       <button type="button" class="btn ghost small" data-si-item-move="-1" ${i === 0 ? 'disabled' : ''} title="Wyżej" aria-label="Przesuń wyżej">↑</button>
       <button type="button" class="btn ghost small" data-si-item-move="1" ${i === count - 1 ? 'disabled' : ''} title="Niżej" aria-label="Przesuń niżej">↓</button>
-      <button type="button" class="btn ghost small" data-si-item-del title="Usuń" aria-label="Usuń element">✕</button>
+      <button type="button" class="btn ghost small" data-si-item-del title="Usuń" aria-label="Usuń element">${uiIcon('x')}</button>
     </div>`;
   let body;
   if (item.kind === 'role') {
