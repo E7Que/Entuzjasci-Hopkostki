@@ -89,8 +89,9 @@ panels as AI slop). Only the events page (`/event`) recolours itself with the se
 
 ## Backgrounds (one per page, all from React Bits, ported in `rb.js` + `rb-*.js` / `particles.js`)
 
-- Landing: Particles (owner's "tło 1"), with drifting glows.
-- Ranking: LightRays from the top, like stage lights over the podium.
+- Landing: Particles (owner's "tło 1"), stronger than the file (more points and links, calm cursor, no field
+  rotation so it does not drift sideways), with drifting glows.
+- Ranking: Galaxy (calm stars in the banner's cyan, they move away from the cursor). LightRays was rejected.
 - Events: Aurora in the selected event's colours.
 - 404: FaultyTerminal, dimmed under the text.
 - Bottom of every page: Scanner waves (owner's "tło 4") in `var(--accent)` / `var(--accent-2)`, from above the
@@ -104,7 +105,11 @@ Do not stack a second full-page background on a page.
 - Full-width banner (`img/banner.webp` 3840×2160 from the owner, `srcset` 960/1600/2400/3840). The owner can set
   the icon and a separate banner for the landing, ranking and events pages in the panel (Ustawienia → Wygląd
   strony, best 3840×2160 / icon 512×512); pages read them from `/public/site` in `motion.js`. On scroll the image
-  moves slower than the page (parallax), zooms out slightly and darkens. It never shrinks into a box.
+  moves slower than the page (parallax, landing only), zooms out slightly and darkens. It never shrinks into a box.
+  Every banner fades into the page at the bottom (mask), without getting taller. Ranking and events banners are a
+  flat strip (best 3840 × 1200) and do not move on scroll.
+- The landing ends with a full-width invite on the dimmed banner: avatars of the top members, a big title, the
+  member and online count, the main button and "Zobacz ranking".
 - `motion.js` gives every public page the same motion: title words rise on load, section headings rise and
   sections slide up once, numbers count up (whole numbers, fixed width), the card under the cursor gets a light
   and tilts slightly, main buttons have a moving star border, a glare and a slight magnet pull, clicks spark.
