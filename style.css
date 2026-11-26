@@ -725,6 +725,7 @@ select.chip-add:hover { border-color: var(--accent); }
 .site-slot strong { display: block; color: var(--text-strong); }
 .site-slot small { display: block; margin: .2rem 0 .6rem; color: var(--muted); }
 .site-prev { aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: var(--bg-3); box-shadow: inset 0 0 0 1px var(--line); }
+.site-prev.wide { aspect-ratio: 16 / 5; }
 .site-prev.icon { width: 88px; aspect-ratio: 1; border-radius: 50%; justify-self: center; }
 .site-prev img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .site-actions { display: flex; flex-wrap: wrap; gap: .5rem; }

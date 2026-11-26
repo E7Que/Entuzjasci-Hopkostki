@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="site.css?v=81d27f5">
+  <link rel="stylesheet" href="site.css?v=39d2192">
   <link rel="stylesheet" href="vendor/lenis.css">
   <style>
     /* Kolory, fonty, tło i górny pasek: site.css. Tu tylko nazwy używane przez tę stronę. */
@@ -971,8 +971,8 @@
 </head>
 <body>
   <a class="skip" href="#tresc">Przejdź do treści</a>
-  <!-- Tło rankingu: promienie światła z góry jak reflektory nad podium (React Bits LightRays). -->
-  <div class="page-bg" aria-hidden="true" data-rb="LightRays" data-props='{"raysOrigin":"top-center","raysColor":"#9ff6f7","raysSpeed":1.1,"lightSpread":0.95,"rayLength":3,"glow":0.9,"haze":0.35,"intensity":1.35,"pulsating":true,"followMouse":true,"mouseInfluence":0.15,"clickPulse":true,"opacity":1}'></div>
+  <!-- Tło rankingu: spokojna galaktyka gwiazd w cyjanie z banera (React Bits Galaxy). -->
+  <div class="page-bg" aria-hidden="true" data-rb="Galaxy" data-props='{"hueShift":180,"saturation":0.35,"density":1.2,"glowIntensity":0.45,"twinkleIntensity":0.5,"starSpeed":0.4,"speed":0.8,"rotationSpeed":0.04,"mouseInteraction":true,"mouseRepulsion":true,"repulsionStrength":1.2,"clickWarp":true,"transparent":true,"opacity":0.9}'></div>
   <header class="site-nav">
     <div class="wrap">
       <a class="site-brand" href="./" translate="no"><img src="img/icon.webp" alt="" width="32" height="32"><span>Entuzjaści Hopkostki</span></a>
@@ -14745,12 +14745,13 @@
   <script src="vendor/gsap.min.js"></script>
   <script src="vendor/ScrollTrigger.min.js"></script>
   <script src="vendor/lenis.min.js"></script>
-  <script src="motion.js?v=81d27f5"></script>
+  <script src="motion.js?v=39d2192"></script>
   <script>
     // Ruch jak na stronie głównej (motion.js): baner zwija się do kolumny przy przewijaniu, tytuł wjeżdża
     // słowo po słowie, liczby w nagłówku odliczają, lista i karty z boku wjeżdżają od dołu (React Bits).
     window.Motion?.init({
       banner: '.banner.bleed',
+      bannerParallax: false,
       title: 'main h1',
       intro: '.totals > div',
       reveal: '.toolbar, .table, .side .info > .card:not([hidden])',
@@ -14758,8 +14759,8 @@
       tilt: '.top3 .top',
     });
   </script>
-  <script src="rb.js?v=81d27f5" defer></script>
-  <script src="rb-lightrays.js?v=81d27f5" defer></script>
-  <script src="rb-scanner.js?v=81d27f5" defer></script>
+  <script src="rb.js?v=39d2192" defer></script>
+  <script src="rb-galaxy.js?v=39d2192" defer></script>
+  <script src="rb-scanner.js?v=39d2192" defer></script>
 </body>
 </html>

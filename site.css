@@ -238,6 +238,9 @@ html.embed .glow { display: none; }
 .scrub { --intro: 0; --shade: 0; clip-path: inset(0 0 calc(var(--intro) * 100%) 0); }
 .scrub::after { content: ''; position: absolute; inset: 0; background: rgb(6 11 23 / var(--shade)); pointer-events: none; }
 .scrub > img { will-change: transform; }
+/* Dół każdego banera wygasa w tło strony, więc nie ma ostrej krawędzi. Wysokość banera bez zmian. */
+.banner.bleed, .hero-media { -webkit-mask-image: linear-gradient(#000 62%, transparent); mask-image: linear-gradient(#000 62%, transparent); }
+
 /* Światło pod kursorem na kartach (React Bits SpotlightCard): miękka plama i jaśniejszy kawałek krawędzi. */
 .spot-layer { position: fixed; z-index: 30; pointer-events: none; opacity: 0; transition: opacity 300ms var(--ease); }
 .spot-layer.on { opacity: 1; }

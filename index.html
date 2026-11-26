@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://ucjmbdogtzztrkorqzjq.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="site.css?v=81d27f5">
+  <link rel="stylesheet" href="site.css?v=39d2192">
   <link rel="stylesheet" href="vendor/lenis.css">
   <style>
     /* Strona główna. Zasady: .claude/skills/site-design; struktura: hero, hasło, teraz na serwerze, najaktywniejsi, jak dołączyć, pytania, zaproszenie. */
@@ -108,11 +108,20 @@
     .faq .answer b { color: var(--text); font-weight: 600; }
     .faq .answer ul { margin: 0 0 var(--sp-2); padding-left: 1.2em; }
 
-    .end { margin-top: var(--section); padding: var(--sp-12) var(--sp-10); }
-    /* Końcowe zaproszenie na środku karty: jedna rzecz do zrobienia na koniec strony. */
-    .end { text-align: center; }
-    .end h2 { font-size: clamp(1.875rem, 3.2vw, 2.5rem); }
-    .end p { max-width: 52ch; margin: var(--sp-3) auto var(--sp-8); color: var(--muted); }
+    /* Końcowe zaproszenie: pełna szerokość, baner serwera w tle (przyciemniony i wygaszony u góry i u dołu), na środku
+       twarze osób z topki, duży tytuł, liczba osób i dwa przyciski. */
+    .end { position: relative; isolation: isolate; overflow: hidden; margin-top: var(--section); padding: clamp(72px, 10vw, 136px) var(--sp-6); text-align: center; }
+    .end-bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 45%; }
+    .end::before { content: ''; position: absolute; inset: 0; z-index: -1; background: rgb(5 11 11 / 0.74); -webkit-mask-image: none; }
+    .end { -webkit-mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent); mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent); }
+    .end-in { max-width: 760px; margin: 0 auto; }
+    .end h2 { font-size: clamp(2.25rem, 5.2vw, 4rem); font-weight: 800; line-height: 1.05; }
+    .end-lead { max-width: 52ch; margin: var(--sp-4) auto var(--sp-8); color: var(--text); opacity: 0.85; font-size: var(--fs-lg); }
+    .end-cta { justify-content: center; }
+    .end-faces { display: flex; justify-content: center; min-height: 48px; margin-bottom: var(--sp-6); }
+    .end-faces img, .end-faces span { width: 48px; height: 48px; margin-left: -12px; border-radius: 50%; box-shadow: 0 0 0 3px var(--bg); object-fit: cover; }
+    .end-faces :first-child { margin-left: 0; }
+    .end-faces span { display: grid; place-items: center; background: var(--raised); color: var(--text); font-weight: 700; }
 
     @media (hover: hover) {
       .top-list li:hover { background: var(--raised); }
@@ -233,18 +242,26 @@
       </details>
     </section>
 
-    <section class="card end" aria-labelledby="end-h">
-      <h2 id="end-h">Wpadnij na serwer</h2>
-      <p>Zaproszenie otworzy się w aplikacji Discord albo w przeglądarce. Dołączenie nic nie kosztuje.</p>
-      <span class="star"><i class="star-t"></i><i class="star-b"></i><a class="btn btn-primary btn-big" href="https://discord.gg/FuqNCJhVYs" rel="noopener">
-        <svg class="discord" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.6 5.3A16.6 16.6 0 0 0 15.5 4l-.5 1a15.4 15.4 0 0 0-6 0L8.5 4a16.6 16.6 0 0 0-4.1 1.3C1.8 9.2 1.1 13 1.4 16.7a16.7 16.7 0 0 0 5.1 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a11.9 11.9 0 0 0 11.4 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a16.6 16.6 0 0 0 5.1-2.6c.4-4.3-.7-8.1-3-11.4zM8.7 14.4c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>
-        Dołącz do serwera
-      </a></span>
+    <!-- Koniec strony: duże zaproszenie na tle banera serwera, z osobami z topki i liczbą osób online. -->
+    <section class="end bleed" aria-labelledby="end-h">
+      <img class="end-bg" src="img/banner-1600.webp" srcset="img/banner-960.webp 960w, img/banner-1600.webp 1600w, img/banner-2400.webp 2400w" sizes="100vw" alt="" loading="lazy">
+      <div class="end-in">
+        <div class="end-faces" id="end-faces" aria-hidden="true"></div>
+        <h2 id="end-h">Wpadnij na serwer</h2>
+        <p class="end-lead" id="end-lead">Zaproszenie otworzy się w aplikacji Discord albo w przeglądarce. Dołączenie nic nie kosztuje.</p>
+        <div class="cta-row end-cta">
+          <span class="star"><i class="star-t"></i><i class="star-b"></i><a class="btn btn-primary btn-big" href="https://discord.gg/FuqNCJhVYs" rel="noopener">
+            <svg class="discord" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.6 5.3A16.6 16.6 0 0 0 15.5 4l-.5 1a15.4 15.4 0 0 0-6 0L8.5 4a16.6 16.6 0 0 0-4.1 1.3C1.8 9.2 1.1 13 1.4 16.7a16.7 16.7 0 0 0 5.1 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a11.9 11.9 0 0 0 11.4 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a16.6 16.6 0 0 0 5.1-2.6c.4-4.3-.7-8.1-3-11.4zM8.7 14.4c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>
+            Dołącz do serwera
+          </a></span>
+          <a class="btn btn-big btn-quiet" href="ranking">Zobacz ranking</a>
+        </div>
+      </div>
     </section>
   </main>
 
   <!-- Dół strony: skaner z React Bits (plik „tło 4”) od nad kartą z zaproszeniem do samego końca strony. -->
-  <div class="page-scan" aria-hidden="true" data-rb="Scanner" data-from=".card.end" data-lift="240" data-props='{"color1":"var(--accent)","color2":"var(--accent-2)","color3":"#e6fdff","speed":0.5,"sweepSpeed":0.25,"sweepWidth":1.6,"trail":0.5,"ripple":0.22,"bandDensity":11,"glow":0.8,"brightness":1.3,"scanDirection":"vertical","colorSpread":0.7,"scanline":true,"scanlineIntensity":0.5,"mouseInteraction":true,"clickEffect":"ping","dpr":1.5}'></div>
+  <div class="page-scan" aria-hidden="true" data-rb="Scanner" data-from=".end" data-lift="120" data-props='{"color1":"var(--accent)","color2":"var(--accent-2)","color3":"#e6fdff","speed":0.5,"sweepSpeed":0.25,"sweepWidth":1.6,"trail":0.5,"ripple":0.22,"bandDensity":11,"glow":0.8,"brightness":1.3,"scanDirection":"vertical","colorSpread":0.7,"scanline":true,"scanlineIntensity":0.5,"mouseInteraction":true,"clickEffect":"ping","dpr":1.5}'></div>
   <footer class="site-foot">
     <div class="wrap">
       <span translate="no">© <span data-year>2026</span> Entuzjaści Hopkostki</span>
@@ -259,7 +276,7 @@
   <script src="vendor/gsap.min.js"></script>
   <script src="vendor/ScrollTrigger.min.js"></script>
   <script src="vendor/lenis.min.js"></script>
-  <script src="motion.js?v=81d27f5"></script>
+  <script src="motion.js?v=39d2192"></script>
   <script>
     'use strict';
     const BASE = ['localhost', '127.0.0.1'].includes(location.hostname)
@@ -378,6 +395,10 @@
       }
       const top = (board?.entries ?? []).slice(0, 3);
       if (!top.length) return;
+      // Końcowe zaproszenie: avatary osób z topki („dołącz do nich”).
+      $('#end-faces').innerHTML = (board?.entries ?? []).slice(0, 5).map((p) => (p.avatar
+        ? `<img src="${esc(p.avatar)}" alt="" width="48" height="48" loading="lazy" onerror="this.remove()">`
+        : `<span>${esc((p.name ?? '?').slice(0, 1).toUpperCase())}</span>`)).join('');
       $('#top').innerHTML = top.map((p, i) => row(p, i, week)).join('');
       // Avatar, który się nie wczytał (np. usunięty), zastępuje pierwsza litera nazwy.
       $('#top').querySelectorAll('img.av').forEach((img) => {
@@ -398,6 +419,9 @@
       const online = g.onlineCount ? `, <span class="online" aria-hidden="true"></span><b>${num(g.onlineCount)}</b> teraz online` : '';
       $('#members').innerHTML = `<b>${num(g.memberCount)}</b> ${plural(g.memberCount, 'osoba', 'osoby', 'osób')} na serwerze${online}`;
       document.querySelectorAll('#members b').forEach((b) => window.Motion?.count(b, Number(b.textContent.replace(/\D/g, '')), num));
+      // Końcowe zaproszenie: ile osób już jest na serwerze i ile teraz online.
+      const lead = `${num(g.memberCount)} ${plural(g.memberCount, 'osoba już tu jest', 'osoby już tu są', 'osób już tu jest')}${g.onlineCount ? `, ${num(g.onlineCount)} teraz online` : ''}. Dołączenie nic nie kosztuje.`;
+      $('#end-lead').textContent = lead;
     }
 
     // Odpowiedzi w pytaniach z prawdziwych ustawień bota (stawki XP, role za poziomy).
@@ -427,8 +451,8 @@
       title: '#hero-title',
       intro: '.hero .lead, .hero .cta-row, .hero .members',
       headings: '.block > h2, .end h2',
-      reveal: '.block > :not(h2), .card.end',
-      spot: '.now-grid > .card:not(.sk-card), .top-list, .steps > li, .faq summary, .card.end',
+      reveal: '.block > :not(h2), .end-in',
+      spot: '.now-grid > .card:not(.sk-card), .top-list, .steps > li, .faq summary',
       magnet: '.star',
       tilt: '.now-grid > .card:not(.sk-card), .steps > li',
     });
@@ -455,8 +479,8 @@
       window.Motion?.refresh();
     })();
   </script>
-  <script src="particles.js?v=81d27f5" defer></script>
-  <script src="rb.js?v=81d27f5" defer></script>
-  <script src="rb-scanner.js?v=81d27f5" defer></script>
+  <script src="particles.js?v=39d2192" defer></script>
+  <script src="rb.js?v=39d2192" defer></script>
+  <script src="rb-scanner.js?v=39d2192" defer></script>
 </body>
 </html>

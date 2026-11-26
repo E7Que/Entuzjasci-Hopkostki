@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="site.css?v=81d27f5">
+  <link rel="stylesheet" href="site.css?v=39d2192">
   <link rel="stylesheet" href="vendor/lenis.css">
   <style>
     [hidden] { display: none !important; }
@@ -237,7 +237,7 @@
 <body>
   <a class="skip" href="#tresc">Przejdź do treści</a>
   <!-- Tło eventów: zorza w kolorach wybranego eventu (React Bits Aurora; kolory zmienia ctPaintPage). -->
-  <div class="page-bg" aria-hidden="true" data-rb="Aurora" data-props='{"colorStops":["#28e9ea","#2ccf98","#166f94"],"amplitude":1,"blend":0.5,"speed":0.8,"height":0.5,"glow":0.6,"opacity":0.8}'></div>
+  <div class="page-bg" aria-hidden="true" data-rb="Aurora" data-props='{"colorStops":["#28e9ea","#166f94","#0b3d5c"],"amplitude":1,"blend":0.5,"speed":0.8,"height":0.5,"glow":0.6,"opacity":0.8}'></div>
   <header class="site-nav">
     <div class="wrap">
       <a class="site-brand" href="./" translate="no"><img src="img/icon.webp" alt="" width="32" height="32"><span>Entuzjaści Hopkostki</span></a>
@@ -815,8 +815,11 @@
     const safeImage = (url) => (/^https:\/\/[^\s"'<>\\()]+$/.test(String(url ?? '')) ? url : null);
     // Kolory eventu obejmują całą stronę (Motion.paint w motion.js): akcent, pasek u góry, karty, fale na dole,
     // a zorza w tle bierze kolory eventu.
-    const AURORA_DEFAULT = ['#28e9ea', '#2ccf98', '#166f94'];
+    const AURORA_DEFAULT = ['#28e9ea', '#166f94', '#0b3d5c'];
+    let ctPainted = null;
     function ctPaintPage(c) {
+      // Dane eventów mogą przyjść, zanim wczyta się motion.js: wtedy kolory nakłada skrypt na końcu strony.
+      ctPainted = c ?? null;
       const colors = c ? window.Motion?.eventColors(c) : null;
       window.Motion?.paint(colors ?? null);
       const stops = colors ? [colors[0], colors[1], colors[0]] : AURORA_DEFAULT;
@@ -907,19 +910,21 @@
   <script src="vendor/gsap.min.js"></script>
   <script src="vendor/ScrollTrigger.min.js"></script>
   <script src="vendor/lenis.min.js"></script>
-  <script src="motion.js?v=81d27f5"></script>
+  <script src="motion.js?v=39d2192"></script>
   <script>
     // Ruch jak na stronie głównej (motion.js): baner zwija się do kolumny przy przewijaniu, tytuł wjeżdża
     // słowo po słowie, eventy i karty z boku wjeżdżają od dołu, a karta pod kursorem dostaje światło (React Bits).
     window.Motion?.init({
       banner: '.banner.bleed',
+      bannerParallax: false,
       title: 'main h1',
       reveal: '.contests, .side > .card:not([hidden])',
       spot: '.side .card, .ct-card',
     });
+    if (ctPainted) ctPaintPage(ctPainted);
   </script>
-  <script src="rb.js?v=81d27f5" defer></script>
-  <script src="rb-aurora.js?v=81d27f5" defer></script>
-  <script src="rb-scanner.js?v=81d27f5" defer></script>
+  <script src="rb.js?v=39d2192" defer></script>
+  <script src="rb-aurora.js?v=39d2192" defer></script>
+  <script src="rb-scanner.js?v=39d2192" defer></script>
 </body>
 </html>

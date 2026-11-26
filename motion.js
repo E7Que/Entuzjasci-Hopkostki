@@ -296,10 +296,11 @@
 
   // Baner przez całą szerokość: przy przewijaniu obraz przesuwa się wolniej niż strona (paralaksa), lekko się oddala
   // i ciemnieje; baner zostaje na całą szerokość. Po wczytaniu odsłania się od góry.
-  function scrub(target, { intro = true } = {}) {
+  function scrub(target, { intro = true, parallax = true } = {}) {
     const el = $(target);
     if (!ON || !el) return null;
     el.classList.add('scrub');
+    if (!parallax) return intro ? gsap.fromTo(el, { '--intro': 1 }, { '--intro': 0, duration: 1, ease: 'power4.out', delay: 0.1 }) : null;
     const img = el.querySelector('img');
     const trigger = { trigger: el, start: 'top top', end: 'bottom top', scrub: true };
     if (img) gsap.fromTo(img, { yPercent: 0, scale: 1.08 }, { yPercent: 24, scale: 1, ease: 'none', scrollTrigger: trigger });
@@ -325,7 +326,7 @@
         const main = $('#tresc');
         if (skip && main) skip.addEventListener('click', () => main.focus({ preventScroll: true }));
       }
-      if (opts.banner) scrub(opts.banner);
+      if (opts.banner) scrub(opts.banner, { parallax: opts.bannerParallax !== false });
       if (opts.title) rise(opts.title, { delay: opts.banner ? 0.35 : 0.1 });
       const intro = $$(opts.intro ?? []);
       if (intro.length) {
