@@ -156,7 +156,7 @@ function setPanelPassword(value) {
   try {
     sessionStorage.setItem(PANEL_PASSWORD_KEY, value);
   } catch {
-    /* prywatna karta / zablokowany storage — hasło trzeba będzie wpisać ponownie po odświeżeniu */
+    /* prywatna karta / zablokowany storage - hasło trzeba będzie wpisać ponownie po odświeżeniu */
   }
 }
 function clearPanelPassword() {
@@ -165,7 +165,7 @@ function clearPanelPassword() {
   } catch {}
 }
 
-// Sesja moderatora z kodu /login — w localStorage, więc zostaje po zamknięciu karty (do wylogowania albo
+// Sesja moderatora z kodu /login - w localStorage, więc zostaje po zamknięciu karty (do wylogowania albo
 // wygaśnięcia). Bot i tak sprawdza na bieżąco role tej osoby.
 function getPanelSession() {
   try {
@@ -178,7 +178,7 @@ function setPanelSession(token) {
   try {
     localStorage.setItem(PANEL_SESSION_KEY, token);
   } catch {
-    /* zablokowany storage — po odświeżeniu trzeba będzie wygenerować nowy kod */
+    /* zablokowany storage - po odświeżeniu trzeba będzie wygenerować nowy kod */
   }
 }
 function clearPanelSession() {
@@ -305,7 +305,7 @@ async function start() {
     api('/me'),
   ]);
   state.me = me;
-  // Każda komenda ma mieć własną listę ról — brakujące (np. nowe komendy) bot uzupełnia według uprawnień Discorda.
+  // Każda komenda ma mieć własną listę ról - brakujące (np. nowe komendy) bot uzupełnia według uprawnień Discorda.
   if (canEdit('uprawnienia') && guild.roles?.length && commands.some((c) => !Array.isArray(config.commandPermissions?.[c.name]))) {
     const filled = await api('/permissions/defaults', { method: 'POST', body: '{}' }).catch(() => null);
     if (filled?.config) config = filled.config;
@@ -314,7 +314,7 @@ async function start() {
   state.draft = clone(config);
   state.defaults = defaults;
   state.guild = { ...EMPTY_GUILD, ...guild };
-  // Opisy komend w Discordzie mają emoji — w panelu pokazujemy sam tekst.
+  // Opisy komend w Discordzie mają emoji - w panelu pokazujemy sam tekst.
   state.commandMeta = commands.map((c) => ({ ...c, description: stripEmoji(c.description) }));
   if (!state.msg) state.msg = { editingId: null, data: blankMessage() };
   revealApp();
@@ -333,7 +333,7 @@ async function init() {
   try {
     await start();
   } catch (error) {
-    // Hasło/sesja zostały już wyczyszczone i pokazany ekran logowania przez api() — nie ma sensu tu dobijać.
+    // Hasło/sesja zostały już wyczyszczone i pokazany ekran logowania przez api() - nie ma sensu tu dobijać.
     if (isLoggedIn()) {
       showConnectionError(error.message);
       setTimeout(init, 10_000);
@@ -357,7 +357,7 @@ function boot() {
   else showLoginGate();
 }
 
-// Co może zmieniać zalogowana osoba: hasło panelu i administratorzy — wszystko, moderacja — części odblokowane
+// Co może zmieniać zalogowana osoba: hasło panelu i administratorzy - wszystko, moderacja - części odblokowane
 // rolami. Resztę widzi z kłódką, tylko podglądowo; „Dostęp do panelu” widzi wyłącznie pełny dostęp.
 function canEdit(view) {
   if (!state.me || state.me.full || view === 'pulpit') return true;
@@ -373,7 +373,7 @@ function applyAccess() {
     a.hidden = !canSee(a.dataset.view);
     const locked = !canEdit(a.dataset.view);
     a.classList.toggle('locked', locked);
-    a.title = locked ? 'Tylko podgląd — nie możesz tego zmieniać' : '';
+    a.title = locked ? 'Tylko podgląd - nie możesz tego zmieniać' : '';
   });
   $('#password-card').hidden = !state.me?.full;
   $('#supabase-link').hidden = !state.me?.full;
@@ -396,9 +396,9 @@ function renderAccessCard() {
   card.classList.toggle('hidden', state.me?.kind !== 'session');
   if (state.me?.kind !== 'session') return;
   const views = VIEWS.filter((v) => v !== 'pulpit' && v !== 'dostep');
-  const expires = state.me.expiresAt ? `Login ważny do ${esc(fullDate(state.me.expiresAt))} (${relTime(state.me.expiresAt)}) — potem wpisz /login na Discordzie, żeby dostać nowy.` : '';
+  const expires = state.me.expiresAt ? `Login ważny do ${esc(fullDate(state.me.expiresAt))} (${relTime(state.me.expiresAt)}) - potem wpisz /login na Discordzie, żeby dostać nowy.` : '';
   $('#access-summary').innerHTML = `
-    <p class="muted small">${state.me.full ? 'Masz pełny dostęp (administrator serwera).' : 'Co możesz zmieniać zależy od Twoich ról na serwerze — bot sprawdza je na bieżąco.'} ${expires}</p>
+    <p class="muted small">${state.me.full ? 'Masz pełny dostęp (administrator serwera).' : 'Co możesz zmieniać zależy od Twoich ról na serwerze - bot sprawdza je na bieżąco.'} ${expires}</p>
     <ul class="access-list">${views
       .map((v) => {
         const ok = canEdit(v);
@@ -426,7 +426,7 @@ function applyViewLock(view) {
     banner.className = 'banner lock-banner';
     section.querySelector('.view-head').after(banner);
   }
-  banner.innerHTML = `🔒 <strong>Tylko podgląd</strong> — tej części panelu nie możesz zmieniać${DATA_VIEWS.includes(view) ? ', a jej dane są ukryte' : ''}. ${
+  banner.innerHTML = `🔒 <strong>Tylko podgląd</strong> - tej części panelu nie możesz zmieniać${DATA_VIEWS.includes(view) ? ', a jej dane są ukryte' : ''}. ${
     roles.length ? `Odblokowują ją role: ${roles.map((n) => `<strong>${esc(n)}</strong>`).join(', ')}.` : 'Odblokowuje ją tylko administracja serwera.'
   }`;
   [...section.children].forEach((el) => el.toggleAttribute('inert', el !== banner && !el.classList.contains('view-head')));
@@ -494,7 +494,7 @@ $('#nav-toggle').addEventListener('click', () => {
   const open = $('.sidebar').classList.toggle('open');
   $('#nav-toggle').setAttribute('aria-expanded', String(open));
 });
-// Kliknięcie w otwartą już zakładkę nie zmienia # — menu i tak ma się zamknąć.
+// Kliknięcie w otwartą już zakładkę nie zmienia # - menu i tak ma się zamknąć.
 $('#nav').addEventListener('click', (event) => {
   if (event.target.closest('a')) closeMobileMenu();
 });
@@ -546,7 +546,7 @@ async function refreshStatus() {
       $('#guild-icon').hidden = false;
     }
   } else {
-    $('#guild-name').textContent = status.ready ? 'Bot nie jest na żadnym serwerze' : '—';
+    $('#guild-name').textContent = status.ready ? 'Bot nie jest na żadnym serwerze' : '-';
   }
   const lastCron = status.cron?.at;
   $('#status-text').innerHTML = status.ready ? '<span class="dot ok"></span>Działa' : '<span class="dot bad"></span>Nie działa';
@@ -571,7 +571,7 @@ async function refreshStatus() {
     .join('');
   $('#recent-table').innerHTML = casesTable(status.recent);
 
-  // Bot właśnie się połączył — dociągamy kanały i role do formularzy.
+  // Bot właśnie się połączył - dociągamy kanały i role do formularzy.
   if (status.ready && (!wasReady || !state.guild.channels.length)) {
     state.guild = { ...EMPTY_GUILD, ...(await api('/guild')) };
     renderChannelSelects();
@@ -613,7 +613,7 @@ function renderHealth(status) {
   ];
   $('#health-issues').innerHTML = issues.length
     ? `<div class="health-alert"><strong>Wymaga uwagi</strong><ul>${issues.map((i) => `<li>${i}</li>`).join('')}</ul></div>`
-    : '<div class="health-ok"><span class="dot ok"></span>Wszystko działa — żadnych problemów w ostatnich przebiegach.</div>';
+    : '<div class="health-ok"><span class="dot ok"></span>Wszystko działa - żadnych problemów w ostatnich przebiegach.</div>';
 
   const cronAt = status.cron?.at;
   const cronFresh = cronAt && Date.now() - cronAt < 3 * MINUTE;
@@ -700,7 +700,7 @@ function casesTable(items) {
   if (!items.length) return '<tr><td class="empty">Brak spraw.</td></tr>';
   const rows = items
     .map((c) => {
-      const duration = c.duration ? formatDuration(c.duration.amount, c.duration.unit) : c.type === 'ban' ? 'perm.' : '—';
+      const duration = c.duration ? formatDuration(c.duration.amount, c.duration.unit) : c.type === 'ban' ? 'perm.' : '-';
       const expiry = c.expiresAt ? `<span class="note">do ${esc(shortDate(c.expiresAt))}</span>` : '';
       return `<tr>
         <td><strong>#${c.id}</strong></td>
@@ -804,10 +804,10 @@ function renderChannelSelects() {
     const list = kind === 'category' || kind === 'archiveCategory' ? state.guild.categories : state.guild.channels;
     const emptyLabel =
       {
-        none: '— wyłączone —',
+        none: '- wyłączone -',
         category: 'Bez kategorii',
         archiveCategory: 'Zostaje w tej samej kategorii',
-        pick: '— wybierz kanał —',
+        pick: '- wybierz kanał -',
         inherit: 'Jak kanał domyślny',
         bump: 'Kanał, na którym ktoś użył /bump',
         modlog: 'Jak kanał logów moderacji',
@@ -902,7 +902,7 @@ document.addEventListener('click', (event) => {
 
 // ---------- Uprawnienia komend w samym Discordzie (Integracje) ----------
 // Discord ma własne nadpisania komend bota (Ustawienia serwera → Integracje → bot): dla całej aplikacji i dla
-// pojedynczych komend, dla ról, osób i kanałów. Bot może je tylko odczytać — pokazujemy je razem z tym, co
+// pojedynczych komend, dla ról, osób i kanałów. Bot może je tylko odczytać - pokazujemy je razem z tym, co
 // blokują wbrew zapisanym listom ról (zakładka Uprawnienia), i z instrukcją, jak je usunąć w Discordzie.
 async function loadDiscordCommandPerms({ fresh = false } = {}) {
   const button = $('#discord-perms-refresh');
@@ -928,10 +928,10 @@ function discordPermsHelp(botName) {
     <ol class="small">
       <li>Otwórz <b>Ustawienia serwera → Integracje</b> i przy ${botName ? `<b>${esc(botName)}</b>` : 'bocie'} kliknij <b>Zarządzaj</b>.</li>
       <li>Na górze są ustawienia <b>całej aplikacji</b> (dla wszystkich komend): „Role i członkowie” oraz „Kanały”. Żeby niczego nie blokować, przy <b>@everyone</b> i <b>Wszystkie kanały</b> ma być ✓ (zielony), bez blokad pojedynczych ról i kanałów.</li>
-      <li>Niżej jest lista komend. Komenda z własnymi nadpisaniami jest oznaczona jako niezsynchronizowana („Not Synced”) — kliknij ją (np. /powiedz) i usuń wpisy ról i kanałów albo przy <b>Wszystkie kanały</b> zaznacz ✓. Możesz też przywrócić jej ustawienia domyślne (takie jak dla całej aplikacji).</li>
+      <li>Niżej jest lista komend. Komenda z własnymi nadpisaniami jest oznaczona jako niezsynchronizowana („Not Synced”) - kliknij ją (np. /powiedz) i usuń wpisy ról i kanałów albo przy <b>Wszystkie kanały</b> zaznacz ✓. Możesz też przywrócić jej ustawienia domyślne (takie jak dla całej aplikacji).</li>
       <li>Zapisz zmiany w Discordzie i kliknij tutaj <b>Sprawdź ponownie</b>.</li>
     </ol>
-    <p class="muted small">Blokady ról i osób nie dotyczą właściciela serwera ani ról z uprawnieniem Administrator — ograniczenia kanałów dotyczą wszystkich. Bot nie zmieni tych ustawień sam: Discord pozwala na to tylko osobie z uprawnieniami Zarządzanie serwerem i Zarządzanie rolami. Kto blokuje? Gdy komendy nie ma na liście po wpisaniu „/”, blokuje ją Discord; gdy jest, a bot odpowiada „Nie masz uprawnień do tej komendy.”, decyduje lista bota poniżej.</p>
+    <p class="muted small">Blokady ról i osób nie dotyczą właściciela serwera ani ról z uprawnieniem Administrator - ograniczenia kanałów dotyczą wszystkich. Bot nie zmieni tych ustawień sam: Discord pozwala na to tylko osobie z uprawnieniami Zarządzanie serwerem i Zarządzanie rolami. Kto blokuje? Gdy komendy nie ma na liście po wpisaniu „/”, blokuje ją Discord; gdy jest, a bot odpowiada „Nie masz uprawnień do tej komendy.”, decyduje lista bota poniżej.</p>
   </details>`;
 }
 
@@ -957,7 +957,7 @@ function renderDiscordCommandPerms() {
     ? `<div class="health-alert"><strong>Discord blokuje to, na co pozwalają listy bota</strong><ul>${data.conflicts
         .map((c) => `<li>${c.level === 'error' ? '⛔' : '⚠️'} ${esc(c.text)}<small class="note">Jak naprawić: ${esc(c.fix)}</small></li>`)
         .join('')}</ul></div>`
-    : '<div class="health-ok"><span class="dot ok"></span>Nadpisania w Discordzie nie kłócą się z listami bota — decydują listy poniżej.</div>';
+    : '<div class="health-ok"><span class="dot ok"></span>Nadpisania w Discordzie nie kłócą się z listami bota - decydują listy poniżej.</div>';
   const scopeNote = { app: 'dotyczy wszystkich komend bez własnych nadpisań', command: 'nadpisania tylko tej komendy', unknown: 'komenda spoza listy bota' };
   const row = (label, entries) => (entries.length ? `<div class="dperm-row"><span class="muted small">${label}:</span>${entries.map(discordPermChip).join('')}</div>` : '');
   const overrides = data.overrides
@@ -974,24 +974,24 @@ function renderDiscordCommandPerms() {
 
 // Uprawnienie kanału „Używanie komend aplikacji”: bez niego Discord nie pozwoli użyć żadnej komendy na kanale,
 // niezależnie od list bota. Administrator je omija. Pokazujemy role z list komend, które widzą kanał, a nie mogą
-// tam używać komend (liczone dla samej roli — osoba z kilkoma rolami może mieć więcej).
+// tam używać komend (liczone dla samej roli - osoba z kilkoma rolami może mieć więcej).
 function channelBlocksHtml(blocks) {
   const limited = blocks.filter((b) => !b.admin && b.blocked.length);
   if (!blocks.length) return '';
   if (!limited.length) return '<div class="health-ok"><span class="dot ok"></span>Wszystkie role z list mogą używać komend na każdym kanale, który widzą.</div>';
   const names = (list) => list.slice(0, 12).map((c) => `#${esc(c.name)}`).join(', ') + (list.length > 12 ? ` i ${list.length - 12} innych` : '');
   return `<div class="health-alert"><strong>Kanały, na których role nie mogą używać komend</strong>
-    <p class="small">Discord wymaga uprawnienia kanału <b>„Używanie komend aplikacji”</b>. Gdy nie ma go rola (albo @everyone na kanale ma je zablokowane, a rola nie ma zgody), komendy bota działają tylko tam, gdzie je dodano — tak jak /powiedz tylko na kanale moderacji. Administrator i właściciel serwera to omijają, dlatego im działa wszędzie.</p>
+    <p class="small">Discord wymaga uprawnienia kanału <b>„Używanie komend aplikacji”</b>. Gdy nie ma go rola (albo @everyone na kanale ma je zablokowane, a rola nie ma zgody), komendy bota działają tylko tam, gdzie je dodano - tak jak /powiedz tylko na kanale moderacji. Administrator i właściciel serwera to omijają, dlatego im działa wszędzie.</p>
     <ul>${limited
-      .map((b) => `<li><b>${esc(b.name)}</b> — bez komend na ${b.blocked.length} z ${b.visible} widocznych kanałów: ${names(b.blocked)}</li>`)
+      .map((b) => `<li><b>${esc(b.name)}</b> - bez komend na ${b.blocked.length} z ${b.visible} widocznych kanałów: ${names(b.blocked)}</li>`)
       .join('')}</ul>
     <small class="note">Jak naprawić: w Discordzie otwórz ustawienia kategorii albo kanału → Uprawnienia → wybierz rolę (np. | Moderator) → „Używanie komend aplikacji” ustaw na ✓. Najprościej zrobić to raz na całej kategorii.</small></div>`;
 }
 
 // ---------- Uprawnienia komend ----------
-// Ta sama logika co po stronie bota (moderation.js/roleHasAccess) — liczona tu dla podglądu na żywo.
+// Ta sama logika co po stronie bota (moderation.js/roleHasAccess) - liczona tu dla podglądu na żywo.
 // Lista komendy obowiązuje każdą rolę, także z Administratorem. Właściciela serwera (osoba, nie rola)
-// w tabeli nie ma — on ma dostęp zawsze.
+// w tabeli nie ma - on ma dostęp zawsze.
 const ADMINISTRATOR_BIT = 8n;
 function hasBit(bitsStr, bit) {
   const bits = BigInt(bitsStr || 0);
@@ -1000,7 +1000,7 @@ function hasBit(bitsStr, bit) {
 function roleCanUse(role, cmd, config) {
   const list = config.commandPermissions?.[cmd.name];
   if (Array.isArray(list)) return list.includes(EVERYONE) || list.includes(role.id);
-  // Komenda bez listy (stara konfiguracja): uprawnienie Discorda albo rola moderatora, jak has() w bocie —
+  // Komenda bez listy (stara konfiguracja): uprawnienie Discorda albo rola moderatora, jak has() w bocie -
   // Administrator ma każde uprawnienie.
   if (!cmd.permission) return true;
   const bit = BigInt(cmd.permission);
@@ -1019,7 +1019,7 @@ function renderPermissions() {
     )
     .join('');
   $('#perm-bulk-role').innerHTML =
-    '<option value="">— wybierz rolę —</option>' + state.guild.roles.map((r) => `<option value="${r.id}">${esc(r.name)}</option>`).join('');
+    '<option value="">- wybierz rolę -</option>' + state.guild.roles.map((r) => `<option value="${r.id}">${esc(r.name)}</option>`).join('');
   renderPermissionMatrix();
 }
 
@@ -1055,13 +1055,13 @@ function renderPermissionMatrix() {
   const roles = state.guild.roles;
   const cmds = state.commandMeta;
   if (!roles?.length || !cmds?.length) {
-    $('#permission-matrix').innerHTML = '<tr><td class="empty">Bot nie jest jeszcze połączony z serwerem — role pojawią się tutaj automatycznie.</td></tr>';
+    $('#permission-matrix').innerHTML = '<tr><td class="empty">Bot nie jest jeszcze połączony z serwerem - role pojawią się tutaj automatycznie.</td></tr>';
     return;
   }
   const head = `<thead><tr><th>Rola</th>${cmds.map((c) => `<th title="${esc(c.description)}">/${esc(c.name)}</th>`).join('')}</tr></thead>`;
   const body = roles
     .map((r) => {
-      const cells = cmds.map((c) => `<td class="perm-cell">${roleCanUse(r, c, state.draft) ? '<span class="yes">tak</span>' : '<span class="no">—</span>'}</td>`).join('');
+      const cells = cmds.map((c) => `<td class="perm-cell">${roleCanUse(r, c, state.draft) ? '<span class="yes">tak</span>' : '<span class="no">-</span>'}</td>`).join('');
       return `<tr><td><span class="role-dot" style="background:${esc(r.color === '#000000' ? '#99aab5' : r.color)}"></span>${esc(r.name)}</td>${cells}</tr>`;
     })
     .join('');
@@ -1130,7 +1130,7 @@ function renderActivities() {
     )
     .join('');
   $('#activities-table').innerHTML = `<thead><tr><th>Rodzaj</th><th>Tekst</th><th></th></tr></thead>
-    <tbody>${body || '<tr><td colspan="3" class="empty">Brak opisów — bot będzie tylko „online”.</td></tr>'}</tbody>`;
+    <tbody>${body || '<tr><td colspan="3" class="empty">Brak opisów - bot będzie tylko „online”.</td></tr>'}</tbody>`;
   $('#add-activity').disabled = list.length >= 10;
 }
 
@@ -1229,7 +1229,7 @@ function renderBotWarnings() {
     list?.length ? `<strong>Bot nie ma uprawnień: ${list.map(esc).join(', ')}.</strong> Nadaj je roli bota (Ustawienia serwera → Role), inaczej ${what} nie zadziała.` : '';
   const intent = (name, portalName) =>
     `<strong>Potrzebna intencja „${name}”.</strong> Bot włącza ją sam po zapisaniu ustawień${
-      bot?.intentsError ? ` — tym razem się nie udało (${esc(bot.intentsError)}). Włącz ją ręcznie: Discord Developer Portal → Bot → Privileged Gateway Intents → ${portalName}.` : '.'
+      bot?.intentsError ? ` - tym razem się nie udało (${esc(bot.intentsError)}). Włącz ją ręcznie: Discord Developer Portal → Bot → Privileged Gateway Intents → ${portalName}.` : '.'
     }`;
   const m = state.draft?.members;
   const logs = state.draft?.logs;
@@ -1240,13 +1240,13 @@ function renderBotWarnings() {
   const bump = state.draft?.bump;
   set($('#logs-warning'), [
     logs?.enabled ? missing(bot?.missingLogs, 'część logów') : '',
-    logs?.enabled && !logs.channelId && !Object.keys(LOG_EVENT_GROUPS).some((g) => logs[`${g}ChannelId`]) ? '<strong>Wybierz kanał logów</strong> — bez kanału nic nie będzie zapisywane.' : '',
+    logs?.enabled && !logs.channelId && !Object.keys(LOG_EVENT_GROUPS).some((g) => logs[`${g}ChannelId`]) ? '<strong>Wybierz kanał logów</strong> - bez kanału nic nie będzie zapisywane.' : '',
     messageLogs && bot && !bot.contentIntent ? intent('Message Content', 'Message Content Intent') + ' Bez niej logi wiadomości nie pokażą treści.' : '',
     joinLogs && bot && !bot.membersIntent ? intent('Server Members', 'Server Members Intent') : '',
   ]);
   if (logOn('memberJoin') && logs?.events.memberInvite && bot?.missingInvites?.length) {
     const warnings = $('#logs-warning');
-    warnings.innerHTML = [warnings.innerHTML, `<strong>Bot nie ma uprawnienia „${esc(bot.missingInvites[0])}”</strong> — bez niego nie zobaczy zaproszeń i nie ustali, kto kogo zaprosił.`].filter(Boolean).join('<br>');
+    warnings.innerHTML = [warnings.innerHTML, `<strong>Bot nie ma uprawnienia „${esc(bot.missingInvites[0])}”</strong> - bez niego nie zobaczy zaproszeń i nie ustali, kto kogo zaprosił.`].filter(Boolean).join('<br>');
     warnings.classList.remove('hidden');
   }
   const alert = logs?.newAccount;
@@ -1256,7 +1256,7 @@ function renderBotWarnings() {
     const extra = alert.mention === 'roles' && !alert.roleIds.length
       ? '<strong>Wybierz role do oznaczenia</strong> przy nowych kontach.'
       : alert.mention !== 'roles' && bot?.missingPing?.length
-        ? `<strong>Bot nie ma uprawnienia „${esc(bot.missingPing[0])}”</strong> — bez niego ${alert.mention === 'everyone' ? '@everyone' : '@here'} nikogo nie powiadomi.`
+        ? `<strong>Bot nie ma uprawnienia „${esc(bot.missingPing[0])}”</strong> - bez niego ${alert.mention === 'everyone' ? '@everyone' : '@here'} nikogo nie powiadomi.`
         : '';
     if (extra) {
       warnings.innerHTML = [warnings.innerHTML, extra].filter(Boolean).join('<br>');
@@ -1294,7 +1294,7 @@ function renderGenerators() {
   const body = list
     .map(
       (g, i) => `<tr data-gen="${i}">
-        <td><select data-gen-field="hubId" aria-label="Kanał do dołączenia">${channelOptions(state.guild.voiceChannels, g.hubId, '— wybierz kanał —')}</select></td>
+        <td><select data-gen-field="hubId" aria-label="Kanał do dołączenia">${channelOptions(state.guild.voiceChannels, g.hubId, '- wybierz kanał -')}</select></td>
         <td><select data-gen-field="categoryId" aria-label="Kategoria">${channelOptions(state.guild.categories, g.categoryId, 'Ta sama co kanał do dołączenia')}</select></td>
         <td class="grow"><input type="text" maxlength="90" value="${esc(g.name)}" data-gen-field="name" aria-label="Nazwa nowego kanału"></td>
         <td><input type="number" min="0" max="99" value="${g.limit}" data-gen-field="limit" aria-label="Limit osób"></td>
@@ -1475,7 +1475,7 @@ function renderBumpPreview() {
   const message = ({ reply, content, embed }) => `<div class="discord"><div class="msg">
       <div class="msg-avatar">${avatar}</div>
       <div>
-        ${reply ? `<div class="msg-reply">↱ <strong>DISBOARD</strong> — ${esc(SAMPLE.target)} użył(a) /bump</div>` : ''}
+        ${reply ? `<div class="msg-reply">↱ <strong>DISBOARD</strong> - ${esc(SAMPLE.target)} użył(a) /bump</div>` : ''}
         <div class="msg-head"><span class="msg-name">${name}</span><span class="msg-app">APP</span><span class="msg-time">Dzisiaj o ${time}</span></div>
         ${content ? `<div>${md(content)}</div>` : ''}
         <div class="embed" style="border-left-color:${color(embed.color)}"><div>
@@ -1505,7 +1505,7 @@ async function loadBump() {
     const { last, ranking, month } = await api('/bump');
     $('#bump-last').innerHTML = last?.at
       ? `Ostatni bump: <strong>${esc(relTime(last.at))}</strong> (ID osoby ${esc(last.userId)}). ${
-          last.remindAt > Date.now() ? `Przypomnienie ${esc(relTime(last.remindAt))}.` : last.reminded ? 'Przypomnienie wysłane — można bumpować.' : 'Można bumpować.'
+          last.remindAt > Date.now() ? `Przypomnienie ${esc(relTime(last.remindAt))}.` : last.reminded ? 'Przypomnienie wysłane - można bumpować.' : 'Można bumpować.'
         }`
       : 'Bot nie zapisał jeszcze żadnego bumpa.';
     const monthly = new Map(month.map((r) => [r.userId, r.count]));
@@ -1538,7 +1538,7 @@ async function loadGiveaways() {
             </tr>`,
           )
           .join('')}</tbody>`
-      : '<tr><td class="empty">Nie było jeszcze konkursów — uruchom je komendą /konkurs start.</td></tr>';
+      : '<tr><td class="empty">Nie było jeszcze konkursów - uruchom je komendą /konkurs start.</td></tr>';
   } catch (error) {
     toast(error.message, 'error');
   }
@@ -1644,7 +1644,7 @@ async function loadLogins() {
   try {
     const { logins, sections } = await api('/access/logins');
     const access = (x) =>
-      x.full ? 'Wszystko (administrator)' : x.sections.length ? esc(x.sections.map((key) => sections[key] ?? key).join(', ')) : '<span class="muted">nic — przy następnym wejściu zostanie wylogowany</span>';
+      x.full ? 'Wszystko (administrator)' : x.sections.length ? esc(x.sections.map((key) => sections[key] ?? key).join(', ')) : '<span class="muted">nic - przy następnym wejściu zostanie wylogowany</span>';
     $('#logins-table').innerHTML = logins.length
       ? `<thead><tr><th>Osoba</th><th>Może zmieniać</th><th>Utworzony</th><th>Wygasa</th><th>Zalogowania</th><th></th></tr></thead><tbody>${logins
           .map(
@@ -1666,7 +1666,7 @@ async function loadLogins() {
 $('#logins-refresh').addEventListener('click', loadLogins);
 $('#logins-table').addEventListener('click', async (event) => {
   const id = event.target.closest('[data-login-revoke]')?.dataset.loginRevoke;
-  if (!id || !confirm('Unieważnić ten login? Hasło przestanie działać, a ta osoba zostanie wylogowana — żeby wrócić, wpisze /login jeszcze raz.')) return;
+  if (!id || !confirm('Unieważnić ten login? Hasło przestanie działać, a ta osoba zostanie wylogowana - żeby wrócić, wpisze /login jeszcze raz.')) return;
   try {
     await api(`/access/logins/${id}`, { method: 'DELETE' });
     toast('Login unieważniony');
@@ -1687,7 +1687,7 @@ $('#logins-revoke-all').addEventListener('click', async () => {
 });
 
 // ---------- Uprawnienia ról w samym Discordzie ----------
-// [klucz, nazwa, bit] w grupach — klucze muszą być na liście ROLE_PERMISSION_KEYS po stronie bota.
+// [klucz, nazwa, bit] w grupach - klucze muszą być na liście ROLE_PERMISSION_KEYS po stronie bota.
 const ROLE_PERM_GROUPS = [
   ['Kary i ludzie', [['KICK_MEMBERS', 'Wyrzucanie', 1n << 1n], ['BAN_MEMBERS', 'Banowanie', 1n << 2n], ['MODERATE_MEMBERS', 'Wyciszanie (timeout)', 1n << 40n], ['MANAGE_NICKNAMES', 'Zmiana cudzych pseudonimów', 1n << 27n], ['MANAGE_ROLES', 'Zarządzanie rolami', 1n << 28n]]],
   ['Wiadomości i kanały', [['MANAGE_MESSAGES', 'Usuwanie wiadomości', 1n << 13n], ['MANAGE_THREADS', 'Zarządzanie wątkami', 1n << 34n], ['MANAGE_CHANNELS', 'Zarządzanie kanałami', 1n << 4n], ['MANAGE_WEBHOOKS', 'Webhooki', 1n << 29n], ['MENTION_EVERYONE', '@everyone i @here', 1n << 17n]]],
@@ -1716,7 +1716,7 @@ function renderRolePermissions() {
           ).join('');
           const note = r.assignable ? '' : ' • wyżej niż bot, tylko w ustawieniach serwera';
           return `<details class="role-perm" data-role-id="${r.id}" ${open.has(r.id) ? 'open' : ''}>
-        <summary><span class="role-dot" style="background:${esc(r.color !== '#000000' ? r.color : '#99aab5')}"></span>${esc(r.name)}<small class="muted"> — włączone: ${on} z ${ROLE_PERMS.length}${note}</small></summary>
+        <summary><span class="role-dot" style="background:${esc(r.color !== '#000000' ? r.color : '#99aab5')}"></span>${esc(r.name)}<small class="muted"> - włączone: ${on} z ${ROLE_PERMS.length}${note}</small></summary>
         ${groups}
       </details>`;
         })
@@ -1753,7 +1753,7 @@ function renderRoleSelects() {
   $$('[data-role-select]').forEach((select) => {
     const current = getPath(state.draft, select.dataset.path) ?? '';
     const roles = state.guild.roles;
-    select.innerHTML = `<option value="">— brak —</option>${roles.map((r) => `<option value="${r.id}">${esc(r.name)}</option>`).join('')}${
+    select.innerHTML = `<option value="">- brak -</option>${roles.map((r) => `<option value="${r.id}">${esc(r.name)}</option>`).join('')}${
       current && !roles.some((r) => r.id === current) ? `<option value="${esc(current)}">(nieznana rola)</option>` : ''
     }`;
     select.value = current;
@@ -1795,11 +1795,11 @@ function renderLevels() {
         .map((b, i) => `<span class="role-chip"><strong>+${b.percent}%</strong>#${esc(state.guild.channels.find((c) => c.id === b.channelId)?.name ?? b.channelId)}<button type="button" data-lv-del="boosters.channels" data-i="${i}" title="Usuń">×</button></span>`)
         .join('')
     : '<span class="muted small">Brak boosterów kanałów.</span>';
-  const roleOpts = `<option value="">— rola —</option>${state.guild.roles.map((r) => `<option value="${r.id}">${esc(r.name)}${r.assignable ? '' : ' (wyżej niż bot)'}</option>`).join('')}`;
+  const roleOpts = `<option value="">- rola -</option>${state.guild.roles.map((r) => `<option value="${r.id}">${esc(r.name)}${r.assignable ? '' : ' (wyżej niż bot)'}</option>`).join('')}`;
   $('#levels-reward-role').innerHTML = roleOpts;
   $('#levels-rb-role').innerHTML = roleOpts;
-  $('#levels-cb-channel').innerHTML = channelOptions(state.guild.channels, '', '— kanał —', '#');
-  if (!$('#levels-test-channel').options.length) $('#levels-test-channel').innerHTML = channelOptions(state.guild.channels, lv.levelUp.channelId ?? '', '— kanał testu —', '#');
+  $('#levels-cb-channel').innerHTML = channelOptions(state.guild.channels, '', '- kanał -', '#');
+  if (!$('#levels-test-channel').options.length) $('#levels-test-channel').innerHTML = channelOptions(state.guild.channels, lv.levelUp.channelId ?? '', '- kanał testu -', '#');
   const link = $('#levels-public-link');
   link.href = new URL('ranking', location.href).href;
   renderXpEvents();
@@ -1840,7 +1840,7 @@ function evSyncForm() {
   $('#ev-form-title').textContent = editing ? 'Edytuj wydarzenie' : 'Nowe wydarzenie';
   $('#ev-add').textContent = editing ? 'Zapisz wydarzenie' : 'Dodaj wydarzenie';
   $('#ev-cancel').hidden = !editing;
-  // Płomienie na dole ekranu — tylko przy efekcie „Ogień”.
+  // Płomienie na dole ekranu - tylko przy efekcie „Ogień”.
   $('#ev-floor-field').hidden = $('#ev-theme').value !== 'fire';
   // Podgląd na stronie rankingu z tym, co jest w formularzu (efekt, intensywność, kolor, mnożnik, nazwa).
   const p = new URLSearchParams({ preview: $('#ev-theme').value, intensity: $('#ev-intensity').value });
@@ -1955,7 +1955,7 @@ function renderXpEvents() {
           return `<div class="ev-item ${cls}${e.id === evEditId ? ' editing' : ''}">
             <div class="ev-main">
               <div><strong>${esc(e.name)}</strong> <span class="ev-badge"${accent ? ` style="background:${accent}"` : ''}>${evMult(e.multiplier)}</span> <span class="ev-status">${label}</span></div>
-              <div class="muted small">${esc(evDate(start))} – ${esc(evDate(end))} · ${(e.kinds ?? []).map((k) => EV_KINDS[k]).join(', ')}</div>
+              <div class="muted small">${esc(evDate(start))} - ${esc(evDate(end))} · ${(e.kinds ?? []).map((k) => EV_KINDS[k]).join(', ')}</div>
               <div class="muted small">${EV_THEMES[e.theme] ?? EV_THEMES.confetti}${e.theme === 'fire' && e.floor === false ? ' (bez płomieni na dole)' : ''} · ${EV_INTENSITY[e.intensity] ?? EV_INTENSITY.medium}${accent ? ` · kolor <span class="ev-swatch" style="background:${accent}"></span>` : ''}</div>
             </div>
             <div class="ev-actions">
@@ -1967,7 +1967,7 @@ function renderXpEvents() {
           </div>`;
         })
         .join('')
-    : '<span class="muted small">Brak wydarzeń — dodaj pierwsze obok.</span>';
+    : '<span class="muted small">Brak wydarzeń - dodaj pierwsze obok.</span>';
 }
 for (const sel of ['#ev-theme', '#ev-intensity', '#ev-accent-on', '#ev-floor', '#ev-mult', '#ev-name']) {
   $(sel).addEventListener('input', evSyncForm);
@@ -2021,11 +2021,11 @@ $('#ev-add').addEventListener('click', () => {
     }
     // To samo id: bot nie ogłosi drugi raz startu, a ranking wydarzenia zachowa zdobyte XP.
     events[i] = { ...events[i], ...data };
-    message = 'Zmieniono wydarzenie — zapisz zmiany (przycisk na dole ekranu).';
+    message = 'Zmieniono wydarzenie - zapisz zmiany (przycisk na dole ekranu).';
   } else {
-    if (events.length >= 50) return toast('Za dużo wydarzeń — usuń stare.', 'error');
+    if (events.length >= 50) return toast('Za dużo wydarzeń - usuń stare.', 'error');
     events.push({ id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, ...data });
-    message = 'Dodano wydarzenie — zapisz zmiany (przycisk na dole ekranu).';
+    message = 'Dodano wydarzenie - zapisz zmiany (przycisk na dole ekranu).';
   }
   setPath(state.draft, 'levels.events', events.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)));
   evReset();
@@ -2052,7 +2052,7 @@ $('#ev-list').addEventListener('click', (event) => {
   } else {
     evEditId = null;
     evFill(e, { copy: true });
-    toast('Skopiowano ustawienia — sprawdź termin i kliknij „Dodaj wydarzenie”.');
+    toast('Skopiowano ustawienia - sprawdź termin i kliknij „Dodaj wydarzenie”.');
   }
   renderXpEvents();
   $('#ev-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2070,11 +2070,11 @@ function ctRequirement(c) {
   const parts = [];
   if (c.invites > 0) parts.push(`zaprosić ${c.invites} ${plural(c.invites, ['osobę', 'osoby', 'osób'])}`);
   if (c.messages > 0) parts.push(`napisać ${c.messages} ${plural(c.messages, ['wiadomość', 'wiadomości', 'wiadomości'])}`);
-  return parts.join(' i ') || '—';
+  return parts.join(' i ') || '-';
 }
 // Stylizacja tekstu jak na Discordzie: **pogrubienie**, *kursywa*, __podkreślenie__, ~~przekreślenie~~,
 // ||spoiler||, `kod`, # nagłówek (## i ### mniejsze), - lista, > cytat, [tekst](https://…), linki i emoji
-// z serwera <:nazwa:id>. Najpierw całość jest escapowana — HTML z opisu nigdy nie trafia na stronę.
+// z serwera <:nazwa:id>. Najpierw całość jest escapowana - HTML z opisu nigdy nie trafia na stronę.
 function richText(text) {
   const tokens = [];
   const keep = (html) => `\u0000${tokens.push(html) - 1}\u0000`;
@@ -2127,7 +2127,7 @@ const CT_COLORS = { messages: ['#3cc3d6', '#a5ecf5'], invites: ['#8b7bff', '#cfc
 const CT_KIND_LABEL = { messages: 'Wiadomości', invites: 'Zaproszenia', mixed: 'Zaproszenia i wiadomości' };
 let ctLook = { color: '', color2: '', banner: '' };
 const ctKind = (c) => (c.invites > 0 && c.messages > 0 ? 'mixed' : c.invites > 0 ? 'invites' : 'messages');
-// [kolor główny, drugi kolor] — jak na stronie: bez drugiego koloru gradient idzie do jaśniejszego głównego.
+// [kolor główny, drugi kolor] - jak na stronie: bez drugiego koloru gradient idzie do jaśniejszego głównego.
 function ctColors(c) {
   const [base, light] = CT_COLORS[ctKind(c)];
   const main = /^#[0-9a-f]{6}$/i.test(c.color ?? '') ? c.color : null;
@@ -2161,8 +2161,8 @@ function ctSyncForm() {
   $('#ct-draw-winners-field').hidden = $('#ct-draw-mode').value === 'none';
   const req = ctRequirement({ invites, messages });
   $('#ct-hint').textContent = invites || messages
-    ? `Osoba loguje się na stronie, klika „Zapisz się”, a potem musi ${req} — liczy się od chwili zapisu (najwcześniej od startu). Po spełnieniu warunku strona pokazuje „Dostałeś się!”, a bot ogłasza to na kanale ogłoszeń.${invites ? ' Liczą się tylko osoby, które zostaną na serwerze, nie były tu wcześniej i mają konto starsze niż podana liczba dni.' : ''}${messages ? ' Wiadomości liczą się tak jak XP w poziomach (cooldown, bez spamu).' : ''}`
-    : 'Ustaw warunek — liczbę zaproszeń, wiadomości albo obie.';
+    ? `Osoba loguje się na stronie, klika „Zapisz się”, a potem musi ${req} - liczy się od chwili zapisu (najwcześniej od startu). Po spełnieniu warunku strona pokazuje „Dostałeś się!”, a bot ogłasza to na kanale ogłoszeń.${invites ? ' Liczą się tylko osoby, które zostaną na serwerze, nie były tu wcześniej i mają konto starsze niż podana liczba dni.' : ''}${messages ? ' Wiadomości liczą się tak jak XP w poziomach (cooldown, bez spamu).' : ''}`
+    : 'Ustaw warunek - liczbę zaproszeń, wiadomości albo obie.';
   $('#ct-form-title').textContent = ctEditId ? 'Edycja eventu' : 'Nowy event';
   $('#ct-add').textContent = ctEditId ? 'Zapisz zmiany eventu' : 'Dodaj event';
   $('#ct-cancel').hidden = !ctEditId;
@@ -2211,10 +2211,10 @@ function renderContests() {
   const lv = state.draft.levels;
   const warn = [];
   if (cfg.enabled && list.some((c) => c.messages > 0 && Date.parse(c.endsAt) > Date.now()) && !(lv.enabled && lv.message.enabled)) {
-    warn.push('<strong>Wiadomości nie będą liczone</strong> — eventy liczą je tak jak XP za wiadomości. Włącz poziomy i XP za wiadomości (zakładka Poziomy).');
+    warn.push('<strong>Wiadomości nie będą liczone</strong> - eventy liczą je tak jak XP za wiadomości. Włącz poziomy i XP za wiadomości (zakładka Poziomy).');
   }
   if (cfg.enabled && list.some((c) => c.invites > 0 && Date.parse(c.endsAt) > Date.now()) && state.guild.bot && state.guild.bot.membersIntent === false) {
-    warn.push('<strong>Potrzebna intencja „Server Members”</strong> — bot włącza ją sam po zapisaniu ustawień; bez niej nie zobaczy wejść z zaproszeń.');
+    warn.push('<strong>Potrzebna intencja „Server Members”</strong> - bot włącza ją sam po zapisaniu ustawień; bez niej nie zobaczy wejść z zaproszeń.');
   }
   $('#ct-warning').innerHTML = warn.join('<br>');
   $('#ct-warning').classList.toggle('hidden', !warn.length);
@@ -2227,7 +2227,7 @@ function renderContests() {
           return `<div class="ev-item ${cls}${c.id === ctEditId ? ' editing' : ''}">
             <div class="ev-main">
               <div><span class="ct-swatch" style="background:linear-gradient(90deg, ${ctColors(c).join(', ')})" title="Kolory eventu"></span><strong>${esc(c.name)}</strong> <span class="ev-status">${label}</span>${c.banner ? ' <span class="muted small" title="Własny baner na stronie eventów">🖼️ baner</span>' : ''}</div>
-              <div class="muted small">${esc(evDate(Date.parse(c.startsAt)))} – ${esc(evDate(Date.parse(c.endsAt)))}</div>
+              <div class="muted small">${esc(evDate(Date.parse(c.startsAt)))} - ${esc(evDate(Date.parse(c.endsAt)))}</div>
               <div class="muted small">🎯 Warunek: ${esc(ctRequirement(c))}${c.prize ? ` · 🎁 ${esc(c.prize)}` : ''}${c.drawWinners > 0 ? ` · 🎲 losowanie: ${c.drawWinners} ${plural(c.drawWinners, ['zwycięzca', 'zwycięzców', 'zwycięzców'])} (${c.drawMode === 'auto' ? 'samo po końcu' : 'ręcznie'})` : ''}</div>
             </div>
             <div class="ev-actions">
@@ -2240,7 +2240,7 @@ function renderContests() {
           </div>`;
         })
         .join('')
-    : '<span class="muted small">Brak eventów — dodaj pierwszy obok. Strona eventów (i pasek z linkiem w rankingu) pokaże go, gdy będzie zaplanowany.</span>';
+    : '<span class="muted small">Brak eventów - dodaj pierwszy obok. Strona eventów (i pasek z linkiem w rankingu) pokaże go, gdy będzie zaplanowany.</span>';
 }
 
 // Czy działa „Zaloguj przez Discord” na stronie (adres strony musi być na liście Redirects aplikacji).
@@ -2254,11 +2254,11 @@ async function loadContestOauth() {
     return;
   }
   const o = data.oauth;
-  const steps = `Wejdź na <a href="https://discord.com/developers/applications" target="_blank" rel="noopener">Discord Developer Portal</a> → aplikacja bota → <strong>OAuth2</strong> → <strong>Redirects</strong> → <strong>Add Redirect</strong>, wklej <code class="copyable" title="Kliknij, żeby skopiować">${esc(o.redirectUri)}</code> i kliknij <strong>Save Changes</strong>. Potem kliknij <button type="button" class="btn small" data-oauth-recheck>Sprawdź teraz</button> — logowanie włączy się od razu (sama strona też to wykryje w ciągu minuty).`;
+  const steps = `Wejdź na <a href="https://discord.com/developers/applications" target="_blank" rel="noopener">Discord Developer Portal</a> → aplikacja bota → <strong>OAuth2</strong> → <strong>Redirects</strong> → <strong>Add Redirect</strong>, wklej <code class="copyable" title="Kliknij, żeby skopiować">${esc(o.redirectUri)}</code> i kliknij <strong>Save Changes</strong>. Potem kliknij <button type="button" class="btn small" data-oauth-recheck>Sprawdź teraz</button> - logowanie włączy się od razu (sama strona też to wykryje w ciągu minuty).`;
   const viaRanking = o.registered === true && o.using && !/\/event(\.html)?$/.test(o.using);
   box.innerHTML = o.registered === true
-    ? `<p class="ct-oauth-ok">✓ <strong>Logowanie przez Discord działa</strong> — na stronie eventów jest przycisk „Zaloguj przez Discord”.${viaRanking ? ` Discord wraca na adres strony rankingu, a ta od razu przekierowuje na eventy. Możesz dodać w Redirects też <code class="copyable" title="Kliknij, żeby skopiować">${esc(o.redirectUri)}</code> — wtedy Discord wróci prosto na stronę eventów.` : ''}</p>`
-    : `<div class="banner warn"><strong>Logowanie przez Discord nie jest jeszcze włączone.</strong> Discord nie pozwala botowi dopisać adresu strony samemu — zrób to raz: ${steps}${o.registered === null ? ' (Bot nie mógł sprawdzić listy — jeśli adres już jest, wszystko działa.)' : ''} Do tego czasu osoby łączą konto komendą <code>/polacz</code>.</div>`;
+    ? `<p class="ct-oauth-ok">✓ <strong>Logowanie przez Discord działa</strong> - na stronie eventów jest przycisk „Zaloguj przez Discord”.${viaRanking ? ` Discord wraca na adres strony rankingu, a ta od razu przekierowuje na eventy. Możesz dodać w Redirects też <code class="copyable" title="Kliknij, żeby skopiować">${esc(o.redirectUri)}</code> - wtedy Discord wróci prosto na stronę eventów.` : ''}</p>`
+    : `<div class="banner warn"><strong>Logowanie przez Discord nie jest jeszcze włączone.</strong> Discord nie pozwala botowi dopisać adresu strony samemu - zrób to raz: ${steps}${o.registered === null ? ' (Bot nie mógł sprawdzić listy - jeśli adres już jest, wszystko działa.)' : ''} Do tego czasu osoby łączą konto komendą <code>/polacz</code>.</div>`;
 }
 
 async function loadContestPeople(id) {
@@ -2266,13 +2266,13 @@ async function loadContestPeople(id) {
   const card = $('#ct-people-card');
   const c = ctList().find((x) => x.id === id);
   card.hidden = false;
-  $('#ct-people-title').textContent = `Zapisani — ${c?.name ?? 'event'}`;
+  $('#ct-people-title').textContent = `Zapisani - ${c?.name ?? 'event'}`;
   $('#ct-people').innerHTML = '<tbody><tr><td class="muted">Wczytywanie…</td></tr></tbody>';
   let data;
   try {
     data = await api(`/contests/${encodeURIComponent(id)}`);
   } catch (error) {
-    $('#ct-people').innerHTML = `<tbody><tr><td class="muted">${esc(/Nie ma takiego eventu/.test(error.message) ? 'Ten event nie jest jeszcze zapisany — zapisz zmiany (przycisk na dole ekranu), wtedy zobaczysz zapisanych.' : error.message)}</td></tr></tbody>`;
+    $('#ct-people').innerHTML = `<tbody><tr><td class="muted">${esc(/Nie ma takiego eventu/.test(error.message) ? 'Ten event nie jest jeszcze zapisany - zapisz zmiany (przycisk na dole ekranu), wtedy zobaczysz zapisanych.' : error.message)}</td></tr></tbody>`;
     return;
   }
   if (ctPeopleId !== id) return;
@@ -2283,8 +2283,8 @@ async function loadContestPeople(id) {
   drawBtn.textContent = data.draw ? '🎲 Losuj ponownie' : '🎲 Losuj zwycięzców';
   drawBtn.dataset.redo = data.draw ? '1' : '';
   $('#ct-draw-note').hidden = !data.draw;
-  if (data.draw) $('#ct-draw-note').textContent = `Ostatnie losowanie: ${shortDate(data.draw.at)} (${data.draw.by ? `losował(a): ${data.draw.by}` : 'samo po końcu eventu'}) — wśród ${data.draw.pool} ${data.draw.pool === 1 ? 'osoby, która się dostała' : `${plural(data.draw.pool, ['osoby', 'osób', 'osób'])}, które się dostały`}.`;
-  $('#ct-people-note').textContent = `${data.entries.length} ${plural(data.entries.length, ['osoba zapisana', 'osoby zapisane', 'osób zapisanych'])}, ${inCount} ${plural(inCount, ['dostała się', 'dostały się', 'dostało się'])}. Warunek: ${ctRequirement(ct)}. Postęp liczy się na bieżąco — gdy zaproszona osoba wyjdzie z serwera, spada.`;
+  if (data.draw) $('#ct-draw-note').textContent = `Ostatnie losowanie: ${shortDate(data.draw.at)} (${data.draw.by ? `losował(a): ${data.draw.by}` : 'samo po końcu eventu'}) - wśród ${data.draw.pool} ${data.draw.pool === 1 ? 'osoby, która się dostała' : `${plural(data.draw.pool, ['osoby', 'osób', 'osób'])}, które się dostały`}.`;
+  $('#ct-people-note').textContent = `${data.entries.length} ${plural(data.entries.length, ['osoba zapisana', 'osoby zapisane', 'osób zapisanych'])}, ${inCount} ${plural(inCount, ['dostała się', 'dostały się', 'dostało się'])}. Warunek: ${ctRequirement(ct)}. Postęp liczy się na bieżąco - gdy zaproszona osoba wyjdzie z serwera, spada.`;
   const who = (p) => `${esc(p.displayName && p.displayName !== p.userTag ? `${p.displayName} (${p.userTag})` : p.userTag ?? 'nieznana osoba')}<span class="note">${esc(p.userId)}${p.hidden ? ' · ukryta na stronie' : ''}</span>`;
   const progress = (p) =>
     [ct.invites > 0 ? `${p.invites}/${ct.invites} zaproszeń` : '', ct.messages > 0 ? `${p.messages}/${ct.messages} wiadomości` : ''].filter(Boolean).join('<br>');
@@ -2336,7 +2336,7 @@ $('#ct-banner-file').addEventListener('change', async (event) => {
     const data = await siBannerData(file);
     const { url } = await api('/contests/banner', { method: 'POST', body: JSON.stringify({ data }) });
     ctLook.banner = url;
-    toast('Wgrano baner — kliknij „Dodaj event” / „Zapisz zmiany eventu”, a potem zapisz ustawienia.');
+    toast('Wgrano baner - kliknij „Dodaj event” / „Zapisz zmiany eventu”, a potem zapisz ustawienia.');
   } catch (error) {
     toast(error.message, 'error');
   } finally {
@@ -2354,7 +2354,7 @@ $('#ct-desc-preview').addEventListener('error', (event) => {
   const img = event.target;
   if (img.matches?.('img.emoji')) img.replaceWith(Object.assign(document.createElement('span'), { className: 'emoji-fallback', textContent: img.alt }));
 }, true);
-// Pasek formatowania: zaznaczony tekst dostaje znaczniki (albo wstawia się pusta para), linie — prefiks.
+// Pasek formatowania: zaznaczony tekst dostaje znaczniki (albo wstawia się pusta para), linie - prefiks.
 $('#ct-desc-tools').addEventListener('click', (event) => {
   const btn = event.target.closest('button');
   if (!btn) return;
@@ -2404,7 +2404,7 @@ $('#ct-draw-btn').addEventListener('click', async () => {
   btn.disabled = true;
   try {
     const { result } = await api(`/contests/${encodeURIComponent(ctPeopleId)}/draw`, { method: 'POST' });
-    toast(result.winners.length ? `Wylosowano: ${result.winners.map((w) => w.displayName ?? w.userTag ?? w.userId).join(', ')}` : 'Nikt nie spełnił warunku — nie było kogo losować.');
+    toast(result.winners.length ? `Wylosowano: ${result.winners.map((w) => w.displayName ?? w.userTag ?? w.userId).join(', ')}` : 'Nikt nie spełnił warunku - nie było kogo losować.');
   } catch (error) {
     toast(error.message, 'error');
   }
@@ -2422,14 +2422,14 @@ $('#ct-oauth').addEventListener('click', async (event) => {
     recheck.textContent = 'Sprawdzam…';
     await loadContestOauth();
     if ($('#ct-oauth .ct-oauth-ok')) toast('Logowanie przez Discord działa!');
-    else toast('Adresu jeszcze nie ma na liście Redirects — sprawdź, czy kliknąłeś Save Changes.', 'error');
+    else toast('Adresu jeszcze nie ma na liście Redirects - sprawdź, czy kliknąłeś Save Changes.', 'error');
     return;
   }
   const code = event.target.closest('code.copyable');
   if (!code) return;
   try {
     await navigator.clipboard.writeText(code.textContent);
-    toast('Skopiowano adres — wklej go w Redirects.');
+    toast('Skopiowano adres - wklej go w Redirects.');
   } catch {
     toast('Zaznacz adres i skopiuj go ręcznie.', 'error');
   }
@@ -2439,7 +2439,7 @@ $('#ct-add').addEventListener('click', () => {
   const end = Date.parse($('#ct-end').value);
   const invites = ctInt('#ct-invites', 0, 1000, 0);
   const messages = ctInt('#ct-messages', 0, 1_000_000, 0);
-  if (!invites && !messages) return toast('Ustaw warunek — ile osób zaprosić albo ile wiadomości napisać.', 'error');
+  if (!invites && !messages) return toast('Ustaw warunek - ile osób zaprosić albo ile wiadomości napisać.', 'error');
   if (!Number.isFinite(start) || !Number.isFinite(end)) return toast('Podaj początek i koniec eventu.', 'error');
   if (end <= start) return toast('Koniec musi być po początku.', 'error');
   if (end - start > 92 * DAY) return toast('Event może trwać najwyżej 92 dni.', 'error');
@@ -2470,11 +2470,11 @@ $('#ct-add').addEventListener('click', () => {
     }
     // To samo id: zapisani i ich postęp zostają.
     list[editing] = { ...list[editing], ...data };
-    message = 'Zmieniono event — zapisz zmiany (przycisk na dole ekranu).';
+    message = 'Zmieniono event - zapisz zmiany (przycisk na dole ekranu).';
   } else {
-    if (list.length >= 30) return toast('Za dużo eventów — usuń stare.', 'error');
+    if (list.length >= 30) return toast('Za dużo eventów - usuń stare.', 'error');
     list.push({ id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, ...data });
-    message = 'Dodano event — zapisz zmiany (przycisk na dole ekranu).';
+    message = 'Dodano event - zapisz zmiany (przycisk na dole ekranu).';
   }
   setPath(state.draft, 'contests.list', list.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)));
   ctReset();
@@ -2496,7 +2496,7 @@ $('#ct-list').addEventListener('click', (event) => {
     }
     renderContests();
     markDirty();
-    return toast('Usunięto event — zapisz zmiany (przycisk na dole ekranu).');
+    return toast('Usunięto event - zapisz zmiany (przycisk na dole ekranu).');
   }
   const btn = event.target.closest('[data-ct-end], [data-ct-edit], [data-ct-dup], [data-ct-people]');
   if (!btn) return;
@@ -2521,7 +2521,7 @@ $('#ct-list').addEventListener('click', (event) => {
   } else {
     ctEditId = null;
     ctFill(c, { copy: true });
-    toast('Skopiowano ustawienia — sprawdź termin i kliknij „Dodaj event”.');
+    toast('Skopiowano ustawienia - sprawdź termin i kliknij „Dodaj event”.');
   }
   renderContests();
   $('#ct-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2607,7 +2607,7 @@ async function loadLevels() {
           })
           .join('')}</tbody>`
       : '<tr><td class="empty">Nikt jeszcze nie ma XP.</td></tr>';
-    $('#levels-page').textContent = total ? `${levelsOffset + 1}–${Math.min(levelsOffset + LEVELS_PAGE, total)} z ${total}` : '';
+    $('#levels-page').textContent = total ? `${levelsOffset + 1}-${Math.min(levelsOffset + LEVELS_PAGE, total)} z ${total}` : '';
     $('#levels-prev').disabled = levelsOffset === 0;
     $('#levels-next').disabled = levelsOffset + LEVELS_PAGE >= total;
   } catch (error) {
@@ -2674,7 +2674,7 @@ $('#levels-import').addEventListener('click', async () => {
 // Każdy rodzaj ticketu (przycisk w panelu) ma własny formularz: maks. 5 pól w okienku Discorda.
 const TICKET_FIELD_KINDS = { short: 'Krótka odpowiedź', long: 'Długi tekst', number: 'Liczba', invite: 'Link do serwera Discord' };
 
-// Starsze rodzaje ticketów miały jedno pole `question` — w edytorze to formularz z jednym długim polem.
+// Starsze rodzaje ticketów miały jedno pole `question` - w edytorze to formularz z jednym długim polem.
 function ticketTypeFields(type) {
   if (!Array.isArray(type.fields)) {
     type.fields = type.question ? [{ label: type.question, placeholder: '', kind: 'long', required: true }] : [];
@@ -2696,7 +2696,7 @@ function renderTicketTypes() {
           <button type="button" class="btn ghost small" data-ttype-del ${types.length <= 1 ? 'disabled' : ''}>Usuń</button>
         </div>
         <div class="tfields">
-          <span class="muted small">Formularz przed otwarciem ticketu${fields.length ? '' : ' — brak pól, ticket otwiera się od razu'}</span>
+          <span class="muted small">Formularz przed otwarciem ticketu${fields.length ? '' : ' - brak pól, ticket otwiera się od razu'}</span>
           ${fields
             .map(
               (f, j) => `<div class="tfield" data-tfield="${j}">
@@ -2711,7 +2711,7 @@ function renderTicketTypes() {
           <button type="button" class="btn ghost small" data-tfield-add ${fields.length >= 5 ? 'disabled' : ''}>Dodaj pole</button>
         </div>
         <label class="field"><span>Powitanie w tym rodzaju ticketu (puste = wspólne z ustawień)</span><textarea rows="2" maxlength="1500" data-ttype-field="welcome" placeholder="np. Dzięki za chęć partnerstwa, {uzytkownik}! Sprawdzimy Twój serwer.">${esc(t.welcome ?? '')}</textarea></label>
-        <label class="field"><span>Regulamin przed formularzem (puste = bez ekranu regulaminu)</span><textarea rows="5" maxlength="3800" data-ttype-field="rules" placeholder="Osoba zobaczy ten tekst z przyciskami „Akceptuję regulamin” i „Nie akceptuję” — formularz pojawi się dopiero po akceptacji. Możesz użyć **pogrubienia**.">${esc(t.rules ?? '')}</textarea></label>
+        <label class="field"><span>Regulamin przed formularzem (puste = bez ekranu regulaminu)</span><textarea rows="5" maxlength="3800" data-ttype-field="rules" placeholder="Osoba zobaczy ten tekst z przyciskami „Akceptuję regulamin” i „Nie akceptuję” - formularz pojawi się dopiero po akceptacji. Możesz użyć **pogrubienia**.">${esc(t.rules ?? '')}</textarea></label>
         <details class="ttype-own">
           <summary>Osobne ustawienia i uprawnienia tego rodzaju (kategoria, obsługa, logi, autor)</summary>
           <p class="muted small">Puste pola używają ustawień ogólnych z karty „Ustawienia”. Dzięki temu np. partnerstwa trafiają do innej kategorii i widzi je inna obsługa niż zgłoszenia.</p>
@@ -2729,7 +2729,7 @@ function renderTicketTypes() {
   $('#add-ticket-type').disabled = types.length >= 5;
   renderPickers();
   const saved = state.ticketPanel?.channelId;
-  $('#ticket-panel-channel').innerHTML = channelOptions(state.guild.channels, saved ?? '', '— wybierz kanał —', '#');
+  $('#ticket-panel-channel').innerHTML = channelOptions(state.guild.channels, saved ?? '', '- wybierz kanał -', '#');
 }
 
 function onTicketTypeChange(event) {
@@ -2805,7 +2805,7 @@ async function loadTickets() {
         (t) => `<tr>
           <td><strong>#${String(t.id).padStart(4, '0')}</strong></td>
           <td>${esc(t.userTag ?? t.userId)}<span class="note">${esc(t.userId)}</span></td>
-          <td>${esc(t.type ?? '—')}${t.subject ? `<span class="note">${esc(t.subject.slice(0, 80))}</span>` : ''}</td>
+          <td>${esc(t.type ?? '-')}${t.subject ? `<span class="note">${esc(t.subject.slice(0, 80))}</span>` : ''}</td>
           <td><span class="dot ${t.status === 'open' ? 'ok' : 'wait'}"></span>${t.status === 'open' ? 'otwarty' : 'zamknięty'}${t.claimedBy ? '<span class="note">przejęty</span>' : ''}</td>
           <td>${esc(shortDate(t.createdAt))}${t.closedAt ? `<span class="note">zamknięty ${esc(shortDate(t.closedAt))}</span>` : ''}</td>
           <td>${t.status === 'open' ? `<button type="button" class="btn danger small" data-ticket-close="${t.id}">Zamknij</button>` : ''}</td>
@@ -2852,7 +2852,7 @@ function renderMessageEditor() {
   $('#msg-editor-title').textContent = editingId ? 'Edycja wysłanej wiadomości' : 'Nowa wiadomość';
   $('#msg-send').textContent = editingId ? 'Zapisz zmiany' : 'Wyślij';
   $('#msg-cancel').classList.toggle('hidden', !editingId);
-  $('#msg-channel').innerHTML = channelOptions(state.guild.channels, data.channelId, '— wybierz kanał —', '#');
+  $('#msg-channel').innerHTML = channelOptions(state.guild.channels, data.channelId, '- wybierz kanał -', '#');
   $('#msg-channel').disabled = Boolean(editingId);
   $('#msg-content').value = data.content;
   $('#msg-embed-enabled').checked = data.embed.enabled;
@@ -2881,7 +2881,7 @@ function renderMessageItems() {
   const { mode, items } = state.msg.data.roles;
   const assignable = state.guild.roles.filter((r) => r.assignable);
   const roleSelect = (selected) => {
-    let html = '<option value="">— wybierz rolę —</option>';
+    let html = '<option value="">- wybierz rolę -</option>';
     html += assignable.map((r) => `<option value="${r.id}" ${r.id === selected ? 'selected' : ''}>${esc(r.name)}</option>`).join('');
     if (selected && !assignable.some((r) => r.id === selected)) {
       html += `<option value="${esc(selected)}" selected>${esc(roleById(selected)?.name ?? 'nieznana rola')} (bot nie może jej nadać)</option>`;
@@ -3039,7 +3039,7 @@ async function loadSentMessages() {
     const { messages } = await api('/messages');
     state.sentMessages = messages;
     const channelName = (id) => state.guild.channels.find((c) => c.id === id)?.name ?? id;
-    const modeText = (roles) => (roles.mode === 'buttons' ? `przyciski (${roles.items.length})` : roles.mode === 'select' ? `lista (${roles.items.length})` : '—');
+    const modeText = (roles) => (roles.mode === 'buttons' ? `przyciski (${roles.items.length})` : roles.mode === 'select' ? `lista (${roles.items.length})` : '-');
     const rows = messages
       .map((m) => {
         const snippet = m.data.content || m.data.embed.title || m.data.embed.description || '';
@@ -3101,7 +3101,7 @@ function applyToDraft(config, label) {
   renderConfigUi();
   renderPreview();
   const changed = Object.keys(state.draft).filter((k) => JSON.stringify(state.draft[k]) !== JSON.stringify(state.config[k]));
-  toast(changed.length ? `${label} — zmienione części: ${changed.length}. Sprawdź i zapisz (przycisk na dole ekranu).` : `${label} — bez różnic względem obecnych ustawień.`);
+  toast(changed.length ? `${label} - zmienione części: ${changed.length}. Sprawdź i zapisz (przycisk na dole ekranu).` : `${label} - bez różnic względem obecnych ustawień.`);
 }
 function downloadJson(name, data) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
@@ -3129,7 +3129,7 @@ $('#backup-file').addEventListener('change', async (event) => {
     try {
       data = JSON.parse(await file.text());
     } catch {
-      throw new Error('Nie udało się odczytać pliku — to nie jest poprawny JSON.');
+      throw new Error('Nie udało się odczytać pliku - to nie jest poprawny JSON.');
     }
     const config = data?.format === 'hopkostki-config' ? data.config : data;
     if (!isPlain(config) || !('actions' in config || 'levels' in config)) throw new Error('To nie jest kopia ustawień tego bota.');
@@ -3148,7 +3148,7 @@ async function loadHistory() {
       ? items
           .map(
             (h) => `<div class="history-item">
-          <div class="history-main"><strong>${esc(h.sections.join(', '))}</strong><div class="muted small">${esc(shortDate(h.createdAt))} · ${esc(h.changedBy ?? '—')}</div></div>
+          <div class="history-main"><strong>${esc(h.sections.join(', '))}</strong><div class="muted small">${esc(shortDate(h.createdAt))} · ${esc(h.changedBy ?? '-')}</div></div>
           <button type="button" class="btn ghost small" data-history-undo="${h.id}">Cofnij</button>
         </div>`,
           )
@@ -3194,7 +3194,7 @@ $('#automod-words-fix').addEventListener('click', () => {
   const words = wordList(before);
   el.value = words.join('\n');
   el.dispatchEvent(new Event('input', { bubbles: true }));
-  toast(words.length ? `Gotowe: ${words.length} ${plural(words.length, ['słowo', 'słowa', 'słów'])} — zapisz zmiany.` : 'Lista jest pusta.');
+  toast(words.length ? `Gotowe: ${words.length} ${plural(words.length, ['słowo', 'słowa', 'słów'])} - zapisz zmiany.` : 'Lista jest pusta.');
 });
 
 // ---------- Serwer info ----------
@@ -3216,7 +3216,7 @@ function siCommand(command, commandId = '') {
   return id ? `</${command}:${id}>` : `\`/${command}\``;
 }
 const siWithCommands = (text) => str(text).replace(/\{\/([\p{Ll}\p{N}_-]{1,32}(?: [\p{Ll}\p{N}_-]{1,32}){0,2})\}/gu, (_, c) => siCommand(c));
-// Element tak, jak zapisze go bot (puste i niepełne pomija) — null, gdy go nie będzie.
+// Element tak, jak zapisze go bot (puste i niepełne pomija) - null, gdy go nie będzie.
 function siCleanItem(item) {
   const text = str(item.text).replace(/\r/g, '').trim();
   if (item.kind === 'heading' || item.kind === 'text') return text ? { kind: item.kind, text } : null;
@@ -3234,7 +3234,7 @@ function siItemText(item, bullet) {
     const quoted = siWithCommands(item.text).split('\n').filter((l) => l.trim()).map((l) => `> ${l}`).join('\n');
     return `${b}<@&${item.roleId}>${quoted ? `\n${quoted}` : ''}`;
   }
-  if (item.kind === 'command') return `${b}${siCommand(item.command, item.commandId)}${item.text ? ` — ${siWithCommands(item.text)}` : ''}`;
+  if (item.kind === 'command') return `${b}${siCommand(item.command, item.commandId)}${item.text ? ` - ${siWithCommands(item.text)}` : ''}`;
   return siWithCommands(item.text);
 }
 // Między rolami pusta linia, między komendami nie; nagłówek przylega do pierwszego elementu pod nim.
@@ -3258,19 +3258,19 @@ function siBuild(info) {
     const name = title || `sekcja ${s + 1}`;
     const items = section.items.map(siCleanItem);
     const skipped = items.filter((item) => !item).length;
-    if (skipped) problems.push(`„${name}”: ${skipped} ${plural(skipped, ['element jest pusty albo niepełny', 'elementy są puste albo niepełne', 'elementów jest pustych albo niepełnych'])} — bot je pominie.`);
+    if (skipped) problems.push(`„${name}”: ${skipped} ${plural(skipped, ['element jest pusty albo niepełny', 'elementy są puste albo niepełne', 'elementów jest pustych albo niepełnych'])} - bot je pominie.`);
     const description = [siWithCommands(str(section.intro).trim()), siItemsText(items.filter(Boolean), info.bullet)].filter(Boolean).join('\n\n');
     const bannerText = str(section.banner).trim();
     const banner = /^https:\/\/\S+$/i.test(bannerText) ? bannerText : '';
     if (bannerText && !banner) problems.push(`„${name}”: link do baneru musi zaczynać się od https://.`);
     if (!title && !description && !banner) return;
-    if (description.length > SI_LIMITS.description) problems.push(`„${name}” ma ${description.length} znaków, a embed mieści ${SI_LIMITS.description} — skróć opisy albo podziel sekcję na dwie.`);
+    if (description.length > SI_LIMITS.description) problems.push(`„${name}” ma ${description.length} znaków, a embed mieści ${SI_LIMITS.description} - skróć opisy albo podziel sekcję na dwie.`);
     if (banner) embeds.push({ banner });
     if (title || description) embeds.push({ title, description });
   });
   const footer = str(info.footer).trim();
   const total = embeds.reduce((sum, e) => sum + str(e.title).length + str(e.description).length, 0) + (embeds.length ? footer.length : 0);
-  if (!embeds.length) problems.push('Wiadomość jest pusta — dodaj sekcję z treścią.');
+  if (!embeds.length) problems.push('Wiadomość jest pusta - dodaj sekcję z treścią.');
   if (embeds.length > SI_LIMITS.embeds) problems.push(`Wiadomość ma ${embeds.length} embedów (banery też się liczą), a Discord pozwala na ${SI_LIMITS.embeds}.`);
   if (total > SI_LIMITS.total) problems.push(`Wiadomość ma ${total} znaków, a Discord pozwala na ${SI_LIMITS.total} we wszystkich embedach razem.`);
   return { embeds, problems, total, footer };
@@ -3315,17 +3315,17 @@ function renderServerInfoPosted() {
   $('#si-send').textContent = sameChannel ? 'Zaktualizuj wiadomość' : 'Wyślij na kanał';
   $('#si-send-new').classList.toggle('hidden', !p);
   if (!p) {
-    $('#si-posted').innerHTML = '<p class="muted small">Wiadomość nie była jeszcze wysłana — ułóż sekcje, zapisz zmiany i kliknij „Wyślij na kanał”.</p>';
+    $('#si-posted').innerHTML = '<p class="muted small">Wiadomość nie była jeszcze wysłana - ułóż sekcje, zapisz zmiany i kliknij „Wyślij na kanał”.</p>';
     return;
   }
   const link = si.guildId ? ` · <a href="https://discord.com/channels/${esc(si.guildId)}/${esc(p.channelId)}/${esc(p.messageId)}" target="_blank" rel="noopener">otwórz w Discordzie</a>` : '';
   const updated = p.updatedAt && p.updatedAt - p.sentAt > 5000 ? ` · zaktualizowano ${relTime(p.updatedAt)}` : '';
-  const moved = sameChannel ? '' : `<span class="note">Wybrany jest inny kanał — „Wyślij na kanał” wyśle nową wiadomość, a stara zostanie na ${esc(siChannelName(p.channelId))}.</span>`;
+  const moved = sameChannel ? '' : `<span class="note">Wybrany jest inny kanał - „Wyślij na kanał” wyśle nową wiadomość, a stara zostanie na ${esc(siChannelName(p.channelId))}.</span>`;
   $('#si-posted').innerHTML = `<p class="small">✅ Wysłano na <strong>${esc(siChannelName(p.channelId))}</strong> ${relTime(p.sentAt)}${updated}${link}</p>${moved}`;
 }
 
 function siRoleOptions(selected) {
-  let html = '<option value="">— wybierz rolę —</option>';
+  let html = '<option value="">- wybierz rolę -</option>';
   html += state.guild.roles.map((r) => `<option value="${r.id}" ${r.id === selected ? 'selected' : ''}>${esc(r.name)}</option>`).join('');
   if (selected && !roleById(selected)) html += `<option value="${esc(selected)}" selected>(usunięta rola ${esc(selected)})</option>`;
   return html;
@@ -3333,7 +3333,7 @@ function siRoleOptions(selected) {
 const siBannerHtml = (banner) =>
   /^https:\/\/\S+$/i.test(str(banner).trim())
     ? `<div class="si-banner has"><img src="${esc(banner.trim())}" alt="Baner sekcji"></div>`
-    : '<div class="si-banner"><div class="si-banner-empty">Bez baneru — wgraj obrazek albo wklej link</div></div>';
+    : '<div class="si-banner"><div class="si-banner-empty">Bez baneru - wgraj obrazek albo wklej link</div></div>';
 function siItemRow(item, i, count) {
   const tools = `<div class="si-item-tools">
       <span class="si-kind">${item.kind === 'role' ? `<span class="role-dot" style="background:${esc(roleLabel(item.roleId).color)}"></span>` : ''}${SI_ITEMS[item.kind] ?? ''}</span>
@@ -3344,7 +3344,7 @@ function siItemRow(item, i, count) {
   let body;
   if (item.kind === 'role') {
     body = `<select data-si-item-field="roleId" aria-label="Rola">${siRoleOptions(item.roleId)}</select>
-      <textarea data-si-item-field="text" rows="2" maxlength="600" placeholder="Opis roli — pokaże się w cytacie pod rolą" aria-label="Opis roli">${esc(item.text)}</textarea>`;
+      <textarea data-si-item-field="text" rows="2" maxlength="600" placeholder="Opis roli - pokaże się w cytacie pod rolą" aria-label="Opis roli">${esc(item.text)}</textarea>`;
   } else if (item.kind === 'command') {
     body = `<div class="si-command-row">
         <span class="si-slash">/</span>
@@ -3366,7 +3366,7 @@ function siSectionCard(section, s, total) {
     <div class="card-head">
       <h3><span class="si-num">${s + 1}</span><span class="si-title">${md(str(section.title).trim() || SI_KINDS[section.kind] || 'Sekcja')}</span></h3>
       <div class="si-section-tools">
-        <select data-si-sec-field="kind" aria-label="Rodzaj sekcji" title="Rodzaj sekcji — „Uzupełnij role z serwera” dopisuje role do sekcji Role i Role za poziomy">${Object.entries(SI_KINDS)
+        <select data-si-sec-field="kind" aria-label="Rodzaj sekcji" title="Rodzaj sekcji - „Uzupełnij role z serwera” dopisuje role do sekcji Role i Role za poziomy">${Object.entries(SI_KINDS)
           .map(([value, label]) => `<option value="${value}" ${value === section.kind ? 'selected' : ''}>${label}</option>`)
           .join('')}</select>
         <button type="button" class="btn ghost small" data-si-sec-move="-1" ${s === 0 ? 'disabled' : ''} title="Sekcja wyżej" aria-label="Sekcja wyżej">↑</button>
@@ -3385,7 +3385,7 @@ function siSectionCard(section, s, total) {
       </div>
       <small>Najlepiej szeroki obrazek, np. 1200×300 px (PNG, JPG, WebP albo GIF do 3 MB). Większe panel zmniejsza do 1600 px szerokości.</small>
     </div>
-    <div class="si-items">${items || '<p class="muted small">Sekcja jest pusta — dodaj elementy poniżej.</p>'}</div>
+    <div class="si-items">${items || '<p class="muted small">Sekcja jest pusta - dodaj elementy poniżej.</p>'}</div>
     <div class="si-add">
       <span class="muted small">Dodaj:</span>
       <button type="button" class="btn ghost small" data-si-add="role">+ Rola</button>
@@ -3404,7 +3404,7 @@ function renderServerInfoSections() {
 function renderServerInfo() {
   if (!state.draft) return;
   if (!siInfo()) {
-    $('#si-sections').innerHTML = '<p class="muted">Bot nie ma jeszcze „Serwer info” — odśwież stronę za chwilę.</p>';
+    $('#si-sections').innerHTML = '<p class="muted">Bot nie ma jeszcze „Serwer info” - odśwież stronę za chwilę.</p>';
     return;
   }
   renderServerInfoSections();
@@ -3474,7 +3474,7 @@ async function uploadServerInfoBanner(section, s, file) {
     const data = await siBannerData(file);
     const { url } = await api('/serverinfo/banner', { method: 'POST', body: JSON.stringify({ data }) });
     section.banner = url;
-    toast('Wgrano baner — zapisz zmiany, żeby został w wiadomości.');
+    toast('Wgrano baner - zapisz zmiany, żeby został w wiadomości.');
   } catch (error) {
     toast(error.message, 'error');
   } finally {
@@ -3564,7 +3564,7 @@ $('#si-fill').addEventListener('click', async () => {
     const { sections, added } = await api('/serverinfo/fill', { method: 'POST', body: JSON.stringify({ sections: info.sections }) });
     info.sections = sections;
     siChanged({ editor: true });
-    toast(added ? `Dopisano ${added} ${plural(added, ['rolę', 'role', 'ról'])} — sprawdź opisy i zapisz zmiany.` : 'Wszystkie role z serwera już są na liście.');
+    toast(added ? `Dopisano ${added} ${plural(added, ['rolę', 'role', 'ról'])} - sprawdź opisy i zapisz zmiany.` : 'Wszystkie role z serwera już są na liście.');
   } catch (error) {
     toast(error.message, 'error');
   } finally {
@@ -3575,7 +3575,7 @@ async function sendServerInfoMessage(asNew) {
   const info = siInfo();
   if (!info) return;
   if (JSON.stringify(info) !== JSON.stringify(state.config.serverInfo)) {
-    toast('Najpierw zapisz zmiany (pasek na dole) — bot wysyła zapisaną wersję.', 'error');
+    toast('Najpierw zapisz zmiany (pasek na dole) - bot wysyła zapisaną wersję.', 'error');
     return;
   }
   const { problems } = siBuild(info);
@@ -3629,7 +3629,7 @@ $('#save').addEventListener('click', async () => {
     renderPreview();
     toast('Zapisano ustawienia');
     if (state.view === 'ustawienia') loadHistory();
-    // Konflikty z Discordem liczone są z zapisanych list — po zapisie sprawdzamy je od nowa.
+    // Konflikty z Discordem liczone są z zapisanych list - po zapisie sprawdzamy je od nowa.
     if (state.view === 'uprawnienia') loadDiscordCommandPerms();
   } catch (error) {
     toast(error.message, 'error');
@@ -3756,7 +3756,7 @@ const withEmoji = (style, text) => {
   return style.emoji ? `${style.emoji} ${cleaned}` : cleaned;
 };
 
-// Odzwierciedla supabase/functions/hopkostki-bot/lib/embeds.js — przykładowe dane do podglądu.
+// Odzwierciedla supabase/functions/hopkostki-bot/lib/embeds.js - przykładowe dane do podglądu.
 function previewData(action) {
   const cfg = state.draft;
   const style = cfg.actions[action];
@@ -3776,7 +3776,7 @@ function previewData(action) {
     moderator: `<@${SAMPLE.modId}>`,
     moderatorNick: SAMPLE.mod,
     powod: SAMPLE.reason,
-    czas: durationText ?? '—',
+    czas: durationText ?? '-',
     serwer: server,
     sprawa: '#42',
     typ: action === 'ban' ? 'tymczasowo' : '',
@@ -4093,7 +4093,7 @@ function tick() {
     const left = Math.max(0, Math.min(1, (until - now) / (until - created)));
     el.style.width = `${(left * 100).toFixed(2)}%`;
   });
-  // Bot sprawdza wygasanie co 30 s — po chwili odświeżamy listę.
+  // Bot sprawdza wygasanie co 30 s - po chwili odświeżamy listę.
   if (expired && !state.reloadPending) {
     state.reloadPending = true;
     setTimeout(() => {
@@ -4157,7 +4157,7 @@ function renderSearch() {
         <strong>${esc(r.text)}</strong><small>${esc(r.viewName)}${r.title && r.title !== r.text ? ` › ${esc(r.title)}` : ''}</small></button>`,
         )
         .join('')
-    : '<div class="search-empty">Nic nie znaleziono — spróbuj innego słowa.</div>';
+    : '<div class="search-empty">Nic nie znaleziono - spróbuj innego słowa.</div>';
 }
 function openSearchHit(item) {
   $('#settings-search').value = '';
@@ -4218,7 +4218,7 @@ document.addEventListener('keydown', (event) => {
 });
 
 // ---------- Tabele na telefonie ----------
-// Na wąskim ekranie tabele z danymi stają się kartami (CSS) — każda komórka dostaje podpis z nagłówka kolumny.
+// Na wąskim ekranie tabele z danymi stają się kartami (CSS) - każda komórka dostaje podpis z nagłówka kolumny.
 function labelTable(table) {
   const heads = [...table.querySelectorAll('thead th')].map((th) => th.textContent.trim());
   if (!heads.length) return;

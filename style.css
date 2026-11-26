@@ -303,7 +303,7 @@ textarea { resize: vertical; }
 .table .reason { max-width: 340px; overflow-wrap: anywhere; }
 /* Telefon: tabele z danymi (sprawy, bany, tickety…) jako karty z podpisami zamiast wąskich kolumn,
    w których długi powód rozciągał wiersze do ogromnej wysokości. Tabele-formularze (.compact) zostają tabelami.
-   Ta sama granica co menu telefonu (860 px) — także telefon poziomo i małe tablety. */
+   Ta sama granica co menu telefonu (860 px) - także telefon poziomo i małe tablety. */
 @media (max-width: 860px) {
   .table:not(.compact) thead { display: none; }
   .table:not(.compact), .table:not(.compact) tbody, .table:not(.compact) tr { display: block; width: 100%; }
@@ -326,7 +326,7 @@ textarea { resize: vertical; }
 #permission-matrix th:first-child, #permission-matrix td:first-child { position: sticky; left: 0; z-index: 1; background: var(--bg-2); box-shadow: 1px 0 0 var(--line); }
 .mobile-only { display: none; }
 /* Telefon: tabele-formularze (generatory kanałów, role w wiadomości, progi ostrzeżeń) jako karty
-   z podpisanymi polami — bez przewijania w bok. */
+   z podpisanymi polami - bez przewijania w bok. */
 @media (max-width: 860px) {
   .mobile-only { display: block; }
   .table.form-cards thead { display: none; }
@@ -488,7 +488,7 @@ textarea { resize: vertical; }
 #gateway-line { text-align: right; }
 
 /* ---------- Logowanie do panelu ---------- */
-/* margin: auto zamiast wyśrodkowania flexem — na niskim ekranie (telefon poziomo) formularz da się przewinąć,
+/* margin: auto zamiast wyśrodkowania flexem - na niskim ekranie (telefon poziomo) formularz da się przewinąć,
    zamiast uciekać poza ekran razem z przyciskiem logowania. */
 .login-gate {
   position: fixed; inset: 0; background: var(--bg); display: flex; overflow-y: auto;
@@ -690,7 +690,7 @@ select.chip-add:hover { border-color: var(--blurple); }
 .rich .spoiler { padding: 0 3px; border-radius: 4px; background: #2b2d31; color: transparent; cursor: pointer; }
 .rich .spoiler.on { background: rgba(255, 255, 255, .1); color: inherit; }
 
-/* Eventy: wygląd (kolory — gradient, baner) z podglądem jak na stronie eventów */
+/* Eventy: wygląd (kolory - gradient, baner) z podglądem jak na stronie eventów */
 .ct-theme > span { display: block; margin-bottom: .45rem; }
 .ct-tp { --c: #8b7bff; --cg: #cfc7ff; overflow: hidden; border: 1px solid color-mix(in srgb, var(--c) 40%, var(--line)); border-radius: 12px; background: var(--bg-2); }
 .ct-tp-banner { position: relative; aspect-ratio: 16 / 4; background: var(--bg); }

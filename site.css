@@ -1,0 +1,189 @@
+/* Wspólny wygląd stron enho.pl (strona główna, ranking, eventy, 404).
+   Zasady: .claude/skills/site-design, kontrakt kolorów: .tastemaker/style-lock.md */
+:root {
+  color-scheme: dark;
+  /* Kolory: szarości z niebieskim odcieniem, jeden akcent (cyjan z banera serwera) */
+  --bg: #171b23;
+  --surface: #1e232d;
+  --raised: #262c38;
+  --raised-hover: #2c3341;
+  --text: #e5eaf1;
+  --muted: #9aa6b7;
+  --faint: #8d99ab;
+  --field-border: #69768a;
+  --accent: #4cc3c8;
+  --accent-hover: #63d0d4;
+  --on-accent: #06282a;
+  --gold: #d8b35c;
+  --silver: #a9b4c2;
+  --bronze: #c38a5e;
+  --ok: #5bbf8a;
+  --warn: #d9a64e;
+  --danger: #e06c70;
+  /* Warstwowe cienie zamiast ramek */
+  --shadow-sm: 0 1px 1px rgb(3 7 12 / 0.4), 0 2px 4px rgb(3 7 12 / 0.3);
+  --shadow: 0 1px 2px rgb(3 7 12 / 0.45), 0 4px 10px rgb(3 7 12 / 0.35), 0 14px 30px rgb(3 7 12 / 0.3);
+  --img-edge: oklch(1 0 0 / 0.1);
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r: 10px;
+  /* Skala tekstu (rem, żeby działał rozmiar czcionki z przeglądarki) */
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.25rem;
+  --fs-2xl: 1.5rem;
+  --fs-3xl: 1.875rem;
+  --fs-4xl: 2.25rem;
+  --fs-5xl: 3rem;
+  --fs-6xl: 3.75rem;
+  /* Odstępy: tylko te wartości */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+  --sp-20: 80px;
+  --sp-24: 96px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --display: 'Manrope', 'Inter', system-ui, sans-serif;
+  --wrap: 1120px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background-color: var(--bg);
+  color: var(--text);
+  font: 400 var(--fs-base) / 1.5 var(--font);
+}
+
+img { max-width: 100%; }
+
+a { color: var(--accent); text-underline-offset: 3px; text-decoration-thickness: from-font; }
+
+a, button, summary { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+h1, h2, h3 { font-family: var(--display); font-weight: 700; line-height: 1.15; margin: 0; text-wrap: balance; }
+h1 { font-weight: 800; }
+
+p, li, dd { text-wrap: pretty; }
+
+.i {
+  width: 1.25em;
+  height: 1.25em;
+  flex: none;
+  fill: currentColor;
+  vertical-align: -0.25em;
+}
+
+.wrap { width: 100%; max-width: var(--wrap); margin: 0 auto; padding: 0 var(--sp-6); }
+
+/* Link „Przejdź do treści” dla klawiatury: widoczny dopiero po Tab. */
+.skip {
+  position: absolute;
+  z-index: 50;
+  left: var(--sp-4);
+  top: var(--sp-3);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-sm);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+.skip:focus-visible { transform: none; }
+
+/* Górny pasek: serwer po lewej, strony po prawej. Aktywna strona: wypełniona ikona. */
+.site-nav { position: relative; z-index: 5; }
+.site-nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); min-height: 64px; }
+.site-brand { display: inline-flex; align-items: center; gap: var(--sp-3); color: var(--text); text-decoration: none; font-family: var(--display); font-weight: 600; font-size: var(--fs-base); }
+.site-brand img { width: 32px; height: 32px; border-radius: 50%; outline: 1px solid var(--img-edge); outline-offset: -1px; }
+.site-links { display: flex; align-items: center; gap: var(--sp-1); margin: 0; padding: 0; list-style: none; }
+.site-links a { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: 40px; padding: 0 var(--sp-4); border-radius: var(--r-sm); color: var(--muted); font-weight: 500; text-decoration: none; transition: background-color 200ms var(--ease), color 200ms var(--ease); }
+.site-links a[aria-current='page'] { color: var(--text); }
+.site-links a[aria-current='page'] .i { color: var(--accent); }
+.site-links .nav-join { min-height: 40px; margin-left: var(--sp-2); padding: 0 var(--sp-4); background: var(--accent); color: var(--on-accent); font-size: var(--fs-sm); font-weight: 600; }
+
+/* Baner strony na całą szerokość ekranu (ranking, eventy; na stronie głównej z efektem przewijania). */
+body { overflow-x: clip; }
+.bleed { width: 100vw; margin-left: calc(50% - 50vw); }
+
+/* Przyciski: tekst mówi, co się stanie. Kolor akcentu tylko dla głównej akcji na ekranie. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  padding: 0 var(--sp-6);
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: var(--raised);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  font: 600 var(--fs-base) / 1.5 var(--font);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 200ms var(--ease), color 200ms var(--ease), transform 200ms var(--ease);
+}
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.6; cursor: progress; transform: none; }
+.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-big { min-height: 56px; padding: 0 var(--sp-8); border-radius: var(--r); font-size: var(--fs-lg); }
+.btn-quiet { background: transparent; box-shadow: none; color: var(--muted); }
+.btn .discord { width: 22px; height: 22px; fill: currentColor; }
+
+/* Hover tylko tam, gdzie jest kursor: na telefonie :hover zostaje po dotknięciu. */
+@media (hover: hover) {
+  .site-links a:hover { color: var(--text); background: var(--surface); }
+  .btn:hover { background: var(--raised-hover); color: var(--text); }
+  .btn-primary:hover { background: var(--accent-hover); color: var(--on-accent); }
+  .btn-quiet:hover { background: var(--surface); color: var(--text); }
+  .site-foot a:hover { color: var(--text); }
+  .site-links .nav-join:hover { background: var(--accent-hover); color: var(--on-accent); }
+}
+
+.site-foot { margin-top: var(--sp-24); padding: var(--sp-8) 0 var(--sp-10); color: var(--faint); font-size: var(--fs-sm); }
+.site-foot .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3) var(--sp-6); }
+.site-foot nav { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-6); }
+.site-foot a { color: var(--muted); text-decoration: none; }
+
+/* Tło: grafit #171b23 i drobne punkty z tsParticles (particles.js), które powoli dryfują. */
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+@media (max-width: 640px) {
+  .wrap { padding: 0 var(--sp-4); }
+  .site-brand span { display: none; }
+  .site-links a { padding: 0 var(--sp-3); }
+  .site-links .nav-join { display: none; }
+  .btn-big { width: 100%; }
+}
+
+/* Tryb wymuszonych kolorów (Windows) zdejmuje cienie: krawędzie zostają dzięki ramkom. */
+@media (forced-colors: active) {
+  .card, .btn, .ct-card, .table, .toolbar, .profile, .ct-strip, .ct-facts, .ct-me { border: 1px solid CanvasText; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn, .site-links a { transition: none; }
+}

@@ -3,32 +3,520 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Entuzjaści Hopkostki</title>
-  <meta name="description" content="Serwer Discord Entuzjaści Hopkostki — ranking poziomów i eventy serwera.">
-  <meta name="theme-color" content="#0d1113">
+  <script>
+    // Stare linki do panelu (był pod tym adresem): #sekcja albo #login=… z komendy /login idą na /panel z tym samym #.
+    if (location.hash.length > 1) location.replace('panel' + location.search + location.hash);
+  </script>
+  <title>Entuzjaści Hopkostki, serwer na Discordzie</title>
+  <meta name="description" content="Serwer na Discordzie, na którym za aktywność dostajesz XP i kolejne poziomy. Ranking tygodnia co tydzień startuje od zera, a w eventach są nagrody.">
+  <meta name="theme-color" content="#171b23">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Entuzjaści Hopkostki">
-  <meta property="og:title" content="Entuzjaści Hopkostki">
-  <meta property="og:description" content="Ranking poziomów i eventy serwera Entuzjaści Hopkostki.">
+  <meta property="og:title" content="Entuzjaści Hopkostki, serwer na Discordzie">
+  <meta property="og:description" content="Za aktywność dostajesz XP i kolejne poziomy. Ranking tygodnia co tydzień startuje od zera, a w eventach są nagrody.">
   <meta property="og:image" content="https://enho.pl/img/banner-og.jpg">
+  <meta property="og:url" content="https://enho.pl/">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" type="image/png" href="img/favicon.png">
-  <script>
-    // Strona główna → ranking poziomów. Panel jest pod /panel; stare linki do panelu (był tutaj) — #sekcja albo
-    // #login=… z komendy /login — idą na /panel z tym samym #.
-    (function () {
-      var h = location.hash;
-      location.replace((h && h.length > 1 ? 'panel' : 'ranking') + location.search + (h && h.length > 1 ? h : ''));
-    })();
-  </script>
-  <noscript><meta http-equiv="refresh" content="0; url=ranking"></noscript>
+  <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://ucjmbdogtzztrkorqzjq.supabase.co" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="site.css?v=b4f624a">
+  <link rel="stylesheet" href="vendor/lenis.css">
   <style>
-    :root { color-scheme: dark; }
-    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0d1113; color: #8b989e; font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
-    a { color: #e6ebed; }
+    /* Strona główna. Zasady: .claude/skills/site-design; struktura: hero, hasło, teraz na serwerze, najaktywniejsi, jak dołączyć, pytania, zaproszenie. */
+    /* Baner przez całą szerokość ekranu. Jedyny efekt przewijania na stronie: przy przewijaniu krawędzie
+       zjeżdżają do kolumny treści, rogi się zaokrąglają, a obraz lekko się oddala (--p od 0 do 1, liczone w JS). */
+    .hero { margin-top: 0; }
+    .hero-media {
+      --p: 0;
+      --zoom: 0.1;
+      position: relative; width: 100vw; margin-left: calc(50% - 50vw); height: clamp(300px, 56vw, 78vh); overflow: hidden; background: var(--surface);
+      --intro: 0;
+      clip-path: inset(0 calc(var(--p) * var(--gut, 24px)) calc(var(--intro) * 100%) calc(var(--p) * var(--gut, 24px)) round calc(var(--p) * var(--r)));
+    }
+    .hero-banner { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 42%; transform: scale(calc(1 + var(--zoom) * (1 - var(--p)))); transform-origin: 50% 40%; }
+    .hero-media.scrub, .hero-media.scrub .hero-banner { will-change: clip-path, transform; }
+    /* Nazwa serwera: słowa wyjeżdżają spod maski raz, po wczytaniu (meng-masked-reveal, React Bits MaskedHeading).
+       Ukryte tylko, gdy działa GSAP (klasa has-motion), więc bez JS wszystko widać od razu. */
+    .hero h1 .mask { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: 0.08em; }
+    .hero h1 .word { display: inline-block; }
+    html.has-motion .hero .lead, html.has-motion .hero .cta-row, html.has-motion .hero .members { visibility: hidden; }
+    .hero-body { padding: 0; }
+    .hero h1 { max-width: 680px; margin-top: var(--sp-10); font-size: var(--fs-4xl); font-weight: 800; line-height: 1.1; }
+    .lead { max-width: 680px; margin: var(--sp-4) 0 var(--sp-8); color: var(--muted); font-size: var(--fs-lg); line-height: 1.55; }
+    .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); }
+    .members { min-height: 24px; margin: var(--sp-4) 0 0; color: var(--muted); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+    .members b { color: var(--text); font-weight: 600; }
+    .online { display: inline-block; width: 8px; height: 8px; margin: 0 var(--sp-2) 1px var(--sp-1); border-radius: 50%; background: var(--ok); }
+
+    /* Hasło: słowa rozjaśniają się po kolei, gdy sekcja wjeżdża na ekran (bez JS i przy ograniczonym ruchu od razu w pełnym kolorze). */
+    .tagline { margin-top: var(--sp-24); padding: var(--sp-8) var(--sp-2); }
+    .tagline p { max-width: 760px; margin: 0; font-family: var(--display); font-size: var(--fs-3xl); font-weight: 600; line-height: 1.2; text-wrap: balance; }
+    .tagline.armed .w { color: rgb(229 234 241 / 0.28); }
+
+    .block { margin-top: var(--sp-24); }
+    .block > h2 { margin-bottom: var(--sp-6); font-size: var(--fs-3xl); }
+    .block-foot { margin-top: var(--sp-6); }
+    .card { padding: var(--sp-6); border: 1px solid transparent; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); }
+
+    .now-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--sp-6); }
+    .ev { display: flex; flex-direction: column; gap: var(--sp-4); }
+    .ev h3 { display: flex; align-items: flex-start; gap: var(--sp-3); font-size: var(--fs-xl); }
+    .ev h3 .i { margin-top: 1px; color: var(--c, var(--accent)); }
+    .ev-when { display: flex; align-items: center; gap: var(--sp-2); margin: calc(var(--sp-2) * -1) 0 0; color: var(--muted); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+    .facts { display: grid; grid-template-columns: max-content 1fr; gap: var(--sp-2) var(--sp-4); margin: 0; font-size: var(--fs-sm); }
+    .facts dt { color: var(--faint); }
+    .facts dd { margin: 0; overflow-wrap: anywhere; }
+    .ev .btn { align-self: flex-start; margin-top: auto; }
+    .empty { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-4) var(--sp-6); }
+    .empty p { max-width: 56ch; margin: 0; color: var(--muted); }
+
+    .top-list { margin: 0; padding: var(--sp-3) var(--sp-4); list-style: none; }
+    .top-list li { display: grid; grid-template-columns: 24px 44px minmax(0, 1fr) auto; align-items: center; gap: var(--sp-4); padding: var(--sp-3); border-radius: var(--r-sm); }
+    .pos { font-family: var(--display); font-weight: 700; font-size: var(--fs-xl); text-align: center; }
+    .av { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: var(--raised); color: var(--muted); font-weight: 600; outline: 1px solid var(--img-edge); outline-offset: -1px; }
+    .who { min-width: 0; }
+    .who b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+    .who small { color: var(--faint); font-size: var(--fs-sm); }
+    .xp { font-variant-numeric: tabular-nums; text-align: right; font-weight: 600; white-space: nowrap; }
+    .xp small { color: var(--faint); font-weight: 400; font-size: var(--fs-sm); }
+
+    /* Szkielety w kształcie prawdziwych kart, zanim przyjdą dane. */
+    .sk { display: block; border-radius: var(--r-sm); background: var(--raised); animation: sk 1.2s var(--ease) infinite alternate; }
+    @keyframes sk { to { opacity: 0.45; } }
+    .sk-card { display: grid; gap: var(--sp-4); }
+    .sk-card .sk:nth-child(1) { width: 70%; height: 24px; }
+    .sk-card .sk:nth-child(2) { width: 45%; height: 16px; }
+    .sk-card .sk:nth-child(3) { width: 85%; height: 60px; }
+    .sk-card .sk:nth-child(4) { width: 50%; height: 44px; }
+
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--sp-6); margin: 0; padding: 0; list-style: none; counter-reset: step; }
+    .steps li { counter-increment: step; }
+    .steps li::before { content: counter(step); display: block; margin-bottom: var(--sp-3); color: var(--accent); font-family: var(--display); font-size: var(--fs-4xl); font-weight: 700; line-height: 1; }
+    .steps h3 { margin-bottom: var(--sp-2); font-size: var(--fs-xl); }
+    .steps p { margin: 0; color: var(--muted); }
+    .steps code, .faq code { padding: 1px 6px; border-radius: var(--r-xs); background: var(--raised); color: var(--text); font: 500 0.9em ui-monospace, 'SFMono-Regular', Menlo, monospace; }
+
+    .faq { max-width: 760px; }
+    .faq details + details { margin-top: var(--sp-2); }
+    .faq summary { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-4) var(--sp-6); border-radius: var(--r-sm); background: var(--surface); box-shadow: var(--shadow-sm); font-weight: 600; cursor: pointer; list-style: none; transition: background-color 200ms var(--ease); }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary .i { color: var(--faint); transition: transform 200ms var(--ease); }
+    .faq details[open] summary .i { transform: rotate(180deg); }
+    .faq .answer { padding: var(--sp-4) var(--sp-6) var(--sp-2); color: var(--muted); }
+    .faq .answer p { margin: 0 0 var(--sp-2); }
+    .faq .answer b { color: var(--text); font-weight: 600; }
+    .faq .answer ul { margin: 0 0 var(--sp-2); padding-left: 1.2em; }
+
+    .end { margin-top: var(--sp-24); padding: var(--sp-10) var(--sp-10) var(--sp-12); }
+    .end h2 { font-size: var(--fs-3xl); }
+    .end p { max-width: 52ch; margin: var(--sp-3) 0 var(--sp-6); color: var(--muted); }
+
+    @media (hover: hover) {
+      .top-list li:hover { background: var(--raised); }
+      .faq summary:hover { background: var(--raised); }
+    }
+    @media (min-width: 720px) {
+      .hero h1 { font-size: var(--fs-6xl); }
+      .tagline p { font-size: var(--fs-5xl); }
+    }
+    @media (max-width: 640px) {
+      .hero-media { --zoom: 0.04; height: auto; aspect-ratio: 16 / 9; }
+      .block, .tagline, .end { margin-top: var(--sp-16); }
+      .card { padding: var(--sp-4); }
+      .top-list { padding: var(--sp-2); }
+      .top-list li { grid-template-columns: 20px 40px minmax(0, 1fr) auto; gap: var(--sp-3); padding: var(--sp-3) var(--sp-2); }
+      .av { width: 40px; height: 40px; }
+      .faq summary { padding: var(--sp-4); }
+      .faq .answer { padding: var(--sp-3) var(--sp-4) var(--sp-2); }
+      .end { padding: var(--sp-8) var(--sp-6); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .sk { animation: none; }
+      .faq summary, .faq summary .i { transition: none; }
+    }
   </style>
 </head>
 <body>
-  <p><a href="ranking">Ranking poziomów</a> · <a href="event">Eventy serwera</a></p>
+  <a class="skip" href="#tresc">Przejdź do treści</a>
+  <header class="site-nav">
+    <div class="wrap">
+      <a class="site-brand" href="./" translate="no"><img src="img/icon.webp" alt="" width="32" height="32"><span>Entuzjaści Hopkostki</span></a>
+      <ul class="site-links">
+        <li><a href="ranking"><svg class="i" aria-hidden="true"><use href="icons.svg#trophy"></use></svg>Ranking</a></li>
+        <li><a href="event"><svg class="i" aria-hidden="true"><use href="icons.svg#calendar-dots"></use></svg>Eventy</a></li>
+        <li><a class="nav-join" href="https://discord.gg/FuqNCJhVYs" rel="noopener">Dołącz</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <main class="wrap" id="tresc" tabindex="-1">
+    <section class="hero">
+      <div class="hero-media" id="hero-media"><img class="hero-banner" src="img/banner.webp" alt="Baner serwera Entuzjaści Hopkostki" width="1600" height="900" fetchpriority="high"></div>
+      <div class="hero-body">
+        <h1 translate="no" id="hero-title">Entuzjaści Hopkostki</h1>
+        <p class="lead">Serwer na Discordzie, na którym za aktywność dostajesz XP i wbijasz kolejne poziomy. Ranking tygodnia co tydzień startuje od zera, a w eventach są nagrody.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary btn-big" href="https://discord.gg/FuqNCJhVYs" rel="noopener">
+            <svg class="discord" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.6 5.3A16.6 16.6 0 0 0 15.5 4l-.5 1a15.4 15.4 0 0 0-6 0L8.5 4a16.6 16.6 0 0 0-4.1 1.3C1.8 9.2 1.1 13 1.4 16.7a16.7 16.7 0 0 0 5.1 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a11.9 11.9 0 0 0 11.4 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a16.6 16.6 0 0 0 5.1-2.6c.4-4.3-.7-8.1-3-11.4zM8.7 14.4c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>
+            Dołącz do serwera
+          </a>
+          <a class="btn btn-big btn-quiet" href="ranking">Zobacz ranking</a>
+        </div>
+        <p class="members" id="members" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section class="tagline" id="tagline" aria-label="Ranking tygodnia">
+      <p>Nie musisz być tu od początku. <span class="hl">Ranking tygodnia</span> co tydzień startuje od zera.</p>
+    </section>
+
+    <section class="block" aria-labelledby="now-h">
+      <h2 id="now-h">Teraz na serwerze</h2>
+      <div class="now-grid" id="now" aria-live="polite" aria-busy="true">
+        <div class="card sk-card" aria-hidden="true"><span class="sk"></span><span class="sk"></span><span class="sk"></span><span class="sk"></span></div>
+        <div class="card sk-card" aria-hidden="true"><span class="sk"></span><span class="sk"></span><span class="sk"></span><span class="sk"></span></div>
+      </div>
+    </section>
+
+    <section class="block" id="top-block" aria-labelledby="top-h" hidden>
+      <h2 id="top-h">Najaktywniejsi w tym tygodniu</h2>
+      <ol class="card top-list" id="top"></ol>
+      <div class="block-foot"><a class="btn" href="ranking">Zobacz cały ranking</a></div>
+    </section>
+
+    <section class="block" aria-labelledby="join-h">
+      <h2 id="join-h">Jak dołączyć</h2>
+      <ol class="steps">
+        <li>
+          <h3>Kliknij zaproszenie</h3>
+          <p>Przycisk „Dołącz do serwera” otwiera zaproszenie w aplikacji Discord albo w przeglądarce.</p>
+        </li>
+        <li>
+          <h3>Przyjmij je</h3>
+          <p>Nie masz konta na Discordzie? Założysz je w tym samym oknie, zanim wejdziesz na serwer.</p>
+        </li>
+        <li>
+          <h3>Napisz pierwszą wiadomość</h3>
+          <p>Od niej liczy się Twoje XP. Swój poziom sprawdzisz na serwerze komendą <code translate="no">/rank</code>.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section class="block faq" aria-labelledby="faq-h">
+      <h2 id="faq-h">Pytania</h2>
+      <details>
+        <summary>Jak zdobywa się XP?<svg class="i" aria-hidden="true"><use href="icons.svg#caret-down"></use></svg></summary>
+        <div class="answer" id="faq-xp"><p>Za wiadomości na serwerze. Bot liczy je z limitem czasu, więc spam nic nie daje.</p></div>
+      </details>
+      <details>
+        <summary>Co dają kolejne poziomy?<svg class="i" aria-hidden="true"><use href="icons.svg#caret-down"></use></svg></summary>
+        <div class="answer" id="faq-rewards"><p>Wyższe miejsce w rankingu, a za niektóre poziomy role na serwerze. Pełna lista jest na stronie <a href="ranking">rankingu</a>.</p></div>
+      </details>
+      <details>
+        <summary>Jak działają eventy?<svg class="i" aria-hidden="true"><use href="icons.svg#caret-down"></use></svg></summary>
+        <div class="answer"><p>Logujesz się na <a href="event">stronie eventów</a> przez Discord i zapisujesz się. Od zapisu liczą się Twoje zaproszenia albo wiadomości, a po spełnieniu warunku bierzesz udział w losowaniu nagrody.</p></div>
+      </details>
+      <details>
+        <summary>Co widzi strona, gdy loguję się przez Discord?<svg class="i" aria-hidden="true"><use href="icons.svg#caret-down"></use></svg></summary>
+        <div class="answer"><p>Tylko Twoją nazwę i avatar. Strona nie ma dostępu do Twoich wiadomości ani listy serwerów.</p></div>
+      </details>
+      <details>
+        <summary>Czy mogę zniknąć z rankingu na stronie?<svg class="i" aria-hidden="true"><use href="icons.svg#caret-down"></use></svg></summary>
+        <div class="answer"><p>Tak. Wpisz na serwerze <code translate="no">/prywatnosc</code> i wybierz <b>Ukryj mnie</b>. Twoje miejsce zostaje, ale bez nicku i avatara.</p></div>
+      </details>
+      <details>
+        <summary>Ile kosztuje dołączenie?<svg class="i" aria-hidden="true"><use href="icons.svg#caret-down"></use></svg></summary>
+        <div class="answer"><p>Nic. Serwer jest darmowy i możesz z niego wyjść w każdej chwili.</p></div>
+      </details>
+    </section>
+
+    <section class="card end" aria-labelledby="end-h">
+      <h2 id="end-h">Wpadnij na serwer</h2>
+      <p>Zaproszenie otworzy się w aplikacji Discord albo w przeglądarce. Dołączenie nic nie kosztuje.</p>
+      <a class="btn btn-primary btn-big" href="https://discord.gg/FuqNCJhVYs" rel="noopener">
+        <svg class="discord" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.6 5.3A16.6 16.6 0 0 0 15.5 4l-.5 1a15.4 15.4 0 0 0-6 0L8.5 4a16.6 16.6 0 0 0-4.1 1.3C1.8 9.2 1.1 13 1.4 16.7a16.7 16.7 0 0 0 5.1 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a11.9 11.9 0 0 0 11.4 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a16.6 16.6 0 0 0 5.1-2.6c.4-4.3-.7-8.1-3-11.4zM8.7 14.4c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>
+        Dołącz do serwera
+      </a>
+    </section>
+  </main>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <span translate="no">Entuzjaści Hopkostki</span>
+      <nav aria-label="Strony">
+        <a href="ranking">Ranking poziomów</a>
+        <a href="event">Eventy serwera</a>
+        <a href="panel">Panel moderacji</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="vendor/gsap.min.js"></script>
+  <script src="vendor/ScrollTrigger.min.js"></script>
+  <script src="vendor/lenis.min.js"></script>
+  <script>
+    'use strict';
+    const BASE = ['localhost', '127.0.0.1'].includes(location.hostname)
+      ? 'public'
+      : 'https://ucjmbdogtzztrkorqzjq.supabase.co/functions/v1/hopkostki-bot/panel/public';
+    const INVITE = 'https://discord.gg/FuqNCJhVYs';
+    const $ = (s) => document.querySelector(s);
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+    const num = (n) => new Intl.NumberFormat('pl-PL').format(n);
+    const plural = (n, one, few, many) => (n === 1 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? few : many);
+    const icon = (name) => `<svg class="i" aria-hidden="true"><use href="icons.svg#${name}"></use></svg>`;
+    const XP_THEME_ICON = { confetti: 'confetti', fire: 'fire', snow: 'snowflake', stars: 'sparkle', neon: 'lightning', hearts: 'heart', halloween: 'ghost', leaves: 'leaf', sakura: 'flower', coins: 'coins', storm: 'cloud-lightning', bubbles: 'drop', matrix: 'binary' };
+    const KIND_ICON = { invites: 'user-plus', messages: 'chat-circle', mixed: 'users' };
+    const XP_KINDS = { message: 'wiadomości', voice: 'czas na głosowych', reaction: 'reakcje' };
+    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+    async function get(path) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 10000);
+      try {
+        const res = await fetch(`${BASE}/${path}`, { signal: ctrl.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    function timeLeft(ms) {
+      const m = Math.max(1, Math.round(ms / 60000));
+      const d = Math.floor(m / 1440);
+      const h = Math.floor((m % 1440) / 60);
+      const min = m % 60;
+      if (d) return `${d} ${plural(d, 'dzień', 'dni', 'dni')}${h ? ` ${h} h` : ''}`;
+      if (h) return `${h} h${min ? ` ${min} min` : ''}`;
+      return `${min} min`;
+    }
+    const seconds = (s) => (s % 60 === 0 && s >= 60 ? (s === 60 ? 'minutę' : `${s / 60} ${plural(s / 60, 'minutę', 'minuty', 'minut')}`) : `${s} s`);
+
+    function task(c) {
+      const inv = c.invites > 0 ? `zaproś ${c.invites} ${plural(c.invites, 'osobę', 'osoby', 'osób')}` : '';
+      const msg = c.messages > 0 ? `napisz ${c.messages} ${plural(c.messages, 'wiadomość', 'wiadomości', 'wiadomości')}` : '';
+      const text = [inv, msg].filter(Boolean).join(' i ');
+      return text.charAt(0).toUpperCase() + text.slice(1);
+    }
+
+    function contestCard(c, now) {
+      const live = c.status === 'live';
+      const when = live ? `Koniec za ${timeLeft(Date.parse(c.endsAt) - now)}` : `Start za ${timeLeft(Date.parse(c.startsAt) - now)}`;
+      const facts = [['Zadanie', task(c)], c.prize ? ['Nagroda', c.prize] : null, ['Zapisani', `${num(c.participants)} ${plural(c.participants, 'osoba', 'osoby', 'osób')}`]]
+        .filter(Boolean)
+        .map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`)
+        .join('');
+      const color = /^#[0-9a-f]{6}$/i.test(c.color ?? '') ? ` style="--c:${c.color}"` : '';
+      return `<article class="card ev"${color}>
+        <h3>${icon(KIND_ICON[c.type] ?? 'calendar-dots')}<span>${esc(c.name)}</span></h3>
+        <p class="ev-when">${icon('clock')}${when}</p>
+        <dl class="facts">${facts}</dl>
+        <a class="btn" href="event#${encodeURIComponent(c.id)}">${live ? 'Zobacz event i zapisz się' : 'Zobacz event'}</a>
+      </article>`;
+    }
+
+    function xpCard(e, now) {
+      const kinds = (e.kinds ?? []).map((k) => XP_KINDS[k]).filter(Boolean).join(', ');
+      const facts = [['Mnożnik', `XP ×${num(e.multiplier)}`], kinds ? ['Liczy się', kinds] : null]
+        .filter(Boolean)
+        .map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`)
+        .join('');
+      return `<article class="card ev">
+        <h3>${icon(XP_THEME_ICON[e.theme] ?? 'sparkle')}<span>${esc(e.name)}</span></h3>
+        <p class="ev-when">${icon('clock')}Koniec za ${timeLeft(Date.parse(e.endsAt) - now)}</p>
+        <dl class="facts">${facts}</dl>
+        <a class="btn" href="ranking">Zobacz ranking wydarzenia</a>
+      </article>`;
+    }
+
+    function renderNow(contests, board) {
+      const now = Date.now();
+      const list = (contests?.contests ?? []).filter((c) => c.status === 'live' || c.status === 'upcoming');
+      list.sort((a, b) => (a.status === b.status ? Date.parse(a.endsAt) - Date.parse(b.endsAt) : a.status === 'live' ? -1 : 1));
+      const cards = list.slice(0, 3).map((c) => contestCard(c, now));
+      const xp = board?.events?.current;
+      if (xp) cards.unshift(xpCard(xp, now));
+      const box = $('#now');
+      box.innerHTML = cards.length
+        ? cards.join('')
+        : `<div class="card empty">
+            <p>Teraz nie trwa żaden event. Nowe ogłaszamy na serwerze, więc dołącz, żeby nie przegapić następnego.</p>
+            <a class="btn btn-primary" href="${INVITE}" rel="noopener">Dołącz do serwera</a>
+          </div>`;
+      box.setAttribute('aria-busy', 'false');
+    }
+
+    function row(p, i, week) {
+      const name = p.displayName || p.name;
+      const color = ['var(--gold)', 'var(--silver)', 'var(--bronze)'][i];
+      const initial = `<span class="av" aria-hidden="true">${esc((name || '?').trim().charAt(0).toUpperCase())}</span>`;
+      const avatar = p.avatar ? `<img class="av" src="${esc(p.avatar)}" alt="" width="44" height="44" loading="lazy">` : initial;
+      const xp = week ? p.periodXp : p.xp;
+      return `<li>
+        <span class="pos" style="color:${color}">${i + 1}</span>
+        ${avatar}
+        <span class="who"><b>${esc(name)}</b><small>poziom ${num(p.level)}</small></span>
+        <span class="xp">${num(xp ?? 0)} <small>XP</small></span>
+      </li>`;
+    }
+
+    async function renderTop(weekBoard) {
+      let board = weekBoard;
+      let week = true;
+      if (!board?.enabled) return;
+      if ((board.entries ?? []).length < 3) {
+        board = await get('leaderboard?limit=3').catch(() => null);
+        week = false;
+        $('#top-h').textContent = 'Najwyżej w rankingu';
+      }
+      const top = (board?.entries ?? []).slice(0, 3);
+      if (!top.length) return;
+      $('#top').innerHTML = top.map((p, i) => row(p, i, week)).join('');
+      // Avatar, który się nie wczytał (np. usunięty), zastępuje pierwsza litera nazwy.
+      $('#top').querySelectorAll('img.av').forEach((img) => {
+        img.addEventListener('error', () => {
+          const span = document.createElement('span');
+          span.className = 'av';
+          span.setAttribute('aria-hidden', 'true');
+          span.textContent = (img.closest('li').querySelector('.who b').textContent.trim().charAt(0) || '?').toUpperCase();
+          img.replaceWith(span);
+        }, { once: true });
+      });
+      $('#top-block').hidden = false;
+    }
+
+    function renderMembers(board) {
+      const g = board?.guild;
+      if (!g?.memberCount) return;
+      const online = g.onlineCount ? `, <span class="online" aria-hidden="true"></span><b>${num(g.onlineCount)}</b> teraz online` : '';
+      $('#members').innerHTML = `<b>${num(g.memberCount)}</b> ${plural(g.memberCount, 'osoba', 'osoby', 'osób')} na serwerze${online}`;
+    }
+
+    // Odpowiedzi w pytaniach z prawdziwych ustawień bota (stawki XP, role za poziomy).
+    function renderFaq(board) {
+      const r = board?.rates;
+      if (r) {
+        const parts = [];
+        if (r.message) parts.push(`<li>Za wiadomość od <b>${num(r.message.min)} do ${num(r.message.max)} XP</b>, najwyżej raz na ${seconds(r.message.cooldown)}.</li>`);
+        if (r.voice) parts.push(`<li>Za czas na kanale głosowym od <b>${num(r.voice.min)} do ${num(r.voice.max)} XP</b> co ${seconds(r.voice.cooldown)}${r.voice.minMembers > 1 ? `, gdy na kanale są co najmniej ${r.voice.minMembers} osoby` : ''}.</li>`);
+        if (r.reaction) parts.push(`<li>Za reakcje od <b>${num(r.reaction.min)} do ${num(r.reaction.max)} XP</b>, najwyżej raz na ${seconds(r.reaction.cooldown)}.</li>`);
+        if (parts.length) $('#faq-xp').innerHTML = `<p>Bot liczy aktywność z limitem czasu, więc spam nic nie daje.</p><ul>${parts.join('')}</ul>`;
+      }
+      const rewards = board?.rewards ?? [];
+      if (rewards.length) {
+        const items = rewards.slice(0, 8).map((x) => `<li>Poziom ${num(x.level)}: rola <b>${esc(x.name)}</b></li>`).join('');
+        const more = rewards.length > 8 ? `<p>Pozostałe role są na stronie <a href="ranking">rankingu</a>.</p>` : '';
+        $('#faq-rewards').innerHTML = `<p>Wyższe miejsce w rankingu i role na serwerze:</p><ul>${items}</ul>${more}`;
+      }
+    }
+
+    // ---------- Ruch: GSAP + ScrollTrigger + Lenis (meng-cinematic-gsap-lenis-motion-system) ----------
+    // Jeden efekt przewijania: baner na całą szerokość zjeżdża do kolumny treści. Do tego wjazd hero po wczytaniu
+    // i hasło, którego słowa zapalają się w rytm przewijania. Przy ograniczonym ruchu albo bez bibliotek: wszystko statyczne.
+    const MOTION = !reduceMotion.matches && window.gsap && window.ScrollTrigger;
+
+    function splitWords(el, cls) {
+      const words = [];
+      const walk = (node, hl) => {
+        for (const child of [...node.childNodes]) {
+          if (child.nodeType === Node.TEXT_NODE) {
+            const frag = document.createDocumentFragment();
+            for (const part of child.textContent.split(/(\s+)/)) {
+              if (!part) continue;
+              if (/^\s+$/.test(part)) { frag.append(part); continue; }
+              const word = document.createElement('span');
+              word.className = hl ? `${cls} hl` : cls;
+              word.textContent = part;
+              words.push(word);
+              if (cls === 'word') {
+                const mask = document.createElement('span');
+                mask.className = 'mask';
+                mask.append(word);
+                frag.append(mask);
+              } else {
+                frag.append(word);
+              }
+            }
+            child.replaceWith(frag);
+          } else if (child.nodeType === Node.ELEMENT_NODE) {
+            walk(child, hl || child.classList.contains('hl'));
+          }
+        }
+      };
+      el.setAttribute('aria-label', el.textContent.replace(/\s+/g, ' ').trim());
+      walk(el, false);
+      el.querySelectorAll('.mask, .w').forEach((x) => x.setAttribute('aria-hidden', 'true'));
+      return words;
+    }
+
+    function initMotion() {
+      if (!MOTION) return;
+      gsap.registerPlugin(ScrollTrigger);
+      gsap.defaults({ ease: 'power3.out', duration: 0.85 });
+      document.documentElement.classList.add('has-motion');
+
+      // Płynne przewijanie, zsynchronizowane z ScrollTriggerem. Klawiatura i kotwice działają jak zwykle.
+      if (window.Lenis) {
+        const lenis = new Lenis({ lerp: 0.08, smoothWheel: true, wheelMultiplier: 0.9, anchors: true });
+        lenis.on('scroll', ScrollTrigger.update);
+        gsap.ticker.add((time) => lenis.raf(time * 1000));
+        gsap.ticker.lagSmoothing(0);
+        $('.skip').addEventListener('click', () => $('#tresc').focus({ preventScroll: true }));
+      }
+
+      // Baner: szerokość kolumny treści liczona przy każdym odświeżeniu ScrollTriggera (zmiana rozmiaru okna).
+      const media = $('#hero-media');
+      const measure = () => {
+        const column = $('main.wrap');
+        const cs = getComputedStyle(column);
+        const inner = column.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        media.style.setProperty('--gut', `${Math.max(0, (media.clientWidth - inner) / 2)}px`);
+      };
+      measure();
+      ScrollTrigger.addEventListener('refreshInit', measure);
+      gsap.to(media, {
+        '--p': 1,
+        ease: 'none',
+        scrollTrigger: { trigger: media, start: 'top top', end: 'bottom 30%', scrub: 1 },
+      });
+
+      // Wjazd hero: najpierw baner, potem słowa nazwy spod maski, opis, przyciski.
+      const words = splitWords($('#hero-title'), 'word');
+      gsap.timeline({ delay: 0.1 })
+        .fromTo(media, { '--intro': 1 }, { '--intro': 0, duration: 1, ease: 'power4.out' })
+        .fromTo(words, { yPercent: 110 }, { yPercent: 0, duration: 1.1, ease: 'power4.out', stagger: 0.09 }, 0.35)
+        .fromTo('.hero .lead', { y: 24, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.8 }, 0.75)
+        .fromTo('.hero .cta-row, .hero .members', { y: 24, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.8, stagger: 0.08 }, 0.9);
+
+      // Hasło: słowa zapalają się po kolei, gdy przewijasz przez sekcję (w obie strony).
+      const box = $('#tagline');
+      const lit = splitWords(box.querySelector('p'), 'w');
+      box.classList.add('armed');
+      const tl = gsap.timeline({ scrollTrigger: { trigger: box, start: 'top 75%', end: 'bottom 45%', scrub: 1 } });
+      lit.forEach((w, i) => tl.to(w, { color: w.classList.contains('hl') ? '#4cc3c8' : '#e5eaf1', duration: 1, ease: 'none' }, i * 0.6));
+
+      addEventListener('load', () => ScrollTrigger.refresh());
+    }
+
+    initMotion();
+    (async () => {
+      const [board, contests] = await Promise.all([
+        get('leaderboard?period=week&limit=3').catch(() => null),
+        get('contests').catch(() => null),
+      ]);
+      renderMembers(board);
+      renderNow(contests, board);
+      renderFaq(board);
+      await renderTop(board);
+      if (MOTION) ScrollTrigger.refresh();
+    })();
+  </script>
+  <script src="vendor/tsparticles.basic.bundle.min.js" defer></script>
+  <script src="particles.js?v=b4f624a" defer></script>
 </body>
 </html>
