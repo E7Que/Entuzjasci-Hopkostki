@@ -1,8 +1,15 @@
-// Tło stron enho.pl (tsParticles, https://github.com/tsparticles/tsparticles, MIT): drobne punkty w kolorach
-// strony powoli dryfują i lekko migoczą na grafitowym tle. Subtelnie: mało punktów, małe, przygaszone.
+// Tło stron enho.pl: miękkie plamy światła w kolorach banera (glow) i punkty tsParticles
+// (https://github.com/tsparticles/tsparticles, MIT), które powoli dryfują i lekko migoczą na grafitowym tle.
 // Ograniczony ruch: punkty stoją. Podgląd w panelu (embed): bez tła. Karta w tle: tsParticles samo pauzuje.
 (async () => {
-  if (!window.tsParticles || document.documentElement.classList.contains('embed')) return;
+  if (document.documentElement.classList.contains('embed')) return;
+  // Kolor w tle: miękkie plamy światła (style w site.css, .glow).
+  const glow = document.createElement('div');
+  glow.className = 'glow';
+  glow.setAttribute('aria-hidden', 'true');
+  glow.innerHTML = '<i></i><i></i><i></i>';
+  document.body.prepend(glow);
+  if (!window.tsParticles) return;
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (window.loadBasic) await loadBasic(tsParticles);
   await tsParticles.load({

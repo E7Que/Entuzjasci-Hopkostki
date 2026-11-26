@@ -147,7 +147,7 @@ body { overflow-x: clip; }
 }
 .btn:active { transform: translateY(1px); }
 .btn:disabled { opacity: 0.6; cursor: progress; transform: none; }
-.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-primary { background: var(--accent); color: var(--on-accent); box-shadow: 0 1px 2px rgb(3 7 12 / 0.4), 0 8px 28px -6px rgb(76 195 200 / 0.55); }
 .btn-big { min-height: 56px; padding: 0 var(--sp-8); border-radius: var(--r); font-size: var(--fs-lg); }
 .btn-quiet { background: transparent; box-shadow: none; color: var(--muted); }
 .btn .discord { width: 22px; height: 22px; fill: currentColor; }
@@ -168,6 +168,17 @@ body { overflow-x: clip; }
 .site-foot a { color: var(--muted); text-decoration: none; }
 
 /* Tło: grafit #171b23 i drobne punkty z tsParticles (particles.js), które powoli dryfują. */
+/* Kolor w tle: trzy miękkie plamy światła w kolorach banera (cyjan, niebieski, magenta) powoli dryfują
+   za treścią. Wstawia je particles.js; bez JS tło zostaje grafitowe. */
+.glow { position: fixed; inset: 0; z-index: -2; overflow: hidden; pointer-events: none; }
+.glow i { position: absolute; width: 62vmax; height: 62vmax; border-radius: 50%; opacity: 0.3; will-change: transform; }
+.glow i:nth-child(1) { left: -18vmax; top: -22vmax; background: radial-gradient(circle, #2ec4d0 0%, rgb(46 196 208 / 0) 62%); animation: glow-a 38s ease-in-out infinite alternate; }
+.glow i:nth-child(2) { right: -24vmax; top: 18vh; background: radial-gradient(circle, #3767d9 0%, rgb(55 103 217 / 0) 62%); animation: glow-b 46s ease-in-out infinite alternate; }
+.glow i:nth-child(3) { left: 8vw; bottom: -34vmax; background: radial-gradient(circle, #b44fd1 0%, rgb(180 79 209 / 0) 60%); opacity: 0.22; animation: glow-c 54s ease-in-out infinite alternate; }
+@keyframes glow-a { to { transform: translate(22vw, 18vh) scale(1.15); } }
+@keyframes glow-b { to { transform: translate(-26vw, 22vh) scale(0.9); } }
+@keyframes glow-c { to { transform: translate(30vw, -16vh) scale(1.1); } }
+html.embed .glow { display: none; }
 
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
@@ -186,4 +197,5 @@ body { overflow-x: clip; }
 
 @media (prefers-reduced-motion: reduce) {
   .btn, .site-links a { transition: none; }
+  .glow i { animation: none; }
 }
