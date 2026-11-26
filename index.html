@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pl">
+<html lang="pl" data-page="home">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://ucjmbdogtzztrkorqzjq.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="site.css?v=9525a15">
+  <link rel="stylesheet" href="site.css?v=81d27f5">
   <link rel="stylesheet" href="vendor/lenis.css">
   <style>
     /* Strona główna. Zasady: .claude/skills/site-design; struktura: hero, hasło, teraz na serwerze, najaktywniejsi, jak dołączyć, pytania, zaproszenie. */
@@ -49,13 +49,13 @@
 
     /* Hasło: słowa rozjaśniają się po kolei, gdy sekcja wjeżdża na ekran (bez JS i przy ograniczonym ruchu od razu w pełnym kolorze). */
     /* Odstępy między sekcjami: jeden rytm (--section) na całej stronie. */
-    main { --section: clamp(64px, 9vw, 112px); }
+    main { --section: clamp(56px, 7vw, 88px); }
     .tagline { margin-top: var(--section); padding: 0; }
     .tagline p { max-width: 800px; margin: 0; font-family: var(--display); font-size: clamp(1.75rem, 3.4vw, 2.75rem); font-weight: 700; line-height: 1.15; text-wrap: balance; transform-origin: 0% 50%; }
     .tagline.armed .w { display: inline-block; color: rgb(230 241 245 / 0.18); filter: blur(5px); }
 
     .block { margin-top: var(--section); }
-    .block > h2 { margin-bottom: var(--sp-6); font-size: var(--fs-3xl); }
+    .block > h2 { margin-bottom: var(--sp-5, 20px); font-size: clamp(1.5rem, 2.4vw, 1.875rem); }
     .block-foot { margin-top: var(--sp-6); }
     .card { padding: var(--sp-6); border: 1px solid var(--panel-edge); border-radius: var(--r); background: var(--panel); box-shadow: var(--panel-shadow); }
 
@@ -97,7 +97,7 @@
     .steps p { margin: 0; color: var(--muted); }
     .steps code, .faq code { padding: 1px 6px; border-radius: var(--r-xs); background: var(--raised); color: var(--text); font: 500 0.9em ui-monospace, 'SFMono-Regular', Menlo, monospace; }
 
-    .faq { max-width: 760px; }
+    .faq { max-width: none; }
     .faq details + details { margin-top: var(--sp-2); }
     .faq summary { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-4) var(--sp-6); border-radius: var(--r-sm); background: var(--surface); box-shadow: var(--shadow-sm); font-weight: 600; cursor: pointer; list-style: none; transition: background-color 200ms var(--ease); }
     .faq summary::-webkit-details-marker { display: none; }
@@ -259,7 +259,7 @@
   <script src="vendor/gsap.min.js"></script>
   <script src="vendor/ScrollTrigger.min.js"></script>
   <script src="vendor/lenis.min.js"></script>
-  <script src="motion.js?v=9525a15"></script>
+  <script src="motion.js?v=81d27f5"></script>
   <script>
     'use strict';
     const BASE = ['localhost', '127.0.0.1'].includes(location.hostname)
@@ -455,8 +455,8 @@
       window.Motion?.refresh();
     })();
   </script>
-  <script src="particles.js?v=9525a15" defer></script>
-  <script src="rb.js?v=9525a15" defer></script>
-  <script src="rb-scanner.js?v=9525a15" defer></script>
+  <script src="particles.js?v=81d27f5" defer></script>
+  <script src="rb.js?v=81d27f5" defer></script>
+  <script src="rb-scanner.js?v=81d27f5" defer></script>
 </body>
 </html>

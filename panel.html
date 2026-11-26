@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=9525a15">
+  <link rel="stylesheet" href="style.css?v=81d27f5">
 </head>
 <body>
   <div id="login-gate" class="login-gate">
@@ -132,6 +132,44 @@
           <h2>Ustawienia</h2>
           <p class="muted">Zmiany zapisujesz przyciskiem na dole ekranu. Działają od razu, bez restartu bota.</p>
         </header>
+        <div class="card site-look" id="site-look">
+          <h3>Wygląd strony</h3>
+          <p class="muted small">Ikona i banery stron enho.pl. Obrazek trafia na stronę w pełnej jakości (bez zmniejszania, do 3 MB). Po wgraniu zapisz zmiany; strona pokaże nowy obrazek w ciągu minuty.</p>
+          <div class="site-look-grid">
+            <div class="site-slot" data-site-key="icon">
+              <div class="site-prev icon"><img alt="" data-site-img></div>
+              <div>
+                <strong>Ikona strony</strong>
+                <small>Kwadrat, najlepiej 512 × 512 px (najmniej 256 × 256). PNG albo WebP.</small>
+                <div class="site-actions"><label class="btn small"><input type="file" accept="image/png,image/webp,image/jpeg" hidden data-site-file>Wgraj ikonę</label><button type="button" class="btn small ghost" data-site-reset>Przywróć domyślną</button></div>
+              </div>
+            </div>
+            <div class="site-slot" data-site-key="bannerHome">
+              <div class="site-prev"><img alt="" data-site-img></div>
+              <div>
+                <strong>Baner strony głównej</strong>
+                <small>16:9, najlepiej 3840 × 2160 px (najmniej 1920 × 1080). WebP albo JPG.</small>
+                <div class="site-actions"><label class="btn small"><input type="file" accept="image/png,image/webp,image/jpeg" hidden data-site-file>Wgraj baner</label><button type="button" class="btn small ghost" data-site-reset>Przywróć domyślny</button></div>
+              </div>
+            </div>
+            <div class="site-slot" data-site-key="bannerRanking">
+              <div class="site-prev"><img alt="" data-site-img></div>
+              <div>
+                <strong>Baner rankingu</strong>
+                <small>16:9, najlepiej 3840 × 2160 px (najmniej 1920 × 1080). Na stronie widać pas ze środka obrazka.</small>
+                <div class="site-actions"><label class="btn small"><input type="file" accept="image/png,image/webp,image/jpeg" hidden data-site-file>Wgraj baner</label><button type="button" class="btn small ghost" data-site-reset>Przywróć domyślny</button></div>
+              </div>
+            </div>
+            <div class="site-slot" data-site-key="bannerEvents">
+              <div class="site-prev"><img alt="" data-site-img></div>
+              <div>
+                <strong>Baner strony eventów</strong>
+                <small>16:9, najlepiej 3840 × 2160 px (najmniej 1920 × 1080). Event z własnym banerem pokazuje swój.</small>
+                <div class="site-actions"><label class="btn small"><input type="file" accept="image/png,image/webp,image/jpeg" hidden data-site-file>Wgraj baner</label><button type="button" class="btn small ghost" data-site-reset>Przywróć domyślny</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="grid two">
           <div class="card">
             <h3>Kanały</h3>
@@ -1297,6 +1335,6 @@
   </div>
   <div id="toast" class="toast"></div>
 
-  <script src="app.js?v=9525a15"></script>
+  <script src="app.js?v=81d27f5"></script>
 </body>
 </html>

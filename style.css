@@ -2,17 +2,17 @@
   color-scheme: dark;
   /* Te same kolory co strony publiczne (site.css): grafit, szarości z niebieskim odcieniem, akcent cyjan.
      --blurple zostaje tylko w podglądach wiadomości Discorda. */
-  --bg: #060b17;
-  --bg-2: #0c1628;
-  --bg-3: #040812;
-  --bg-hover: #13213a;
-  --line: #1c2c48;
-  --text: #dde6f6;
+  --bg: #050b0b;
+  --bg-2: #0b1716;
+  --bg-3: #030707;
+  --bg-hover: #11221f;
+  --line: #1a302c;
+  --text: #dcefec;
   --text-strong: #f0f8fa;
-  --muted: #99aac4;
-  --accent: #2fd9e0;
-  --accent-hover: #63e5ea;
-  --on-accent: #03272a;
+  --muted: #93b3ae;
+  --accent: #28e9ea;
+  --accent-hover: #6ff1f2;
+  --on-accent: #032a2a;
   --blurple: #5865f2;
   --blurple-hover: #4752c4;
   --green: #5bbf8a;
@@ -717,3 +717,17 @@ select.chip-add:hover { border-color: var(--accent); }
 .ct-color input { width: 2.4rem; height: 2rem; padding: 2px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); cursor: pointer; }
 #ct-banner-btn.busy { opacity: .6; pointer-events: none; }
 .ct-swatch { display: inline-block; width: 1.6rem; height: .55rem; margin-right: .35rem; border-radius: 99px; vertical-align: .1rem; }
+
+/* Ustawienia → Wygląd strony: ikona i osobne banery stron (podgląd + wgrywanie w pełnej jakości). */
+.site-look { margin-bottom: 1rem; }
+.site-look-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem 1.5rem; margin-top: .75rem; }
+.site-slot { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 1rem; align-items: start; }
+.site-slot strong { display: block; color: var(--text-strong); }
+.site-slot small { display: block; margin: .2rem 0 .6rem; color: var(--muted); }
+.site-prev { aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: var(--bg-3); box-shadow: inset 0 0 0 1px var(--line); }
+.site-prev.icon { width: 88px; aspect-ratio: 1; border-radius: 50%; justify-self: center; }
+.site-prev img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.site-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.site-actions label.btn { cursor: pointer; }
+.site-slot.busy { opacity: .6; pointer-events: none; }
+@media (max-width: 520px) { .site-slot { grid-template-columns: 1fr; } .site-prev { max-width: 320px; } }

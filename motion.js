@@ -239,6 +239,13 @@
     root.addEventListener('pointerleave', () => { rest(card); card = null; });
   }
 
+  // AnimatedList: wiersze listy wjeżdżają po kolei (16 px od dołu, co 0,03 s), np. ranking po przełączeniu zakładki.
+  function stagger(nodes, { y = 16, each = 0.03, max = 24 } = {}) {
+    const els = [...(nodes ?? [])].slice(0, max);
+    if (!ON || !els.length) return;
+    gsap.fromTo(els, { autoAlpha: 0, y }, { autoAlpha: 1, y: 0, duration: 0.5, ease: 'power3.out', stagger: each, overwrite: true, clearProps: 'transform,opacity,visibility' });
+  }
+
   // ClickSpark: 8 iskier w kolorze akcentu rozbiega się z miejsca kliknięcia (0,4 s).
   function sparks({ count = 8, size = 10, radius = 18, duration = 400 } = {}) {
     if (reduce || document.querySelector('.sparks')) return;
@@ -294,7 +301,7 @@
     if (!ON || !el) return null;
     el.classList.add('scrub');
     const img = el.querySelector('img');
-    const trigger = { trigger: el, start: 'top 64px', end: 'bottom 64px', scrub: true };
+    const trigger = { trigger: el, start: 'top top', end: 'bottom top', scrub: true };
     if (img) gsap.fromTo(img, { yPercent: 0, scale: 1.08 }, { yPercent: 24, scale: 1, ease: 'none', scrollTrigger: trigger });
     gsap.fromTo(el, { '--shade': 0 }, { '--shade': 0.65, ease: 'none', scrollTrigger: { ...trigger } });
     return intro ? gsap.fromTo(el, { '--intro': 1 }, { '--intro': 0, duration: 1, ease: 'power4.out', delay: 0.1 }) : null;
@@ -350,7 +357,7 @@
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   };
   const ratio = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
-  const PAGE_BG = [6, 11, 23];
+  const PAGE_BG = [5, 11, 11];
   const readable = (hex) => {
     const base = hexRgb(hex);
     let c = base;
@@ -386,8 +393,44 @@
     document.dispatchEvent(new Event('rb:theme'));
   }
 
+  // ---------- Ikona i banery z panelu (Ustawienia → Wygląd strony) ----------
+  // Bot podaje adresy wgranych obrazków; puste = domyślne pliki strony. Ostatni wygląd pamiętamy w przeglądarce,
+  // żeby przy kolejnej wizycie od razu pokazać właściwy obrazek. Strona eventów słucha zdarzenia „site:look”.
+  const SITE_API = ['localhost', '127.0.0.1'].includes(location.hostname)
+    ? 'public/site'
+    : 'https://ucjmbdogtzztrkorqzjq.supabase.co/functions/v1/hopkostki-bot/panel/public/site';
+  const PAGE = root.dataset.page;
+  let siteLook = null;
+  function applySite(look) {
+    if (!look || typeof look !== 'object') return;
+    siteLook = look;
+    const safe = (url) => (/^https:\/\/[^\s"'<>\\()]+$/.test(String(url ?? '')) ? url : '');
+    const icon = safe(look.icon);
+    if (icon) {
+      document.querySelectorAll('.site-brand img').forEach((img) => { if (img.src !== icon) img.src = icon; });
+      document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').forEach((link) => { link.href = icon; });
+    }
+    const banner = safe(look.banners?.[PAGE]);
+    const img = PAGE === 'home' ? $('#hero-media img') : PAGE === 'ranking' ? $('.banner img') : null;
+    if (img && banner && img.dataset.site !== banner) {
+      img.removeAttribute('srcset');
+      img.src = banner;
+      img.dataset.site = banner;
+    }
+    document.dispatchEvent(new CustomEvent('site:look', { detail: look }));
+  }
+  try { applySite(JSON.parse(localStorage.getItem('site-look') || 'null')); } catch { /* bez pamięci przeglądarki */ }
+  fetch(SITE_API)
+    .then((res) => (res.ok ? res.json() : null))
+    .then((look) => {
+      if (!look) return;
+      try { localStorage.setItem('site-look', JSON.stringify(look)); } catch { /* tryb prywatny */ }
+      applySite(look);
+    })
+    .catch(() => {});
+
   // Rok w stopce („© 2026 Entuzjaści Hopkostki”) zawsze bieżący.
   document.querySelectorAll('[data-year]').forEach((el) => { el.textContent = String(new Date().getFullYear()); });
 
-  window.Motion = { on: ON, init, rise, reveal, count, refresh, splitWords, spotlight, magnet, tilt, sparks, scrub, paint, eventColors, get lenis() { return lenis; } };
+  window.Motion = { on: ON, init, rise, reveal, count, refresh, splitWords, spotlight, magnet, tilt, sparks, scrub, paint, eventColors, stagger, get site() { return siteLook; }, get lenis() { return lenis; } };
 })();
