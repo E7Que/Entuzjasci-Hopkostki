@@ -1,7 +1,7 @@
 -- Kanały głosowe na żądanie (wejście na wybrany kanał tworzy własny kanał) + wiadomości wysyłane z panelu
 -- (z przyciskami albo listą do wybierania ról).
 
--- Kto jest teraz na jakim kanale głosowym (z gatewaya) — potrzebne, żeby wiedzieć, kiedy kanał jest pusty.
+-- Kto jest teraz na jakim kanale głosowym (z gatewaya) - potrzebne, żeby wiedzieć, kiedy kanał jest pusty.
 create table bot.voice_states (
   user_id text primary key,
   channel_id text not null,
@@ -24,7 +24,7 @@ create table bot.temp_voice (
   created_at timestamptz not null default now()
 );
 
--- Wiadomości wysłane z panelu (zakładka Wiadomości) — żeby można je było potem edytować albo usunąć.
+-- Wiadomości wysłane z panelu (zakładka Wiadomości) - żeby można je było potem edytować albo usunąć.
 create table bot.sent_messages (
   id int generated always as identity primary key,
   channel_id text not null,

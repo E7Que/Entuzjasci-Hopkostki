@@ -142,7 +142,7 @@ test('/losuj, /powiedz jako odpowiedź, /propozycja z reakcjami i wątkiem', asy
   const [suggestion] = s.discord.state.channels.get(SUGGEST);
   assert.equal(suggestion.embeds[0].title, 'Propozycja #1');
   assert.deepEqual(s.discord.state.reactions.map((r) => r.emoji), ['👍', '👎']);
-  assert.equal(s.discord.state.threads[0].name, 'Propozycja #1 — dyskusja');
+  assert.equal(s.discord.state.threads[0].name, 'Propozycja #1 - dyskusja');
 });
 
 test('/emoji dodaj: kradnie emoji z innego serwera (pobiera obrazek z CDN)', async () => {
@@ -161,7 +161,7 @@ test('wybór ról: własne emoji serwera i zwykłe emoji na przyciskach i liści
   const s = await setup();
   const gctx = await getGuildContext(s.bot);
   const base = { channelId: 'chan', content: 'Wybierz', roles: { mode: 'buttons', items: [{ roleId: 'r-fan', emoji: `<:hopka:${EMOJIS[0].id}>` }, { roleId: 'r-member', emoji: '🎮' }] } };
-  // Role w atrapie mają krótkie ID — przepuszczamy je przez walidację ręcznie.
+  // Role w atrapie mają krótkie ID - przepuszczamy je przez walidację ręcznie.
   const data = { ...cleanMessageData(base), roles: { ...cleanMessageData(base).roles, items: base.roles.items.map((i) => ({ ...i, label: '', description: '', style: 'niebieski' })) } };
   const buttons = buildMessagePayload(data, gctx).components[0].components;
   assert.deepEqual(buttons.map((b) => b.emoji), [{ id: EMOJIS[0].id, name: 'hopka', animated: false }, { name: '🎮' }]);

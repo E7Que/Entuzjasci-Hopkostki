@@ -1,23 +1,23 @@
 // Logowanie moderacji do panelu. /login na kanale wybranym w panelu daje osobie jej login i hasło (widoczne
-// tylko dla niej). Login wygasa po ustawionym czasie (np. co tydzień albo co miesiąc) — wtedy /login daje
+// tylko dla niej). Login wygasa po ustawionym czasie (np. co tydzień albo co miesiąc) - wtedy /login daje
 // nowy; /login nowy:True wymusza nowe hasło wcześniej (stare i wszystkie zalogowania nim przestają działać).
 // Części panelu odblokowują role (zakładka „Dostęp do panelu”): bot czyta aktualne role przy /login, przy
-// logowaniu i potem co kilka minut — odebrana rola zamyka dostęp bez wylogowywania ręcznie.
+// logowaniu i potem co kilka minut - odebrana rola zamyka dostęp bez wylogowywania ręcznie.
 // Pełny dostęp do wszystkiego mają tylko właściciel serwera i logowanie hasłem panelu. Uprawnienie
-// Administrator w Discordzie niczego tu samo nie odblokowuje — tak jak przy komendach (zakładka Uprawnienia)
+// Administrator w Discordzie niczego tu samo nie odblokowuje - tak jak przy komendach (zakładka Uprawnienia)
 // decydują listy ról, więc administracja widzi te części, które przypisano jej rolom.
 
 import { getGuildContext } from './moderation.js';
 import { DiscordError, avatarUrl } from './rest.js';
 import { safeEqual } from './verify.js';
 
-// Strony bota: własna domena enho.pl (GitHub Pages z podpiętą domeną — plik panel/public/CNAME). Dawny adres
+// Strony bota: własna domena enho.pl (GitHub Pages z podpiętą domeną - plik panel/public/CNAME). Dawny adres
 // e7que.github.io/Entuzjasci-Hopkostki/ GitHub sam przekierowuje tutaj, więc stare linki działają.
 export const PANEL_SITE = 'https://enho.pl/';
-// Sam panel (strona dla moderacji) — /panel; strona główna prowadzi do rankingu poziomów.
+// Sam panel (strona dla moderacji) - /panel; strona główna prowadzi do rankingu poziomów.
 export const PANEL_URL = `${PANEL_SITE}panel`;
-// Dawny adres stron na GitHub Pages — zostaje na liście Redirects logowania przez Discord i w CORS (stare karty).
-// (Po zmianie nazwy konta NotKairo → E7Que stary notkairo.github.io nie jest wpuszczany — mógłby go zająć ktoś inny.)
+// Dawny adres stron na GitHub Pages - zostaje na liście Redirects logowania przez Discord i w CORS (stare karty).
+// (Po zmianie nazwy konta NotKairo → E7Que stary notkairo.github.io nie jest wpuszczany - mógłby go zająć ktoś inny.)
 export const GITHUB_SITE = 'https://e7que.github.io/Entuzjasci-Hopkostki/';
 export const SITE_ORIGINS = ['https://enho.pl', 'https://www.enho.pl', 'https://e7que.github.io'];
 
@@ -43,7 +43,7 @@ export const PANEL_SECTIONS = {
 };
 const ALL_SECTIONS = Object.keys(PANEL_SECTIONS);
 
-// Klucze konfiguracji należące do części panelu — zapis z panelu zmienia tylko odblokowane części.
+// Klucze konfiguracji należące do części panelu - zapis z panelu zmienia tylko odblokowane części.
 // panelAccess (kto ma dostęp do czego) zmienia wyłącznie pełny dostęp.
 export const SECTION_CONFIG_KEYS = {
   ustawienia: ['modLogChannelId', 'alerts', 'announceChannelId', 'modRoleIds', 'mentionTarget', 'dmUsers', 'dmShowModerator', 'appealText', 'appeals', 'replyReaction', 'presence'],
@@ -67,10 +67,10 @@ export const LOGIN_DAYS = [7, 14, 30];
 const RECHECK_MS = 5 * 60_000;
 const SEEN_EVERY_MS = 60_000;
 const DAY_MS = 24 * 60 * 60_000;
-// Bez znaków łatwych do pomylenia (0/O, 1/I). 32 znaki — bajt % 32 nie faworyzuje żadnego; 12 znaków = 60 bitów.
+// Bez znaków łatwych do pomylenia (0/O, 1/I). 32 znaki - bajt % 32 nie faworyzuje żadnego; 12 znaków = 60 bitów.
 const PASSWORD_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
-// Błąd logowania — API odpowiada na niego 401 (strona panelu wraca do ekranu logowania).
+// Błąd logowania - API odpowiada na niego 401 (strona panelu wraca do ekranu logowania).
 export class AccessError extends Error {}
 
 export const normalizeLogin = (login) => String(login ?? '').trim().toLowerCase();
@@ -119,9 +119,9 @@ async function memberSnapshot(bot, userId) {
   return { roles, admin: userId === gctx.guild.ownerId, user: member.user ?? null };
 }
 
-// /login: aktywny login tej osoby albo nowy (renew = wymuszone nowe hasło). Hasło jest tylko w odpowiedzi —
+// /login: aktywny login tej osoby albo nowy (renew = wymuszone nowe hasło). Hasło jest tylko w odpowiedzi -
 // w bazie zostaje jego skrót, więc istniejącego hasła nie da się pokazać drugi raz.
-// Role bierzemy z samej interakcji — to stan z chwili użycia komendy.
+// Role bierzemy z samej interakcji - to stan z chwili użycia komendy.
 export async function issueLogin(bot, ix, config, { renew = false } = {}) {
   const { guild } = await getGuildContext(bot);
   const roles = ix.member?.roles ?? [];
@@ -150,15 +150,15 @@ export async function issueLogin(bot, ix, config, { renew = false } = {}) {
 }
 
 // Logowanie na stronie panelu loginem i hasłem → sesja przeglądarki (kończy się razem z loginem).
-// Role sprawdzamy od nowa — od /login mogły się zmienić.
+// Role sprawdzamy od nowa - od /login mogły się zmienić.
 export async function signIn(bot, { login, password }) {
   const config = await bot.store.getConfig();
-  if (!config.panelAccess.enabled) throw new AccessError('Logowanie moderacji jest wyłączone — zaloguj się hasłem panelu.');
+  if (!config.panelAccess.enabled) throw new AccessError('Logowanie moderacji jest wyłączone - zaloguj się hasłem panelu.');
   const row = await bot.store.findPanelLogin(normalizeLogin(login));
-  // Skrót liczony także dla nieistniejącego loginu — czas odpowiedzi nie zdradza, które loginy istnieją.
+  // Skrót liczony także dla nieistniejącego loginu - czas odpowiedzi nie zdradza, które loginy istnieją.
   const hash = await passwordHash(row?.userId ?? '', password);
   if (!(await safeEqual(hash, row?.tokenHash ?? '')) || !row) {
-    throw new AccessError('Zły login albo hasło. Login mógł też wygasnąć — wpisz /login na Discordzie, żeby dostać nowy.');
+    throw new AccessError('Zły login albo hasło. Login mógł też wygasnąć - wpisz /login na Discordzie, żeby dostać nowy.');
   }
   const member = await memberSnapshot(bot, row.userId);
   if (!member) throw new AccessError('Nie ma Cię już na serwerze.');
@@ -191,12 +191,12 @@ function sessionAuth(session, config, user = null) {
 // osoba bez ról dających dostęp (albo spoza serwera) traci sesję od razu.
 export async function authenticateSession(bot, token) {
   const config = await bot.store.getConfig();
-  if (!config.panelAccess.enabled) throw new AccessError('Logowanie moderacji jest wyłączone — zaloguj się hasłem panelu.');
+  if (!config.panelAccess.enabled) throw new AccessError('Logowanie moderacji jest wyłączone - zaloguj się hasłem panelu.');
   let session = token ? await bot.store.getPanelSession(await tokenHash(token)) : null;
-  if (!session) throw new AccessError('Sesja wygasła albo login został zmieniony — zaloguj się ponownie (nowy login: /login na Discordzie).');
+  if (!session) throw new AccessError('Sesja wygasła albo login został zmieniony - zaloguj się ponownie (nowy login: /login na Discordzie).');
   let user = null;
   if (Date.now() - session.checkedAt > RECHECK_MS) {
-    // Chwilowy błąd Discorda nie wylogowuje — zostają role z ostatniego sprawdzenia.
+    // Chwilowy błąd Discorda nie wylogowuje - zostają role z ostatniego sprawdzenia.
     const member = await memberSnapshot(bot, session.userId).catch(() => undefined);
     if (member === null) {
       await bot.store.deletePanelLogins({ id: session.id });
@@ -217,7 +217,7 @@ export async function authenticateSession(bot, token) {
   return auth;
 }
 
-// Logowanie hasłem panelu — pełny dostęp.
+// Logowanie hasłem panelu - pełny dostęp.
 export const PASSWORD_AUTH = Object.freeze({ kind: 'password', full: true, sections: ALL_SECTIONS, session: null, expiresAt: null, user: null });
 
 // Zapis konfiguracji z panelu: osoba bez pełnego dostępu zmienia tylko klucze swoich części panelu.

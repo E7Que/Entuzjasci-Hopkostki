@@ -1,4 +1,4 @@
-// Prawdziwy Postgres w pamięci (PGlite) z migracją schematu bota — testy sprawdzają faktyczne SQL.
+// Prawdziwy Postgres w pamięci (PGlite) z migracją schematu bota - testy sprawdzają faktyczne SQL.
 // Jedna instancja na plik testowy; przed każdym testem tabele są czyszczone.
 import fs from 'node:fs';
 import { PGlite } from '@electric-sql/pglite';
@@ -13,7 +13,7 @@ const COMMUNITY = new URL('../../supabase/migrations/20260927100000_bot_logs_com
 const PROFILES = new URL('../../supabase/migrations/20260927140000_bot_member_profiles.sql', import.meta.url);
 const INVITES = new URL('../../supabase/migrations/20260927160000_bot_invite_joins.sql', import.meta.url);
 const TICKET_ARCHIVE = new URL('../../supabase/migrations/20260927180000_bot_ticket_archive.sql', import.meta.url);
-// Zapis rozmowy po zamknięciu wysyła się od razu (nie z opóźnieniem przez crona) — te kolumny już niepotrzebne.
+// Zapis rozmowy po zamknięciu wysyła się od razu (nie z opóźnieniem przez crona) - te kolumny już niepotrzebne.
 const TICKET_ARCHIVE_IMMEDIATE = new URL('../../supabase/migrations/20260927190000_bot_ticket_archive_immediate.sql', import.meta.url);
 const PANEL_SESSIONS = new URL('../../supabase/migrations/20261030200000_bot_panel_sessions.sql', import.meta.url);
 const LEVELS = new URL('../../supabase/migrations/20261115120000_bot_levels.sql', import.meta.url);
@@ -86,7 +86,7 @@ export async function createTestStore() {
 }
 
 // postgres.js (sterownik w funkcji Edge) serializuje parametr rzutowany wprost na jsonb przez JSON.stringify,
-// więc przekazany napis JSON zostałby zapisany jako napis, a nie obiekt. PGlite tak nie robi —
+// więc przekazany napis JSON zostałby zapisany jako napis, a nie obiekt. PGlite tak nie robi -
 // odtwarzamy to zachowanie, żeby testy wyłapywały takie błędy.
 function emulatePostgresJs(text, params) {
   const jsonbParams = new Set([...text.matchAll(/\$(\d+)::jsonb/g)].map((m) => Number(m[1]) - 1));

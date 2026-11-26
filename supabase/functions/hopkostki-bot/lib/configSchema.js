@@ -62,9 +62,9 @@ export const XP_EVENT_INTENSITY = ['none', 'low', 'medium', 'high'];
 export const XP_EVENT_KINDS = ['message', 'voice', 'reaction'];
 const XP_EVENT_MAX_MS = 31 * 24 * 60 * 60_000;
 
-// Wydarzenia XP z panelu: poprawne daty (koniec po początku, najwyżej 31 dni), dowolny mnożnik 1,1–10 (do dwóch
+// Wydarzenia XP z panelu: poprawne daty (koniec po początku, najwyżej 31 dni), dowolny mnożnik 1,1-10 (do dwóch
 // miejsc po przecinku), co najmniej jeden rodzaj XP; styl: motyw, intensywność efektów, opcjonalny własny kolor
-// (#rrggbb) i floor — efekt przy dole ekranu (płomienie przy „Ogniu”; domyślnie włączony). Najwyżej 50, posortowane
+// (#rrggbb) i floor - efekt przy dole ekranu (płomienie przy „Ogniu”; domyślnie włączony). Najwyżej 50, posortowane
 // po początku.
 function cleanXpEvents(input, current) {
   if (!Array.isArray(input)) return current;
@@ -96,10 +96,10 @@ function cleanXpEvents(input, current) {
   return out.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)).slice(-50);
 }
 
-// Eventy na stronie rankingu: warunek dostania się — zaprosić `invites` osób i/lub napisać `messages` wiadomości
+// Eventy na stronie rankingu: warunek dostania się - zaprosić `invites` osób i/lub napisać `messages` wiadomości
 // (0 = bez tego warunku, co najmniej jeden > 0); poprawne daty (koniec po początku, najwyżej 92 dni);
-// minAccountDays — zaproszone konta młodsze niż tyle dni się nie liczą; drawWinners — ilu zwycięzców losować wśród
-// osób, które się dostały (0 = bez losowania), drawMode — manual (przycisk w panelu) albo auto (po końcu eventu).
+// minAccountDays - zaproszone konta młodsze niż tyle dni się nie liczą; drawWinners - ilu zwycięzców losować wśród
+// osób, które się dostały (0 = bez losowania), drawMode - manual (przycisk w panelu) albo auto (po końcu eventu).
 // Najwyżej 30, posortowane po początku.
 // Stary zapis (type + goal) zamieniamy na warunek.
 const CONTEST_MAX_MS = 92 * 24 * 60 * 60_000;
@@ -209,7 +209,7 @@ function cleanRoleIds(input, { everyone = false, max = 50 } = {}) {
   return [...new Set(input.map(String).filter((id) => SNOWFLAKE.test(id) || (everyone && id === EVERYONE)))].slice(0, max);
 }
 
-// { nazwaKomendy: ['idRoli' | 'everyone', ...] } — tylko prawdziwe nazwy komend i poprawne ID ról.
+// { nazwaKomendy: ['idRoli' | 'everyone', ...] } - tylko prawdziwe nazwy komend i poprawne ID ról.
 function cleanCommandPermissions(input, current) {
   if (!isPlainObject(input)) return current ?? {};
   const out = {};
@@ -224,7 +224,7 @@ function cleanCommandPermissions(input, current) {
 // zaproszenia na serwer Discord (bot sprawdza, czy działa, i podaje obsłudze prawdziwą liczbę członków).
 export const TICKET_FIELD_KINDS = ['short', 'long', 'number', 'invite'];
 
-// Starsze rodzaje ticketów miały jedno pole `question` — to formularz z jednym długim polem.
+// Starsze rodzaje ticketów miały jedno pole `question` - to formularz z jednym długim polem.
 export function ticketFields(type) {
   if (Array.isArray(type?.fields)) return type.fields;
   const question = String(type?.question ?? '').trim();

@@ -55,7 +55,7 @@ const CONFIG = { commandPermissions: { powiedz: [R.mod, R.helper, R.admin], pomo
 test('„Wszystkie kanały” to ID serwera minus 1', () => {
   assert.equal(allChannelsId('900000000000000100'), '900000000000000099');
   assert.equal(allChannelsId('1000000000000000000'), '999999999999999999');
-  assert.equal(allChannelsId('g1'), null, 'ID spoza Discorda (atrapa) — bez stałej');
+  assert.equal(allChannelsId('g1'), null, 'ID spoza Discorda (atrapa) - bez stałej');
 });
 
 test('brak nadpisań w Discordzie = puste listy; nieodczytane dane też nie zgłaszają konfliktów', () => {
@@ -63,7 +63,7 @@ test('brak nadpisań w Discordzie = puste listy; nieodczytane dane też nie zgł
   assert.deepEqual(analyzeCommandPermissions({ ...snapshot([entry(CMD.powiedz, [role(R.helper, false)])]), readable: false }, CONFIG), { overrides: [], conflicts: [] });
 });
 
-test('/powiedz tylko na jednym kanale („Wszystkie kanały” zablokowane) — także dla administratorów', () => {
+test('/powiedz tylko na jednym kanale („Wszystkie kanały” zablokowane) - także dla administratorów', () => {
   const { overrides, conflicts } = analyzeCommandPermissions(snapshot([entry(CMD.powiedz, [channel(ALL, false), channel(C.modOnly, true)])]), CONFIG);
   assert.deepEqual(overrides, [
     {
@@ -93,12 +93,12 @@ test('ograniczenie kanałów dla całej aplikacji: jedno zdanie o bocie i wyjąt
   assert.equal(conflicts.length, 1);
   assert.equal(
     conflicts[0].text,
-    'Discord ogranicza bota do kanału #bot-komendy — na wszystkich innych kanałach komendy bota są wyłączone (ustawienie całej aplikacji, także dla administratorów). Wyjątek: /powiedz ma własne ustawienia kanałów.',
+    'Discord ogranicza bota do kanału #bot-komendy - na wszystkich innych kanałach komendy bota są wyłączone (ustawienie całej aplikacji, także dla administratorów). Wyjątek: /powiedz ma własne ustawienia kanałów.',
   );
   assert.deepEqual(conflicts[0].commands, ['pomoc', 'ban']);
   assert.match(conflicts[0].fix, /ustawienia całej aplikacji \(góra strony\) → sekcja „Kanały” → przy „Wszystkie kanały” zaznacz ✓/);
 
-  // Kilka zablokowanych kanałów (mniej niż dozwolonych) — wymienione są zablokowane.
+  // Kilka zablokowanych kanałów (mniej niż dozwolonych) - wymienione są zablokowane.
   const few = findConflicts(snapshot([entry(CMD.ban, [channel(C.ogolny, false)])]), CONFIG);
   assert.deepEqual(few.map((c) => c.text), ['Discord wyłącza /ban na kanale #ogolny (także dla administratorów).']);
   const none = findConflicts(snapshot([entry(APP, [channel(ALL, false)])]), CONFIG);
@@ -114,8 +114,8 @@ test('@everyone zablokowane dla całej aplikacji: komunikat ogólny i role z lis
   assert.deepEqual(
     conflicts.map((c) => [c.kind, c.text]),
     [
-      ['app-everyone', 'Wszystkie komendy bota są w Discordzie wyłączone dla @everyone (ustawienie całej aplikacji) — Discord pozwala na nie tylko roli | Moderator i administratorom. Listy bota pozwalają wszystkim na /pomoc.'],
-      // | Admin ma uprawnienie Administrator — Discord go nie blokuje; /ban jest tylko dla Moderatora, którego Discord wpuszcza.
+      ['app-everyone', 'Wszystkie komendy bota są w Discordzie wyłączone dla @everyone (ustawienie całej aplikacji) - Discord pozwala na nie tylko roli | Moderator i administratorom. Listy bota pozwalają wszystkim na /pomoc.'],
+      // | Admin ma uprawnienie Administrator - Discord go nie blokuje; /ban jest tylko dla Moderatora, którego Discord wpuszcza.
       ['role', 'Discord blokuje /powiedz dla roli | Helper (lista bota na to pozwala).'],
     ],
   );
@@ -142,9 +142,9 @@ test('blokada roli przy komendzie: konflikt tylko, gdy lista bota tej roli pozwa
   ]);
 });
 
-test('@everyone zablokowane przy komendzie, którą lista bota daje wszystkim — jedno zdanie z rolami, które Discord wpuszcza', () => {
+test('@everyone zablokowane przy komendzie, którą lista bota daje wszystkim - jedno zdanie z rolami, które Discord wpuszcza', () => {
   const conflicts = findConflicts(snapshot([entry(CMD.pomoc, [role(GUILD, false), role(R.mod, true)])]), CONFIG);
-  assert.deepEqual(conflicts.map((c) => c.text), ['Discord blokuje /pomoc dla @everyone (lista bota pozwala wszystkim) — Discord pozwala tylko roli | Moderator i administratorom.']);
+  assert.deepEqual(conflicts.map((c) => c.text), ['Discord blokuje /pomoc dla @everyone (lista bota pozwala wszystkim) - Discord pozwala tylko roli | Moderator i administratorom.']);
   // Wpis zezwalający niczego nie blokuje.
   assert.deepEqual(findConflicts(snapshot([entry(APP, [role(GUILD, true), channel(ALL, true)]), entry(CMD.pomoc, [role(R.fan, true)])]), CONFIG), []);
 });
@@ -159,7 +159,7 @@ test('blokada pojedynczej osoby: ostrzeżenie, gdy lista bota wpuszcza ją przez
 test('domyślne uprawnienia komendy w Discordzie (default_member_permissions) też są brane pod uwagę', () => {
   const snap = snapshot([entry(APP, [role(R.helper, true)])]);
   snap.commands = snap.commands.map((c) => (c.name === 'powiedz' ? { ...c, default_member_permissions: String(P.MANAGE_MESSAGES) } : c));
-  // Zgoda dla całej aplikacji nie znosi wymaganych uprawnień komendy — Helper bez „Zarządzania wiadomościami” nadal jej nie widzi.
+  // Zgoda dla całej aplikacji nie znosi wymaganych uprawnień komendy - Helper bez „Zarządzania wiadomościami” nadal jej nie widzi.
   const conflicts = findConflicts(snap, CONFIG);
   assert.deepEqual(conflicts.map((c) => c.text), ['Discord blokuje /powiedz dla roli | Helper (lista bota na to pozwala).']);
   assert.match(conflicts[0].fix, /domyślne wymagane uprawnienia/);
@@ -216,7 +216,7 @@ test('API panelu: brak nadpisań, 404 i 403 z Discorda nie psują zakładki; dan
   const s = await setup();
   const clean = await s.call('/commands/discord');
   assert.deepEqual([clean.status, clean.body.readable, clean.body.overrides, clean.body.conflicts], [200, true, [], []]);
-  // Kanały są potrzebne zawsze — do sprawdzenia uprawnienia „Używanie komend aplikacji” (channelBlocks).
+  // Kanały są potrzebne zawsze - do sprawdzenia uprawnienia „Używanie komend aplikacji” (channelBlocks).
   assert.ok(Array.isArray(clean.body.channelBlocks));
   assert.equal(s.discord.state.calls.filter((c) => c.path === '/guilds/g1/channels').length, 1);
 
@@ -237,7 +237,7 @@ test('API panelu: brak nadpisań, 404 i 403 z Discorda nie psują zakładki; dan
   assert.deepEqual([denied.body.overrides, denied.body.conflicts], [[], []]);
 });
 
-test('API panelu: /commands/discord jak /commands — widzi każdy zalogowany, także bez odblokowanych części', async () => {
+test('API panelu: /commands/discord jak /commands - widzi każdy zalogowany, także bez odblokowanych części', async () => {
   const s = await setup();
   const auth = { kind: 'session', full: false, sections: [], session: null, user: { id: 'mod', tag: 'mod' } };
   const result = await handlePanel(s.bot, { method: 'GET', path: '/commands/discord', auth });
@@ -274,5 +274,5 @@ test('findChannelBlocks: kanały bez „Używania komend aplikacji” dla ról z
   assert.deepEqual(byId.mod.blocked.map((c) => c.name), ['ogolny'], 'moderator widzi oba kanały, komendy ma tylko na moderator-only');
   assert.equal(byId.mod.visible, 2);
   assert.deepEqual(byId[G].blocked.map((c) => c.name), ['ogolny']);
-  assert.equal(byId[G].visible, 1, 'kanału moderacji @everyone nie widzi — nie liczy się');
+  assert.equal(byId[G].visible, 1, 'kanału moderacji @everyone nie widzi - nie liczy się');
 });

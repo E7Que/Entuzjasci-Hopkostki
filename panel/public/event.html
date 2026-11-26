@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Eventy serwera — Entuzjaści Hopkostki</title>
+  <title>Eventy serwera - Entuzjaści Hopkostki</title>
   <meta name="description" content="Eventy serwera Entuzjaści Hopkostki: zapisz się, zaproś znajomych albo pisz na serwerze, śledź postęp i wyniki losowań.">
   <meta name="theme-color" content="#0d1113">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Entuzjaści Hopkostki">
-  <meta property="og:title" content="Eventy serwera — Entuzjaści Hopkostki">
+  <meta property="og:title" content="Eventy serwera - Entuzjaści Hopkostki">
   <meta property="og:description" content="Trwające eventy serwera: warunki, nagrody, postęp i wylosowani zwycięzcy.">
   <meta property="og:image" content="https://enho.pl/img/banner-og.jpg">
   <meta property="og:url" content="https://enho.pl/event">
@@ -76,7 +76,7 @@
     }
     @keyframes grid { to { background-position: 0 48px, 48px 0; } }
 
-    /* Boczki: przygaszone piły, zębatki, kolumny i strzałki — tylko na szerokich ekranach */
+    /* Boczki: przygaszone piły, zębatki, kolumny i strzałki - tylko na szerokich ekranach */
     .rail { position: absolute; top: 0; bottom: 0; width: calc((100vw - 1120px) / 2 - 24px); display: none; opacity: 0.55; }
     .rail-l { left: 0; }
     .rail-r { right: 0; }
@@ -468,10 +468,10 @@
           <section class="card">
             <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5l3 2"/></svg>Jak to działa</h2>
             <ol class="how">
-              <li><b>Zaloguj się przez Discord</b> — strona widzi tylko Twoją nazwę i avatar.</li>
-              <li><b>Zapisz się</b> na event — od tej chwili liczy się Twój postęp.</li>
-              <li><b>Spełnij warunek</b> (zaproszenia albo wiadomości) — paski pokażą, ile brakuje.</li>
-              <li>Po warunku: <b>„Dostałeś się!”</b>, a przy losowaniu — szansa na nagrodę.</li>
+              <li><b>Zaloguj się przez Discord</b> - strona widzi tylko Twoją nazwę i avatar.</li>
+              <li><b>Zapisz się</b> na event - od tej chwili liczy się Twój postęp.</li>
+              <li><b>Spełnij warunek</b> (zaproszenia albo wiadomości) - paski pokażą, ile brakuje.</li>
+              <li>Po warunku: <b>„Dostałeś się!”</b>, a przy losowaniu - szansa na nagrodę.</li>
             </ol>
           </section>
           <section class="card">
@@ -484,7 +484,7 @@
           </section>
           <section class="card">
             <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.1 7.5 9.5 4.4-1.4 7.5-4.9 7.5-9.5V6z"/><path d="m9 12 2.2 2.2L15.5 10"/></svg>Prywatność</h2>
-            <p>Lista zapisanych pokazuje pseudonim, avatar i postęp. Osoby ukryte komendą <code>/prywatnosc</code> widać jako „Ukryta osoba”. Logowanie zostaje tylko w tej przeglądarce — „Wyloguj” je kończy.</p>
+            <p>Lista zapisanych pokazuje pseudonim, avatar i postęp. Osoby ukryte komendą <code>/prywatnosc</code> widać jako „Ukryta osoba”. Logowanie zostaje tylko w tej przeglądarce - „Wyloguj” je kończy.</p>
           </section>
         </div>
       </aside>
@@ -532,7 +532,7 @@
     // ---------- Eventy ----------
     // Strona pokazuje eventy z bota (zaplanowane, trwające i zakończone w ostatnich 3 dniach); przy kilku eventach
     // każdy ma swoją podzakładkę (#id w adresie). Jak to działa: logujesz się przez Discord (albo linkiem z /polacz),
-    // klikasz „Zapisz się”, a od tej chwili liczą się Twoje zaproszenia i wiadomości — paski postępu pokazują, ile
+    // klikasz „Zapisz się”, a od tej chwili liczą się Twoje zaproszenia i wiadomości - paski postępu pokazują, ile
     // brakuje do warunku. Po jego spełnieniu: „Dostałeś się!”. Każdy event może mieć własny motyw (kolory, baner).
     const SESSION_KEY = 'ranking-session';
     const CT_KEY = 'ranking-contest';
@@ -601,7 +601,7 @@
 
     // Stylizacja tekstu jak na Discordzie: **pogrubienie**, *kursywa*, __podkreślenie__, ~~przekreślenie~~,
     // ||spoiler||, `kod`, # nagłówek (## i ### mniejsze), -# mały tekst (stopka), - lista, > cytat, [tekst](https://…),
-    // linki i emoji z serwera <:nazwa:id>. Najpierw całość jest escapowana — HTML z opisu nigdy nie trafia na stronę.
+    // linki i emoji z serwera <:nazwa:id>. Najpierw całość jest escapowana - HTML z opisu nigdy nie trafia na stronę.
     function richText(text) {
       const tokens = [];
       const keep = (html) => `\u0000${tokens.push(html) - 1}\u0000`;
@@ -650,15 +650,15 @@
       if (c.prize) facts.push(`<li class="prize">🎁 <span><b>Nagroda:</b> ${esc(c.prize)}</span></li>`);
       if (c.draw && c.draw.winners > 0) {
         const who = `${c.draw.winners} ${ctPlural(c.draw.winners, ['zwycięzca', 'zwycięzców', 'zwycięzców'])}`;
-        facts.push(`<li class="draw">🎲 <span>Losowanie: <b>${who}</b> wśród tych, którzy się dostaną${c.draw.mode === 'auto' ? ' — po końcu eventu' : ''}</span></li>`);
+        facts.push(`<li class="draw">🎲 <span>Losowanie: <b>${who}</b> wśród tych, którzy się dostaną${c.draw.mode === 'auto' ? ' - po końcu eventu' : ''}</span></li>`);
       }
       facts.push(`<li>👥 <span><b>${fmt(c.participants)}</b> ${ctPlural(c.participants, ['zapisany', 'zapisanych', 'zapisanych'])}${c.qualified ? ` · <b>${fmt(c.qualified)}</b> ${ctPlural(c.qualified, ['dostał(a) się', 'dostało się', 'dostało się'])}` : ''}</span></li>`);
-      const rules = ['Najpierw się zapisz — liczy się to, co zrobisz od chwili zapisu (najwcześniej od startu eventu). Wypisać się możesz, póki event trwa (postęp wtedy przepada).'];
+      const rules = ['Najpierw się zapisz - liczy się to, co zrobisz od chwili zapisu (najwcześniej od startu eventu). Wypisać się możesz, póki event trwa (postęp wtedy przepada).'];
       if (c.invites > 0) {
         const age = c.minAccountDays ? `, mają konto co najmniej ${c.minAccountDays}-dniowe` : '';
         rules.push(`Liczą się osoby, które wejdą z Twojego zaproszenia, zostaną na serwerze${age} i nie były tu wcześniej.`);
       }
-      if (c.messages > 0) rules.push('Wiadomości liczą się tak jak do poziomów — spam i powtarzanie tego samego nic nie dają.');
+      if (c.messages > 0) rules.push('Wiadomości liczą się tak jak do poziomów - spam i powtarzanie tego samego nic nie dają.');
       return `<ul class="ct-facts">${facts.join('')}</ul><ul class="ct-rules">${rules.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>`;
     }
 
@@ -677,7 +677,7 @@
       if (!me) {
         const login = ct.data?.oauth
           ? `${loginButton()}<span class="ct-hint">albo wpisz <code>/polacz</code> na serwerze i kliknij link od bota</span>`
-          : '<ol class="ct-steps"><li>Wpisz <code>/polacz</code> na serwerze.</li><li>Kliknij <b>Połącz konto</b> w odpowiedzi bota — wrócisz tutaj zalogowany(-a).</li></ol>';
+          : '<ol class="ct-steps"><li>Wpisz <code>/polacz</code> na serwerze.</li><li>Kliknij <b>Połącz konto</b> w odpowiedzi bota - wrócisz tutaj zalogowany(-a).</li></ol>';
         return `<section class="ct-me ct-connect">
           <div class="ct-icon sm">${CT_LINK_ICON}</div>
           <div><b>Zaloguj się, żeby się zapisać</b><p class="ct-sub">Po zapisie od razu zobaczysz, ile brakuje Ci do warunku.</p></div>
@@ -689,7 +689,7 @@
       if (!m.joined) {
         const action = c.status === 'ended'
           ? '<span class="ct-hint">Ten event już się skończył.</span>'
-          : `<button type="button" class="ct-btn" data-ct-join="${esc(c.id)}"${ct.busy ? ' disabled' : ''}>${ct.busy ? 'Chwila…' : 'Zapisz się'}</button><span class="ct-hint">Potem ${esc(ctRequirement(c))} — liczy się od chwili zapisu.</span>`;
+          : `<button type="button" class="ct-btn" data-ct-join="${esc(c.id)}"${ct.busy ? ' disabled' : ''}>${ct.busy ? 'Chwila…' : 'Zapisz się'}</button><span class="ct-hint">Potem ${esc(ctRequirement(c))} - liczy się od chwili zapisu.</span>`;
         return `<section class="ct-me">${head}<div class="ct-actions">${action}</div></section>`;
       }
       const bars = [];
@@ -697,16 +697,16 @@
       if (c.messages > 0) bars.push(ctBar('messages', 'Wiadomości', m.messages, c.messages, animate));
       let status;
       if (m.won) status = '<div class="ct-win gold"><b>🏆 Wygrałeś w losowaniu!</b><span>Administracja odezwie się w sprawie nagrody.</span></div>';
-      else if (m.reached) status = `<div class="ct-win"><b>🎉 Dostałeś się!</b><span>${c.draw?.done ? 'Warunek spełniony — tym razem losowanie wygrał ktoś inny.' : c.draw?.winners ? 'Warunek spełniony — bierzesz udział w losowaniu.' : 'Warunek spełniony — administracja już to widzi.'}</span></div>`;
+      else if (m.reached) status = `<div class="ct-win"><b>🎉 Dostałeś się!</b><span>${c.draw?.done ? 'Warunek spełniony - tym razem losowanie wygrał ktoś inny.' : c.draw?.winners ? 'Warunek spełniony - bierzesz udział w losowaniu.' : 'Warunek spełniony - administracja już to widzi.'}</span></div>`;
       else if (c.status === 'upcoming') status = `<span class="ct-ok">✓ Zapisano</span><span class="ct-hint">Liczenie ruszy razem z eventem.</span>`;
-      else if (c.status === 'ended') status = '<span class="ct-hint">Event się skończył — warunek nie został spełniony.</span>';
+      else if (c.status === 'ended') status = '<span class="ct-hint">Event się skończył - warunek nie został spełniony.</span>';
       else {
         const left = [];
         if (c.invites > m.invites) left.push(ctUnit('invites', c.invites - m.invites, true));
         if (c.messages > m.messages) left.push(ctUnit('messages', c.messages - m.messages, true));
         status = `<span class="ct-ok">✓ Zapisano</span><span class="ct-hint">Brakuje jeszcze ${esc(left.join(' i '))}.</span>`;
       }
-      const leave = m.canLeave ? `<button type="button" class="ct-leave" data-ct-leave="${esc(c.id)}"${ct.busy ? ' disabled' : ''} title="Wypisz się z tego eventu — postęp przepadnie">Wypisz się</button>` : '';
+      const leave = m.canLeave ? `<button type="button" class="ct-leave" data-ct-leave="${esc(c.id)}"${ct.busy ? ' disabled' : ''} title="Wypisz się z tego eventu - postęp przepadnie">Wypisz się</button>` : '';
       return `<section class="ct-me${m.won ? ' won gold' : m.reached ? ' won' : ''}">${head}${bars.join('')}<div class="ct-actions">${status}${leave}</div></section>`;
     }
 
@@ -738,7 +738,7 @@
     // Wylosowani (po losowaniu w panelu albo samym po końcu eventu).
     function ctWinners(c) {
       if (!c.draw?.done) return '';
-      if (!c.winners?.length) return '<section class="ct-drawn"><h3>🎲 Losowanie</h3><p class="ct-hint">Nikt nie spełnił warunku — nie było kogo losować.</p></section>';
+      if (!c.winners?.length) return '<section class="ct-drawn"><h3>🎲 Losowanie</h3><p class="ct-hint">Nikt nie spełnił warunku - nie było kogo losować.</p></section>';
       const people = c.winners
         .map((w, i) => `<span class="ct-drawn-person${w.me ? ' me' : ''}">${w.avatar ? `<img class="avatar" src="${esc(w.avatar)}" alt="" width="34" height="34">` : '<span class="avatar ghost"></span>'}<span><b>${['🥇', '🥈', '🥉'][i] ?? '🏅'} ${esc(w.displayName ?? w.name)}</b>${w.me ? '<small>to Ty!</small>' : ''}</span></span>`)
         .join('');
@@ -757,7 +757,7 @@
           <div class="ct-title">
             <div class="ct-kicker">Event · ${T.label}<span class="ct-st ${c.status}"><i></i>${CT_STATUS[c.status]}</span></div>
             <h2>${esc(c.name)}</h2>
-            <div class="ct-dates">${esc(ctShort(c.startsAt))} – ${esc(ctShort(c.endsAt))}</div>
+            <div class="ct-dates">${esc(ctShort(c.startsAt))} - ${esc(ctShort(c.endsAt))}</div>
           </div>
           ${clock}
         </header>
@@ -777,8 +777,8 @@
       const banner = ct.flash ? `<div class="ct-flash ok" role="status">${esc(ct.flash)}</div>` : ct.error ? `<div class="ct-flash err" role="alert">${esc(ct.error)}</div>` : '';
       if (!list.length) {
         box.innerHTML = ct.loaded
-          ? `${banner}<div class="ct-empty"><b>${ct.data?.enabled === false ? 'Eventy są wyłączone' : 'Teraz nie ma żadnego eventu'}</b>Bot ogłosi następny na serwerze — wtedy zapiszesz się tutaj. Do tego czasu zajrzyj do <a href="ranking">rankingu poziomów</a>.</div>`
-          : `${banner}<div class="ct-loading">${ct.data === null && ct.failed ? 'Nie udało się wczytać eventów — spróbuj odświeżyć stronę.' : 'Wczytywanie eventów…'}</div>`;
+          ? `${banner}<div class="ct-empty"><b>${ct.data?.enabled === false ? 'Eventy są wyłączone' : 'Teraz nie ma żadnego eventu'}</b>Bot ogłosi następny na serwerze - wtedy zapiszesz się tutaj. Do tego czasu zajrzyj do <a href="ranking">rankingu poziomów</a>.</div>`
+          : `${banner}<div class="ct-loading">${ct.data === null && ct.failed ? 'Nie udało się wczytać eventów - spróbuj odświeżyć stronę.' : 'Wczytywanie eventów…'}</div>`;
         ctApplyTheme(null);
         return;
       }
@@ -797,10 +797,10 @@
       // Paski postępu „rosną” przy pierwszym pokazaniu eventu.
       if (animate) requestAnimationFrame(() => requestAnimationFrame(() => box.querySelectorAll('.ct-bar i[data-p]').forEach((i) => i.style.setProperty('--p', `${i.dataset.p}%`))));
       ctApplyTheme(c);
-      document.title = `${c.name} — Eventy serwera · Entuzjaści Hopkostki`;
+      document.title = `${c.name} - Eventy serwera · Entuzjaści Hopkostki`;
     }
 
-    // Karta „Twoje konto” — widać, czy jesteś zalogowany(-a).
+    // Karta „Twoje konto” - widać, czy jesteś zalogowany(-a).
     function renderAccount() {
       const card = $('#card-account');
       card.hidden = !ct.data?.enabled;
@@ -819,11 +819,11 @@
         const data = await res.json();
         if (data.expired) {
           ctForget();
-          if (!ct.error) ctMessage('err', 'Sesja wygasła — zaloguj się jeszcze raz.');
+          if (!ct.error) ctMessage('err', 'Sesja wygasła - zaloguj się jeszcze raz.');
         }
         ct.data = data;
         ct.loaded = true;
-        // „To ja” na stronie rankingu (Moje miejsce) — ta sama przeglądarka.
+        // „To ja” na stronie rankingu (Moje miejsce) - ta sama przeglądarka.
         if (data.me?.id) saved.set(ME_KEY, data.me.id);
       } catch {
         ct.failed = true;
@@ -839,16 +839,16 @@
       try {
         const res = await fetch(`${BASE}/link`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token }) });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data.token) return ctMessage('err', data.error ?? 'Nie udało się połączyć konta — spróbuj jeszcze raz.');
+        if (!res.ok || !data.token) return ctMessage('err', data.error ?? 'Nie udało się połączyć konta - spróbuj jeszcze raz.');
         ctSignedIn(data);
       } catch {
-        ctMessage('err', 'Nie udało się połączyć konta — sprawdź internet i spróbuj jeszcze raz.');
+        ctMessage('err', 'Nie udało się połączyć konta - sprawdź internet i spróbuj jeszcze raz.');
       }
     }
     function ctSignedIn(data) {
       ct.session = data.token;
       saved.set(SESSION_KEY, data.token);
-      ctMessage('ok', `Zalogowano jako ${data.me?.name ?? 'Ty'} — możesz zapisywać się na eventy.`);
+      ctMessage('ok', `Zalogowano jako ${data.me?.name ?? 'Ty'} - możesz zapisywać się na eventy.`);
       if (data.me?.id) saved.set(ME_KEY, data.me.id);
     }
 
@@ -880,21 +880,21 @@
       const rest = qs.toString();
       try { history.replaceState(null, '', `${cleanPath()}${rest ? `?${rest}` : ''}`); } catch {}
       if (error) {
-        ctMessage('err', error === 'access_denied' ? 'Anulowano logowanie przez Discord.' : 'Logowanie przez Discord nie powiodło się — spróbuj jeszcze raz.');
+        ctMessage('err', error === 'access_denied' ? 'Anulowano logowanie przez Discord.' : 'Logowanie przez Discord nie powiodło się - spróbuj jeszcze raz.');
         return true;
       }
       if (!pending || pending.state !== returned) {
-        ctMessage('err', 'Logowanie wygasło — kliknij „Zaloguj przez Discord” jeszcze raz.');
+        ctMessage('err', 'Logowanie wygasło - kliknij „Zaloguj przez Discord” jeszcze raz.');
         return true;
       }
       if (pending.contest) ct.selected = pending.contest;
       try {
         const res = await fetch(`${BASE}/oauth`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code, verifier: pending.verifier, redirectUri: pending.redirectUri ?? null }) });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data.token) ctMessage('err', data.error ?? 'Logowanie przez Discord nie powiodło się — spróbuj jeszcze raz.');
+        if (!res.ok || !data.token) ctMessage('err', data.error ?? 'Logowanie przez Discord nie powiodło się - spróbuj jeszcze raz.');
         else ctSignedIn(data);
       } catch {
-        ctMessage('err', 'Nie udało się połączyć z botem — spróbuj za chwilę.');
+        ctMessage('err', 'Nie udało się połączyć z botem - spróbuj za chwilę.');
       }
       return true;
     }
@@ -908,11 +908,11 @@
         const data = await res.json().catch(() => ({}));
         if (res.status === 401) {
           ctForget();
-          ctMessage('err', data.error ?? 'Sesja wygasła — zaloguj się jeszcze raz.');
-        } else if (!res.ok) ctMessage('err', data.error ?? 'Nie udało się — spróbuj za chwilę.');
-        else ctMessage('ok', 'Zapisano! Teraz spełnij warunek — pasek pokaże, ile brakuje.');
+          ctMessage('err', data.error ?? 'Sesja wygasła - zaloguj się jeszcze raz.');
+        } else if (!res.ok) ctMessage('err', data.error ?? 'Nie udało się - spróbuj za chwilę.');
+        else ctMessage('ok', 'Zapisano! Teraz spełnij warunek - pasek pokaże, ile brakuje.');
       } catch {
-        ctMessage('err', 'Nie udało się połączyć z botem — spróbuj za chwilę.');
+        ctMessage('err', 'Nie udało się połączyć z botem - spróbuj za chwilę.');
       }
       ct.busy = false;
       ct.shown = '';
@@ -922,7 +922,7 @@
     async function ctLeave(id) {
       if (ct.busy || !ct.session) return;
       const c = ct.data?.contests?.find((x) => x.id === id);
-      const lost = c?.me?.reached ? 'Masz już spełniony warunek — po wypisaniu stracisz miejsce' : 'Twój postęp przepadnie';
+      const lost = c?.me?.reached ? 'Masz już spełniony warunek - po wypisaniu stracisz miejsce' : 'Twój postęp przepadnie';
       const what = [c?.invites > 0 ? 'zaproszenia' : '', c?.messages > 0 ? 'wiadomości' : ''].filter(Boolean).join(' i ') || 'postęp';
       if (!confirm(`Wypisać się z eventu „${c?.name ?? 'event'}”?\n\n${lost}, a po ponownym zapisie ${what} liczą się od nowa.`)) return;
       ct.busy = true;
@@ -932,11 +932,11 @@
         const data = await res.json().catch(() => ({}));
         if (res.status === 401) {
           ctForget();
-          ctMessage('err', data.error ?? 'Sesja wygasła — zaloguj się jeszcze raz.');
-        } else if (!res.ok) ctMessage('err', data.error ?? 'Nie udało się — spróbuj za chwilę.');
+          ctMessage('err', data.error ?? 'Sesja wygasła - zaloguj się jeszcze raz.');
+        } else if (!res.ok) ctMessage('err', data.error ?? 'Nie udało się - spróbuj za chwilę.');
         else ctMessage('ok', 'Wypisano Cię z eventu. Możesz zapisać się ponownie, póki event trwa.');
       } catch {
-        ctMessage('err', 'Nie udało się połączyć z botem — spróbuj za chwilę.');
+        ctMessage('err', 'Nie udało się połączyć z botem - spróbuj za chwilę.');
       }
       ct.busy = false;
       ct.shown = '';
@@ -982,7 +982,7 @@
       document.querySelector(`#contests [data-ct="${CSS.escape(ct.selected)}"]`)?.focus();
     });
 
-    // Odliczanie co sekundę; po starcie albo końcu eventu — świeże dane.
+    // Odliczanie co sekundę; po starcie albo końcu eventu - świeże dane.
     function ctTick() {
       let ended = false;
       document.querySelectorAll('#contests [data-ct-until]').forEach((b) => {
@@ -1035,7 +1035,7 @@
       if (img.dataset.src === src || (!img.dataset.src && src === DEFAULT_BANNER)) return;
       img.dataset.src = src;
       $('.bg-banner').style.backgroundImage = `url("${src}")`;
-      // Płynna zmiana: nowy baner pokazuje się dopiero, gdy się wczyta (zły adres — zostaje poprzedni).
+      // Płynna zmiana: nowy baner pokazuje się dopiero, gdy się wczyta (zły adres - zostaje poprzedni).
       const next = new Image();
       next.onload = () => {
         if (img.dataset.src !== src) return;
@@ -1048,7 +1048,7 @@
       next.src = src;
     }
 
-    // Czysty adres: /event — bez .html i bez #… (link do eventu, token z /polacz) — po odczytaniu od razu znika.
+    // Czysty adres: /event - bez .html i bez #… (link do eventu, token z /polacz) - po odczytaniu od razu znika.
     function cleanPath() {
       return location.pathname.replace(/\/event\.html$/, '/event');
     }
@@ -1094,7 +1094,7 @@
       else if (img.classList.contains('emoji') && img.closest('.rich')) img.replaceWith(img.alt);
     }, true);
 
-    // #id eventu albo #polacz=token — same litery, cyfry, - i _ (bez dekodowania: zły link nie psuje strony).
+    // #id eventu albo #polacz=token - same litery, cyfry, - i _ (bez dekodowania: zły link nie psuje strony).
     contestsInit(location.hash.slice(1));
   </script>
 </body>

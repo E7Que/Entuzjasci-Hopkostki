@@ -46,11 +46,11 @@ test('ochrona logowania: 10 złych haseł z adresu → blokada na 15 min (także
   assert.equal((await call('tajne')).status, 200);
 });
 
-test('ochrona logowania: złe dane z /login też się liczą; wyłączone logowanie moderacji — nie', async () => {
+test('ochrona logowania: złe dane z /login też się liczą; wyłączone logowanie moderacji - nie', async () => {
   const s = await setup();
   const login = () =>
     s.handle(new Request(`${BASE}/login`, { method: 'POST', body: JSON.stringify({ login: 'kasia', password: 'AAAA-BBBB-CCCC' }), headers: { 'content-type': 'application/json', 'x-forwarded-for': '192.0.2.5' } }));
-  for (let i = 0; i < 12; i++) assert.equal((await login()).status, 401, 'logowanie moderacji wyłączone — bez licznika');
+  for (let i = 0; i < 12; i++) assert.equal((await login()).status, 401, 'logowanie moderacji wyłączone - bez licznika');
   await s.store.updateConfig({ panelAccess: { enabled: true } });
   for (let i = 0; i < 10; i++) assert.equal((await login()).status, 401);
   assert.equal((await login()).status, 429);

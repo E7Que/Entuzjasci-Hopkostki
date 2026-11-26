@@ -1,5 +1,5 @@
 // Serwer info (zakładka panelu): wiadomość z informacjami o rolach, rolach za poziomy i komendach dla społeczności.
-// Każda sekcja to embed (tytuł, wstęp, lista), a nad nim opcjonalny baner — osobny embed z samym obrazkiem.
+// Każda sekcja to embed (tytuł, wstęp, lista), a nad nim opcjonalny baner - osobny embed z samym obrazkiem.
 // Wiadomość wysyła się i aktualizuje z panelu; bot pamięta, gdzie ją wysłał (bot.state 'server_info_message').
 // Banery wgrane w panelu leżą w bot.assets i są serwowane publicznie przez funkcję (/panel/public/asset/…).
 
@@ -16,7 +16,7 @@ const DEFAULT_COLOR = 0x3cc3d6;
 
 // ---------- Treść wiadomości ----------
 
-// Puste linie pomijamy — sama „> ” na Discordzie nie jest cytatem i przerwałaby blok.
+// Puste linie pomijamy - sama „> ” na Discordzie nie jest cytatem i przerwałaby blok.
 const quote = (text) =>
   text
     .split('\n')
@@ -24,7 +24,7 @@ const quote = (text) =>
     .map((line) => `> ${line}`)
     .join('\n');
 
-// Komendy innych botów, które znamy z ID (DISBOARD /bump) — klikalne także jako {/bump}.
+// Komendy innych botów, które znamy z ID (DISBOARD /bump) - klikalne także jako {/bump}.
 export const KNOWN_COMMANDS = { bump: '947088344167366698' };
 
 // {/rank} w tekście → klikalna komenda (albo `/rank`, gdy bot nie zna jej ID).
@@ -36,7 +36,7 @@ function commandMention(command, { commandIds = {}, commandId = '' } = {}) {
 const withCommands = (text, opts) => String(text ?? '').replace(/\{\/([\p{Ll}\p{N}_-]{1,32}(?: [\p{Ll}\p{N}_-]{1,32}){0,2})\}/gu, (_, c) => commandMention(c, opts));
 
 // Rola: znaczek + wzmianka, opis w cytacie pod spodem (jak w dotychczasowym embedzie „Role Info”).
-// Komenda: jedna linia „znaczek /komenda — opis”. Nagłówek: pogrubiona linia.
+// Komenda: jedna linia „znaczek /komenda - opis”. Nagłówek: pogrubiona linia.
 export function itemText(item, { bullet = '', commandIds = {} } = {}) {
   const b = bullet ? `${bullet} ` : '';
   const opts = { commandIds };
@@ -46,7 +46,7 @@ export function itemText(item, { bullet = '', commandIds = {} } = {}) {
     case 'role':
       return `${b}<@&${item.roleId}>${item.text ? `\n${quote(withCommands(item.text, opts))}` : ''}`;
     case 'command':
-      return `${b}${commandMention(item.command, { commandIds, commandId: item.commandId })}${item.text ? ` — ${withCommands(item.text, opts)}` : ''}`;
+      return `${b}${commandMention(item.command, { commandIds, commandId: item.commandId })}${item.text ? ` - ${withCommands(item.text, opts)}` : ''}`;
     default:
       return withCommands(item.text, opts);
   }
@@ -83,20 +83,20 @@ export function buildServerInfoPayload(info, { commandIds = {}, now = Date.now()
     const description = sectionDescription(section, opts);
     if (!section.title && !description && !section.banner) continue;
     if (description.length > LIMITS.description) {
-      throw new ActionError(`Sekcja „${section.title || 'bez tytułu'}” ma ${description.length} znaków, a embed mieści 4096 — skróć opisy albo podziel ją na dwie.`);
+      throw new ActionError(`Sekcja „${section.title || 'bez tytułu'}” ma ${description.length} znaków, a embed mieści 4096 - skróć opisy albo podziel ją na dwie.`);
     }
     if (section.banner) embeds.push({ color, image: { url: section.banner } });
     if (section.title || description) embeds.push({ color, ...(section.title ? { title: section.title } : {}), ...(description ? { description } : {}) });
   }
-  if (!embeds.length) throw new ActionError('Wiadomość jest pusta — dodaj sekcję z treścią.');
+  if (!embeds.length) throw new ActionError('Wiadomość jest pusta - dodaj sekcję z treścią.');
   if (info.footer) Object.assign(embeds.at(-1), { footer: { text: info.footer }, timestamp: new Date(now).toISOString() });
-  if (embeds.length > LIMITS.embeds) throw new ActionError(`Wiadomość ma ${embeds.length} embedów, a Discord pozwala na 10 — usuń któryś baner albo sekcję.`);
+  if (embeds.length > LIMITS.embeds) throw new ActionError(`Wiadomość ma ${embeds.length} embedów, a Discord pozwala na 10 - usuń któryś baner albo sekcję.`);
   const total = embeds.reduce((sum, e) => sum + (e.title?.length ?? 0) + (e.description?.length ?? 0) + (e.footer?.text.length ?? 0), 0);
-  if (total > LIMITS.total) throw new ActionError(`Wiadomość ma ${total} znaków, a Discord pozwala na 6000 we wszystkich embedach razem — skróć opisy.`);
+  if (total > LIMITS.total) throw new ActionError(`Wiadomość ma ${total} znaków, a Discord pozwala na 6000 we wszystkich embedach razem - skróć opisy.`);
   return { content: '', embeds, allowed_mentions: { parse: [] } };
 }
 
-// ID komend bota (klikalne komendy w wiadomości) — z pamięcią na 10 minut.
+// ID komend bota (klikalne komendy w wiadomości) - z pamięcią na 10 minut.
 export function commandIdMap(bot) {
   return cached(bot, 'commandIds', 10 * 60_000, async () => {
     const app = await getApp(bot);
@@ -106,7 +106,7 @@ export function commandIdMap(bot) {
   });
 }
 
-// Wysyła wiadomość albo aktualizuje już wysłaną (asNew — zawsze nowa). Zwraca { action, channelId, messageId }.
+// Wysyła wiadomość albo aktualizuje już wysłaną (asNew - zawsze nowa). Zwraca { action, channelId, messageId }.
 export async function sendServerInfo(bot, { channelId = '', asNew = false } = {}) {
   const info = (await bot.store.getConfig()).serverInfo;
   const posted = await bot.store.getState('server_info_message');
@@ -119,7 +119,7 @@ export async function sendServerInfo(bot, { channelId = '', asNew = false } = {}
       await bot.store.setState('server_info_message', next);
       return { action: 'updated', ...next };
     } catch (error) {
-      // Wiadomość usunięta na Discordzie — wysyłamy nową.
+      // Wiadomość usunięta na Discordzie - wysyłamy nową.
       if (!(error instanceof DiscordError && error.status === 404)) throw error;
     }
   }
@@ -162,24 +162,24 @@ function creatorText(m, ctx) {
 }
 
 // [grupa, test nazwy (bez „| ” na początku), opis albo (dopasowanie, kontekst) => opis].
-// Kolejność reguł = kolejność ról w grupie (jak w dotychczasowym embedzie), przy remisie — pozycja roli.
+// Kolejność reguł = kolejność ról w grupie (jak w dotychczasowym embedzie), przy remisie - pozycja roli.
 const ROLE_RULES = [
-  ['staff', /właściciel|wlasciciel|owner/i, 'Właściciel serwera — nic dodać, nic ująć.'],
+  ['staff', /właściciel|wlasciciel|owner/i, 'Właściciel serwera - nic dodać, nic ująć.'],
   ['staff', /^admin/i, 'Administrator serwera. Najsilniejsza rola, jaką możesz dostać.'],
   ['staff', /^moderator/i, 'Moderator, taki admin, ale może mniej.'],
   ['staff', /^helper/i, 'Pomocnik moderatorów i adminów.'],
-  ['staff', /^test\s*helper/i, 'Helper na okresie próbnym — uczy się moderacji pod okiem ekipy.'],
-  ['staff', /^bot$/i, '„Bep Bop” — dźwięki robota.'],
+  ['staff', /^test\s*helper/i, 'Helper na okresie próbnym - uczy się moderacji pod okiem ekipy.'],
+  ['staff', /^bot$/i, '„Bep Bop” - dźwięki robota.'],
   ['community', /twórca|tworca|creator/i, creatorText],
   ['community', /booster/i, 'Osoba, która zboostowała serwer.'],
-  ['community', /^ex-?\s*moderator/i, 'Były moderator — dziękujemy za pomoc przy serwerze.'],
-  ['community', /członek|czlonek|^member$/i, 'Członek serwera — podstawowa rola każdej osoby na serwerze.'],
+  ['community', /^ex-?\s*moderator/i, 'Były moderator - dziękujemy za pomoc przy serwerze.'],
+  ['community', /członek|czlonek|^member$/i, 'Członek serwera - podstawowa rola każdej osoby na serwerze.'],
   ['notify', TIKTOK, (m) => `Powiadomienia o nowych filmach ${m[1]} na TikToku.`],
   ['notify', YOUTUBE, (m) => `Powiadomienia o nowych filmach ${m[1]} na YouTube.`],
   ['notify', /(mc|minecraft).*ping|ping.*(mc|minecraft)/i, 'Powiadomienia o serwerze Minecraft.'],
   ['notify', /bump/i, (m, ctx) => `Ping${ctx.bumpChannelId ? ` na <#${ctx.bumpChannelId}>` : ''}, kiedy znowu można podbić serwer komendą {/bump}.`],
   ['notify', /highlight/i, 'Ping przy podsumowaniu najaktywniejszych osób tygodnia i miesiąca.'],
-  ['notify', /dead\s*chat/i, 'Ping, gdy na czacie robi się pusto — wpadnij pogadać.'],
+  ['notify', /dead\s*chat/i, 'Ping, gdy na czacie robi się pusto - wpadnij pogadać.'],
   ['notify', /collab/i, 'Powiadomienia o collabach i ogłoszeniach Serwer Collab.'],
   ['notify', /ping/i, 'Rola z powiadomieniami.'],
 ];
@@ -224,7 +224,7 @@ export function suggestServerInfoRoles(gctx, config, { ticketChannelId = '', bum
     if (role.tags?.bot_id || role.tags?.integration_id) continue;
     const levelMatch = /^(?:level|poziom|lvl)\s*(\d+)$/i.exec(name);
     if (rewardLevel.has(role.id) || levelMatch) {
-      // Rola „Level N” spoza nagród — bot jej nie daje, więc jej nie opisujemy.
+      // Rola „Level N” spoza nagród - bot jej nie daje, więc jej nie opisujemy.
       if (rewards.length && !rewardLevel.has(role.id)) continue;
       const level = rewardLevel.get(role.id) ?? Number(levelMatch[1]);
       const extra = BigInt(role.permissions ?? 0) & ~everyone;
@@ -280,7 +280,7 @@ export const ASSET_ID = /^[a-f0-9]{24}\.(webp|png|jpg|gif)$/;
 
 // Publiczny adres obrazka: adres funkcji bez parametrów (selfUrl ma ?forceFunctionRegion=…) + /panel/public/asset/<id>.
 export function assetUrl(selfUrl, id) {
-  if (!selfUrl) throw new ActionError('Bot nie zna swojego adresu (brak SUPABASE_URL) — nie da się udostępnić obrazka.');
+  if (!selfUrl) throw new ActionError('Bot nie zna swojego adresu (brak SUPABASE_URL) - nie da się udostępnić obrazka.');
   const url = new URL(selfUrl);
   url.search = '';
   url.hash = '';

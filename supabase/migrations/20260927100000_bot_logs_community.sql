@@ -1,7 +1,7 @@
 -- Logi serwera (jak Carl-bot), przypominajka o bumpie (jak Fibo) i komendy społecznościowe:
 -- przypomnienia, konkursy (giveaway) i status AFK.
 
--- Ostatnie wiadomości z serwera — Discord przy usunięciu/edycji nie podaje starej treści, więc trzymamy ją
+-- Ostatnie wiadomości z serwera - Discord przy usunięciu/edycji nie podaje starej treści, więc trzymamy ją
 -- przez kilka dni (logi usuniętych i edytowanych wiadomości, /snipe). Czyszczone przez crona.
 create table bot.message_cache (
   id text primary key,
@@ -18,7 +18,7 @@ create table bot.message_cache (
 create index message_cache_channel_deleted_idx on bot.message_cache (channel_id, deleted_at desc);
 create index message_cache_created_idx on bot.message_cache (created_at);
 
--- Udane bumpy (DISBOARD /bump) — do rankingu i przypominajki.
+-- Udane bumpy (DISBOARD /bump) - do rankingu i przypominajki.
 create table bot.bumps (
   id int generated always as identity primary key,
   user_id text not null,
@@ -28,7 +28,7 @@ create table bot.bumps (
 );
 create index bumps_user_idx on bot.bumps (user_id);
 
--- /przypomnij — bot pisze na kanale (albo w DM) o wybranej porze.
+-- /przypomnij - bot pisze na kanale (albo w DM) o wybranej porze.
 create table bot.reminders (
   id int generated always as identity primary key,
   user_id text not null,
@@ -39,7 +39,7 @@ create table bot.reminders (
 );
 create index reminders_due_idx on bot.reminders (due_at);
 
--- /konkurs — wiadomość z przyciskiem „Weź udział”, losowanie zwycięzców po czasie.
+-- /konkurs - wiadomość z przyciskiem „Weź udział”, losowanie zwycięzców po czasie.
 create table bot.giveaways (
   id int generated always as identity primary key,
   channel_id text not null,
@@ -56,7 +56,7 @@ create table bot.giveaways (
 );
 create index giveaways_open_idx on bot.giveaways (ended, ends_at);
 
--- /afk — oznaczenie takiej osoby dostaje odpowiedź, że jej nie ma; pierwsza jej wiadomość zdejmuje status.
+-- /afk - oznaczenie takiej osoby dostaje odpowiedź, że jej nie ma; pierwsza jej wiadomość zdejmuje status.
 create table bot.afk (
   user_id text primary key,
   reason text not null default '',

@@ -1,5 +1,5 @@
-// Komendy poziomów (jak w Arcane): /rank — karta poziomu, /ranking — tabela najlepszych (łącznie, w tym
-// tygodniu albo miesiącu), /xp — ręczne zmiany XP (Zarządzanie serwerem; w panelu można zostawić /xp i
+// Komendy poziomów (jak w Arcane): /rank - karta poziomu, /ranking - tabela najlepszych (łącznie, w tym
+// tygodniu albo miesiącu), /xp - ręczne zmiany XP (Zarządzanie serwerem; w panelu można zostawić /xp i
 // resetowanie tylko właścicielowi serwera).
 
 import { P } from './permissions.js';
@@ -15,7 +15,7 @@ const pl = (n) => Number(n).toLocaleString('pl-PL');
 
 async function levelsConfig(bot) {
   const { levels } = await bot.store.getConfig();
-  if (!levels.enabled) throw new ActionError('Poziomy są wyłączone — administrator może je włączyć w panelu (zakładka Poziomy).');
+  if (!levels.enabled) throw new ActionError('Poziomy są wyłączone - administrator może je włączyć w panelu (zakładka Poziomy).');
   return levels;
 }
 
@@ -24,7 +24,7 @@ const rank = {
   defer: 'public',
   data: {
     name: 'rank',
-    description: '📈 Karta poziomu — Twoja albo innej osoby',
+    description: '📈 Karta poziomu - Twoja albo innej osoby',
     ...GUILD_ONLY,
     options: [{ type: T.USER, name: 'uzytkownik', description: '👤 Czyja karta (puste = Twoja)' }],
   },
@@ -43,7 +43,7 @@ const ranking = {
   defer: 'public',
   data: {
     name: 'ranking',
-    description: '🏆 Ranking poziomów — łącznie, w tym tygodniu albo miesiącu',
+    description: '🏆 Ranking poziomów - łącznie, w tym tygodniu albo miesiącu',
     ...GUILD_ONLY,
     options: [
       {
@@ -67,14 +67,14 @@ const ranking = {
     }
     const lines = rows.map((r) => {
       const xp = period === 'wszystko' ? r.xp : r.periodXp;
-      return `**${r.rank}.** <@${r.userId}> — poziom **${levelProgress(r.xp, config.formula).level}** · ${pl(xp)} XP`;
+      return `**${r.rank}.** <@${r.userId}> - poziom **${levelProgress(r.xp, config.formula).level}** · ${pl(xp)} XP`;
     });
     const link = config.publicLeaderboard ? `\n\n[Pełny ranking](${PANEL_SITE}ranking)` : '';
     return ix.edit({
       embeds: [
         {
           color: config.card.autoColor === false ? embeds.colorInt(config.card.color, LEVEL_COLOR) : LEVEL_COLOR,
-          title: `🏆 Ranking poziomów — ${PERIODS[period]}`,
+          title: `🏆 Ranking poziomów - ${PERIODS[period]}`,
           description: (lines.length ? lines.join('\n') : 'Na tej stronie nikogo jeszcze nie ma.') + link,
           footer: { text: `Strona ${page} • ${embeds.BRAND}` },
         },
@@ -118,10 +118,10 @@ const xp = {
     const reset = ix.sub === 'reset' || ix.sub === 'reset-wszystkich';
     const member = { ...ix.member, id: ix.user.id };
     if (!(await canManageXp(bot, member, { reset }))) {
-      throw new ActionError(reset ? 'Resetowanie XP jest zablokowane — może to zrobić tylko właściciel serwera.' : '/xp jest zablokowane — może jej używać tylko właściciel serwera.');
+      throw new ActionError(reset ? 'Resetowanie XP jest zablokowane - może to zrobić tylko właściciel serwera.' : '/xp jest zablokowane - może jej używać tylko właściciel serwera.');
     }
     if (ix.sub === 'reset-wszystkich') {
-      if (ix.opt('potwierdz') !== true) throw new ActionError('Nic nie zmieniono — zaznacz potwierdz: True.');
+      if (ix.opt('potwierdz') !== true) throw new ActionError('Nic nie zmieniono - zaznacz potwierdz: True.');
       const count = await bot.store.resetLevels();
       return ix.edit({ embeds: [embeds.successEmbed(`Wyzerowano XP i poziomy (${count} osób). Statystyki zostały.`)] });
     }

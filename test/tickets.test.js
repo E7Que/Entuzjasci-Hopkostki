@@ -76,7 +76,7 @@ test('otwarcie ticketu: okienko z pytaniem, prywatny kanał, powitanie z przycis
   assert.equal(BigInt(byId[SUPPORT].allow) & P.VIEW_CHANNEL, P.VIEW_CHANNEL);
 
   const welcome = s.discord.state.channels.get(channel.id)[0];
-  assert.equal(welcome.content, '<@target>', 'bez pingowania obsługi — i tak widzi kanał');
+  assert.equal(welcome.content, '<@target>', 'bez pingowania obsługi - i tak widzi kanał');
   assert.equal(welcome.embeds[0].fields[0].value, 'Nie działa mi rola');
   assert.deepEqual(welcome.components[0].components.map((b) => b.label), ['Zamknij', 'Przejmij', 'Dodaj osobę']);
   assert.match(s.discord.state.webhook.at(-1).body.embeds[0].description, new RegExp(`<#${channel.id}>`));
@@ -87,7 +87,7 @@ test('otwarcie ticketu: okienko z pytaniem, prywatny kanał, powitanie z przycis
   assert.equal(s.discord.state.createdChannels.length, 1);
 });
 
-test('wybór: Zgłoszenie albo Partnerstwo — formularz partnerstwa z linkiem, liczbą członków i powodem', async () => {
+test('wybór: Zgłoszenie albo Partnerstwo - formularz partnerstwa z linkiem, liczbą członków i powodem', async () => {
   const s = await setup();
   s.discord.state.publicInvites.fajny = {
     code: 'fajny',
@@ -109,7 +109,7 @@ test('wybór: Zgłoszenie albo Partnerstwo — formularz partnerstwa z linkiem, 
   const rules = await run(s.bot, click('tk|open|1'));
   assert.equal(rules.response.type, 4);
   assert.equal(rules.response.data.flags, 64);
-  assert.equal(rules.response.data.embeds[0].title, 'Regulamin — Partnerstwo');
+  assert.equal(rules.response.data.embeds[0].title, 'Regulamin - Partnerstwo');
   assert.match(rules.response.data.embeds[0].description, /prawdziwa/);
   assert.deepEqual(rules.response.data.components[0].components.map((b) => b.custom_id), ['tk|accept|1', 'tk|decline|1']);
   const declined = await run(s.bot, click('tk|decline|1'));
@@ -131,7 +131,7 @@ test('wybór: Zgłoszenie albo Partnerstwo — formularz partnerstwa z linkiem, 
     { type: 1, components: [{ type: 4, custom_id: 'f1', value: count }] },
     { type: 1, components: [{ type: 4, custom_id: 'f2', value: why }] },
   ];
-  // Z panelu (publiczna wiadomość) — błędna liczba: nic nie powstaje, odpowiedzi zostają w wiadomości z błędem.
+  // Z panelu (publiczna wiadomość) - błędna liczba: nic nie powstaje, odpowiedzi zostają w wiadomości z błędem.
   const wrong = await run(s.bot, click('tkm|open|1', { type: 5, components: answers('discord.gg/fajny', 'około 1,5k'), message: { id: 'panel', flags: 0 } }));
   assert.equal(wrong.response.type, 5);
   const error = s.discord.state.webhook.at(-1).body;
@@ -153,7 +153,7 @@ test('wybór: Zgłoszenie albo Partnerstwo — formularz partnerstwa z linkiem, 
     'Podobna tematyka, chętnie się wymienimy.',
   ]);
 
-  // Wysłane z wiadomości z błędem — aktualizuje ją (typ 6) zamiast dodawać nową.
+  // Wysłane z wiadomości z błędem - aktualizuje ją (typ 6) zamiast dodawać nową.
   const fromError = { type: 5, message: { id: 'err', flags: 64 } };
   const dead = await run(s.bot, click('tkm|open|1', { ...fromError, components: answers('https://discord.com/invite/martwy', '1500') }));
   assert.equal(dead.response.type, 6);
@@ -207,7 +207,7 @@ test('rodzaje ticketów z panelu: stare pytanie zamienia się w formularz, pola 
     },
   });
   const [old, fresh] = saved.tickets.types;
-  assert.equal(saved.tickets.types.length, 2, 'bez napisu na przycisku — pomijany');
+  assert.equal(saved.tickets.types.length, 2, 'bez napisu na przycisku - pomijany');
   assert.deepEqual(old, { label: 'Stary', style: 'czerwony', emoji: '', welcome: '', rules: '', categoryId: '', archiveCategoryId: '', logChannelId: '', supportRoleIds: [], authorCanClose: true, authorCanAdd: true, authorCanAttach: true, fields: [{ label: 'Od czego się odwołujesz?', placeholder: '', kind: 'long', required: true }] });
   assert.equal(fresh.style, 'niebieski');
   assert.equal(fresh.emoji, '');
@@ -240,7 +240,7 @@ test('ticket: przejęcie tylko przez obsługę, dodanie osoby, zamknięcie z zap
   assert.equal((await s.store.getTicket(ticket.id)).status, 'open', 'bez powodu ticket zostaje otwarty');
   await run(s.bot, click(`tkm|close|${ticket.id}`, { type: 5, components: [{ type: 1, components: [{ type: 4, custom_id: 'reason', value: 'Sprawa rozwiązana' }] }] }));
 
-  // Kanał NIE jest usuwany — zostaje jako archiwum, ukryty dla autora i dodanej osoby.
+  // Kanał NIE jest usuwany - zostaje jako archiwum, ukryty dla autora i dodanej osoby.
   assert.deepEqual(s.discord.state.deletedChannels, []);
   const closed = await s.store.getTicket(ticket.id);
   assert.equal(closed.status, 'closed');
@@ -319,7 +319,7 @@ test('osobne ustawienia rodzajów ticketów: własna kategoria, role obsługi, l
       { label: 'Partnerstwo', style: 'zielony', fields: [], categoryId: PARTNER_CAT, logChannelId: PARTNER_LOG, supportRoleIds: [PARTNER_ROLE], authorCanClose: false, authorCanAdd: false, authorCanAttach: false },
     ],
   });
-  // Autor partnerstwa to zwykła osoba (nie właściciel serwera — ten zawsze należy do obsługi).
+  // Autor partnerstwa to zwykła osoba (nie właściciel serwera - ten zawsze należy do obsługi).
   await run(s.bot, click('tk|open|0', { user: 'target' }));
   await run(s.bot, click('tk|open|1', { user: 'partner' }));
   const [report, partner] = s.discord.state.createdChannels;
@@ -359,12 +359,12 @@ test('obsługa ticketów = lista „Obsługa” z panelu i właściciel serwera;
   assert.match(error(await run(s.bot, click(`tk|claim|${ticket.id}`, channels))), /tylko obsługa/, '„Zarządzanie kanałami” też nie wystarcza');
   assert.equal((await s.store.getTicket(ticket.id)).claimedBy, null);
 
-  // Właściciel serwera — zawsze, także bez żadnej roli (rozpoznawany po ID, nie po uprawnieniach).
+  // Właściciel serwera - zawsze, także bez żadnej roli (rozpoznawany po ID, nie po uprawnieniach).
   await run(s.bot, click(`tk|claim|${ticket.id}`, { user: 'owner' }));
   assert.equal((await s.store.getTicket(ticket.id)).claimedBy, 'owner');
   // Administrator dopisany do listy „Obsługa” obsługuje tickety jak każda inna rola z listy.
   await s.store.updateConfig({ tickets: { supportRoleIds: [SUPPORT, ADMIN_ROLE] } });
-  assert.equal((await run(s.bot, click(`tk|close|${ticket.id}`, admin))).response.type, 9, 'z listy — okienko z powodem zamknięcia');
+  assert.equal((await run(s.bot, click(`tk|close|${ticket.id}`, admin))).response.type, 9, 'z listy - okienko z powodem zamknięcia');
   await s.store.updateConfig({ tickets: { supportRoleIds: [SUPPORT] } });
 
   // Archiwum: „Usuń kanał z archiwum” też tylko dla obsługi i właściciela.
@@ -376,7 +376,7 @@ test('obsługa ticketów = lista „Obsługa” z panelu i właściciel serwera;
   assert.deepEqual(s.discord.state.deletedChannels, []);
 });
 
-test('ticket: pierwsza odpowiedź obsługi przejmuje go sama (bez klikania); autor, boty i inni — nie; można wyłączyć', async () => {
+test('ticket: pierwsza odpowiedź obsługi przejmuje go sama (bez klikania); autor, boty i inni - nie; można wyłączyć', async () => {
   const s = await setup({ types: [{ label: 'Pomoc', style: 'niebieski', question: '' }] });
   await run(s.bot, click('tk|open|0'));
   const channel = s.discord.state.createdChannels[0];
@@ -386,7 +386,7 @@ test('ticket: pierwsza odpowiedź obsługi przejmuje go sama (bez klikania); aut
     author: { id: author, username: author }, member: { roles }, ...extra,
   });
 
-  // Autor ticketu (nawet z rolą obsługi), ktoś spoza obsługi, bot i webhook — bez przejęcia.
+  // Autor ticketu (nawet z rolą obsługi), ktoś spoza obsługi, bot i webhook - bez przejęcia.
   assert.equal(await onMessageTicketClaim(s.bot, msg(channel.id, 'target', [SUPPORT])), null);
   assert.equal(await onMessageTicketClaim(s.bot, msg(channel.id, 'obcy')), null);
   assert.equal(await onMessageTicketClaim(s.bot, msg(channel.id, 'robot', [SUPPORT], { author: { id: 'robot', bot: true } })), null);
@@ -401,13 +401,13 @@ test('ticket: pierwsza odpowiedź obsługi przejmuje go sama (bez klikania); aut
   const welcome = messages.find((m) => JSON.stringify(m.components ?? []).includes(`tk|claim|${ticket.id}`));
   const edit = s.discord.state.editedMessages.find((e) => e.channel === channel.id && e.id === welcome.id);
   assert.deepEqual([edit?.body.components[0].components[1].label, edit?.body.components[0].components[1].disabled], ['Przejęty', true], 'przycisk w powitaniu: „Przejęty”');
-  assert.match(messages.at(-1).embeds[0].description, /Ticket przejęty przez <@mod> — pierwsza odpowiedź obsługi/);
+  assert.match(messages.at(-1).embeds[0].description, /Ticket przejęty przez <@mod> - pierwsza odpowiedź obsługi/);
   // Kolejna osoba z obsługi już nie przejmuje (ani nie pisze drugi raz).
   const before = messages.length;
   assert.equal(await onMessageTicketClaim(s.bot, msg(channel.id, 'mod2', [SUPPORT])), null);
   assert.equal((await s.store.getTicket(ticket.id)).claimedBy, 'mod');
   assert.equal(s.discord.state.channels.get(channel.id).length, before);
-  // Zwykły kanał (nie ticket) — nic.
+  // Zwykły kanał (nie ticket) - nic.
   assert.equal(await onMessageTicketClaim(s.bot, msg('100000000000000099', 'mod', [SUPPORT])), null);
 
   // Wyłączone w panelu → bez przejęcia (przycisk dalej działa).

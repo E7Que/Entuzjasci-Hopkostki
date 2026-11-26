@@ -1,10 +1,10 @@
 // Uprawnienia komend ustawione w samym Discordzie: Ustawienia serwera → Integracje → bot → Zarządzaj.
-// Administracja serwera może tam zablokować komendy bota rolom, osobom i kanałom — dla całej aplikacji albo
+// Administracja serwera może tam zablokować komendy bota rolom, osobom i kanałom - dla całej aplikacji albo
 // dla pojedynczej komendy. Te nadpisania działają niezależnie od list ról bota (zakładka „Uprawnienia”,
 // config.commandPermissions): zablokowana komenda znika z listy komend, choć lista bota na nią pozwala.
 //
 // Bot może je tylko ODCZYTAĆ (GET z tokenem bota). Zmienić je może wyłącznie osoba z uprawnieniami
-// Zarządzanie serwerem i Zarządzanie rolami — API przyjmuje do tego tylko jej token Bearer (OAuth2, scope
+// Zarządzanie serwerem i Zarządzanie rolami - API przyjmuje do tego tylko jej token Bearer (OAuth2, scope
 // applications.commands.permissions.update), a token bota dostaje błąd. Dlatego panel je pokazuje, porównuje
 // z listami bota i podpowiada, co kliknąć w Discordzie.
 //
@@ -13,8 +13,8 @@
 // - kanał: wpis komendy dla tego kanału → jej „Wszystkie kanały” (id = guild_id − 1) → to samo w ustawieniach
 //   całej aplikacji (wpis o id = id aplikacji) → domyślnie wszędzie. Ograniczenia kanałów dotyczą też
 //   administratorów (na serwerze admin mógł użyć /powiedz tylko na kanale dopuszczonym w Discordzie);
-// - osoba: właściciel serwera i Administrator — zawsze. Inaczej wpis komendy dla tej osoby → dla jej ról
-//   (wystarczy jedna zezwalająca) → dla @everyone (id = guild_id); gdy komenda nie ma takiego wpisu — te same
+// - osoba: właściciel serwera i Administrator - zawsze. Inaczej wpis komendy dla tej osoby → dla jej ról
+//   (wystarczy jedna zezwalająca) → dla @everyone (id = guild_id); gdy komenda nie ma takiego wpisu - te same
 //   kroki w ustawieniach całej aplikacji (jej blokada działa, zgoda nie znosi default_member_permissions);
 //   na końcu default_member_permissions komendy (bot ich nie ustawia, więc domyślnie może każdy).
 
@@ -42,7 +42,7 @@ export function allChannelsId(guildId) {
 
 // Dane do porównania, pamiętane 30 s (fresh = pobierz od nowa):
 // { readable, error, appId, botName, guildId, checkedAt, roles, permissions, commands, channels, members }.
-// readable: false — Discord nie pozwolił odczytać nadpisań (403); 404 i pusta lista = brak nadpisań.
+// readable: false - Discord nie pozwolił odczytać nadpisań (403); 404 i pusta lista = brak nadpisań.
 export function loadDiscordCommandPermissions(bot, { fresh = false } = {}) {
   if (fresh) bot.cache.delete(CACHE_KEY);
   return cached(bot, CACHE_KEY, CACHE_MS, async () => {
@@ -265,7 +265,7 @@ export function findConflicts(snapshot, config) {
     if (!map.has(key)) map.set(key, { name, items: [] });
     map.get(key).items.push(item);
   };
-  // Kanały dzielone na dozwolone i zablokowane (+ skąd blokady). Najpierw samo ustawienie całej aplikacji —
+  // Kanały dzielone na dozwolone i zablokowane (+ skąd blokady). Najpierw samo ustawienie całej aplikacji -
   // komendy z takim samym wynikiem opisuje jedno zdanie, pozostałe mają własne ustawienia kanałów.
   const splitChannels = (levels) => {
     const result = { blocked: [], allowed: [], sources: new Set() };
@@ -292,7 +292,7 @@ export function findConflicts(snapshot, config) {
       const forAll = list.includes(EVERYONE);
       const forEveryone = forAll ? access(everyone) : null;
       if (forEveryone && !forEveryone.allowed) {
-        // Lista bota pozwala wszystkim, a Discord blokuje @everyone — wystarczy jedno zdanie (z rolami, które Discord wpuszcza).
+        // Lista bota pozwala wszystkim, a Discord blokuje @everyone - wystarczy jedno zdanie (z rolami, które Discord wpuszcza).
         everyoneBlocks.push({ command: command.name, source: forEveryone.source, allowedRoles: roles.filter((r) => !r.admin && access(r).allowed).map((r) => r.name) });
       } else {
         for (const role of roles) {
@@ -308,7 +308,7 @@ export function findConflicts(snapshot, config) {
       }
     }
 
-    // Kanały sprawdzamy dla każdej komendy — ograniczenie kanałów dotyczy też administratorów.
+    // Kanały sprawdzamy dla każdej komendy - ograniczenie kanałów dotyczy też administratorów.
     const channels = splitChannels(levels);
     if (channels.key === appChannels.key) continue;
     channelExceptions.push(command.name);
@@ -329,7 +329,7 @@ export function findConflicts(snapshot, config) {
     const scope = `ustawienie całej aplikacji, ${admins}`;
     let text;
     if (!allowed.length) text = `Wszystkie komendy bota są w Discordzie wyłączone na wszystkich kanałach (${scope}).`;
-    else if (allowed.length <= blocked.length) text = `Discord ogranicza bota do ${toChannels(allowed)} — na wszystkich innych kanałach komendy bota są wyłączone (${scope}).`;
+    else if (allowed.length <= blocked.length) text = `Discord ogranicza bota do ${toChannels(allowed)} - na wszystkich innych kanałach komendy bota są wyłączone (${scope}).`;
     else text = `Discord wyłącza komendy bota na ${onChannels(blocked)} (${scope}).`;
     if (channelExceptions.length) {
       text += ` Wyjątek: ${channelExceptions.length === 1 ? `/${channelExceptions[0]} ma` : `${slashList(channelExceptions)} mają`} własne ustawienia kanałów.`;
@@ -346,7 +346,7 @@ export function findConflicts(snapshot, config) {
     else if (allowed.length <= blocked.length) text = `Discord pozwala używać ${commandsGen(commands)} tylko na ${onChannels(allowed)} (wszystkie inne kanały wyłączone, ${admins}).`;
     else text = `Discord wyłącza ${commandsAcc(commands)} na ${onChannels(blocked)} (${admins}).`;
     const places = [...(sources.has('command') ? [`kliknij ${slashList(commands)}`] : []), ...(sources.has('app') ? [APP_PLACE] : [])].join(' oraz ');
-    const reset = sources.has('command') ? ' — albo usuń wszystkie nadpisania tej komendy (przywróć domyślne)' : '';
+    const reset = sources.has('command') ? ' - albo usuń wszystkie nadpisania tej komendy (przywróć domyślne)' : '';
     conflicts.push({ level: 'error', kind: 'channels', text, fix: `${path} → ${places} → ${channelsFix}${reset}.`, commands });
   }
 
@@ -354,7 +354,7 @@ export function findConflicts(snapshot, config) {
   if (app?.roles.get(guildId) === false) {
     const affected = everyoneBlocks.filter((b) => b.source === 'app').map((b) => b.command);
     const allowedRoles = [...app.roles].filter(([id, allow]) => allow && id !== guildId).map(([id]) => names.role(id));
-    const who = allowedRoles.length ? ` — Discord pozwala na nie tylko ${roleWord(allowedRoles)} i administratorom` : ' — widzą je tylko administratorzy';
+    const who = allowedRoles.length ? ` - Discord pozwala na nie tylko ${roleWord(allowedRoles)} i administratorom` : ' - widzą je tylko administratorzy';
     const listed = affected.length ? ` Listy bota pozwalają wszystkim na ${slashList(affected)}.` : '';
     conflicts.push({
       level: affected.length ? 'error' : 'warn',
@@ -374,10 +374,10 @@ export function findConflicts(snapshot, config) {
   }
   for (const group of everyoneGroups.values()) {
     const one = group.commands.length === 1;
-    const who = group.allowedRoles.length ? ` — Discord pozwala tylko ${roleWord(group.allowedRoles)} i administratorom` : '';
+    const who = group.allowedRoles.length ? ` - Discord pozwala tylko ${roleWord(group.allowedRoles)} i administratorom` : '';
     const fix =
       group.source === 'default'
-        ? `Komenda ma w Discordzie domyślne wymagane uprawnienia — ${path} → kliknij ${slashList(group.commands)} → przy @everyone zaznacz ✓ (zezwól).`
+        ? `Komenda ma w Discordzie domyślne wymagane uprawnienia - ${path} → kliknij ${slashList(group.commands)} → przy @everyone zaznacz ✓ (zezwól).`
         : `${path} → kliknij ${slashList(group.commands)} → przy @everyone zaznacz ✓ (zezwól) albo usuń nadpisania tej komendy (przywróć domyślne).`;
     conflicts.push({
       level: 'error',
@@ -395,7 +395,7 @@ export function findConflicts(snapshot, config) {
       level: 'error',
       kind: 'role',
       text: `Discord blokuje ${commandsAcc(commands)} dla roli ${name} (${commands.length === 1 ? 'lista bota na to pozwala' : 'listy bota na to pozwalają'}).`,
-      fix: `${path} → ${fixPlaces(items)} → przy roli „${name}” zaznacz ✓ (jeśli jej tam nie ma — dodaj ją z ✓) albo usuń nadpisania, które ją blokują.`,
+      fix: `${path} → ${fixPlaces(items)} → przy roli „${name}” zaznacz ✓ (jeśli jej tam nie ma - dodaj ją z ✓) albo usuń nadpisania, które ją blokują.`,
       commands,
     });
   }
@@ -414,7 +414,7 @@ export function findConflicts(snapshot, config) {
   return conflicts;
 }
 
-// Nadpisania i konflikty razem — dane dla panelu (GET /commands/discord).
+// Nadpisania i konflikty razem - dane dla panelu (GET /commands/discord).
 export function analyzeCommandPermissions(snapshot, config) {
   return { overrides: describeOverrides(snapshot), conflicts: findConflicts(snapshot, config) };
 }
@@ -422,12 +422,12 @@ export function analyzeCommandPermissions(snapshot, config) {
 // ---------- Uprawnienie kanału „Używanie komend aplikacji” ----------
 // Niezależnie od Integracji Discord pozwala użyć komendy tylko na kanale, na którym osoba ma uprawnienie
 // „Używanie komend aplikacji” (zwykłe uprawnienia roli i kanału). Serwery często odbierają je @everyone na
-// większości kanałów — wtedy np. moderator może używać komend bota tylko tam, gdzie jego rola ma je dodane.
+// większości kanałów - wtedy np. moderator może używać komend bota tylko tam, gdzie jego rola ma je dodane.
 // Administrator omija uprawnienia kanałów, dlatego jemu działa wszędzie.
 const USE_APPLICATION_COMMANDS = 1n << 31n;
 const VIEW_CHANNEL = 1n << 10n;
 
-// Uprawnienia na kanale dla osoby z rolami roleIds (bez wpisów dla pojedynczych osób) — algorytm Discorda:
+// Uprawnienia na kanale dla osoby z rolami roleIds (bez wpisów dla pojedynczych osób) - algorytm Discorda:
 // rola @everyone + role → nadpisanie @everyone na kanale → nadpisania ról (zgody wygrywają z blokadami).
 export function channelPermissionsFor({ guildId, everyonePerms, rolePerms = [], roleIds = [] }, channel) {
   let perms = BigInt(everyonePerms ?? 0);
@@ -449,7 +449,7 @@ export function channelPermissionsFor({ guildId, everyonePerms, rolePerms = [], 
 }
 
 // Dla każdej roli z list komend bota (i zwykłych członków): na których widocznych dla niej kanałach nie może
-// używać komend. Liczone dla samej tej roli (+ @everyone) — osoba z kilkoma rolami może mieć więcej.
+// używać komend. Liczone dla samej tej roli (+ @everyone) - osoba z kilkoma rolami może mieć więcej.
 export function findChannelBlocks({ guildId, roles, channels, config }) {
   const byId = new Map(roles.map((r) => [String(r.id), r]));
   const everyonePerms = byId.get(String(guildId))?.permissions ?? '0';
@@ -483,7 +483,7 @@ export function findChannelBlocks({ guildId, roles, channels, config }) {
 }
 
 // Odpowiedź API panelu: { readable, error, botName, checkedAt, overrides, conflicts, channelBlocks }.
-// channelBlocks: [{ roleId, name, admin, visible, blocked: [{ id, name }] }] — kanały, które rola widzi, ale nie
+// channelBlocks: [{ roleId, name, admin, visible, blocked: [{ id, name }] }] - kanały, które rola widzi, ale nie
 // może na nich używać komend (uprawnienie kanału „Używanie komend aplikacji”); admin = omija (Administrator).
 export async function discordCommandPermissions(bot, config, { fresh = false } = {}) {
   const snapshot = await loadDiscordCommandPermissions(bot, { fresh });

@@ -1,6 +1,6 @@
-// Opcjonalny LOKALNY wrapper na panel — panel działa też bez tego, prosto pod
+// Opcjonalny LOKALNY wrapper na panel - panel działa też bez tego, prosto pod
 // https://enho.pl/panel (patrz README).
-// Ten serwer tylko serwuje pliki z ./public i przekazuje resztę żądań 1:1 do bota na Supabase —
+// Ten serwer tylko serwuje pliki z ./public i przekazuje resztę żądań 1:1 do bota na Supabase -
 // hasło panelu wpisuje się w przeglądarce (tak samo jak w wersji hostowanej), więc nie trzeba
 // go tu konfigurować.
 
@@ -123,7 +123,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const host = process.env.PANEL_HOST || '127.0.0.1';
   const botUrl = process.env.BOT_URL || DEFAULT_BOT_URL;
 
-  if (!LOCAL_HOSTS.has(host)) console.warn('⚠️  Panel nasłuchuje poza localhost — każdy w sieci zobaczy stronę logowania panelu!');
+  if (!LOCAL_HOSTS.has(host)) console.warn('⚠️  Panel nasłuchuje poza localhost - każdy w sieci zobaczy stronę logowania panelu!');
 
   const server = createPanelServer({ botUrl, host });
   server.listen(port, host, () => {

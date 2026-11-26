@@ -72,7 +72,7 @@ const message = (author, extra = {}) => ({
   ...extra,
 });
 
-test('formuła jak w Arcane („Linear”): 100·poziom + 75 XP na kolejny poziom — progi zgodne z rankingiem Arcane', () => {
+test('formuła jak w Arcane („Linear”): 100·poziom + 75 XP na kolejny poziom - progi zgodne z rankingiem Arcane', () => {
   assert.deepEqual([0, 1, 2, 3, 10].map((l) => xpToNext(l, ARCANE)), [75, 175, 275, 375, 1075]);
   assert.deepEqual([1, 2, 3, 4, 24, 31].map((l) => totalXpForLevel(l, ARCANE)), [75, 250, 525, 900, 29400, 48825]);
   // Z rankingu Arcane: 49.7K → 31, 43.9K → 29, 30K → 24, 531 → 3, 482 → 2, 244 → 1, 83 → 1.
@@ -88,11 +88,11 @@ test('formuła jak w Arcane („Linear”): 100·poziom + 75 XP na kolejny pozio
 
 test('tagi wiadomości o awansie jak w Arcane, z {earned:…} tylko przy zdobytej roli', () => {
   const user = { id: '42', username: 'kasia' };
-  const template = '{user.mention} ({user.name}) ma poziom {user.level} i {user.xp} XP!{earned: Rola {name} — {mention}!}';
+  const template = '{user.mention} ({user.name}) ma poziom {user.level} i {user.xp} XP!{earned: Rola {name} - {mention}!}';
   assert.equal(levelUpText(template, { user, level: 5, xp: 1375, earned: [] }), '<@42> (kasia) ma poziom 5 i 1375 XP!');
   assert.equal(
     levelUpText(template, { user, level: 5, xp: 1375, earned: [{ roleId: LVL5 }], roleName: () => '| Level 5' }),
-    `<@42> (kasia) ma poziom 5 i 1375 XP! Rola | Level 5 — <@&${LVL5}>!`,
+    `<@42> (kasia) ma poziom 5 i 1375 XP! Rola | Level 5 - <@&${LVL5}>!`,
   );
 });
 
@@ -146,7 +146,7 @@ test('XP za wiadomości: cooldown, awans z wiadomością na kanale i rolą za po
   assert.equal(voiceCard.thumbnail.url, 'https://cdn.discordapp.com/avatars/target/a_ruchomy.gif?size=256');
 });
 
-test('wątki, fora, czat kanałów głosowych i komendy slash — według przełączników; tryb „tylko te kanały”', async () => {
+test('wątki, fora, czat kanałów głosowych i komendy slash - według przełączników; tryb „tylko te kanały”', async () => {
   const [THREAD, THREAD_PARENT, FORUM_POST, FORUM, VOICE, OTHER, CHAN] = ['101', '102', '103', '104', '105', '106', '107'].map((n) => `100000000000000${n}`);
   const s = await setup({ restrictions: { threads: false, forums: true, voiceText: false, slashCommands: true, channelMode: 'allow', channelIds: [FORUM, THREAD_PARENT, CHAN] } });
   s.discord.state.channelInfo = {
@@ -174,7 +174,7 @@ test('XP za reakcje (dający i autor) i za kanały głosowe (minimum osób, anty
   assert.equal((await s.store.getLevel('target')).reactions, 1);
 
   await s.store.setVoiceState('owner', 'vc1', { muted: false });
-  assert.equal(await voiceXpTick(s.bot), 0, 'sam na kanale — nic');
+  assert.equal(await voiceXpTick(s.bot), 0, 'sam na kanale - nic');
   await s.store.setVoiceState('mod', 'vc1', { muted: true });
   await s.store.setVoiceState('robot', 'vc1', { bot: true });
   assert.equal(await voiceXpTick(s.bot), 1, 'wyciszony liczy się do minimum, ale XP nie dostaje');
@@ -213,12 +213,12 @@ test('ochrona przed nabijaniem: dzienny limit XP, powtórki i za krótkie wiadom
   await onMessageLevels(s.bot, message('target', { content: 'nowy dzień' }));
   assert.equal((await s.store.getLevel('target')).xp, 140);
 
-  // Komenda slash innego bota: treść to odpowiedź bota — bez sprawdzania długości i powtórek.
+  // Komenda slash innego bota: treść to odpowiedź bota - bez sprawdzania długości i powtórek.
   await s.store.updateConfig({ levels: { restrictions: { slashCommands: true } } });
   await onMessageLevels(s.bot, message('innybot', { author: { id: 'innybot', bot: true }, content: '', interaction_metadata: { user: { id: 'slash', username: 'slash' } } }));
   assert.equal((await s.store.getLevel('slash')).xp, 40);
 
-  // Głosowe: ogłuszony nie liczy się do minimum 2 osób, wyciszony (słucha) — tak.
+  // Głosowe: ogłuszony nie liczy się do minimum 2 osób, wyciszony (słucha) - tak.
   await s.store.setVoiceState('a', 'vc1');
   await s.store.setVoiceState('b', 'vc1', { deafened: true });
   assert.equal(await voiceXpTick(s.bot), 0, 'ogłuszony nie liczy się do minimum');
@@ -278,7 +278,7 @@ test('wydarzenia XP: mnożnik, limit dzienny × mnożnik, ranking wydarzenia, og
   posts = s.discord.state.channels.get(EVENT_CH);
   assert.equal(posts.length, 2);
   assert.equal(posts[1].embeds[0].title, '🏁 Koniec wydarzenia XP: Podwójne XP');
-  assert.match(posts[1].embeds[0].description, /🥇 <@target> — \*\*50 XP\*\*/);
+  assert.match(posts[1].embeds[0].description, /🥇 <@target> - \*\*50 XP\*\*/);
   assert.match(posts[1].embeds[0].description, /Łącznie \*\*1\*\* osoba zdobyła \*\*50 XP\*\*/);
   assert.deepEqual(posts[1].allowed_mentions, { parse: [] });
 
@@ -404,7 +404,7 @@ test('prywatność: /prywatnosc ukrywa osobę na stronie rankingu (anonimowe mie
 });
 
 test('archiwum zwycięzców: zapis przy końcu tygodnia i miesiąca, publiczne archiwum z wydarzeniami i ukrytymi', async () => {
-  const now = Date.parse('2026-11-22T00:05:00Z'); // niedziela — zaczyna się tydzień 2026-11-22
+  const now = Date.parse('2026-11-22T00:05:00Z'); // niedziela - zaczyna się tydzień 2026-11-22
   const s = await setup({
     publicLeaderboard: true,
     events: [{ id: 'evarch1', name: 'Halloween XP', multiplier: 2, startsAt: '2026-10-30T18:00:00Z', endsAt: '2026-11-01T22:00:00Z', kinds: ['message'], theme: 'fire' }],
@@ -432,7 +432,7 @@ test('archiwum zwycięzców: zapis przy końcu tygodnia i miesiąca, publiczne a
   const res = await handle(new Request('https://x.supabase.co/functions/v1/hopkostki-bot/panel/public/archive'));
   const body = await res.json();
   assert.equal(body.weeks[0].key, '2026-11-15');
-  assert.equal(body.weeks[0].label, '15 – 21 listopada');
+  assert.equal(body.weeks[0].label, '15 - 21 listopada');
   assert.deepEqual(body.weeks[0].winners.map((w) => [w.rank, w.name, w.xp, w.hidden ?? false]), [
     [1, 'osoba0', 400, false],
     [2, 'Ukryta osoba', 300, true],
@@ -442,7 +442,7 @@ test('archiwum zwycięzców: zapis przy końcu tygodnia i miesiąca, publiczne a
   assert.equal(body.months[0].label, 'Październik 2026');
   assert.deepEqual(body.months[0].winners.map((w) => w.name), ['osoba3', 'osoba2', 'Ukryta osoba']);
   assert.deepEqual(body.events.map((e) => [e.name, e.winners.map((w) => [w.name, w.xp])]), [['Halloween XP', [['osoba2', 500], ['osoba0', 300]]]]);
-  assert.equal(periodLabel('week', '2026-11-29'), '29 listopada – 5 grudnia');
+  assert.equal(periodLabel('week', '2026-11-29'), '29 listopada - 5 grudnia');
 });
 
 test('skrót wiadomości do wykrywania powtórek', () => {
@@ -467,7 +467,7 @@ test('rankingi tygodnia i miesiąca: najwięcej XP w okresie, ping roli; rola za
   await s.store.awardXp({ userId: 'b', userTag: 'b', amount: 900, kind: 'message', cooldownSec: 0, weekKey: lastWeek, monthKey: '2026-10' });
   await s.store.awardXp({ userId: 'c', userTag: 'c', amount: 5000, kind: 'message', cooldownSec: 0, weekKey: thisWeek, monthKey: '2026-11' });
 
-  // Pierwszy przebieg tylko zapamiętuje okres — bez wysyłania starego rankingu.
+  // Pierwszy przebieg tylko zapamiętuje okres - bez wysyłania starego rankingu.
   await highlightsTick(s.bot, { now: Date.parse(`${thisWeek}T01:00:00Z`) });
   assert.equal(s.discord.state.channels.get(RANKING), undefined);
   await s.store.setState('levels_highlight_week', 'stary');
@@ -477,7 +477,7 @@ test('rankingi tygodnia i miesiąca: najwięcej XP w okresie, ping roli; rola za
   const week = posts.find((p) => p.embeds[0].title.includes('tygodnia'));
   assert.equal(week.content, `<@&${PING}>`);
   assert.deepEqual(week.allowed_mentions, { parse: [], roles: [PING] });
-  assert.match(week.embeds[0].description, /🥇 <@b> — \*\*900 XP\*\*[\s\S]*🥈 <@a> — \*\*500 XP\*\*/);
+  assert.match(week.embeds[0].description, /🥇 <@b> - \*\*900 XP\*\*[\s\S]*🥈 <@a> - \*\*500 XP\*\*/);
   assert.ok(!week.embeds[0].description.includes('<@c>'), 'XP z bieżącego tygodnia nie liczy się do zakończonego');
   await highlightsTick(s.bot, { now: Date.parse(`${thisWeek}T02:00:00Z`) });
   assert.equal(s.discord.state.channels.get(RANKING).length, posts.length, 'każdy ranking tylko raz');
@@ -531,7 +531,7 @@ test('/rank, /ranking, /xp (tylko Zarządzanie serwerem; blokada dla właścicie
   reply = await run('rank', [], { invoker: 'target', permissions: '0' });
   assert.match(reply.embeds[0].description, /\/ranking\?u=target&me=1\)$/, 'własna karta: link zapamiętuje „ja”');
   reply = await run('ranking', [], { permissions: '0' });
-  assert.match(reply.embeds[0].description, /\*\*1\.\*\* <@target> — poziom \*\*10\*\*/);
+  assert.match(reply.embeds[0].description, /\*\*1\.\*\* <@target> - poziom \*\*10\*\*/);
 
   await s.store.updateConfig({ levels: { management: { lockReset: true } } });
   reply = await run('xp', sub('reset', [{ name: 'uzytkownik', type: 6, value: 'target' }]), { permissions: ADMIN });
@@ -563,7 +563,7 @@ test('/xp: o dostępie decyduje lista ról komendy z panelu (nie samo „Zarząd
   };
   const add = [{ name: 'dodaj', type: 1, options: [{ name: 'uzytkownik', type: 6, value: 'target' }, { name: 'ilosc', type: 4, value: 200 }] }];
 
-  // Rola z listy /xp bez „Zarządzania serwerem” — wcześniej dostawała „tylko właściciel serwera”.
+  // Rola z listy /xp bez „Zarządzania serwerem” - wcześniej dostawała „tylko właściciel serwera”.
   let reply = await run(add, { roles: [XP_ROLE], permissions: '0' });
   assert.match(reply.embeds[0].description, /200 XP\*\*, poziom \*\*1\*\*/);
   assert.equal(await canManageXp(s.bot, { id: 'mod', roles: [XP_ROLE], permissions: '0' }), true);

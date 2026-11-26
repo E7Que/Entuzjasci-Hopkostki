@@ -17,15 +17,15 @@ import { onMessageTicketClaim } from './tickets.js';
 
 const QUERY = '/?v=10&encoding=json';
 // GUILDS (lista osób na kanałach głosowych przy logowaniu) + GUILD_VOICE_STATES (wejścia/wyjścia z kanałów)
-// + GUILD_MESSAGES (odpowiedzi na wiadomości o karach — bez treści, wystarczy message_reference).
+// + GUILD_MESSAGES (odpowiedzi na wiadomości o karach - bez treści, wystarczy message_reference).
 export const INTENTS = (1 << 0) | (1 << 7) | (1 << 9);
 // Uprzywilejowane intencje (GUILD_MEMBERS, MESSAGE_CONTENT) dodajemy tylko, gdy są potrzebne i aplikacja
-// je ma — inaczej Discord odrzuciłby logowanie (4014) i bot straciłby status i kanały głosowe.
-// GUILD_MODERATION (bany + dziennik zdarzeń) nie jest uprzywilejowana — potrzebna do logów serwera.
+// je ma - inaczej Discord odrzuciłby logowanie (4014) i bot straciłby status i kanały głosowe.
+// GUILD_MODERATION (bany + dziennik zdarzeń) nie jest uprzywilejowana - potrzebna do logów serwera.
 const GUILD_MEMBERS = 1 << 1;
 const GUILD_MODERATION = 1 << 2;
 const MESSAGE_CONTENT = 1 << 15;
-// Reakcje na wiadomościach — tylko dla XP za reakcje (poziomy).
+// Reakcje na wiadomościach - tylko dla XP za reakcje (poziomy).
 const GUILD_MESSAGE_REACTIONS = 1 << 10;
 
 export async function sessionIntents(bot) {
@@ -42,16 +42,16 @@ export async function sessionIntents(bot) {
   return intents;
 }
 const OP = { DISPATCH: 0, HEARTBEAT: 1, IDENTIFY: 2, PRESENCE: 3, RESUME: 6, RECONNECT: 7, INVALID_SESSION: 9, HELLO: 10, ACK: 11 };
-// 4004 zły token, 4010–4014 błędna konfiguracja — ponawianie nic nie da.
+// 4004 zły token, 4010-4014 błędna konfiguracja - ponawianie nic nie da.
 const FATAL = new Map([
-  [4004, 'Discord odrzucił token (4004) — sprawdź sekret DISCORD_TOKEN.'],
+  [4004, 'Discord odrzucił token (4004) - sprawdź sekret DISCORD_TOKEN.'],
   [4010, 'Nieprawidłowy shard (4010).'],
   [4011, 'Discord wymaga shardingu (4011).'],
   [4012, 'Nieobsługiwana wersja API (4012).'],
   [4013, 'Nieprawidłowe intencje (4013).'],
-  [4014, 'Niedozwolone intencje (4014) — włącz je w Developer Portal.'],
+  [4014, 'Niedozwolone intencje (4014) - włącz je w Developer Portal.'],
 ]);
-const RESET = new Set([4007, 4009]); // zły numer sekwencji / sesja wygasła — trzeba zalogować się od nowa
+const RESET = new Set([4007, 4009]); // zły numer sekwencji / sesja wygasła - trzeba zalogować się od nowa
 const CLOSE_KEEP_SESSION = 4000; // każdy kod inny niż 1000/1001 zostawia sesję do wznowienia
 const DAY = 24 * 60 * 60_000;
 export const IDENTIFY_CAP = 600; // Discord pozwala na 1000 logowań na dobę; po przekroczeniu resetuje token
@@ -67,7 +67,7 @@ export function fillPresenceText(text, vars) {
     .slice(0, 128);
 }
 
-// Który opis pokazać teraz — liczone z zegara, więc kolejne sesje kontynuują rotację.
+// Który opis pokazać teraz - liczone z zegara, więc kolejne sesje kontynuują rotację.
 export function pickActivity(presence, now = Date.now()) {
   const list = presence?.activities ?? [];
   if (!presence?.enabled || !list.length) return { activity: null, nextAt: null };
@@ -114,7 +114,7 @@ async function identifyBudget(bot) {
   const info = await bot.discord.get('/gateway/bot');
   const remaining = info?.session_start_limit?.remaining;
   if (typeof remaining === 'number' && remaining < 100) {
-    return { ok: false, reason: `Discord pozwala jeszcze tylko na ${remaining} logowań — czekam na reset limitu.` };
+    return { ok: false, reason: `Discord pozwala jeszcze tylko na ${remaining} logowań - czekam na reset limitu.` };
   }
   await bot.store.setState('gateway_identifies', [...log, now]);
   return { ok: true, url: info?.url ?? 'wss://gateway.discord.gg', identifies24h: log.length + 1 };
@@ -141,7 +141,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function connectOnce(bot, { WebSocketImpl, deadline, margin, status }) {
   const saved = await bot.store.getState('gateway_session');
   const intents = await sessionIntents(bot);
-  // Wznowiona sesja ma intencje z chwili logowania — po ich zmianie trzeba zalogować się od nowa.
+  // Wznowiona sesja ma intencje z chwili logowania - po ich zmianie trzeba zalogować się od nowa.
   const resuming = Boolean(
     saved?.sessionId && saved?.resumeUrl && saved.intents === intents && Date.now() - (saved.savedAt ?? 0) < RESUME_WINDOW_MS,
   );
@@ -163,7 +163,7 @@ async function connectOnce(bot, { WebSocketImpl, deadline, margin, status }) {
     const p = promise.catch((error) => console.warn(`[gateway] ${error.message}`)).finally(() => pending.delete(p));
     pending.add(p);
   };
-  // Zdarzenia głosowe po kolei — wejście i szybkie wyjście z kanału nie mogą się wyprzedzić.
+  // Zdarzenia głosowe po kolei - wejście i szybkie wyjście z kanału nie mogą się wyprzedzić.
   let voiceChain = Promise.resolve();
   const queueVoice = (fn) => {
     voiceChain = voiceChain.then(fn).catch((error) => console.warn(`[gateway:voice] ${error.message}`));
@@ -203,7 +203,7 @@ async function connectOnce(bot, { WebSocketImpl, deadline, margin, status }) {
     };
     later(() => close({ done: true }), deadline - Date.now());
     const heartbeat = () => {
-      if (!acked) return close({ done: false }); // brak ACK — połączenie "zombie", łączymy się od nowa
+      if (!acked) return close({ done: false }); // brak ACK - połączenie "zombie", łączymy się od nowa
       acked = false;
       send(OP.HEARTBEAT, seq);
     };
@@ -340,7 +340,7 @@ async function connectOnce(bot, { WebSocketImpl, deadline, margin, status }) {
         session = null;
         outcome = { done: false, reset: true };
       } else if (!closing) {
-        // Discord zamknął połączenie sam — spróbujemy wznowić w tej samej sesji.
+        // Discord zamknął połączenie sam - spróbujemy wznowić w tej samej sesji.
         outcome = { done: false };
       }
       if (!outcome.done && Date.now() >= deadline - margin) outcome = { ...outcome, done: true };
@@ -373,7 +373,7 @@ export async function runGatewaySession(
       const result = await connectOnce(bot, { WebSocketImpl, deadline, margin, status });
       if (result.reset) await bot.store.setState('gateway_session', null);
       if (result.done) break;
-      if (result.wait) await sleep(retryDelay()); // Discord zaleca 1–5 s po INVALID_SESSION
+      if (result.wait) await sleep(retryDelay()); // Discord zaleca 1-5 s po INVALID_SESSION
     }
   } catch (error) {
     console.error('[gateway]', error);

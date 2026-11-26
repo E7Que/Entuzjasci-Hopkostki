@@ -1,6 +1,6 @@
 -- Logowanie moderacji do panelu: /login na wybranym kanale daje osobie jej login i hasło (ważne kilka dni,
 -- potem trzeba wygenerować nowe), a logowanie nimi na stronie panelu tworzy sesję przeglądarki.
--- Trzymamy tylko skróty SHA-256 haseł i tokenów — same wartości zna wyłącznie ta osoba. Sesja należy do
+-- Trzymamy tylko skróty SHA-256 haseł i tokenów - same wartości zna wyłącznie ta osoba. Sesja należy do
 -- loginu (login_id): nowy albo unieważniony login kończy też wszystkie jego zalogowania.
 -- roles/admin to ostatnio sprawdzone role z Discorda (bot odświeża je co kilka minut), a które części panelu
 -- odblokowują, liczy się z bieżącej konfiguracji przy każdym zapytaniu.

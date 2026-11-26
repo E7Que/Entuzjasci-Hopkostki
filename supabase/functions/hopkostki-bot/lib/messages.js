@@ -1,4 +1,4 @@
-// Wiadomości wysyłane z panelu (zakładka Wiadomości): treść, opcjonalny embed i opcjonalny wybór ról —
+// Wiadomości wysyłane z panelu (zakładka Wiadomości): treść, opcjonalny embed i opcjonalny wybór ról -
 // przyciski „kliknij, żeby dodać/zdjąć rolę” albo lista wyboru (jak przy usuwaniu ostrzeżeń).
 // Identyfikator roli siedzi w samym przycisku/opcji listy, więc obsługa kliknięcia nie potrzebuje bazy.
 
@@ -89,13 +89,13 @@ export function buildMessagePayload(data, gctx) {
   const botPosition = highestPosition(gctx.botMember.roles, gctx.roles);
   const roles = items.map((item) => {
     const role = gctx.roles.get(item.roleId);
-    if (!role || role.id === gctx.guild.id) throw new ActionError('Jedna z wybranych ról już nie istnieje — wybierz ją ponownie.');
-    if (role.managed) throw new ActionError(`Roli „${role.name}” zarządza integracja — nie da się jej rozdawać.`);
-    if (has(role.permissions, P.ADMINISTRATOR)) throw new ActionError(`Rola „${role.name}” ma uprawnienia administratora — nie można jej rozdawać każdemu.`);
-    if (role.position >= botPosition) throw new ActionError(`Rola „${role.name}” jest wyżej niż rola bota — przesuń rolę bota wyżej w ustawieniach serwera.`);
+    if (!role || role.id === gctx.guild.id) throw new ActionError('Jedna z wybranych ról już nie istnieje - wybierz ją ponownie.');
+    if (role.managed) throw new ActionError(`Roli „${role.name}” zarządza integracja - nie da się jej rozdawać.`);
+    if (has(role.permissions, P.ADMINISTRATOR)) throw new ActionError(`Rola „${role.name}” ma uprawnienia administratora - nie można jej rozdawać każdemu.`);
+    if (role.position >= botPosition) throw new ActionError(`Rola „${role.name}” jest wyżej niż rola bota - przesuń rolę bota wyżej w ustawieniach serwera.`);
     const custom = CUSTOM_EMOJI.exec(item.emoji ?? '');
     if (custom && gctx.emojis && !gctx.emojis.some((e) => e.id === custom[3])) {
-      throw new ActionError(`Emoji :${custom[2]}: nie jest z tego serwera — wybierz emoji serwera z listy albo zwykłe emoji.`);
+      throw new ActionError(`Emoji :${custom[2]}: nie jest z tego serwera - wybierz emoji serwera z listy albo zwykłe emoji.`);
     }
     return { ...item, name: role.name, emojiObj: emojiObject(item.emoji) };
   });
@@ -207,7 +207,7 @@ export function handleRoleInteraction(ix, bot) {
       }
       const list = (ids) => ids.map((id) => `<@&${id}>`).join(', ');
       const lines = [added.length ? `Dodano: ${list(added)}` : null, removed.length ? `Zdjęto: ${list(removed)}` : null].filter(Boolean);
-      await ix.edit({ embeds: [successEmbed(lines.join('\n') || 'Bez zmian — masz już dokładnie te role.')], allowed_mentions: { parse: [] } });
+      await ix.edit({ embeds: [successEmbed(lines.join('\n') || 'Bez zmian - masz już dokładnie te role.')], allowed_mentions: { parse: [] } });
     } catch (error) {
       await ix.edit({ embeds: [errorEmbed(describeError(error))] }).catch(() => {});
     }

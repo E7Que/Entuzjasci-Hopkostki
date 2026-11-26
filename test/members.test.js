@@ -11,7 +11,7 @@ const BOT_ROLE = '100000000000000091';
 const WELCOME = '100000000000000092';
 const LOGS = '100000000000000093';
 const MEMBERS_LIMITED = 1 << 15;
-// Role z ID jak prawdziwe: straż ma „Banowanie członków”, szef — administratora.
+// Role z ID jak prawdziwe: straż ma „Banowanie członków”, szef - administratora.
 const GUARD = '100000000000000094';
 const BOSS = '100000000000000095';
 ROLES.push(
@@ -30,7 +30,7 @@ async function setup(members = {}) {
 const joined = (id, extra = {}) => ({ guild_id: GUILD, user: { id, username: `u-${id}` }, roles: [], joined_at: new Date().toISOString(), ...extra });
 const roleCalls = (discord) => discord.state.calls.filter((c) => c.method === 'PUT' && /\/roles\//.test(c.path)).map((c) => c.path);
 
-test('autorole: nowa osoba dostaje role, bot — role dla botów; oczekujący na regulamin dopiero po akceptacji', async () => {
+test('autorole: nowa osoba dostaje role, bot - role dla botów; oczekujący na regulamin dopiero po akceptacji', async () => {
   const s = await setup({ autoRole: { enabled: true, roleIds: [ROLE], botRoleIds: [BOT_ROLE] } });
   await onMemberJoin(s.bot, joined('111111111111111111'));
   await onMemberJoin(s.bot, joined('222222222222222222', { user: { id: '222222222222222222', username: 'robot', bot: true } }));
@@ -60,7 +60,7 @@ test('powitanie, pożegnanie i log wejść z ostrzeżeniem o młodym koncie', as
   assert.equal(welcome.embeds[0].title, 'Hej nowy!');
   assert.equal(welcome.embeds[0].description, `Witaj <@${fresh}> na Entuzjaści Hopkostki, jesteś 1337.`);
   const joinLog = s.discord.state.channels.get(LOGS)[0];
-  assert.match(joinLog.embeds[0].description, /nowe konto — ma mniej niż 1 dzień/);
+  assert.match(joinLog.embeds[0].description, /nowe konto - ma mniej niż 1 dzień/);
   assert.equal(joinLog.content, '@here', 'nowe konto oznacza @here');
   assert.deepEqual(joinLog.allowed_mentions, { parse: ['everyone'] });
 
@@ -100,7 +100,7 @@ test('uprawnienia: każda komenda dostaje własną listę ról według obecnego 
   const { changed, config } = await fillCommandPermissions(bot);
   assert.equal(changed, COMMANDS.length);
   assert.deepEqual(config.commandPermissions.ban, [BOSS, GUARD], 'rola z „Banowaniem członków” i rola z Administratorem (wyżej, więc pierwsza)');
-  assert.deepEqual(config.commandPermissions.kick, [BOSS], '„Wyrzucanie” ma tylko administrator — i trafia na listę, żeby nie stracić dostępu');
+  assert.deepEqual(config.commandPermissions.kick, [BOSS], '„Wyrzucanie” ma tylko administrator - i trafia na listę, żeby nie stracić dostępu');
   assert.deepEqual(config.commandPermissions.pomoc, ['everyone']);
   assert.equal((await fillCommandPermissions(bot)).changed, 0, 'drugi raz nic nie zmienia');
 
@@ -116,7 +116,7 @@ test('uprawnienia: każda komenda dostaje własną listę ról według obecnego 
   assert.equal(owner.response.type, 5, 'pusta lista = tylko właściciel serwera');
 });
 
-test('domyślne listy ról: role z Administratorem są na listach, @everyone i role integracji — nie', () => {
+test('domyślne listy ról: role z Administratorem są na listach, @everyone i role integracji - nie', () => {
   const MOD_ROLE = '100000000000000096';
   const INTEGRATION = '100000000000000097';
   const rawRoles = [

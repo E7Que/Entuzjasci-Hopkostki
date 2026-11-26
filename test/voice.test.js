@@ -25,7 +25,7 @@ async function setup({ generator = {}, dashboard = true } = {}) {
   return { store, discord, bot, voice };
 }
 
-// Kliknięcie w przycisk / wybór z listy / wysłanie okna — tak, jak przysyła to Discord.
+// Kliknięcie w przycisk / wybór z listy / wysłanie okna - tak, jak przysyła to Discord.
 function interaction(customId, { user = 'target', permissions = '0', type = 3, values, components, channel } = {}) {
   return {
     type,
@@ -181,7 +181,7 @@ test('cron sprząta puste kanały tylko przy działającym gatewayu i po okresie
   assert.ok(await s.store.getTempVoice('300000000000000002'));
 });
 
-test('konfiguracja kanałów na żądanie: tylko poprawne ID, limit 0–99, bez duplikatów', async () => {
+test('konfiguracja kanałów na żądanie: tylko poprawne ID, limit 0-99, bez duplikatów', async () => {
   const { store } = await createTestStore();
   const config = await store.updateConfig({
     tempVoice: {

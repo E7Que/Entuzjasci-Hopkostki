@@ -54,7 +54,7 @@ async function ensureTarget(ix, bot, action, name) {
 }
 
 const snowflakeTime = (id) => (/^\d+$/.test(String(id)) ? Number((BigInt(id) >> 22n) + 1420070400000n) : null);
-const stamp = (ms) => (ms ? `${discordTimestamp(ms, 'D')} (${discordTimestamp(ms, 'R')})` : '—');
+const stamp = (ms) => (ms ? `${discordTimestamp(ms, 'D')} (${discordTimestamp(ms, 'R')})` : '-');
 
 // ---------- Kary ----------
 const ban = {
@@ -65,9 +65,9 @@ const ban = {
     description: '⛔ Zbanuj użytkownika na określony czas albo na zawsze',
     ...GUILD_ONLY,
     options: [
-      user('uzytkownik', '👤 Kogo zbanować (działa też na osoby spoza serwera — wklej ID)', true),
+      user('uzytkownik', '👤 Kogo zbanować (działa też na osoby spoza serwera - wklej ID)', true),
       reasonOpt('📝 Za co? Powód zobaczy ukarany, moderacja i logi'),
-      int('czas', '⏱️ Ile jednostek czasu, np. 7 — zostaw puste, żeby zbanować na zawsze', { min_value: 1, max_value: 1000 }),
+      int('czas', '⏱️ Ile jednostek czasu, np. 7 - zostaw puste, żeby zbanować na zawsze', { min_value: 1, max_value: 1000 }),
       str('jednostka', '📅 Jednostka czasu: minuty, godziny, dni, tygodnie lub miesiące (domyślnie dni)', { choices: UNIT_CHOICES }),
       int('usun_wiadomosci', '🧹 Usunąć też ostatnie wiadomości tej osoby?', {
         choices: [
@@ -99,10 +99,10 @@ const unban = {
   defer: (ix) => (ix.opt('uzytkownik') ? 'action' : 'ephemeral'),
   data: {
     name: 'unban',
-    description: '✅ Zdejmij bana — podaj osobę albo zostaw puste, żeby zobaczyć listę zbanowanych',
+    description: '✅ Zdejmij bana - podaj osobę albo zostaw puste, żeby zobaczyć listę zbanowanych',
     ...GUILD_ONLY,
     options: [
-      str('uzytkownik', '👤 Zbanowana osoba (zacznij pisać nick lub ID) — puste = lista wszystkich banów', { autocomplete: true }),
+      str('uzytkownik', '👤 Zbanowana osoba (zacznij pisać nick lub ID) - puste = lista wszystkich banów', { autocomplete: true }),
       reasonOpt('📝 Dlaczego zdejmujesz bana (opcjonalnie)', false),
     ],
   },
@@ -188,7 +188,7 @@ const untimeout = {
 };
 
 // ---------- Ostrzeżenia ----------
-// /warn dodaj: do 5 osób naraz (uzytkownik + osoba2…osoba5) — ten sam powód i punkty, każda dostaje własne
+// /warn dodaj: do 5 osób naraz (uzytkownik + osoba2…osoba5) - ten sam powód i punkty, każda dostaje własne
 // ostrzeżenie (sprawa, wiadomość prywatna, ogłoszenie, progi punktów).
 const WARN_MORE = ['osoba2', 'osoba3', 'osoba4', 'osoba5'];
 const warn = {
@@ -200,16 +200,16 @@ const warn = {
     description: '⚠️ System ostrzeżeń z punktami (znikają same po 60 dniach)',
     ...GUILD_ONLY,
     options: [
-      sub('dodaj', '⚠️ Ostrzeżenie dla 1–5 osób naraz — dostaną wiadomość, punkty widzi tylko moderacja', [
+      sub('dodaj', '⚠️ Ostrzeżenie dla 1-5 osób naraz - dostaną wiadomość, punkty widzi tylko moderacja', [
         user('uzytkownik', '👤 Kogo ostrzec', true),
         reasonOpt('📝 Za co? Np. spam, obraza, offtop'),
-        int('punkty', '🔢 Ile punktów (1–100, domyślnie z panelu) — im poważniej, tym więcej', { min_value: 1, max_value: 100 }),
+        int('punkty', '🔢 Ile punktów (1-100, domyślnie z panelu) - im poważniej, tym więcej', { min_value: 1, max_value: 100 }),
         ...WARN_MORE.map((name, i) => user(name, `👥 ${i + 2}. osoba do ostrzeżenia (ten sam powód i punkty)`)),
       ]),
       sub('status', '📋 Ostrzeżenia, punkty i odliczanie do wygaśnięcia (strony ◀ 1 2 3 ▶)', [
         user('uzytkownik', '👤 Czyje ostrzeżenia pokazać', true),
       ]),
-      sub('usun', '🗑️ Wybierz osobę — pokażę jej ostrzeżenia do usunięcia z listy', [
+      sub('usun', '🗑️ Wybierz osobę - pokażę jej ostrzeżenia do usunięcia z listy', [
         user('uzytkownik', '👤 Czyje ostrzeżenia usuwasz', true),
         int('numer', '#️⃣ Numer ostrzeżenia, jeśli znasz go od razu (opcjonalnie)', { min_value: 1 }),
       ]),
@@ -243,7 +243,7 @@ const warn = {
       }
       const reason = ix.opt('powod');
       const points = ix.opt('punkty') ?? config.warns.defaultPoints;
-      // Pierwsza osoba — w odpowiedzi na komendę (jak dotąd), kolejne — osobnymi ogłoszeniami na tym samym kanale.
+      // Pierwsza osoba - w odpowiedzi na komendę (jak dotąd), kolejne - osobnymi ogłoszeniami na tym samym kanale.
       const failed = [];
       for (const [i, target] of targets.entries()) {
         try {
@@ -264,7 +264,7 @@ const warn = {
                 '⚠️ Nie wszyscy dostali ostrzeżenie',
                 [
                   `Ostrzeżono: ${targets.filter((t) => !failed.some((f) => f.target.id === t.id)).map((t) => `<@${t.id}>`).join(', ')}`,
-                  ...notes.map((s) => `• <@${s.target.id}> — ${s.problem}`),
+                  ...notes.map((s) => `• <@${s.target.id}> - ${s.problem}`),
                 ].join('\n'),
               ),
             ],
@@ -317,7 +317,7 @@ const historia = {
   defer: 'ephemeral',
   data: {
     name: 'historia',
-    description: '📜 Wszystkie kary danej osoby — bany, kicki, timeouty, ostrzeżenia (strony ◀ 1 2 3 ▶)',
+    description: '📜 Wszystkie kary danej osoby - bany, kicki, timeouty, ostrzeżenia (strony ◀ 1 2 3 ▶)',
     ...GUILD_ONLY,
     options: [user('uzytkownik', '👤 Czyją historię pokazać', true)],
   },
@@ -393,7 +393,7 @@ const sprawa = {
     await sendModLog(bot, config, {
       embeds: [
         {
-          ...embeds.successEmbed(`**Sprawa #${id}** — zmieniono powód\n**Było:** ${entry.reason}\n**Jest:** ${newReason}\n**Zmienił:** <@${ix.user.id}>`),
+          ...embeds.successEmbed(`**Sprawa #${id}** - zmieniono powód\n**Było:** ${entry.reason}\n**Jest:** ${newReason}\n**Zmienił:** <@${ix.user.id}>`),
           title: '✏️ Edycja sprawy',
         },
       ],
@@ -410,7 +410,7 @@ const notatka = {
     description: '📌 Prywatne notatki moderacji o użytkownikach (np. „podejrzany o multikonto”)',
     ...GUILD_ONLY,
     options: [
-      sub('dodaj', '📌 Dodaj notatkę — widzi ją tylko moderacja', [
+      sub('dodaj', '📌 Dodaj notatkę - widzi ją tylko moderacja', [
         user('uzytkownik', '👤 Kogo dotyczy notatka', true),
         str('tresc', '✍️ Treść notatki', { required: true, max_length: 1000 }),
       ]),
@@ -456,7 +456,7 @@ const info = {
     const fields = [
       { name: '🆔 ID', value: `\`${target.id}\``, inline: true },
       { name: '📅 Konto założone', value: stamp(snowflakeTime(target.id)), inline: true },
-      { name: '📥 Na serwerze od', value: member?.joined_at ? stamp(new Date(member.joined_at).getTime()) : '— (nie ma go na serwerze)', inline: true },
+      { name: '📥 Na serwerze od', value: member?.joined_at ? stamp(new Date(member.joined_at).getTime()) : '- (nie ma go na serwerze)', inline: true },
       { name: '⚠️ Ostrzeżenia', value: `**${summary.count}** (${summary.points} pkt)`, inline: true },
       {
         name: '🗂️ Kary',
@@ -552,7 +552,7 @@ const avatar = {
       embeds: [
         {
           color: embeds.COLORS.info,
-          author: { name: `Awatar — ${target.global_name ?? target.username}`, icon_url: avatarUrl(target, 64) },
+          author: { name: `Awatar - ${target.global_name ?? target.username}`, icon_url: avatarUrl(target, 64) },
           description: `🔗 ${links}`,
           image: { url: base },
           footer: { text: embeds.BRAND },
@@ -614,9 +614,9 @@ const rola = {
     const gctx = await getGuildContext(bot);
     const role = gctx.roles.get(roleId);
     if (!role || role.id === ix.guildId) throw new ReplyError('Tej roli nie można nadać.');
-    if (role.managed) throw new ReplyError('Tą rolą zarządza integracja (np. bot) — nie da się jej nadać ręcznie.');
+    if (role.managed) throw new ReplyError('Tą rolą zarządza integracja (np. bot) - nie da się jej nadać ręcznie.');
     if (highestPosition(gctx.botMember.roles, gctx.roles) <= role.position) {
-      throw new ReplyError('Ta rola jest wyżej niż moja — przesuń moją rolę wyżej w ustawieniach serwera.');
+      throw new ReplyError('Ta rola jest wyżej niż moja - przesuń moją rolę wyżej w ustawieniach serwera.');
     }
     if (ix.member.id !== gctx.guild.ownerId && highestPosition(ix.member.roles, gctx.roles) <= role.position) {
       throw new ReplyError('Ta rola jest równa lub wyższa od Twojej najwyższej roli.');
@@ -662,7 +662,7 @@ const ogloszenie = {
     ...GUILD_ONLY,
     options: [
       str('tytul', '🏷️ Tytuł ogłoszenia', { required: true, max_length: 200 }),
-      str('tresc', '📝 Treść — nową linię zrobisz wpisując \\n', { required: true, max_length: 4000 }),
+      str('tresc', '📝 Treść - nową linię zrobisz wpisując \\n', { required: true, max_length: 4000 }),
       str('kolor', '🎨 Kolor paska z boku embeda', { choices: ANNOUNCE_COLORS }),
       channelOpt('📢 Gdzie wysłać (domyślnie ten kanał)', [CH.TEXT, CH.ANNOUNCEMENT]),
       str('oznacz', '🔔 Kogo powiadomić', {
@@ -705,7 +705,7 @@ const ogloszenie = {
       allowed_mentions: { parse: ping === 'none' ? [] : ['everyone'] },
     });
     return ix.edit({
-      embeds: [embeds.successEmbed(`Ogłoszenie wysłane na <#${channelId}> — [zobacz](https://discord.com/channels/${ix.guildId}/${channelId}/${message.id}).`)],
+      embeds: [embeds.successEmbed(`Ogłoszenie wysłane na <#${channelId}> - [zobacz](https://discord.com/channels/${ix.guildId}/${channelId}/${message.id}).`)],
     });
   },
 };
@@ -736,10 +736,10 @@ const clear = {
     description: '🧹 Usuń ostatnie wiadomości na tym kanale (maks. 100, nie starsze niż 14 dni)',
     ...GUILD_ONLY,
     options: [
-      int('ilosc', '🔢 Ile ostatnich wiadomości sprawdzić (1–100)', { required: true, min_value: 1, max_value: 100 }),
+      int('ilosc', '🔢 Ile ostatnich wiadomości sprawdzić (1-100)', { required: true, min_value: 1, max_value: 100 }),
       user('uzytkownik', '👤 Usuń tylko wiadomości tej osoby (opcjonalnie)'),
       str('filtr', '🔎 Usuń tylko wybrane wiadomości (opcjonalnie)', { choices: CLEAR_FILTERS.map(([value, name]) => ({ name, value })) }),
-      str('tekst', '🔤 Dla filtra „zawiera tekst” — jaki tekst (bez rozróżniania wielkości liter)', { max_length: 100 }),
+      str('tekst', '🔤 Dla filtra „zawiera tekst” - jaki tekst (bez rozróżniania wielkości liter)', { max_length: 100 }),
     ],
   },
   async execute(ix, bot) {
@@ -783,7 +783,7 @@ const slowmode = {
   defer: 'ephemeral',
   data: {
     name: 'slowmode',
-    description: '🐢 Ustaw tryb powolny — co ile sekund można pisać',
+    description: '🐢 Ustaw tryb powolny - co ile sekund można pisać',
     ...GUILD_ONLY,
     options: [
       int('sekundy', '⏱️ Odstęp między wiadomościami w sekundach (0 = wyłącz, maks. 21600 = 6 h)', { required: true, min_value: 0, max_value: 21600 }),
@@ -851,7 +851,7 @@ function lockCommand(name, description, locked) {
 
 // ---------- Logowanie do panelu ----------
 // Działa tylko na kanale wybranym w panelu („Dostęp do panelu”); login i hasło widzi tylko ta osoba. O tym, co
-// odblokowuje, decydują jej role — dlatego komenda jest otwarta dla wszystkich (permission: null).
+// odblokowuje, decydują jej role - dlatego komenda jest otwarta dla wszystkich (permission: null).
 function accessSummary(access) {
   if (access.full) return '✅ **Możesz zmieniać:** wszystko (administrator)';
   const locked = Object.keys(PANEL_SECTIONS).filter((key) => !access.sections.includes(key));
@@ -868,30 +868,30 @@ const login = {
     name: 'login',
     description: '🔑 Twój login i hasło do panelu bota (tylko na kanale do logowania)',
     ...GUILD_ONLY,
-    options: [{ type: T.BOOLEAN, name: 'nowy', description: '🔄 Wygeneruj nowe hasło — stare i wszystkie zalogowania przestaną działać' }],
+    options: [{ type: T.BOOLEAN, name: 'nowy', description: '🔄 Wygeneruj nowe hasło - stare i wszystkie zalogowania przestaną działać' }],
   },
   async execute(ix, bot) {
     const config = await bot.store.getConfig();
     const { enabled, channelId } = config.panelAccess;
-    if (!enabled) throw new ActionError('Logowanie do panelu jest wyłączone — administrator może je włączyć w panelu (zakładka „Dostęp do panelu”).');
+    if (!enabled) throw new ActionError('Logowanie do panelu jest wyłączone - administrator może je włączyć w panelu (zakładka „Dostęp do panelu”).');
     if (!channelId) throw new ActionError('Administrator nie wybrał jeszcze kanału do logowania (panel → zakładka „Dostęp do panelu”).');
     if (ix.channelId !== channelId) throw new ActionError(`Login do panelu wygenerujesz tylko na kanale <#${channelId}>.`);
     const { login: issued, password, access } = await issueLogin(bot, ix, config, { renew: ix.opt('nowy') === true });
-    if (!issued) throw new ActionError('Żadna z Twoich ról nie odblokowuje panelu — poproś administrację o dostęp.');
+    if (!issued) throw new ActionError('Żadna z Twoich ról nie odblokowuje panelu - poproś administrację o dostęp.');
     const expires = `${discordTimestamp(issued.expiresAt, 'f')} (${discordTimestamp(issued.expiresAt, 'R')})`;
     const description = password
       ? [
           `**Login:** \`${issued.login}\``,
-          `**Hasło:** ||\`${password}\`|| — kliknij, żeby odsłonić`,
-          `**Ważny do:** ${expires} — potem wpisz \`/login\` jeszcze raz.`,
+          `**Hasło:** ||\`${password}\`|| - kliknij, żeby odsłonić`,
+          `**Ważny do:** ${expires} - potem wpisz \`/login\` jeszcze raz.`,
           '',
           accessSummary(access),
           '',
-          '-# Hasło pokazuję tylko teraz. Nie dawaj go nikomu. Gdyby ktoś je zobaczył, wpisz `/login nowy:True` — dostaniesz nowe, a stare od razu przestanie działać. Dostęp zależy od Twoich ról — po odebraniu roli panel sam się zamknie.',
+          '-# Hasło pokazuję tylko teraz. Nie dawaj go nikomu. Gdyby ktoś je zobaczył, wpisz `/login nowy:True` - dostaniesz nowe, a stare od razu przestanie działać. Dostęp zależy od Twoich ról - po odebraniu roli panel sam się zamknie.',
         ]
       : [
           `Masz już aktywny login **\`${issued.login}\`**, ważny do ${expires}.`,
-          'Hasło pokazuję tylko raz, przy generowaniu. Nie pamiętasz go albo ktoś mógł je zobaczyć? Wpisz `/login nowy:True` — dostaniesz nowe, a stare i wszystkie zalogowania nim przestaną działać.',
+          'Hasło pokazuję tylko raz, przy generowaniu. Nie pamiętasz go albo ktoś mógł je zobaczyć? Wpisz `/login nowy:True` - dostaniesz nowe, a stare i wszystkie zalogowania nim przestaną działać.',
           '',
           accessSummary(access),
         ];
@@ -919,24 +919,24 @@ const pomoc = {
       embeds: [
         {
           color: embeds.COLORS.info,
-          title: 'Bot moderacyjny — Entuzjaści Hopkostki',
+          title: 'Bot moderacyjny - Entuzjaści Hopkostki',
           description: 'Czas wybierasz z listy: **minuty, godziny, dni, tygodnie, miesiące**. Listy mają strony **◀ 1 2 3 ▶**.',
           fields: [
             {
               name: '🔨 Kary',
               value: [
-                '`/ban` — ban na czas lub na zawsze',
-                '`/unban` — zdejmij bana (puste = lista zbanowanych)',
-                '`/timeout` · `/untimeout` — wyciszenie (maks. 28 dni)',
-                '`/kick` — wyrzucenie z serwera',
+                '`/ban` - ban na czas lub na zawsze',
+                '`/unban` - zdejmij bana (puste = lista zbanowanych)',
+                '`/timeout` · `/untimeout` - wyciszenie (maks. 28 dni)',
+                '`/kick` - wyrzucenie z serwera',
               ].join('\n'),
             },
             {
               name: '⚠️ Ostrzeżenia',
               value: [
-                '`/warn dodaj` — ostrzeżenie z punktami (do 5 osób naraz)',
-                '`/warn status` — ostrzeżenia i punkty osoby',
-                '`/warn usun` — wybierz osobę i usuń z listy',
+                '`/warn dodaj` - ostrzeżenie z punktami (do 5 osób naraz)',
+                '`/warn status` - ostrzeżenia i punkty osoby',
+                '`/warn usun` - wybierz osobę i usuń z listy',
                 '`/warn wyczysc` · `/warn ranking`',
                 warns.expiryDays > 0 ? `-# Każde ostrzeżenie znika samo po **${warns.expiryDays} dniach**.` : '-# Ostrzeżenia nie wygasają.',
               ].join('\n'),
@@ -944,12 +944,12 @@ const pomoc = {
             {
               name: '🗂️ Moderacja',
               value: [
-                '`/info` — karta użytkownika',
+                '`/info` - karta użytkownika',
                 '`/historia` · `/sprawy` · `/sprawa`',
                 '`/notatka dodaj` · `/notatka lista`',
                 '`/nick` · `/rola dodaj` · `/rola usun`',
-                '`/login` — Twój login i hasło do panelu bota (na kanale do logowania)',
-                '`/xp dodaj|odejmij|ustaw|poziom|reset` — XP i poziomy',
+                '`/login` - Twój login i hasło do panelu bota (na kanale do logowania)',
+                '`/xp dodaj|odejmij|ustaw|poziom|reset` - XP i poziomy',
               ].join('\n'),
             },
             {
@@ -957,7 +957,7 @@ const pomoc = {
               value: [
                 '`/clear` (z filtrami) · `/slowmode` · `/lock` · `/unlock` · `/snipe`',
                 '`/ogloszenie` · `/powiedz` · `/ankieta` · `/konkurs`',
-                '`/emoji dodaj` — emoji z innego serwera · `/rolainfo`',
+                '`/emoji dodaj` - emoji z innego serwera · `/rolainfo`',
               ].join('\n'),
             },
             {
@@ -965,9 +965,9 @@ const pomoc = {
               value: [
                 '`/profil` · `/serwer` · `/czlonkowie` · `/avatar`',
                 '`/przypomnij` · `/afk` · `/propozycja` · `/losuj`',
-                '`/bumpy` — ranking bumpów · `/zaproszenia` — kto kogo zaprosił · `/pomoc`',
-                '`/rank` — karta poziomu · `/ranking` — ranking poziomów (łącznie, tydzień, miesiąc)',
-                '`/polacz` — połącz konto ze stroną eventów (zaproszenia, wiadomości)',
+                '`/bumpy` - ranking bumpów · `/zaproszenia` - kto kogo zaprosił · `/pomoc`',
+                '`/rank` - karta poziomu · `/ranking` - ranking poziomów (łącznie, tydzień, miesiąc)',
+                '`/polacz` - połącz konto ze stroną eventów (zaproszenia, wiadomości)',
               ].join('\n'),
             },
           ],
@@ -1009,7 +1009,7 @@ export const COMMANDS = [
 export const COMMAND_MAP = new Map(COMMANDS.map((c) => [c.data.name, c]));
 export const commandDefinitions = () => COMMANDS.map((c) => c.data);
 
-// Metadane do panelu (zakładka "Uprawnienia") — nazwa, opis i domyślny wymóg uprawnień każdej komendy.
+// Metadane do panelu (zakładka "Uprawnienia") - nazwa, opis i domyślny wymóg uprawnień każdej komendy.
 export const COMMAND_META = COMMANDS.map((c) => ({
   name: c.data.name,
   description: c.data.description,

@@ -34,7 +34,7 @@ test('rozpoznaje udany bump DISBOARD, a „poczekaj jeszcze X minut” i innych 
   assert.equal(bumpInfo(disboard('target')).user.id, 'target');
   assert.equal(bumpInfo(disboard('target', { ok: false })), null);
   assert.equal(bumpInfo({ ...disboard('target'), author: { id: '1' } }), null);
-  // Bez intencji treści embedy są puste — wystarcza nazwa komendy.
+  // Bez intencji treści embedy są puste - wystarcza nazwa komendy.
   assert.equal(bumpInfo({ ...disboard('target'), embeds: [] }).user.id, 'target');
 });
 
@@ -46,7 +46,7 @@ test('bump: podziękowanie jako odpowiedź, po 2 h „Czas na Bump!” z oznacze
   const [thanks] = s.discord.state.channels.get(BUMP_CHANNEL);
   assert.equal(thanks.message_reference.message_id, message.id, 'odpowiada na wiadomość z bumpem');
   assert.equal(thanks.embeds[0].title, 'Dzięki za Bumpnięcie serwera!');
-  assert.match(thanks.embeds[0].description, /<@target> — to już Twój \*\*1\.\*\* bump\. Kolejny możliwy <t:\d+:R>/);
+  assert.match(thanks.embeds[0].description, /<@target> - to już Twój \*\*1\.\*\* bump\. Kolejny możliwy <t:\d+:R>/);
 
   // Ta sama wiadomość drugi raz (np. z przeglądu kanału przez crona) nic nie robi.
   await onBumpMessage(s.bot, message);
@@ -85,5 +85,5 @@ test('bump: cron znajduje bump przegapiony przez gateway; /bumpy pokazuje rankin
   const result = await handleInteraction(commandPayload('bumpy', [{ name: 'ranking', type: 1, options: [] }]), s.bot);
   await result.task();
   const embed = s.discord.state.webhook.at(-1).body.embeds[0];
-  assert.match(embed.description, /1\. <@target> — \*\*2\*\* bumpy\n2\. <@mod> — \*\*1\*\* bump/);
+  assert.match(embed.description, /1\. <@target> - \*\*2\*\* bumpy\n2\. <@mod> - \*\*1\*\* bump/);
 });

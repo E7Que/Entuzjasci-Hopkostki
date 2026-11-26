@@ -1,6 +1,6 @@
 // API panelu konfiguracyjnego. Strona panelu (GitHub Pages albo lokalny wrapper) wysyła tu żądania
-// z nagłówkiem x-panel-password (pełny dostęp) albo x-panel-session (moderator zalogowany loginem z /login —
-// tylko części panelu odblokowane jego rolami) — samo API działa na Supabase razem z botem.
+// z nagłówkiem x-panel-password (pełny dostęp) albo x-panel-session (moderator zalogowany loginem z /login -
+// tylko części panelu odblokowane jego rolami) - samo API działa na Supabase razem z botem.
 
 import { DEFAULT_CONFIG } from './defaults.js';
 import { cached, getApp, getGuildContext, unbanUser, sendModLog, describeError, ActionError } from './moderation.js';
@@ -118,9 +118,9 @@ async function setRolePermission(bot, auth, roleId, name, value) {
   const gctx = await getGuildContext(bot, { force: true });
   const role = gctx.rawRoles.find((r) => r.id === roleId);
   if (!role || role.managed || role.id === gctx.guild.id) throw new ActionError('Nie ma takiej roli (albo to rola bota lub integracji).');
-  if (has(role.permissions, P.ADMINISTRATOR)) throw new ActionError(`Rola ${role.name} ma uprawnienie Administrator — zmień ją w ustawieniach serwera.`);
+  if (has(role.permissions, P.ADMINISTRATOR)) throw new ActionError(`Rola ${role.name} ma uprawnienie Administrator - zmień ją w ustawieniach serwera.`);
   if (role.position >= highestPosition(gctx.botMember.roles, gctx.roles)) {
-    throw new ActionError(`Rola ${role.name} jest wyżej niż rola bota — przesuń rolę bota wyżej (Ustawienia serwera → Role).`);
+    throw new ActionError(`Rola ${role.name} jest wyżej niż rola bota - przesuń rolę bota wyżej (Ustawienia serwera → Role).`);
   }
   const bits = value ? BigInt(role.permissions) | P[name] : BigInt(role.permissions) & ~P[name];
   const who = auth.user ? auth.user.tag : 'hasło panelu';
@@ -217,7 +217,7 @@ async function guildInfo(bot) {
     // permissions + position pozwalają panelowi policzyć samodzielnie, kto ma dostęp do jakiej komendy
     // (zakładka "Uprawnienia") i które role bot może rozdawać (zakładka "Wiadomości").
     roles: gctx.rawRoles
-      // Role integracji pomijamy — poza rolą boosterów serwera (np. do boosterów XP w Poziomach).
+      // Role integracji pomijamy - poza rolą boosterów serwera (np. do boosterów XP w Poziomach).
       .filter((r) => r.id !== gctx.guild.id && (!r.managed || 'premium_subscriber' in (r.tags ?? {})))
       .sort((a, b) => b.position - a.position)
       .map((r) => ({
@@ -228,7 +228,7 @@ async function guildInfo(bot) {
         position: r.position,
         assignable: !r.managed && r.position < botPosition && !has(r.permissions, P.ADMINISTRATOR),
       })),
-    // Własne emoji serwera — do wyboru przy rolach w wiadomościach.
+    // Własne emoji serwera - do wyboru przy rolach w wiadomościach.
     emojis: gctx.emojis
       .filter((e) => e.available)
       .map((e) => ({ ...e, tag: `<${e.animated ? 'a' : ''}:${e.name}:${e.id}>`, url: `https://cdn.discordapp.com/emojis/${e.id}.${e.animated ? 'gif' : 'png'}?size=48` })),
@@ -282,7 +282,7 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
     await store
       .addConfigHistory({ changedBy: auth.user?.tag ?? 'hasło panelu', changes: configChanges(before, config) })
       .catch((error) => console.warn(`[panel] Dziennik zmian: ${error.message}`));
-    // Włączone powitania/autorole/tickety potrzebują intencji aplikacji — włączamy je od razu, nie czekając na crona.
+    // Włączone powitania/autorole/tickety potrzebują intencji aplikacji - włączamy je od razu, nie czekając na crona.
     const intents = bot.discord ? await ensureIntentFlags(bot, config).catch((error) => ({ error: error.message })) : null;
     return ok({ config, intents });
   }
@@ -316,7 +316,7 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
   if (method === 'GET' && path === '/commands') return ok({ commands: COMMAND_META });
   // Nadpisania uprawnień komend ustawione w samym Discordzie (Ustawienia serwera → Integracje → bot) porównane
   // z zapisanymi listami ról bota (szczegóły w discordCommandPerms.js). Odpowiedź:
-  // { readable,   // false = Discord nie pozwolił ich odczytać (403) — wtedy listy są puste, a error mówi dlaczego
+  // { readable,   // false = Discord nie pozwolił ich odczytać (403) - wtedy listy są puste, a error mówi dlaczego
   //   error, botName, checkedAt,
   //   overrides: [{ id, scope: 'app' | 'command' | 'unknown', command, label,
   //                 entries: [{ id, type: 'role' | 'user' | 'channel', target: 'everyone' | 'role' | 'user' | 'allChannels' | 'channel', name, allow }] }],
@@ -326,7 +326,7 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
     if (!bot.discord) return fail(503, 'Bot nie jest skonfigurowany (brak DISCORD_TOKEN).');
     return attempt(async () => {
       const result = await discordCommandPermissions(bot, await store.getConfig(), { fresh: query.fresh === '1' });
-      // Właściciel serwera omija w Discordzie (i w bocie) ograniczenia ról — panel pokazuje, kto nim jest.
+      // Właściciel serwera omija w Discordzie (i w bocie) ograniczenia ról - panel pokazuje, kto nim jest.
       const { guild } = await getGuildContext(bot);
       return { ...result, ownerId: guild.ownerId ?? null };
     });
@@ -338,7 +338,7 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
     return ok({ last, ranking, month, now: Date.now() });
   }
 
-  // Konkursy (/konkurs) — lista i zakończenie przed czasem.
+  // Konkursy (/konkurs) - lista i zakończenie przed czasem.
   if (method === 'GET' && path === '/giveaways') return ok({ giveaways: await store.listGiveaways({ limit: 25 }), now: Date.now() });
   const giveawayMatch = /^\/giveaways\/(\d+)\/end$/.exec(path);
   if (method === 'POST' && giveawayMatch) {
@@ -397,7 +397,7 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
     return ok({ ok: true });
   }
 
-  // Dziennik zmian ustawień (tylko pełny dostęp — pokazuje wszystkie sekcje).
+  // Dziennik zmian ustawień (tylko pełny dostęp - pokazuje wszystkie sekcje).
   if (method === 'GET' && path === '/config/history') {
     const items = await store.listConfigHistory(Math.min(Number(query.limit) || 30, 100));
     return ok({ items: items.map((h) => ({ ...h, sections: [...new Set(h.keys.map(configKeyLabel))] })) });
@@ -410,12 +410,12 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
 
   // ---------- Serwer info ----------
   if (method === 'GET' && path === '/serverinfo') {
-    // Komendy bota dostępne dla wszystkich (z podkomendami) — podpowiedzi w edytorze.
+    // Komendy bota dostępne dla wszystkich (z podkomendami) - podpowiedzi w edytorze.
     const commands = COMMANDS.filter((c) => !c.permission).flatMap((c) => {
       const subs = (c.data.options ?? []).filter((o) => o.type === 1);
       return subs.length ? subs.map((s) => ({ name: `${c.data.name} ${s.name}`, description: s.description })) : [{ name: c.data.name, description: c.data.description }];
     });
-    // ID komend na serwerze — podgląd pokazuje klikalne komendy tak jak na Discordzie.
+    // ID komend na serwerze - podgląd pokazuje klikalne komendy tak jak na Discordzie.
     const commandIds = bot.discord ? await commandIdMap(bot).catch(() => ({})) : {};
     const guildId = bot.discord ? ((await getGuildContext(bot).catch(() => null))?.guild.id ?? null) : null;
     return ok({ posted: await store.getState('server_info_message'), commands, commandIds, guildId });
@@ -430,7 +430,7 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
       const before = await store.getConfig();
       const gctx = await getGuildContext(bot, { force: true });
       const suggestion = suggestServerInfoRoles(gctx, before, await serverInfoContext(bot, before));
-      // Bez save: uzupełnia przysłany szkic z panelu (zapisuje się go potem paskiem zapisu); save: true — od razu zapis.
+      // Bez save: uzupełnia przysłany szkic z panelu (zapisuje się go potem paskiem zapisu); save: true - od razu zapis.
       if (body?.save !== true) {
         const draft = Array.isArray(body?.sections) ? sanitizeConfig({ serverInfo: { sections: body.sections } }, before).serverInfo.sections : before.serverInfo.sections;
         return fillServerInfoSections(draft, suggestion);
@@ -497,7 +497,7 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
     const target = await bot.discord.get(`/users/${ban.userId}`).catch(() => null);
     if (!target) {
       await store.removeTempBan(ban.guildId, ban.userId);
-      return fail(404, 'Nie znaleziono użytkownika — usunięto wpis.');
+      return fail(404, 'Nie znaleziono użytkownika - usunięto wpis.');
     }
     try {
       const { botUser } = await getGuildContext(bot);
@@ -510,7 +510,7 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
   }
 
   // Dostęp do panelu: aktywne loginy z /login (części panelu liczone z obecnej konfiguracji i ról z chwili
-  // /login). Unieważnienie loginu wylogowuje też wszystkie jego przeglądarki — osoba musi wpisać /login.
+  // /login). Unieważnienie loginu wylogowuje też wszystkie jego przeglądarki - osoba musi wpisać /login.
   if (method === 'GET' && path === '/access/logins') {
     const config = await store.getConfig();
     const logins = (await store.listPanelLogins()).map((login) => ({ ...login, ...sectionAccess(login, config) }));
@@ -528,7 +528,7 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
   const contestMatch = /^\/contests\/([a-z0-9]{6,24})$/i.exec(path);
   if (method === 'GET' && contestMatch) {
     const details = await contestDetails(bot, contestMatch[1]);
-    return details ? ok({ ...details, now: Date.now() }) : fail(404, 'Nie ma takiego eventu — może nie został jeszcze zapisany.');
+    return details ? ok({ ...details, now: Date.now() }) : fail(404, 'Nie ma takiego eventu - może nie został jeszcze zapisany.');
   }
   // Losowanie zwycięzców wśród osób, które spełniły warunek (kolejne losowanie zastępuje poprzednie).
   const drawMatch = /^\/contests\/([a-z0-9]{6,24})\/draw$/i.exec(path);
@@ -565,13 +565,13 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
   if (method === 'POST' && levelUser) {
     const mode = String(body?.mode ?? '');
     if (!['add', 'set', 'level', 'reset'].includes(mode)) return fail(400, 'Nieznana zmiana.');
-    if (mode === 'reset' && (await ownerOnlyReset())) return fail(403, 'Resetowanie XP jest zablokowane — może to zrobić tylko właściciel serwera.');
+    if (mode === 'reset' && (await ownerOnlyReset())) return fail(403, 'Resetowanie XP jest zablokowane - może to zrobić tylko właściciel serwera.');
     const amount = Math.trunc(Number(body?.amount) || 0);
     return attempt(async () => ({ result: await changeXp(bot, levelUser[1], { mode, amount }) }));
   }
   if (method === 'POST' && path === '/levels/reset-all') {
     if (body?.confirm !== true) return fail(400, 'Potwierdź reset.');
-    if (await ownerOnlyReset()) return fail(403, 'Resetowanie XP jest zablokowane — może to zrobić tylko właściciel serwera.');
+    if (await ownerOnlyReset()) return fail(403, 'Resetowanie XP jest zablokowane - może to zrobić tylko właściciel serwera.');
     return ok({ reset: await store.resetLevels() });
   }
   if (method === 'POST' && path === '/levels/test') {
@@ -603,7 +603,7 @@ export async function handlePanel(bot, { method, path, query = {}, body = {}, au
     return attempt(async () => ({ ...(await importLevels(bot, entries.slice(0, 1000))), invalid }));
   }
 
-  // Nowa rola (np. pingowana przy rankingach poziomów) — bez uprawnień, tylko pełny dostęp.
+  // Nowa rola (np. pingowana przy rankingach poziomów) - bez uprawnień, tylko pełny dostęp.
   if (method === 'POST' && path === '/roles') {
     if (!bot.discord) return fail(503, 'Bot nie jest skonfigurowany (brak DISCORD_TOKEN).');
     const name = String(body?.name ?? '').trim().slice(0, 100);

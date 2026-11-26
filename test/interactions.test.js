@@ -136,7 +136,7 @@ test('/health działa bez sekretów i nie ujawnia ich', async () => {
 const sub = (name, options = []) => ({ name, type: 1, options });
 const ALL_MOD = String((1n << 2n) | (1n << 1n) | (1n << 40n) | (1n << 13n) | (1n << 27n) | (1n << 28n));
 
-// Kliknięcie przycisku lub wybór z listy — tak jak wysyła to Discord.
+// Kliknięcie przycisku lub wybór z listy - tak jak wysyła to Discord.
 function componentPayload(customId, { values, permissions = String((1n << 2n) | (1n << 1n) | (1n << 40n)), roles = ['r-mod'], user = { id: 'mod', username: 'dfgbh65' } } = {}) {
   return {
     type: 3,
@@ -168,7 +168,7 @@ async function addWarns(store, n) {
   return warns;
 }
 
-test('/warn dodaj: kilka osób naraz — każda dostaje własne ostrzeżenie i ogłoszenie; powtórki i boty pominięte', async () => {
+test('/warn dodaj: kilka osób naraz - każda dostaje własne ostrzeżenie i ogłoszenie; powtórki i boty pominięte', async () => {
   const s = await setup();
   const second = { id: 'target2', username: 'drugi_gracz', avatar: null };
   s.discord.state.users.set('target2', second);
@@ -186,21 +186,21 @@ test('/warn dodaj: kilka osób naraz — każda dostaje własne ostrzeżenie i o
   assert.deepEqual([first.points, first.reason, other.points, other.reason], [2, 'spam na ogólnym', 2, 'spam na ogólnym']);
   assert.notEqual(first.caseId, other.caseId, 'osobne sprawy');
 
-  // Pierwsza osoba w odpowiedzi na komendę, druga — osobnym ogłoszeniem na tym samym kanale.
+  // Pierwsza osoba w odpowiedzi na komendę, druga - osobnym ogłoszeniem na tym samym kanale.
   const edit = s.discord.state.webhook.find((w) => w.op === 'edit');
   assert.match(JSON.stringify(edit.body), /<@target>/);
   assert.doesNotMatch(JSON.stringify(edit.body), /target2/);
   assert.ok((s.discord.state.channels.get('chan') ?? []).some((m) => JSON.stringify(m).includes('<@target2>')), 'ogłoszenie dla drugiej osoby');
   assert.deepEqual(s.discord.state.dms.map((d) => d.channel_id).sort(), ['dm-target', 'dm-target2'], 'każda osoba dostaje wiadomość prywatną');
 
-  // Bot pominięty — moderator dostaje prywatnie wyjaśnienie.
+  // Bot pominięty - moderator dostaje prywatnie wyjaśnienie.
   const note = s.discord.state.webhook.find((w) => w.op === 'followup');
   assert.equal(note.body.flags, 64);
-  assert.match(note.body.embeds[0].description, /<@bot> — Botów nie można ostrzegać/);
+  assert.match(note.body.embeds[0].description, /<@bot> - Botów nie można ostrzegać/);
   assert.match(note.body.embeds[0].description, /Ostrzeżono: <@target>, <@target2>/);
 });
 
-test('/warn dodaj: gdy nikogo nie można ostrzec — błąd z powodem dla każdej osoby', async () => {
+test('/warn dodaj: gdy nikogo nie można ostrzec - błąd z powodem dla każdej osoby', async () => {
   const s = await setup();
   await s.send(commandPayload('warn', [sub('dodaj', [opt('uzytkownik', 'bot', 6), opt('powod', 'test'), opt('osoba2', 'owner', 6)])], { resolvedIds: ['bot', 'owner'] }));
   assert.equal((await s.store.getWarns('owner')).length, 0);
@@ -360,9 +360,9 @@ test('/serwer pokazuje statystyki moderacji tylko moderatorom, /info ma przycisk
 
 test('nadpisanie uprawnień z panelu ogranicza komendę do wybranych ról (i widoki, które z niej korzystają)', async () => {
   const s = await setup();
-  const VIP = '100000000000000020'; // ID jak prawdziwy snowflake — wymaga tego sanitizer konfiguracji
+  const VIP = '100000000000000020'; // ID jak prawdziwy snowflake - wymaga tego sanitizer konfiguracji
   // Moderator ma uprawnienie Discorda MODERATE_MEMBERS, ale komenda /notatka jest nadpisana na rolę VIP.
-  // (Celowo komenda bez sprawdzania hierarchii ról jak /kick — nadpisanie testujemy niezależnie od niej.)
+  // (Celowo komenda bez sprawdzania hierarchii ról jak /kick - nadpisanie testujemy niezależnie od niej.)
   await s.store.updateConfig({ commandPermissions: { notatka: [VIP] } });
 
   const deniedForMod = await s.send(commandPayload('notatka', [sub('dodaj', [opt('uzytkownik', 'target', 6), opt('tresc', 'test')])]));
@@ -390,7 +390,7 @@ test('lista ról obowiązuje też administratora, a właściciel serwera ma dost
   const s = await setup();
   const VIP = '100000000000000020';
   const ADMIN = String(1n << 3n);
-  // /unban (i jego lista banów) tylko dla VIP-a, /historia z pustą listą — czyli tylko dla właściciela.
+  // /unban (i jego lista banów) tylko dla VIP-a, /historia z pustą listą - czyli tylko dla właściciela.
   await s.store.updateConfig({ commandPermissions: { unban: [VIP], historia: [] } });
   s.discord.state.bans.set('target', { user: { id: '123456789012345678', username: 'hurownik_og' } });
   const suggestions = async (who) => {
@@ -406,12 +406,12 @@ test('lista ról obowiązuje też administratora, a właściciel serwera ma dost
   assert.equal(await suggestions(admin), 0);
   assert.match((await bansView(admin)).data.embeds[0].description, /Nie masz uprawnień/);
 
-  // Rola z listy — dostęp bez żadnych uprawnień Discorda.
+  // Rola z listy - dostęp bez żadnych uprawnień Discorda.
   const vip = { roles: [VIP], permissions: '0' };
   assert.equal(await suggestions(vip), 1);
   assert.deepEqual(await bansView(vip), { type: 6 });
 
-  // Właściciel serwera nie ma żadnej roli z list, a mimo to może wszystko — także przy pustej liście.
+  // Właściciel serwera nie ma żadnej roli z list, a mimo to może wszystko - także przy pustej liście.
   const owner = { invoker: 'owner', roles: [], permissions: ADMIN };
   assert.deepEqual(await historia(owner), { type: 5, data: { flags: 64 } });
   assert.equal(lastEdit(s).embeds[0].author.name, 'hurownik_og • Historia kar');

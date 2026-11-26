@@ -77,7 +77,7 @@ test('event zaproszeń: zapis najpierw, potem liczą się prawdziwe zaproszenia 
   const link = await connect(s);
   assert.equal(link.out.response.data.flags, 64, 'link widzi tylko ta osoba');
   assert.match(link.url, /^https:\/\/enho\.pl\/event#polacz=[\w-]{40,}$/, 'eventy mają własną stronę (enho.pl/event)');
-  assert.match(link.reply.embeds[0].description, /Zaproś znajomych\*\* — trzeba zaprosić 3 osoby, koniec <t:\d+:R>/);
+  assert.match(link.reply.embeds[0].description, /Zaproś znajomych\*\* - trzeba zaprosić 3 osoby, koniec <t:\d+:R>/);
   assert.equal((await s.call('/public/link', { method: 'POST', body: { token: link.token } })).status, 401, 'link działa tylko raz');
 
   let me = (await view(s, link.session, 'zapr0001')).me;
@@ -85,7 +85,7 @@ test('event zaproszeń: zapis najpierw, potem liczą się prawdziwe zaproszenia 
   assert.deepEqual((await join(s, 'zapr0001', link.session)).body, { joined: true, already: false });
   assert.equal((await join(s, 'zapr0001', link.session)).body.already, true);
 
-  // Po zapisie: 2 dobre, młode konto, wyjście, powrót (wcześniejsze wejście) i znany wcześniej profil — nie.
+  // Po zapisie: 2 dobre, młode konto, wyjście, powrót (wcześniejsze wejście) i znany wcześniej profil - nie.
   const [ok1, ok2, young, leaver, back, known] = [account(400), account(30), account(2), account(100), account(200), account(150)];
   await s.db.query(`insert into bot.invite_joins (user_id, inviter_id, code, joined_at) values ($1, 'mod', 'x', now() - interval '20 days')`, [back]);
   await s.db.query(`insert into bot.member_profiles (user_id, username, updated_at) values ($1, 'stary', now() - interval '30 days')`, [known]);
@@ -104,10 +104,10 @@ test('event zaproszeń: zapis najpierw, potem liczą się prawdziwe zaproszenia 
   const log = s.discord.state.channels.get(LOG);
   assert.equal(log.length, 1);
   assert.equal(log[0].content, `<@&${PING}>`);
-  assert.match(log[0].embeds[0].title, /Dostał\(a\) się — Zaproś znajomych/);
+  assert.match(log[0].embeds[0].title, /Dostał\(a\) się - Zaproś znajomych/);
   assert.match(log[0].embeds[0].description, /<@target> spełnił\(a\) warunek eventu: zaprosił\(a\) \*\*3 osoby\*\* \(warunek: 3\)\.\n\*\*Nagroda:\*\* Nitro/);
 
-  // Druga osoba: zapisana, bez zaproszeń — niżej; lista: kto się dostał, ten wyżej.
+  // Druga osoba: zapisana, bez zaproszeń - niżej; lista: kto się dostał, ten wyżej.
   const other = await connect(s, 'mod');
   await join(s, 'zapr0001', other.session);
   const c1 = await view(s, other.session, 'zapr0001');
@@ -137,7 +137,7 @@ test('event wiadomości i oba warunki: liczą się tylko wiadomości zapisanych 
   await onMessageLevels(s.bot, message('target', 'przed zapisem'));
   const link = await connect(s);
   for (const id of ['wiad0001', 'oba00001', 'pozn0001']) assert.equal((await join(s, id, link.session)).status, 200, id);
-  assert.deepEqual((await join(s, 'stary001', link.session)).status, 400, 'zakończony ponad 3 dni temu — nie ma go');
+  assert.deepEqual((await join(s, 'stary001', link.session)).status, 400, 'zakończony ponad 3 dni temu - nie ma go');
   await onMessageLevels(s.bot, message('target', 'pierwsza'));
   await onMessageLevels(s.bot, message('mod', 'niezapisany'));
   let w = await view(s, link.session, 'wiad0001');
@@ -154,7 +154,7 @@ test('event wiadomości i oba warunki: liczą się tylko wiadomości zapisanych 
   assert.equal(await contestsTick(s.bot), 2);
   assert.equal(s.discord.state.channels.get(LOG).length, 2);
 
-  // Osoba ukryta komendą /prywatnosc: dla innych „Ukryta osoba”, dla siebie — normalnie.
+  // Osoba ukryta komendą /prywatnosc: dla innych „Ukryta osoba”, dla siebie - normalnie.
   await s.store.setLevelHidden('target', true);
   const other = await connect(s, 'mod');
   const seen = (await view(s, other.session, 'wiad0001')).entries[0];
@@ -187,7 +187,7 @@ test('logowanie przez Discord: kod z PKCE → sesja; adres strony musi być na l
 
   // Panel pokazuje, czy logowanie jest gotowe.
   assert.deepEqual((await handlePanel(s.bot, { method: 'GET', path: '/contests' })).body.oauth.registered, true);
-  // Kilka adresów: strona eventów wygrywa; sam adres rankingu (dodany przed /event) też działa — ranking przekazuje
+  // Kilka adresów: strona eventów wygrywa; sam adres rankingu (dodany przed /event) też działa - ranking przekazuje
   // powrót z Discorda na /event. Zapis sprzed listy adresów (oauthRedirect: true bez adresu) = adres rankingu.
   const RANKING = OAUTH_REDIRECTS.at(-1);
   s.discord.state.redirectUris = [RANKING];
@@ -206,7 +206,7 @@ test('logowanie przez Discord: kod z PKCE → sesja; adres strony musi być na l
   await s.call('/public/oauth', { method: 'POST', body: { code: 'kod-3333333333', verifier, redirectUri: 'https://zly.example/' } });
   assert.equal(s.discord.state.lastTokenForm.redirect_uri, RANKING, 'obcy adres → adres z konfiguracji');
 
-  // Adres dopisany w Developer Portal: panel wykrywa go od razu, strona — najwyżej po minucie (bez czekania na cron).
+  // Adres dopisany w Developer Portal: panel wykrywa go od razu, strona - najwyżej po minucie (bez czekania na cron).
   s.discord.state.redirectUris = ['https://example.com/'];
   assert.equal((await ensureSetup(s.bot, { force: true })).oauthRedirect, false);
   assert.equal((await s.call('/public/contests')).body.oauth, null);
@@ -222,10 +222,10 @@ test('logowanie przez Discord: kod z PKCE → sesja; adres strony musi być na l
   assert.deepEqual((await s.call('/public/contests')).body.oauth, { clientId: 'app', redirectUri: OAUTH_REDIRECT }, 'po minucie strona sama wykrywa adres');
 
   delete s.discord.state.redirectUris;
-  assert.equal((await ensureSetup(s.bot, { force: true })).oauthRedirect, null, 'Discord nie podał listy — nie wiadomo');
+  assert.equal((await ensureSetup(s.bot, { force: true })).oauthRedirect, null, 'Discord nie podał listy - nie wiadomo');
 });
 
-test('wypisanie się: postęp przepada, ponowny zapis liczy od nowa; po końcu eventu i po wylosowaniu — nie', async () => {
+test('wypisanie się: postęp przepada, ponowny zapis liczy od nowa; po końcu eventu i po wylosowaniu - nie', async () => {
   const now = Date.now();
   const s = await setup([
     { id: 'wyp00001', name: 'Wypisz', startsAt: iso(now - DAY), endsAt: iso(now + DAY), invites: 2, messages: 1, drawWinners: 1 },
@@ -252,7 +252,7 @@ test('wypisanie się: postęp przepada, ponowny zapis liczy od nowa; po końcu e
   c = await view(s, link.session, 'wyp00001');
   assert.deepEqual([c.me.joined, c.me.invites, c.me.messages], [true, 0, 0]);
 
-  // Wylosowany(-a): bez wypisywania (rezygnacja z nagrody — przez administrację).
+  // Wylosowany(-a): bez wypisywania (rezygnacja z nagrody - przez administrację).
   await s.store.setContestWinners('wyp00001', ['target']);
   c = await view(s, link.session, 'wyp00001');
   assert.deepEqual([c.me.won, c.me.canLeave], [true, false]);
@@ -260,7 +260,7 @@ test('wypisanie się: postęp przepada, ponowny zapis liczy od nowa; po końcu e
   assert.equal(won.status, 400);
   assert.match(won.body.error, /Wylosowano Cię/);
 
-  // Po końcu eventu wyniki są ostateczne; bez sesji — 401; nieznany event — 400.
+  // Po końcu eventu wyniki są ostateczne; bez sesji - 401; nieznany event - 400.
   await s.store.addContestEntry({ contestId: 'wyp00002', userId: 'target', userTag: 'target' });
   assert.equal((await view(s, link.session, 'wyp00002')).me.canLeave, false);
   const ended = await leave(s, 'wyp00002', link.session);
@@ -270,7 +270,7 @@ test('wypisanie się: postęp przepada, ponowny zapis liczy od nowa; po końcu e
   assert.equal((await leave(s, 'nieznany1', link.session)).status, 400);
 });
 
-test('event przed startem: zapis od razu, liczenie od startu; po końcu i spoza serwera — bez zapisu', async () => {
+test('event przed startem: zapis od razu, liczenie od startu; po końcu i spoza serwera - bez zapisu', async () => {
   const now = Date.now();
   const s = await setup([{ id: 'zapr0003', name: 'Wkrótce', startsAt: iso(now + DAY), endsAt: iso(now + 3 * DAY), invites: 3 }]);
   const link = await connect(s);
@@ -282,7 +282,7 @@ test('event przed startem: zapis od razu, liczenie od startu; po końcu i spoza 
   assert.deepEqual((await join(s, 'wiad0002', link.session)).body.error, 'Ten event już się skończył.');
   s.discord.state.members.delete('target');
   const gone = await join(s, 'wiad0003', link.session);
-  assert.deepEqual([gone.status, gone.body.error], [400, 'Nie ma Cię na serwerze — wróć na niego, żeby się zapisać.']);
+  assert.deepEqual([gone.status, gone.body.error], [400, 'Nie ma Cię na serwerze - wróć na niego, żeby się zapisać.']);
   assert.equal((await join(s, 'nieznany1', link.session)).status, 400);
 });
 
@@ -293,7 +293,7 @@ test('wejścia w czasie eventu zaproszeń: bot sprawdza zaproszenie bez logów, 
   await s.store.addContestEntry({ contestId: 'zapr0004', userId: 'target', userTag: 'hurownik_og' });
   const inv = (code, inviter, uses) => ({ code, uses, max_uses: 0, inviter: { id: inviter }, channel: { id: 'chan' }, expires_at: null });
   s.discord.state.invites = [inv('abc', 'target', 3)];
-  // Stan sprzed tygodnia (zaproszenia nie były wtedy śledzone) — pobierany od nowa na start eventu, potem już nie.
+  // Stan sprzed tygodnia (zaproszenia nie były wtedy śledzone) - pobierany od nowa na start eventu, potem już nie.
   await s.store.setState('invites_snapshot', { at: now - 7 * DAY, invites: { abc: { uses: 1, inviterId: 'target', maxUses: 0, expiresAt: null } }, vanity: null });
   assert.equal(await ensureInviteSnapshot(s.bot, await s.store.getConfig()), 1);
   assert.equal(await ensureInviteSnapshot(s.bot, await s.store.getConfig()), 0);
@@ -305,7 +305,7 @@ test('wejścia w czasie eventu zaproszeń: bot sprawdza zaproszenie bez logów, 
   const count = async () => (await s.store.contestProgress('zapr0004', { start: now - 60_000, end: now + DAY, invites: true, minAccountMs: 7 * DAY }))[0].invites;
   assert.equal(await count(), 1);
   await onMemberLeave(s.bot, { guild_id: GUILD, user: { id, username: 'nowy' } });
-  assert.equal(await count(), 0, 'osoba wyszła — zaproszenie się nie liczy');
+  assert.equal(await count(), 0, 'osoba wyszła - zaproszenie się nie liczy');
 
   // Bez trwającego eventu (i bez logów) nic nie jest sprawdzane.
   await s.store.updateConfig({ contests: { list: [] } });
@@ -356,7 +356,7 @@ test('panel: walidacja eventów (warunek, stary zapis), zapisani z postępem, us
   assert.match(JSON.stringify(s.discord.state.webhook.at(-1).body), /Eventy są wyłączone/);
 });
 
-test('losowanie: ręcznie z panelu wśród tych, którzy się dostali (ponowne zastępuje), samo po końcu eventu — raz', async () => {
+test('losowanie: ręcznie z panelu wśród tych, którzy się dostali (ponowne zastępuje), samo po końcu eventu - raz', async () => {
   const now = Date.now();
   const s = await setup([
     { id: 'los00001', name: 'Losowanie Nitro', startsAt: iso(now - DAY), endsAt: iso(now + DAY), invites: 1, drawWinners: 2, prize: 'Nitro' },
@@ -374,7 +374,7 @@ test('losowanie: ręcznie z panelu wśród tych, którzy się dostali (ponowne z
   assert.deepEqual(first.body.result.winners.map((w) => w.userId).sort(), ['mod', 'target'], 'losowanie tylko wśród tych, którzy się dostali');
   assert.equal(first.body.result.pool, 2);
   const log = s.discord.state.channels.get(LOG).at(-1);
-  assert.match(log.embeds[0].title, /Losowanie — Losowanie Nitro/);
+  assert.match(log.embeds[0].title, /Losowanie - Losowanie Nitro/);
   assert.match(log.embeds[0].description, /\*\*Zwycięzcy:\*\*\n🥇 <@(target|mod)>\n🥈 <@(target|mod)>\n\*\*Nagroda:\*\* Nitro\n-# Losowanie wśród 2 osób, które się dostały · losował\(a\): hasło panelu\./);
   assert.deepEqual(log.allowed_mentions.users.sort(), ['mod', 'target'], 'zwycięzcy dostają ping');
   const link = await connect(s);
@@ -389,16 +389,16 @@ test('losowanie: ręcznie z panelu wśród tych, którzy się dostali (ponowne z
   assert.equal(details.draw.pool, 2);
   assert.match((await handlePanel(s.bot, { method: 'POST', path: '/contests/los00003/draw' })).body.error, /jeszcze się nie zaczął/);
 
-  // Samo po końcu eventu: raz (nikt się nie dostał — ogłoszenie, że nie było kogo losować).
+  // Samo po końcu eventu: raz (nikt się nie dostał - ogłoszenie, że nie było kogo losować).
   const before = s.discord.state.channels.get(LOG).length;
   await contestsTick(s.bot);
   await contestsTick(s.bot);
   const auto = s.discord.state.channels.get(LOG).slice(before).filter((m) => /^🎲 Losowanie/.test(m.embeds[0].title));
   assert.equal(auto.length, 1, 'jedno losowanie (osobno ogłoszenia o spełnionym warunku)');
-  assert.match(auto[0].embeds[0].description, /Nikt nie spełnił warunku — nie było kogo losować\.[\s\S]*automatycznie po końcu eventu/);
+  assert.match(auto[0].embeds[0].description, /Nikt nie spełnił warunku - nie było kogo losować\.[\s\S]*automatycznie po końcu eventu/);
 });
 
-test('motyw eventu: kolory (gradient) i baner wgrany w panelu — walidacja, widok na stronie, sprzątanie obrazków', async () => {
+test('motyw eventu: kolory (gradient) i baner wgrany w panelu - walidacja, widok na stronie, sprzątanie obrazków', async () => {
   const now = Date.now();
   const s = await setup();
   const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
@@ -439,7 +439,7 @@ test('motyw eventu: kolory (gradient) i baner wgrany w panelu — walidacja, wid
   assert.ok(!left.includes(unused.body.id));
 });
 
-test('własna domena: bot przyjmuje zapytania stron z github.io i enho.pl (CORS), obcych — nie', async () => {
+test('własna domena: bot przyjmuje zapytania stron z github.io i enho.pl (CORS), obcych - nie', async () => {
   const s = await setup();
   const handle = createHandler(s.bot);
   const ask = async (origin) => (await handle(new Request(`${BASE}/public/contests`, { headers: { origin } }))).headers.get('access-control-allow-origin');

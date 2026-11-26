@@ -11,7 +11,7 @@ create table if not exists bot.level_daily (
 );
 create index if not exists level_daily_day_idx on bot.level_daily (day);
 
--- Skrót ostatniej wiadomości, za którą było XP — ta sama wiadomość drugi raz nie daje XP.
+-- Skrót ostatniej wiadomości, za którą było XP - ta sama wiadomość drugi raz nie daje XP.
 alter table bot.levels add column if not exists last_text_hash text;
 
 revoke all on bot.level_daily from anon, authenticated;

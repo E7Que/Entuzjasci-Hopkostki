@@ -154,28 +154,28 @@ test('wygasły tymczasowy ban jest zdejmowany automatycznie', async () => {
   assert.match(unban.reason, /sprawa #7/);
 });
 
-// ID ról jak prawdziwe snowflaki Discorda — sanitizeConfig odrzuca krótkie napisy typu "r-vip".
+// ID ról jak prawdziwe snowflaki Discorda - sanitizeConfig odrzuca krótkie napisy typu "r-vip".
 const SUPPORT = '100000000000000010';
 const VIP = '100000000000000020';
 const ADMIN_ROLE = '100000000000000030';
 const ADMIN_BITS = String(1n << 3n);
 const PERMISSION_LISTS = { kick: [VIP], ban: [VIP, ADMIN_ROLE], pomoc: ['everyone'], lock: [] };
 
-test('hasModAccess: lista ról komendy liczy się zamiast uprawnień Discorda i modRoleIds — także dla administratora', async () => {
+test('hasModAccess: lista ról komendy liczy się zamiast uprawnień Discorda i modRoleIds - także dla administratora', async () => {
   const s = await setup({ config: { modRoleIds: [SUPPORT], commandPermissions: PERMISSION_LISTS } });
   const config = await s.store.getConfig();
 
-  // Zwykły moderator (uprawnienie Discorda KICK_MEMBERS) — bez listy miałby dostęp, z nią już nie.
+  // Zwykły moderator (uprawnienie Discorda KICK_MEMBERS) - bez listy miałby dostęp, z nią już nie.
   const modMember = { id: 'mod', roles: ['r-mod'], permissions: String((1n << 1n) | (1n << 2n) | (1n << 40n)) };
   assert.equal(moderation.hasModAccess(modMember, 1n << 1n, config, 'kick'), false);
-  // Rola z listy — dostęp, mimo braku jakichkolwiek uprawnień Discorda.
+  // Rola z listy - dostęp, mimo braku jakichkolwiek uprawnień Discorda.
   const vipMember = { id: 'vip', roles: [VIP], permissions: '0' };
   assert.equal(moderation.hasModAccess(vipMember, 1n << 1n, config, 'kick'), true);
   // Rola z ogólnej listy moderatorów (modRoleIds) NIE omija listy konkretnej komendy.
   const supportMember = { id: 'support', roles: [SUPPORT], permissions: '0' };
   assert.equal(moderation.hasModAccess(supportMember, 1n << 1n, config, 'kick'), false);
 
-  // Administrator też podlega liście: bez roli z listy nie ma dostępu, z rolą z listy — ma.
+  // Administrator też podlega liście: bez roli z listy nie ma dostępu, z rolą z listy - ma.
   const adminMember = { id: 'admin', roles: [ADMIN_ROLE], permissions: ADMIN_BITS };
   assert.equal(moderation.hasModAccess(adminMember, 1n << 1n, config, 'kick'), false);
   assert.equal(moderation.hasModAccess(adminMember, 1n << 2n, config, 'ban'), true);
@@ -184,21 +184,21 @@ test('hasModAccess: lista ról komendy liczy się zamiast uprawnień Discorda i 
   // „Wszyscy” wpuszcza każdego, także osobę bez ról.
   assert.equal(moderation.hasModAccess({ id: 'x', roles: [], permissions: '0' }, null, config, 'pomoc'), true);
 
-  // Właściciel serwera ma dostęp zawsze — bez żadnej roli z listy, nawet przy pustej liście.
+  // Właściciel serwera ma dostęp zawsze - bez żadnej roli z listy, nawet przy pustej liście.
   const ownerMember = { id: 'owner', roles: [], permissions: '0' };
   assert.equal(moderation.hasModAccess(ownerMember, 1n << 1n, config, 'kick', 'owner'), true);
   assert.equal(moderation.hasModAccess(ownerMember, P.MANAGE_CHANNELS, config, 'lock', 'owner'), true);
   assert.equal(moderation.hasModAccess(ownerMember, 1n << 1n, config, 'kick'), false, 'bez podanego ID właściciela liczy się sama lista');
   assert.equal(moderation.hasModAccess(adminMember, 1n << 1n, config, 'kick', 'owner'), false, 'ID właściciela nie pomaga innym');
 
-  // Komenda bez listy (stara konfiguracja): jak dawniej — uprawnienie Discorda (Administrator ma każde) albo modRoleIds.
+  // Komenda bez listy (stara konfiguracja): jak dawniej - uprawnienie Discorda (Administrator ma każde) albo modRoleIds.
   assert.equal(moderation.hasModAccess(supportMember, 1n << 40n, config, 'timeout'), true);
   assert.equal(moderation.hasModAccess(adminMember, 1n << 40n, config, 'timeout'), true);
   assert.equal(moderation.hasModAccess(modMember, 1n << 40n, config, 'timeout'), true);
   assert.equal(moderation.hasModAccess({ id: 'x', roles: [], permissions: '0' }, 1n << 40n, config, 'timeout'), false);
   // Komenda bez wymaganych uprawnień i bez listy jest otwarta dla wszystkich.
   assert.equal(moderation.hasModAccess({ id: 'x', roles: [], permissions: '0' }, null, config, 'serwer'), true);
-  // Brak członka (np. spoza serwera) nigdy nie dostaje dostępu — nawet z ID właściciela.
+  // Brak członka (np. spoza serwera) nigdy nie dostaje dostępu - nawet z ID właściciela.
   assert.equal(moderation.hasModAccess(null, null, config, 'serwer'), false);
   assert.equal(moderation.hasModAccess(null, null, config, 'pomoc', 'owner'), false);
 });
@@ -216,7 +216,7 @@ test('roleHasAccess: ta sama logika co hasModAccess, ale liczona dla roli (panel
   assert.equal(moderation.roleHasAccess(role(ADMIN_ROLE, ADMIN_BITS), 1n << 2n, config, 'ban'), true);
   assert.equal(moderation.roleHasAccess(role(ADMIN_ROLE, ADMIN_BITS), P.MANAGE_CHANNELS, config, 'lock'), false);
   assert.equal(moderation.roleHasAccess(role('r-fan'), null, config, 'pomoc'), true);
-  // Bez listy — stare zasady: modRoleIds albo uprawnienie Discorda (Administrator ma każde).
+  // Bez listy - stare zasady: modRoleIds albo uprawnienie Discorda (Administrator ma każde).
   assert.equal(moderation.roleHasAccess(role(SUPPORT), 1n << 40n, config, 'timeout'), true);
   assert.equal(moderation.roleHasAccess(role(ADMIN_ROLE, ADMIN_BITS), 1n << 40n, config, 'timeout'), true);
   assert.equal(moderation.roleHasAccess(role('r-fan'), 1n << 40n, config, 'timeout'), false);
@@ -228,7 +228,7 @@ test('canUseCommand: właściciel serwera zawsze; Discorda pytamy dopiero, gdy l
   const config = await s.store.getConfig();
   const vip = { id: 'vip', roles: [VIP], permissions: '0' };
   const admin = { id: 'admin', roles: ['r-admin'], permissions: ADMIN_BITS };
-  // W interakcji Discord podaje właścicielowi wszystkie uprawnienia — o dostępie decyduje jednak jego ID.
+  // W interakcji Discord podaje właścicielowi wszystkie uprawnienia - o dostępie decyduje jednak jego ID.
   const owner = { id: 'owner', roles: [], permissions: ADMIN_BITS };
 
   assert.equal(await moderation.canUseCommand(s.bot, vip, 1n << 1n, config, 'kick'), true);
@@ -239,7 +239,7 @@ test('canUseCommand: właściciel serwera zawsze; Discorda pytamy dopiero, gdy l
   assert.equal(await moderation.canUseCommand(s.bot, null, null, config, 'pomoc'), false);
   assert.equal(await moderation.guildOwnerId(s.bot), 'owner');
 
-  // Discord nie odpowiada: bez ID właściciela liczy się sama lista — nikt nie dostaje dostępu „na zapas”.
+  // Discord nie odpowiada: bez ID właściciela liczy się sama lista - nikt nie dostaje dostępu „na zapas”.
   t.mock.method(console, 'warn', () => {});
   const offline = { ...s.bot, cache: new Map(), discord: { get: async () => { throw new Error('offline'); } } };
   assert.equal(await moderation.guildOwnerId(offline), null);

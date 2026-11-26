@@ -1,6 +1,6 @@
 project_id = "ucjmbdogtzztrkorqzjq"
 
-# Discord i pg_cron nie wysyłają JWT Supabase — funkcja sama sprawdza podpis Ed25519,
+# Discord i pg_cron nie wysyłają JWT Supabase - funkcja sama sprawdza podpis Ed25519,
 # sekret crona i hasło panelu.
 [functions.hopkostki-bot]
 verify_jwt = false

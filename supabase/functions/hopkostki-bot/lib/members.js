@@ -34,7 +34,7 @@ export function contentFeaturesOn(config) {
   return config.tickets.enabled || config.bump.enabled || messageLogsOn(config) || (config.levels.enabled && config.levels.message.enabled) || config.automod.enabled;
 }
 
-// Włącza w aplikacji intencje potrzebne do włączonych funkcji (tylko wersje "limited" da się włączyć przez API —
+// Włącza w aplikacji intencje potrzebne do włączonych funkcji (tylko wersje "limited" da się włączyć przez API -
 // wystarczą dla botów na mniej niż 100 serwerach). Zwraca aktualny stan dla panelu.
 export async function ensureIntentFlags(bot, config) {
   const app = await getApp(bot);
@@ -83,12 +83,12 @@ export async function onMemberJoin(bot, member) {
   if (!(await isOurGuild(bot, member?.guild_id))) return;
   const config = await bot.store.getConfig();
   const { members } = config;
-  // Przy weryfikacji członkostwa (regulamin) rolę dostaje się dopiero po akceptacji — patrz onMemberUpdate.
+  // Przy weryfikacji członkostwa (regulamin) rolę dostaje się dopiero po akceptacji - patrz onMemberUpdate.
   if (members.autoRole.enabled && !member.pending) await giveAutoRoles(bot, member.guild_id, member, members.autoRole);
 
   const logJoins = joinLogsOn(config);
   const needsGuild = members.welcome.enabled || logJoins;
-  // Trwa event zaproszeń — kto zaprosił, sprawdzamy od razu (raz; wynik trafia też do logu wejść).
+  // Trwa event zaproszeń - kto zaprosił, sprawdzamy od razu (raz; wynik trafia też do logu wejść).
   const invite = inviteContestLive(config) ? await detectInvite(bot, member).catch(() => null) : undefined;
   const gctx = needsGuild ? await getGuildContext(bot, { force: true }).catch(() => null) : null;
   const user = member.user;

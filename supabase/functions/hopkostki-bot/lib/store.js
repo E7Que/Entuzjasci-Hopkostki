@@ -1,5 +1,5 @@
 // Dostęp do bazy (schemat "bot" w Postgresie Supabase).
-// query(text, params) => Promise<wiersze> — w funkcji Edge to postgres.js, w testach PGlite.
+// query(text, params) => Promise<wiersze> - w funkcji Edge to postgres.js, w testach PGlite.
 
 import { DEFAULT_CONFIG } from './defaults.js';
 import { mergeWithDefaults, sanitizeConfig } from './configSchema.js';
@@ -40,7 +40,7 @@ const mapLevel = (r) => ({
   hidden: Boolean(r.hidden),
 });
 
-// Szukanie po ID, nazwie albo pseudonimie; publicOnly — bez osób ukrytych na stronie rankingu.
+// Szukanie po ID, nazwie albo pseudonimie; publicOnly - bez osób ukrytych na stronie rankingu.
 const levelSearch = (n, alias, publicOnly) =>
   `($${n}::text = '' or (${publicOnly ? `not ${alias}hidden and ` : ''}(${alias}user_id = $${n}::text or ${alias}user_tag ilike '%' || $${n}::text || '%' or ${alias}display_name ilike '%' || $${n}::text || '%')))`;
 
@@ -58,7 +58,7 @@ const mapContestEntry = (r) => ({
   wonAt: ms(r.won_at),
 });
 
-// Bez skrótu tokenu — ten zostaje w bazie.
+// Bez skrótu tokenu - ten zostaje w bazie.
 const mapMemberLink = (r) => ({
   id: r.id,
   kind: r.kind,
@@ -71,7 +71,7 @@ const mapMemberLink = (r) => ({
   lastSeenAt: ms(r.last_seen_at),
 });
 
-// Bez skrótu tokenu — ten zostaje w bazie.
+// Bez skrótu tokenu - ten zostaje w bazie.
 const mapPanelSession = (r) => ({
   id: r.id,
   kind: r.kind,
@@ -384,7 +384,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return { bytes: Number(total.bytes), schemas: schemas.map((s) => ({ name: s.name, bytes: Number(s.bytes) })) };
     },
 
-    // XP, wiadomości i minuty na głosowych z danego dnia (czas polski) — z bot.level_daily.
+    // XP, wiadomości i minuty na głosowych z danego dnia (czas polski) - z bot.level_daily.
     async dayActivity(day) {
       const row = await one(
         `select count(*)::int as people, coalesce(sum(xp), 0)::bigint as xp, coalesce(sum(messages), 0)::int as messages,
@@ -432,7 +432,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
     },
 
     // ---------- Dziennik zmian ustawień ----------
-    // changes = { klucz: { before, after } } — tylko zmienione sekcje. Zostaje ostatnie 100 wpisów.
+    // changes = { klucz: { before, after } } - tylko zmienione sekcje. Zostaje ostatnie 100 wpisów.
     async addConfigHistory({ changedBy, changes }) {
       const keys = Object.keys(changes);
       if (!keys.length) return null;
@@ -674,7 +674,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       );
     },
 
-    // Blokada (dzierżawa) na czas działania zadania — wygasa sama, gdyby zadanie padło.
+    // Blokada (dzierżawa) na czas działania zadania - wygasa sama, gdyby zadanie padło.
     async acquireLease(key, seconds) {
       await query(
         `insert into bot.state (key, value) values ($1::text, to_jsonb('1970-01-01T00:00:00Z'::text))
@@ -722,7 +722,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return (await one('select channel_id from bot.voice_states where user_id = $1::text', [userId]))?.channel_id ?? null;
     },
 
-    // muted/deafened (samo- albo przez serwer), bot i role — dla XP za kanały głosowe (anty-AFK, role bez XP).
+    // muted/deafened (samo- albo przez serwer), bot i role - dla XP za kanały głosowe (anty-AFK, role bez XP).
     async setVoiceState(userId, channelId, { muted = false, deafened = false, bot = false, roles = [] } = {}) {
       if (!channelId) {
         await query('delete from bot.voice_states where user_id = $1::text', [userId]);
@@ -749,7 +749,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       }));
     },
 
-    // Pełna lista z GUILD_CREATE — zastępuje wszystko, co było (po ponownym zalogowaniu do gatewaya).
+    // Pełna lista z GUILD_CREATE - zastępuje wszystko, co było (po ponownym zalogowaniu do gatewaya).
     async replaceVoiceStates(states) {
       await query('delete from bot.voice_states');
       if (!states.length) return;
@@ -829,7 +829,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return row ? mapTicket(row) : null;
     },
 
-    // Przejęcie tylko wolnego, otwartego ticketu — przy dwóch odpowiedziach naraz wygrywa pierwsza (null = już zajęty).
+    // Przejęcie tylko wolnego, otwartego ticketu - przy dwóch odpowiedziach naraz wygrywa pierwsza (null = już zajęty).
     async claimTicketIfFree(id, userId) {
       const row = await one(
         `update bot.tickets set claimed_by = $2::text where id = $1::int and claimed_by is null and status = 'open' returning *`,
@@ -966,7 +966,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return mapped;
     },
 
-    // Tylko osoby, których jeszcze nie znamy — istniejących nie nadpisujemy (zmianę wykryje GUILD_MEMBER_UPDATE).
+    // Tylko osoby, których jeszcze nie znamy - istniejących nie nadpisujemy (zmianę wykryje GUILD_MEMBER_UPDATE).
     async seedMemberProfiles(list) {
       if (!list.length) return 0;
       const rows = await query(
@@ -1014,7 +1014,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return rows.map((r) => ({ inviterId: r.inviter_id, count: r.n }));
     },
 
-    // Wyjście z serwera — jej zaproszenie przestaje się liczyć w eventach.
+    // Wyjście z serwera - jej zaproszenie przestaje się liczyć w eventach.
     async markInviteLeft(userId) {
       await query('update bot.invite_joins set left_at = now() where user_id = $1::text and left_at is null', [userId]);
     },
@@ -1022,7 +1022,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
     // ---------- Eventy ----------
     // Zapisani do eventu z postępem. Zaproszenia (invites = true) liczą się od chwili zapisu (najwcześniej od startu)
     // do końca: osoby, które weszły z zaproszenia tej osoby, nadal są na serwerze, nie były tu wcześniej (wcześniejsze
-    // wejście albo profil sprzed wejścia) i w chwili wejścia miały konto starsze niż minAccountMs. Wiadomości —
+    // wejście albo profil sprzed wejścia) i w chwili wejścia miały konto starsze niż minAccountMs. Wiadomości -
     // licznik z contest_scores (store.awardXp liczy je tylko zapisanym).
     async contestProgress(contestId, { start, end, invites = false, minAccountMs = 0 }) {
       const rows = await query(
@@ -1059,7 +1059,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return rows.map((r) => r.user_id);
     },
 
-    // Uczestnicy eventu (od najwcześniej zapisanych) — nazwa i avatar z rankingu poziomów, jeśli są świeższe.
+    // Uczestnicy eventu (od najwcześniej zapisanych) - nazwa i avatar z rankingu poziomów, jeśli są świeższe.
     async contestEntries(contestId) {
       const rows = await query(
         `select e.*, l.user_tag as l_tag, l.display_name as l_name, l.avatar as l_avatar, l.guild_avatar as l_guild_avatar,
@@ -1094,14 +1094,14 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return rows.map((r) => r.user_id);
     },
 
-    // Usunięcie z eventu kasuje też policzone wiadomości — po ponownym zapisie postęp liczy się od nowa.
+    // Usunięcie z eventu kasuje też policzone wiadomości - po ponownym zapisie postęp liczy się od nowa.
     async removeContestEntry(contestId, userId) {
       const rows = await query('delete from bot.contest_entries where contest_id = $1::text and user_id = $2::text returning user_id', [contestId, userId]);
       await query('delete from bot.contest_scores where contest_id = $1::text and user_id = $2::text', [contestId, userId]);
       return rows.length > 0;
     },
 
-    // Wyniki i zapisy eventów, których nie ma już w konfiguracji (po 30 dniach — usunięcie można cofnąć w dzienniku).
+    // Wyniki i zapisy eventów, których nie ma już w konfiguracji (po 30 dniach - usunięcie można cofnąć w dzienniku).
     async pruneContestData(keepIds) {
       const keep = JSON.stringify(keepIds ?? []);
       await query(
@@ -1198,7 +1198,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return row ? mapReminder(row) : null;
     },
 
-    // Zabiera (usuwa) przypomnienia, których czas minął — każde wysyłamy tylko raz.
+    // Zabiera (usuwa) przypomnienia, których czas minął - każde wysyłamy tylko raz.
     async takeDueReminders(limit = 20) {
       const rows = await query(
         `delete from bot.reminders where id in (select id from bot.reminders where due_at <= now() order by due_at limit $1::int) returning *`,
@@ -1282,7 +1282,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
     },
 
     // ---------- Logowanie do panelu (loginy z /login i sesje przeglądarki) ----------
-    // ttlMs — ważność od teraz, expiresAt — konkretna chwila (sesja kończy się razem ze swoim loginem).
+    // ttlMs - ważność od teraz, expiresAt - konkretna chwila (sesja kończy się razem ze swoim loginem).
     async addPanelLogin({ kind, login = null, loginId = null, tokenHash, userId, userTag, roles = [], admin = false, ttlMs, expiresAt }) {
       const row = await one(
         `insert into bot.panel_sessions (kind, login, login_id, token_hash, user_id, user_tag, roles, admin, expires_at)
@@ -1294,7 +1294,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return mapPanelSession(row);
     },
 
-    // Aktywny login o tej nazwie — razem ze skrótem hasła (do sprawdzenia przy logowaniu).
+    // Aktywny login o tej nazwie - razem ze skrótem hasła (do sprawdzenia przy logowaniu).
     async findPanelLogin(login) {
       const row = await one(`select * from bot.panel_sessions where kind = 'login' and login = $1::text and expires_at > now()`, [login]);
       return row ? { ...mapPanelSession(row), tokenHash: row.token_hash } : null;
@@ -1344,7 +1344,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return rows.map((r) => ({ ...mapPanelSession(r), sessions: r.sessions, lastSeenAt: ms(r.session_seen_at) }));
     },
 
-    // { id } — jeden wpis, { userId, kind } — np. login tej osoby, {} — wszystko. Usunięcie loginu kończy też
+    // { id } - jeden wpis, { userId, kind } - np. login tej osoby, {} - wszystko. Usunięcie loginu kończy też
     // jego sesje (kaskada w bazie).
     async deletePanelLogins({ id, userId, kind } = {}) {
       const rows = await query(
@@ -1361,10 +1361,10 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
     },
 
     // ---------- Poziomy ----------
-    // XP z cooldownem danego rodzaju (wiadomość / głosowe / reakcja) — atomowo: przy cooldownie nic się nie
+    // XP z cooldownem danego rodzaju (wiadomość / głosowe / reakcja) - atomowo: przy cooldownie nic się nie
     // zmienia i wynik to null. Zwraca nowe łączne XP i POPRZEDNI poziom (kolumna level zmienia się osobno).
-    // XP z cooldownem danego rodzaju. dailyCap > 0 — najwyżej tyle XP na dobę (dayKey, czas polski), reszta przepada;
-    // textHash — skrót wiadomości: ta sama wiadomość co ostatnio nagrodzona nie daje XP (null = bez sprawdzania).
+    // XP z cooldownem danego rodzaju. dailyCap > 0 - najwyżej tyle XP na dobę (dayKey, czas polski), reszta przepada;
+    // textHash - skrót wiadomości: ta sama wiadomość co ostatnio nagrodzona nie daje XP (null = bez sprawdzania).
     // Zwraca null (cooldown / powtórka) albo { xp, level, granted }. Dzienne sumy trafiają do bot.level_daily.
     async awardXp({ userId, userTag, displayName = null, avatar, amount, kind, cooldownSec, minutes = 0, weekKey, monthKey, dayKey, dailyCap = 0, textHash = null, eventId = null, contestIds = [] }) {
       const k = XP_KINDS[kind];
@@ -1539,7 +1539,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       await query('update bot.levels set level = $2::int where user_id = $1::text', [userId, level]);
     },
 
-    // Ręczna zmiana (/xp, panel) — nie liczy się do rankingów tygodnia i miesiąca.
+    // Ręczna zmiana (/xp, panel) - nie liczy się do rankingów tygodnia i miesiąca.
     async setXp({ userId, xp, userTag = null, avatar = null }) {
       const row = await one(
         `insert into bot.levels as l (user_id, user_tag, avatar, xp) values ($1::text, $3::text, $4::text, $2::bigint)
@@ -1551,7 +1551,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return { xp: Number(row.xp), level: row.level };
     },
 
-    // Import (np. z Arcane): większe XP zostaje, statystyki — większe z dwóch.
+    // Import (np. z Arcane): większe XP zostaje, statystyki - większe z dwóch.
     async importLevel({ userId, userTag, displayName = null, avatar, xp, messages = 0, reactions = 0 }) {
       const row = await one(
         `insert into bot.levels as l (user_id, user_tag, avatar, xp, messages, reactions, display_name) values ($1::text, $2::text, $3::text, $4::bigint, $5::int, $6::int, $7::text)
@@ -1565,7 +1565,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return { xp: Number(row.xp), level: row.level };
     },
 
-    // Ukrycie (albo pokazanie) osoby na publicznej stronie rankingu — także zanim zdobędzie XP.
+    // Ukrycie (albo pokazanie) osoby na publicznej stronie rankingu - także zanim zdobędzie XP.
     async setLevelHidden(userId, hidden) {
       await query(
         `insert into bot.levels (user_id, hidden) values ($1::text, $2::boolean)
@@ -1582,7 +1582,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return row ? mapLevel(row) : null;
     },
 
-    // sort: xp (domyślnie), messages albo voice — miejsca liczone według wybranej kolejności.
+    // sort: xp (domyślnie), messages albo voice - miejsca liczone według wybranej kolejności.
     async levelLeaderboard({ limit = 10, offset = 0, search = '', publicOnly = false, sort = 'xp' } = {}) {
       const col = { messages: 'messages', voice: 'voice_minutes' }[sort] ?? 'xp';
       const rows = await query(
@@ -1618,7 +1618,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return rows.map((r) => ({ ...mapLevel(r), periodXp: Number(r.period_xp), periodRank: Number(r.period_rank) }));
     },
 
-    // Ile razy osoba wygrała tydzień/miesiąc (1. miejsce) i ile razy była na podium (1–3) — odznaki.
+    // Ile razy osoba wygrała tydzień/miesiąc (1. miejsce) i ile razy była na podium (1-3) - odznaki.
     async levelWins(userId) {
       const rows = await query(
         `select period, count(*) filter (where rank = 1)::int as wins, count(*)::int as podium
@@ -1649,7 +1649,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return row.n;
     },
 
-    // Nazwy i avatary z listy członków serwera — tylko dla osób, które już są w rankingu.
+    // Nazwy i avatary z listy członków serwera - tylko dla osób, które już są w rankingu.
     // [{ id, tag, name, avatar }]; name = pseudonim na serwerze albo nazwa wyświetlana (może być null).
     async syncLevelProfiles(members) {
       if (!members.length) return 0;
@@ -1696,7 +1696,7 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return { members: row.members, xp: Number(row.xp), messages: Number(row.messages), voiceMinutes: Number(row.voice_minutes) };
     },
 
-    // { userId } — jedna osoba, {} — wszyscy. Zeruje XP, poziom i liczniki okresów; statystyki zostają.
+    // { userId } - jedna osoba, {} - wszyscy. Zeruje XP, poziom i liczniki okresów; statystyki zostają.
     async resetLevels({ userId } = {}) {
       const rows = await query(
         `update bot.levels set xp = 0, level = 0, week_xp = 0, month_xp = 0, updated_at = now()

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Nie ma takiej strony — Entuzjaści Hopkostki</title>
+  <title>Nie ma takiej strony - Entuzjaści Hopkostki</title>
   <meta name="robots" content="noindex">
   <script>
     // Adres bez .html (np. /event albo /ranking) → plik .html tej strony, z resztą adresu (#…, ?…).
@@ -28,7 +28,7 @@
     <a href="ranking" data-page>Ranking poziomów</a><a href="event" data-page>Eventy serwera</a>
   </main>
   <script>
-    // Strona 404 odpowiada na dowolny adres — linki liczone od katalogu strony (GitHub Pages: /Entuzjasci-Hopkostki/).
+    // Strona 404 odpowiada na dowolny adres - linki liczone od katalogu strony (GitHub Pages: /Entuzjasci-Hopkostki/).
     var base = /\.github\.io$/.test(location.hostname) ? '/' + location.pathname.split('/')[1] + '/' : '/';
     document.querySelectorAll('[data-page]').forEach(function (a) { a.href = base + a.getAttribute('href'); });
   </script>

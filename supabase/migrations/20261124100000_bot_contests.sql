@@ -1,5 +1,5 @@
 -- Eventy (konkursy) na stronie rankingu: zaproszenia, wiadomości albo mieszane. Same eventy są w konfiguracji
--- (contests.list, edytowane w panelu), tu — wyniki, uczestnicy i konta połączone ze stroną.
+-- (contests.list, edytowane w panelu), tu - wyniki, uczestnicy i konta połączone ze stroną.
 
 -- Wiadomości policzone w czasie eventu (tak jak do poziomów: z cooldownem i ochroną przed nabijaniem).
 create table if not exists bot.contest_scores (

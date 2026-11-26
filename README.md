@@ -1,7 +1,7 @@
-# Entuzjaści Hopkostki — bot moderacyjny
+# Entuzjaści Hopkostki - bot moderacyjny
 
 Bot moderacyjny na Discorda dla serwera **Entuzjaści Hopkostki**. Działa 24/7 na **Supabase**, więc nie
-musisz trzymać włączonego komputera. Panel konfiguracyjny to strona na GitHub Pages — wystarczy
+musisz trzymać włączonego komputera. Panel konfiguracyjny to strona na GitHub Pages - wystarczy
 przeglądarka, nic nie trzeba instalować ani uruchamiać lokalnie.
 
 ```
@@ -23,7 +23,7 @@ i harmonogram są wdrożone. Brakuje tylko Twojego tokenu bota:
    | Nazwa | Wartość |
    | --- | --- |
    | `DISCORD_TOKEN` | nowy token bota |
-   | `PANEL_PASSWORD` *(opcjonalnie)* | własne hasło do panelu — jeśli go nie ustawisz, bot wygeneruje je sam przy pierwszym otwarciu panelu |
+   | `PANEL_PASSWORD` *(opcjonalnie)* | własne hasło do panelu - jeśli go nie ustawisz, bot wygeneruje je sam przy pierwszym otwarciu panelu |
    | `GUILD_ID` *(opcjonalnie)* | ID serwera; bez niego bot bierze pierwszy serwer, na którym jest |
 3. **Poczekaj około minuty.** Harmonogram sam:
    - zarejestruje komendy slash na serwerze,
@@ -38,7 +38,7 @@ Jeśli bota nie ma jeszcze na serwerze, zaproś go tym linkiem (podmień `TWOJE_
 https://discord.com/oauth2/authorize?client_id=TWOJE_CLIENT_ID&scope=bot+applications.commands&permissions=1374676151382
 ```
 Potem przesuń rolę bota **wyżej** niż role osób, które ma karać (Ustawienia serwera → Role). Do kanałów głosowych
-na żądanie rola bota potrzebuje też **Łączenie** i **Przenoszenie członków** — panel pokaże, jeśli ich brakuje.
+na żądanie rola bota potrzebuje też **Łączenie** i **Przenoszenie członków** - panel pokaże, jeśli ich brakuje.
 
 ## Panel konfiguracyjny
 
@@ -53,28 +53,28 @@ Strona główna (`enho.pl`) prowadzi do rankingu poziomów, a panel jest pod `/p
 `…/functions/v1/hopkostki-bot/panel/` przekierowują tutaj. Supabase nie pozwala funkcjom Edge
 wyświetlać stron HTML (zamienia je na zwykły tekst), więc sama strona leży na GitHub Pages (gałąź `gh-pages`,
 publikowana automatycznie z `panel/public/` po każdej zmianie na `main`), a dane i hasło obsługuje API bota
-na Supabase — strona tylko je woła.
+na Supabase - strona tylko je woła.
 
-Strony publiczne mają czyste adresy (bez `.html` i `#`): ranking poziomów — `…/ranking`, eventy serwera —
+Strony publiczne mają czyste adresy (bez `.html` i `#`): ranking poziomów - `…/ranking`, eventy serwera -
 `…/event`. Stare linki (`ranking.html`, `#week`, `#eventy`, `event.html`, `event#…`) działają dalej, a adres
 w przeglądarce od razu się czyści.
 
-**Własna domena (enho.pl).** Strony zostają na GitHub Pages — domena tylko na nie wskazuje:
+**Własna domena (enho.pl).** Strony zostają na GitHub Pages - domena tylko na nie wskazuje:
 1. OVH → Web Cloud → Nazwy domen → `enho.pl` → **Strefa DNS**: rekordy **A** dla `enho.pl` (pole subdomeny puste)
-   → `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153` (zamiast `213.186.33.5` — to strona
+   → `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153` (zamiast `213.186.33.5` - to strona
    „w budowie” OVH), **CNAME** `www` → `e7que.github.io.` (z kropką), bez starych rekordów A/TXT „w budowie”.
-2. GitHub → repo → **Settings → Pages → Custom domain**: `enho.pl` → Save, a gdy certyfikat będzie gotowy —
+2. GitHub → repo → **Settings → Pages → Custom domain**: `enho.pl` → Save, a gdy certyfikat będzie gotowy -
    **Enforce HTTPS**. Adres github.io zacznie wtedy sam przekierowywać na `enho.pl`. Plik `panel/public/CNAME`
-   (`enho.pl`) trzyma domenę przy każdej publikacji — workflow nadpisuje całą gałąź `gh-pages`, a bez tego pliku
+   (`enho.pl`) trzyma domenę przy każdej publikacji - workflow nadpisuje całą gałąź `gh-pages`, a bez tego pliku
    GitHub odpiąłby domenę.
 3. Discord Developer Portal → OAuth2 → **Redirects**: dodać `https://enho.pl/event`.
 4. W bocie: `PANEL_SITE` w `access.js` na `https://enho.pl/` (linki w wiadomościach). Bot już przyjmuje zapytania
    stron z `enho.pl` (`SITE_ORIGINS`), a logowanie przez Discord działa też przez stary adres w Redirects.
 
-Moderacja loguje się własnym loginem i hasłem z komendy `/login` — patrz „Logowanie moderacji do panelu”
+Moderacja loguje się własnym loginem i hasłem z komendy `/login` - patrz „Logowanie moderacji do panelu”
 niżej. Właściciel może też użyć **hasła panelu**: przy pierwszym wejściu panel zapyta o **hasło**. Hasło
 zmienione w zakładce **Ustawienia → Hasło panelu** ma pierwszeństwo; dopóki go nie zmienisz, działa
-`PANEL_PASSWORD` z sekretów Supabase (a bez sekretu — hasło wygenerowane przez bota przy pierwszym użyciu).
+`PANEL_PASSWORD` z sekretów Supabase (a bez sekretu - hasło wygenerowane przez bota przy pierwszym użyciu).
 Hasło zapamiętuje przeglądarka na czas karty (do „Wyloguj” albo zamknięcia karty).
 
 W panelu są:
@@ -83,17 +83,17 @@ W panelu są:
 - **Ustawienia:** kanał logów, kanał ogłoszeń, role moderatorów, DM, dopisek o odwołaniach, emoji reakcji,
   status i rotujące opisy bota oraz hasło panelu.
 - **Uprawnienia:** dla każdej komendy możesz nadpisać domyślne uprawnienie Discorda i ograniczyć ją do
-  wybranych ról — plus tabela pokazująca na żywo, która rola może użyć której komendy, i uprawnienia ról
+  wybranych ról - plus tabela pokazująca na żywo, która rola może użyć której komendy, i uprawnienia ról
   w samym Discordzie (np. odebranie wyrzucania).
 - **Dostęp do panelu:** logowanie moderacji komendą `/login` (kanał, wygasanie loginów, które role
-  odblokowują które części panelu) i lista aktywnych loginów — patrz niżej.
+  odblokowują które części panelu) i lista aktywnych loginów - patrz niżej.
 - **Nowe osoby:** automatyczne role po wejściu (osobno dla ludzi i botów), powitanie i pożegnanie.
-- **Logi serwera:** logi jak w Carl-bocie — patrz niżej.
-- **Bump:** przypominajka o bumpie DISBOARD jak w Fibo, z podziękowaniem i rankingiem — patrz niżej.
+- **Logi serwera:** logi jak w Carl-bocie - patrz niżej.
+- **Bump:** przypominajka o bumpie DISBOARD jak w Fibo, z podziękowaniem i rankingiem - patrz niżej.
 - **Społeczność:** propozycje (`/propozycja`), lista konkursów i opis komend na co dzień.
-- **Tickety:** panel z przyciskami, prywatne kanały ticketów, zapis rozmów — patrz niżej.
-- **Kanały głosowe:** kanały na żądanie — patrz niżej.
-- **Wiadomości:** wysyłanie wiadomości (treść + embed) z przyciskami ról albo listą wyboru ról — każda rola
+- **Tickety:** panel z przyciskami, prywatne kanały ticketów, zapis rozmów - patrz niżej.
+- **Kanały głosowe:** kanały na żądanie - patrz niżej.
+- **Wiadomości:** wysyłanie wiadomości (treść + embed) z przyciskami ról albo listą wyboru ról - każda rola
   może mieć emoji (własne emoji serwera wybierane z siatki albo zwykłe); wysłane można potem edytować albo usunąć.
 - **Wygląd embedów:** edycja każdej akcji z podglądem na żywo w stylu Discorda (na kanale i w DM).
 - **Ostrzeżenia:** czas wygasania (domyślnie 60 dni), domyślne punkty, progi automatycznych kar
@@ -109,7 +109,7 @@ W zakładce **Kanały głosowe** wybierasz „kanał do dołączenia” (np. „
 (`{nick}`, `{numer}`), limit osób i czy nowy kanał ma być od razu prywatny. Kto wejdzie na kanał do dołączenia,
 dostaje własny kanał i jest na niego przenoszony; pusty kanał znika sam. Na czacie kanału bot wysyła panel
 (po polsku) z przyciskami: **Ustaw jako prywatny/publiczny**, **Dodaj osoby**, **Zmień nazwę**, **Zmień
-właściciela**, **Zmień limit**, **Zbanuj**, **Wyrzuć** — osoby wybiera się z listy, nazwę i limit wpisuje w
+właściciela**, **Zmień limit**, **Zbanuj**, **Wyrzuć** - osoby wybiera się z listy, nazwę i limit wpisuje w
 okienku. Z panelu korzysta właściciel kanału (oraz osoby z uprawnieniem „Zarządzanie kanałami”).
 
 ### Logi serwera
@@ -122,24 +122,24 @@ i zmiany ról serwera. Do wyboru są też m.in.: zbiorcze usuwanie wiadomości, 
 wyrzucenia, kanały i wątki (utworzenie, zmiany z wartościami przed/po, usunięcie), role serwera, ustawienia
 serwera, emoji, zaproszenia i kanały głosowe (wejście, przejście, wyjście).
 
-- **Zmiana zdjęcia profilowego:** log pokazuje stare i nowe zdjęcie obok siebie — bot pobiera oba obrazki od
+- **Zmiana zdjęcia profilowego:** log pokazuje stare i nowe zdjęcie obok siebie - bot pobiera oba obrazki od
   razu i dołącza je do wiadomości, więc stare zdjęcie nie zniknie z logów.
-- **Zmiana nazwy:** pseudonim na serwerze (z dziennika zdarzeń) i nazwa użytkownika — przed/po.
+- **Zmiana nazwy:** pseudonim na serwerze (z dziennika zdarzeń) i nazwa użytkownika - przed/po.
 - **Kto kogo zaprosił:** log wejścia pokazuje, z czyjego zaproszenia ktoś wszedł (kod, liczba użyć i ile osób
-  ta osoba już zaprosiła), a log wyjścia — kto tę osobę zaprosił. Bot porównuje liczniki użyć zaproszeń (jak
+  ta osoba już zaprosiła), a log wyjścia - kto tę osobę zaprosił. Bot porównuje liczniki użyć zaproszeń (jak
   boty typu Invite Tracker), więc potrzebuje uprawnienia „Zarządzanie serwerem”. `/zaproszenia` pokazuje
   ranking albo osoby zaproszone przez wybraną osobę.
-- **Nowe konta:** przy wejściu osoby z kontem młodszym niż wybrany próg (1 dzień – 30 dni) log jest żółty i
+- **Nowe konta:** przy wejściu osoby z kontem młodszym niż wybrany próg (1 dzień - 30 dni) log jest żółty i
   bot oznacza **@here**, @everyone albo wybrane role.
 
 Zmiany z dziennika zdarzeń Discorda pokazują, **kto** je zrobił (bot potrzebuje uprawnienia „Wyświetlanie
 dziennika zdarzeń”). Treść wiadomości bot pamięta 7 dni (tabela `bot.message_cache`, czyszczona przez crona),
-a ostatnie zdjęcia i nazwy osób — w `bot.member_profiles`; z pamięci wiadomości korzysta też `/snipe`.
+a ostatnie zdjęcia i nazwy osób - w `bot.member_profiles`; z pamięci wiadomości korzysta też `/snipe`.
 
 ### Bump (DISBOARD)
 
 Jak Fibo: po udanym `/bump` bota DISBOARD bot **odpowiada na tę wiadomość** podziękowaniem (np. „Dzięki za
-Bumpnięcie serwera! @osoba — to już Twój 7. bump. Kolejny możliwy za 2 godziny”), a po 120 minutach wysyła
+Bumpnięcie serwera! @osoba - to już Twój 7. bump. Kolejny możliwy za 2 godziny”), a po 120 minutach wysyła
 **„Czas na Bump!”** jako odpowiedź na ostatni bump, oznaczając wybrane role. Podziękowanie można wyłączyć,
 teksty, kolory i czas zmienić (zmienne: `{uzytkownik}`, `{nick}`, `{liczba}`, `{nastepny}`, `{godzina}`),
 a zakładka pokazuje podgląd i ranking. Komenda `/bumpy` pokazuje ranking i kiedy następny bump.
@@ -151,7 +151,7 @@ Zakładka **Poziomy** ma wszystkie funkcje Arcane, także premium:
   minimalnej liczbie osób; anty-AFK pomija wyciszonych, ogłuszonych i kanał AFK) i za **reakcje** (dający,
   autor albo obie strony). Formuła „Liniowa” jest taka jak w Arcane (100 × poziom + 75 XP na kolejny
   poziom), jest też standardowa (jak MEE6) i stała, z mnożnikiem i maksymalnym poziomem.
-- **Wiadomość o awansie** na kanale, na którym ktoś napisał, na wybranym kanale albo w DM — z tagami Arcane
+- **Wiadomość o awansie** na kanale, na którym ktoś napisał, na wybranym kanale albo w DM - z tagami Arcane
   `{user.mention}`, `{user.name}`, `{user.level}`, `{user.xp}` i `{earned:…}` (tekst tylko przy zdobytej roli),
   opcjonalnie z kartą poziomu, i przyciskiem testu.
 - **Role za poziomy** (z kumulowaniem albo tylko najwyższa) i **rola za 1. miejsce** (co godzinę).
@@ -171,100 +171,100 @@ Komendy dla wszystkich: `/rank` (karta poziomu) i `/ranking` (łącznie, w tym t
 ### Eventy serwera (strona /event)
 
 Eventy serwera mają **własną stronę**: `https://enho.pl/event` (plik `event.html`).
-To co innego niż **wydarzenia XP** (mnożniki XP z efektami) — te należą do poziomów i zostają na stronie rankingu.
+To co innego niż **wydarzenia XP** (mnożniki XP z efektami) - te należą do poziomów i zostają na stronie rankingu.
 Zakładka **Eventy** w panelu tworzy eventy; strona pokazuje te zaplanowane, trwające i zakończone w ostatnich 3 dniach
-(przy kilku — podzakładki, a wybrany event ma swój adres: `/event#<id>`). Gdy jakiś event jest zaplanowany albo trwa,
+(przy kilku - podzakładki, a wybrany event ma swój adres: `/event#<id>`). Gdy jakiś event jest zaplanowany albo trwa,
 ranking poziomów pokazuje **pasek z linkiem** do niego (w kolorach eventu). Stare linki (`ranking.html#eventy`,
 linki z `/polacz` i powrót z logowania na adres rankingu) przekierowują na `/event`. Każdy event ma **warunek**:
 zaprosić X osób i/lub napisać Y wiadomości.
 
-Jak to działa dla osoby: **„Zaloguj przez Discord”** na stronie (albo `/polacz` na serwerze — link, który loguje),
-potem **„Zapisz się”**. Od chwili zapisu (najwcześniej od startu) liczą się jej zaproszenia i wiadomości — **paski
+Jak to działa dla osoby: **„Zaloguj przez Discord”** na stronie (albo `/polacz` na serwerze - link, który loguje),
+potem **„Zapisz się”**. Od chwili zapisu (najwcześniej od startu) liczą się jej zaproszenia i wiadomości - **paski
 postępu** pokazują, ile brakuje. Po spełnieniu warunku strona pokazuje **„Dostałeś się!”**, a bot ogłasza to na
-kanale wybranym w panelu (z pingiem roli). Póki event trwa, można się **wypisać** (przycisk „Wypisz się” — postęp
+kanale wybranym w panelu (z pingiem roli). Póki event trwa, można się **wypisać** (przycisk „Wypisz się” - postęp
 przepada, a ponowny zapis liczy od nowa); po końcu eventu i po wylosowaniu już nie.
 - **Zaproszenia** liczą się tylko za osoby, które weszły z zaproszenia, nadal są na serwerze, nie były na nim
   wcześniej i mają konto starsze niż wybrana liczba dni (bot sprawdza zaproszenia sam, także bez logu wejść).
 - **Wiadomości** liczą się tak jak XP za wiadomości w poziomach (cooldown, kanały bez XP, ochrona przed nabijaniem).
-- **Losowanie** (opcjonalne): wśród osób, które się dostały, bot losuje wybraną liczbę zwycięzców (1–50) —
+- **Losowanie** (opcjonalne): wśród osób, które się dostały, bot losuje wybraną liczbę zwycięzców (1-50) -
   **ręcznie** przyciskiem „🎲 Losuj zwycięzców” w panelu (w trakcie albo po evencie, można powtórzyć) albo **samo**
   po końcu eventu. Bot ogłasza wynik na kanale eventów z pingiem zwycięzców, a strona pokazuje wylosowanych
   (🏆 przy osobie na liście, „Wygrałeś w losowaniu!” dla zwycięzcy). Losowanie używa `crypto.getRandomValues`.
-- **Wygląd** (opcjonalny): kolor główny i drugi kolor (gradient — nagłówek eventu, paski postępu, akcenty strony)
+- **Wygląd** (opcjonalny): kolor główny i drugi kolor (gradient - nagłówek eventu, paski postępu, akcenty strony)
   oraz **baner** wgrany w panelu (zmniejszany w przeglądarce, PNG/JPG/WebP/GIF do 3 MB, najlepiej 1600×500 px).
   Na stronie baner eventu zastępuje baner serwera w nagłówku; ikona serwera i ikona typu eventu zostają. Bez
-  własnych kolorów — kolory typu (zaproszenia: fiolet, wiadomości: turkus, oba warunki: pomarańcz). Banery leżą
+  własnych kolorów - kolory typu (zaproszenia: fiolet, wiadomości: turkus, oba warunki: pomarańcz). Banery leżą
   w `bot.assets` (jak w „Serwer info”) i są serwowane pod `/panel/public/asset/<id>`; nieużywane bot sprząta po dniu.
 - **Opis** eventu można formatować jak na Discordzie: `**pogrubienie**`, `*kursywa*`, `__podkreślenie__`,
   `~~przekreślenie~~`, `||spoiler||`, `` `kod` ``, `# nagłówek`, `-# mały tekst (stopka)`, `- lista`, `> cytat`,
   `[tekst](https://…)` i emoji z serwera `<:nazwa:id>`. W panelu jest pasek przycisków (zaznacz tekst → klik)
-  i podgląd na żywo. HTML z opisu nigdy nie trafia na stronę — całość jest najpierw escapowana.
-- Panel: tworzenie, edycja (także zakończonych — np. przedłużenie), duplikowanie, zakończenie, lista zapisanych
+  i podgląd na żywo. HTML z opisu nigdy nie trafia na stronę - całość jest najpierw escapowana.
+- Panel: tworzenie, edycja (także zakończonych - np. przedłużenie), duplikowanie, zakończenie, lista zapisanych
   z postępem i usuwanie kogoś z eventu.
 
-**Logowanie przez Discord** (OAuth2 z PKCE — bez sekretu aplikacji) wymaga jednorazowego dodania adresu strony
+**Logowanie przez Discord** (OAuth2 z PKCE - bez sekretu aplikacji) wymaga jednorazowego dodania adresu strony
 w [Discord Developer Portal](https://discord.com/developers/applications) → aplikacja bota → **OAuth2 → Redirects**:
 najlepiej `https://enho.pl/event`. Działa też dodany wcześniej adres strony rankingu na github.io
-(`…/ranking.html`) — ranking od razu przekazuje powrót z Discorda na `/event`. Discord nie pozwala dopisać adresu
-przez API. Po dopisaniu wystarczy kliknąć **„Sprawdź teraz”** w panelu (Eventy) — logowanie włącza się od razu,
+(`…/ranking.html`) - ranking od razu przekazuje powrót z Discorda na `/event`. Discord nie pozwala dopisać adresu
+przez API. Po dopisaniu wystarczy kliknąć **„Sprawdź teraz”** w panelu (Eventy) - logowanie włącza się od razu,
 a sama strona wykrywa je najpóźniej po minucie. Do tego czasu działa `/polacz`.
 
 ### Tickety
 
 W zakładce **Tickety** włączasz tickety, wybierasz kategorię, kanał logów i role obsługi, a potem wysyłasz
-**panel ticketów** (wiadomość z przyciskami — każdy przycisk to rodzaj ticketu, domyślnie **Zgłoszenie** i
+**panel ticketów** (wiadomość z przyciskami - każdy przycisk to rodzaj ticketu, domyślnie **Zgłoszenie** i
 **Partnerstwo**). Każdy rodzaj ma własny **formularz** (do 5 pól w okienku Discorda: krótka odpowiedź, długi
 tekst, liczba albo link do serwera Discord), emoji na przycisku i opcjonalnie własne powitanie:
 - **Partnerstwo** pyta o link do serwera, liczbę członków i powód. Link musi być działającym zaproszeniem
   (bot sprawdza go w Discordzie i odrzuca link do naszego serwera), a w tickecie obsługa widzi nazwę serwera
   i jego **prawdziwą** liczbę członków i osób online obok liczby podanej w formularzu;
-- pole „Liczba” przyjmuje tylko liczbę („1 500” tak, „1,5k” czy „250–300” nie);
-- przy błędzie nic nie przepada — przycisk **„Popraw formularz”** otwiera okienko z wpisanymi odpowiedziami.
+- pole „Liczba” przyjmuje tylko liczbę („1 500” tak, „1,5k” czy „250-300” nie);
+- przy błędzie nic nie przepada - przycisk **„Popraw formularz”** otwiera okienko z wpisanymi odpowiedziami.
 
 Każdy rodzaj ticketu można też skonfigurować osobno (zakładka Tickety → rodzaj → „Osobne ustawienia”):
-- **Regulamin przed formularzem** — tekst edytowany w panelu; osoba widzi go z przyciskami „Akceptuję
+- **Regulamin przed formularzem** - tekst edytowany w panelu; osoba widzi go z przyciskami „Akceptuję
   regulamin” / „Nie akceptuję” i dopiero po akceptacji dostaje formularz (domyślnie ma go Partnerstwo,
   a obsługa widzi w tickecie „Regulamin: zaakceptowany”);
-- **własna kategoria, archiwum, kanał logów i role obsługi** — np. partnerstwa trafiają do innej kategorii
+- **własna kategoria, archiwum, kanał logów i role obsługi** - np. partnerstwa trafiają do innej kategorii
   i widzi je tylko inna obsługa niż zgłoszenia (puste = ustawienia ogólne);
-- **uprawnienia autora** — czy może zamknąć ticket, dodawać osoby i wysyłać pliki/linki.
+- **uprawnienia autora** - czy może zamknąć ticket, dodawać osoby i wysyłać pliki/linki.
 
 Wysłanie formularza tworzy prywatny kanał widoczny tylko dla tej osoby i obsługi (oznaczona w powitaniu
-jest tylko ta osoba — obsługa i tak ma dostęp do kanału, więc pingowanie całej roli przy każdym nowym
-tickecie byłoby tylko spamem powiadomień), z przyciskami **Zamknij** (trzeba podać powód zamknięcia — trafia do logów, DM i zapisu rozmowy; także przy zamykaniu w panelu), **Przejmij** i
+jest tylko ta osoba - obsługa i tak ma dostęp do kanału, więc pingowanie całej roli przy każdym nowym
+tickecie byłoby tylko spamem powiadomień), z przyciskami **Zamknij** (trzeba podać powód zamknięcia - trafia do logów, DM i zapisu rozmowy; także przy zamykaniu w panelu), **Przejmij** i
 **Dodaj osobę**. Za obsługę (przejęcie, zamknięcie i dodawanie osób w cudzym tickecie, usuwanie z archiwum)
-uznawane są tylko role z listy obsługi (rodzaju ticketu albo ogólnej) i właściciel serwera — samo uprawnienie
+uznawane są tylko role z listy obsługi (rodzaju ticketu albo ogólnej) i właściciel serwera - samo uprawnienie
 Administrator czy „Zarządzanie kanałami” nie wystarcza, więc administrację, która ma obsługiwać tickety,
 dopisz do listy.
-Ticket przejmuje też sama **pierwsza odpowiedź kogoś z obsługi** (role „Obsługa” albo właściciel serwera) — bez
+Ticket przejmuje też sama **pierwsza odpowiedź kogoś z obsługi** (role „Obsługa” albo właściciel serwera) - bez
 klikania „Przejmij”; autor ticketu, boty i kolejne osoby z obsługi go nie przejmują. Można to wyłączyć w panelu (Tickety).
 
-Zamknięty ticket **nie jest usuwany** — zostaje jako archiwum:
+Zamknięty ticket **nie jest usuwany** - zostaje jako archiwum:
 - kanał przenosi się do **kategorii dla zamkniętych ticketów** (osobne pole w ustawieniach, puste = zostaje
   w tej samej kategorii);
-- znika dla wszystkich poza obsługą — **także dla autora** i każdego, kogo dodano do ticketu — zapis
+- znika dla wszystkich poza obsługą - **także dla autora** i każdego, kogo dodano do ticketu - zapis
   rozmowy widzi więc tylko obsługa;
 - zapis rozmowy (.txt) i podsumowanie zamknięcia trafiają **od razu** do logów ticketów, w DM do autora i
   na sam kanał archiwum, razem z przyciskiem **„Usuń kanał z archiwum”** (z potwierdzeniem, tylko dla
-  obsługi) — do ręcznego sprzątania spraw, które nie są już potrzebne.
+  obsługi) - do ręcznego sprzątania spraw, które nie są już potrzebne.
 
 ### Intencje Discorda
 
 Powitania, autorole i log wejść/wyjść potrzebują intencji **Server Members**, a zapis rozmów w ticketach, logi
-wiadomości i rozpoznawanie udanego bumpa — **Message Content**. Bot włącza je sam (wersje „limited” dla botów na mniej niż 100 serwerach) po zapisaniu ustawień; jeśli
+wiadomości i rozpoznawanie udanego bumpa - **Message Content**. Bot włącza je sam (wersje „limited” dla botów na mniej niż 100 serwerach) po zapisaniu ustawień; jeśli
 się nie uda, panel pokaże, gdzie włączyć je ręcznie (Developer Portal → Bot → Privileged Gateway Intents).
 
-### Uprawnienia — kto może użyć jakiej komendy
+### Uprawnienia - kto może użyć jakiej komendy
 
 Każda komenda ma **własną listę ról** (zakładka **Uprawnienia**): role dodajesz przez „+ Dodaj rolę”, usuwasz
 krzyżykiem, a „Szybkie zmiany” dodają lub usuwają jedną rolę naraz ze wszystkich komend. Listy zostały
 ustawione według tego, kto miał dostęp wcześniej (uprawnienia Discorda + role moderatorów); nowe komendy
-dostają listę automatycznie, tak samo jak przy ustawianiu list od nowa — role z Administratorem też na nią
-trafiają. Lista obowiązuje każdą rolę — także z uprawnieniem Administrator. Jedyny wyjątek to **właściciel serwera**: może zawsze użyć każdej komendy
+dostają listę automatycznie, tak samo jak przy ustawianiu list od nowa - role z Administratorem też na nią
+trafiają. Lista obowiązuje każdą rolę - także z uprawnieniem Administrator. Jedyny wyjątek to **właściciel serwera**: może zawsze użyć każdej komendy
 (bezpiecznik, żeby serwer nigdy nie zablokował sam siebie), więc pusta lista = tylko właściciel, a „Wszyscy
 (@everyone)” = każdy. Tabela na dole pokazuje na żywo, która rola może użyć której komendy.
 
-Komendy nie mają własnego wymogu uprawnień Discorda (`default_member_permissions`) — gdyby go ustawić,
+Komendy nie mają własnego wymogu uprawnień Discorda (`default_member_permissions`) - gdyby go ustawić,
 Discord ukrywałby komendę przed rolami dodanymi tylko przez panel (np. Helperem bez prawdziwego
 uprawnienia „Wyciszanie członków”), mimo że miałyby do niej dostęp. Dlatego każda komenda jest widoczna
 dla wszystkich w liście komend, a o tym, kto faktycznie może jej użyć, decyduje wyłącznie lista ról z tej
@@ -274,15 +274,15 @@ zależy Ci na ukryciu komendy przed kimś na poziomie samego Discorda, możesz d
 
 Zakładka **Uprawnienia** ma też kartę **Uprawnienia ról w Discordzie** (tylko pełny dostęp): najważniejsze
 uprawnienia samego Discorda (wyrzucanie, banowanie, wyciszanie, usuwanie wiadomości, pseudonimy, role,
-kanały, wątki, webhooki, głosowe, emoji, wydarzenia, zaproszenia, dziennik zdarzeń i inne — ponad 25 w grupach)
+kanały, wątki, webhooki, głosowe, emoji, wydarzenia, zaproszenia, dziennik zdarzeń i inne - ponad 25 w grupach)
 dla każdej roli, którą rozwiniesz na liście. Te
-działają bez bota — np. Test Helper z „Wyrzucaniem” mógłby wyrzucać prawym przyciskiem myszy mimo braku
-`/kick` — więc tu można je odebrać jednym kliknięciem (bot zmienia rolę od razu, z wpisem w dzienniku
+działają bez bota - np. Test Helper z „Wyrzucaniem” mógłby wyrzucać prawym przyciskiem myszy mimo braku
+`/kick` - więc tu można je odebrać jednym kliknięciem (bot zmienia rolę od razu, z wpisem w dzienniku
 zdarzeń). Role wyżej niż rola bota i role z Administratorem zmienisz tylko w ustawieniach serwera.
 
 ### Logowanie moderacji do panelu (`/login`)
 
-Każda osoba z moderacji może mieć **własny login do panelu** — bez znajomości hasła panelu — i widzi w nim,
+Każda osoba z moderacji może mieć **własny login do panelu** - bez znajomości hasła panelu - i widzi w nim,
 co może zmieniać, a co nie, zależnie od swojego stopnia:
 1. W zakładce **Dostęp do panelu** włączasz logowanie, wybierasz **kanał**, na którym działa `/login`
    (najlepiej widoczny tylko dla moderacji), ustawiasz, jak często login **wygasa** (co tydzień, co 2 tygodnie
@@ -291,7 +291,7 @@ co może zmieniać, a co nie, zależnie od swojego stopnia:
    **loginem** (jego nazwa na Discordzie) i **hasłem**, datą wygaśnięcia, listą tego, co może zmieniać, oraz
    przyciskiem **„Zaloguj się do panelu”**. Na innym kanale albo bez odpowiedniej roli komenda odmawia.
 3. Hasło bot pokazuje tylko raz (w bazie jest tylko jego skrót SHA-256). Kolejny `/login` przypomina login,
-   a `/login nowy:True` **wymusza nowe hasło** — stare i wszystkie zalogowania nim od razu przestają działać.
+   a `/login nowy:True` **wymusza nowe hasło** - stare i wszystkie zalogowania nim od razu przestają działać.
    Po wygaśnięciu `/login` daje nowy login sam.
 4. W panelu odblokowane części działają normalnie, a pozostałe są widoczne z **kłódką**, tylko do podglądu
    (z informacją, które role je odblokowują; dane spraw, banów i wiadomości są ukryte). Na pulpicie karta
@@ -301,20 +301,20 @@ co może zmieniać, a co nie, zależnie od swojego stopnia:
 Bot sprawdza role zalogowanych co kilka minut: odebrana rola albo wyjście z serwera kończy sesję samo, a
 zmiany ról w zakładce działają od razu. Pełny dostęp do wszystkiego (także do tej zakładki) mają tylko
 właściciel serwera i logowanie hasłem panelu. Samo uprawnienie Administrator w Discordzie niczego w panelu nie
-odblokowuje — administracja widzi te części, które przypiszesz jej rolom, tak jak przy listach ról komend.
+odblokowuje - administracja widzi te części, które przypiszesz jej rolom, tak jak przy listach ról komend.
 W zakładce widać aktywne loginy (kto, do kiedy, ile przeglądarek) i można wymusić nowy login jednej osobie
 albo wszystkim.
 
 ### Uruchomienie panelu lokalnie (opcjonalnie)
 
-Panel działa w pełni bez tego — to tylko wygodny skrót, jeśli wolisz `localhost` zamiast GitHub Pages.
+Panel działa w pełni bez tego - to tylko wygodny skrót, jeśli wolisz `localhost` zamiast GitHub Pages.
 Potrzebujesz Node.js 18.17+ (https://nodejs.org), zero zależności do zainstalowania:
 
 ```bash
 npm run panel
 ```
 
-Otwiera `http://localhost:3000` — te same pliki co na GitHub Pages, serwer tylko przekazuje resztę żądań
+Otwiera `http://localhost:3000` - te same pliki co na GitHub Pages, serwer tylko przekazuje resztę żądań
 do bota na Supabase (adres z `BOT_URL` w `.env`, domyślnie projekt „Entuzjaści Hopkostki”). Hasło i tak
 wpisujesz w przeglądarce.
 
@@ -327,7 +327,7 @@ wpisujesz w przeglądarce.
 | `/timeout uzytkownik czas jednostka powod` | Wyciszenie na czas (maksymalnie 28 dni, bo tyle pozwala Discord). |
 | `/untimeout uzytkownik [powod]` | Zdejmuje wyciszenie. |
 | `/kick uzytkownik powod` | Wyrzuca z serwera. |
-| `/warn dodaj uzytkownik powod [punkty] [osoba2…osoba5]` | Ostrzeżenie z punktami — jednej osobie albo do 5 naraz (ten sam powód i punkty, każda dostaje własne ostrzeżenie). |
+| `/warn dodaj uzytkownik powod [punkty] [osoba2…osoba5]` | Ostrzeżenie z punktami - jednej osobie albo do 5 naraz (ten sam powód i punkty, każda dostaje własne ostrzeżenie). |
 | `/warn status uzytkownik` | Ostrzeżenia, punkty, pasek poziomu i odliczanie do wygaśnięcia (strony ◀ 1 2 3 ▶, widzi tylko moderacja). |
 | `/warn usun uzytkownik [numer]` | Lista ostrzeżeń tej osoby do usunięcia (albo od razu jedno, jeśli podasz numer). |
 | `/warn wyczysc uzytkownik` · `/warn ranking` | Czyszczenie wszystkich ostrzeżeń / ranking punktów. |
@@ -342,17 +342,17 @@ wpisujesz w przeglądarce.
 | `/clear ilosc [uzytkownik] [filtr] [tekst]` · `/slowmode sekundy [kanal]` | Czyszczenie wiadomości (filtry: boty, ludzie, linki, załączniki, tekst) / tryb powolny. |
 | `/lock` · `/unlock` | Blokada i odblokowanie pisania na kanale. |
 | `/snipe [ktora]` | Ostatnio usunięta wiadomość z kanału (wymaga logów wiadomości). |
-| `/powiedz tresc [kanal] [odpowiedz_na]` | Wiadomość jako bot — także jako odpowiedź na czyjąś wiadomość (link albo ID). |
+| `/powiedz tresc [kanal] [odpowiedz_na]` | Wiadomość jako bot - także jako odpowiedź na czyjąś wiadomość (link albo ID). |
 | `/ankieta pytanie odpowiedzi [godziny] [wielokrotny] [kanal]` | Ankieta Discorda, odpowiedzi rozdzielone `;` (mogą mieć emoji). |
 | `/konkurs start/zakoncz/losuj/lista` | Konkursy z przyciskiem „Weź udział”, wymaganą rolą i losowaniem ponownym. |
 | `/emoji dodaj emoji [nazwa]` · `/emoji info emoji` | Dodanie emoji z innego serwera albo linku / duży podgląd. |
 | `/przypomnij dodaj/lista/usun` | Przypomnienia na kanale albo w DM. |
-| `/afk [powod]` | Status AFK — kto Cię oznaczy, dostanie odpowiedź; Twoja wiadomość zdejmuje status. |
+| `/afk [powod]` | Status AFK - kto Cię oznaczy, dostanie odpowiedź; Twoja wiadomość zdejmuje status. |
 | `/propozycja tresc` | Propozycja na kanale propozycji z głosowaniem i wątkiem. |
 | `/profil` · `/rolainfo` · `/czlonkowie` | Profil użytkownika / informacje o roli / liczba członków i online. |
 | `/losuj kostka/moneta/liczba/wybor` · `/bumpy ranking/status` | Losowanie / ranking bumpów i kiedy następny. |
 | `/zaproszenia [uzytkownik]` | Ranking zaproszeń albo kogo zaprosiła dana osoba. |
-| `/polacz` | Link, który loguje Cię na stronie eventów (`/event`: zapis i postęp) — gdy logowanie przez Discord nie działa. Widoczny tylko dla Ciebie, działa raz. |
+| `/polacz` | Link, który loguje Cię na stronie eventów (`/event`: zapis i postęp) - gdy logowanie przez Discord nie działa. Widoczny tylko dla Ciebie, działa raz. |
 | `/login [nowy]` | Login i hasło do panelu bota (tylko na kanale do logowania, widoczne tylko dla Ciebie); `nowy:True` wymusza nowe hasło. |
 | `/pomoc` | Lista komend. |
 
@@ -360,7 +360,7 @@ wpisujesz w przeglądarce.
 czas jest odmieniony po polsku („1 dzień”, „2 tygodnie”), a obok widać datę wygaśnięcia i odliczanie Discorda.
 
 **Listy z wieloma wynikami** (`/warn status`, `/warn usun`, `/unban`, `/historia`, `/sprawy`, `/notatka lista`,
-`/warn ranking`) mają strony z przyciskami **◀ 1 2 3 ▶**, a tam gdzie trzeba coś usunąć/odbanować — listę
+`/warn ranking`) mają strony z przyciskami **◀ 1 2 3 ▶**, a tam gdzie trzeba coś usunąć/odbanować - listę
 wyboru pod spodem.
 
 **Każda kara:**
@@ -369,7 +369,7 @@ wyboru pod spodem.
 - pokazuje powód, czas, datę wygaśnięcia i numer sprawy;
 - ląduje w logach moderacji.
 
-Pod każdą odpowiedzią na wiadomość o karze bot dodaje reakcję 🫓 (`:flatbread:`) — natychmiast przez
+Pod każdą odpowiedzią na wiadomość o karze bot dodaje reakcję 🫓 (`:flatbread:`) - natychmiast przez
 gateway, a dodatkowo sprawdzane co 30 s przez pg_cron jako zapas.
 
 **Ostrzeżenia:**
@@ -378,7 +378,7 @@ gateway, a dodatkowo sprawdzane co 30 s przez pg_cron jako zapas.
 - opcjonalnie działają automatyczne kary za przekroczenie progu punktów, np. 10 pkt → timeout na 1 dzień.
 
 **Status bota:** dzięki krótkim sesjom gateway (co minutę) bot świeci na zielono i pokazuje rotujące opisy
-(„Gra w…”, „Ogląda…”, własny status…) — konfigurowalne w panelu, z podstawianymi zmiennymi
+(„Gra w…”, „Ogląda…”, własny status…) - konfigurowalne w panelu, z podstawianymi zmiennymi
 (`{czlonkowie}`, `{online}`, `{ostrzezenia}`, `{sprawy}`, `{serwer}`).
 
 **Zabezpieczenia:**
@@ -392,7 +392,7 @@ gateway, a dodatkowo sprawdzane co 30 s przez pg_cron jako zapas.
 
 Supabase uruchamia kod na żądanie i nie trzyma stałego połączenia z Discordem, więc bot łączy się z
 gatewayem w krótkich sesjach (~55 s co minutę) zamiast trzymać je stale:
-- Między sesjami (ułamki minuty) bot bywa chwilowo „w trakcie łączenia” zamiast pełnego online — to
+- Między sesjami (ułamki minuty) bot bywa chwilowo „w trakcie łączenia” zamiast pełnego online - to
   normalne, komendy HTTP działają cały czas niezależnie od tego.
 - **Darmowy plan Supabase wstrzymuje projekt po tygodniu bez aktywności.** Wtedy wejdź na dashboard i kliknij
   „Restore”. Regularne używanie komend i gateway liczą się jako aktywność.
@@ -428,7 +428,7 @@ supabase/
     lib/embeds.js, defaults.js    wygląd i domyślne ustawienia
 panel/
   server.js                       opcjonalny lokalny wrapper (statyka + przezroczysty proxy do Supabase)
-  public/                         frontend panelu — publikowany na GitHub Pages (.github/workflows/panel-pages.yml)
+  public/                         frontend panelu - publikowany na GitHub Pages (.github/workflows/panel-pages.yml)
 ```
 
 Wdrożenie zmian w bocie: `supabase functions deploy hopkostki-bot --no-verify-jwt` (Supabase CLI) albo przez

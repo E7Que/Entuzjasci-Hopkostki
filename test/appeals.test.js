@@ -22,7 +22,7 @@ async function setup(appeals = {}) {
 }
 
 const modal = (customId, fields) => ({ custom_id: customId, components: [{ type: 1, components: Object.entries(fields).map(([id, value]) => ({ type: 4, custom_id: id, value })) }] });
-// Kliknięcie / formularz w wiadomości prywatnej — bez serwera, osoba w `user`.
+// Kliknięcie / formularz w wiadomości prywatnej - bez serwera, osoba w `user`.
 function fromDm(customId, { user = 'target', fields = null, messageId = '1' } = {}) {
   return {
     type: fields ? 5 : 3,
@@ -62,7 +62,7 @@ test('odwołanie od ostrzeżenia: przycisk w DM → formularz → kanał moderac
   assert.deepEqual(dm.components[0].components[0].custom_id, `apl|open|${entry.id}`);
   assert.match(dm.embeds[0].fields.find((f) => f.name === '💬 Odwołania').value, /Odwołaj się/);
 
-  // Przycisk otwiera formularz — tylko dla ukaranej osoby.
+  // Przycisk otwiera formularz - tylko dla ukaranej osoby.
   let res = await run(s.bot, fromDm(`apl|open|${entry.id}`, { messageId: dm.id }));
   assert.equal(res.type, 9);
   assert.equal(res.data.custom_id, `aplm|send|${entry.id}`);
@@ -72,7 +72,7 @@ test('odwołanie od ostrzeżenia: przycisk w DM → formularz → kanał moderac
   assert.match(errorText(res), /co najmniej 20 znaków/);
 
   // Wysłany formularz: odwołanie z pingiem roli i przyciskami, przycisk w DM wyłączony.
-  res = await run(s.bot, fromDm(`aplm|send|${entry.id}`, { messageId: dm.id, fields: { text: 'To był żart z kolegą, nie spam — przepraszam za zamieszanie.' } }));
+  res = await run(s.bot, fromDm(`aplm|send|${entry.id}`, { messageId: dm.id, fields: { text: 'To był żart z kolegą, nie spam - przepraszam za zamieszanie.' } }));
   assert.equal(res.type, 5);
   const posted = s.discord.state.channels.get(APPEALS_CH).at(-1);
   assert.equal(posted.content, `<@&${PING}>`);
@@ -85,7 +85,7 @@ test('odwołanie od ostrzeżenia: przycisk w DM → formularz → kanał moderac
   res = await run(s.bot, fromDm(`apl|open|${entry.id}`));
   assert.match(errorText(res), /już czeka na decyzję/);
 
-  // Decyzja: osoba ukarana i ktoś bez uprawnień — nie; właściciel serwera zawsze; moderator — okienko, potem przyjęcie.
+  // Decyzja: osoba ukarana i ktoś bez uprawnień - nie; właściciel serwera zawsze; moderator - okienko, potem przyjęcie.
   res = await run(s.bot, fromGuild('apl|ok|1', { user: 'target', roles: [], permissions: '0' }));
   assert.match(errorText(res), /własnego odwołania/);
   res = await run(s.bot, fromGuild('apl|ok|1', { user: 'czlonek', roles: [], permissions: '0' }));
@@ -152,7 +152,7 @@ test('odwołanie od bana: odrzucenie zostawia bana, przyjęcie zdejmuje bana; te
   await s.store.query('delete from bot.appeals where case_id = $1::int', [entry.id]);
   assert.match(errorText(await run(s.bot, fromDm(`apl|open|${entry.id}`))), /Czas na odwołanie minął/);
 
-  // Wyłączone odwołania: DM bez przycisku, przycisk ze starego DM — komunikat.
+  // Wyłączone odwołania: DM bez przycisku, przycisk ze starego DM - komunikat.
   await s.store.updateConfig({ appeals: { enabled: false } });
   await moderation.timeoutUser(s.bot, { target, moderator: mod, reason: 'Spam', duration: { amount: 1, unit: 'h' } });
   assert.deepEqual(s.discord.state.dms.at(-1).components, []);

@@ -61,7 +61,7 @@ export function fakeDiscord({ dmFails = false, banError = null, endpoint = null 
     channelWebhooks: [],
     webhookPosts: [],
     webhooksFail: false,
-    // Rodzaj i kanał nadrzędny wybranych kanałów (np. wątek na forum) — dla GET /channels/:id.
+    // Rodzaj i kanał nadrzędny wybranych kanałów (np. wątek na forum) - dla GET /channels/:id.
     channelInfo: {},
     createdRoles: [],
     // Nadpisania uprawnień komend z Integracji (GET …/commands/permissions); błąd (np. 403) zamiast listy.
@@ -73,7 +73,7 @@ export function fakeDiscord({ dmFails = false, banError = null, endpoint = null 
     if (!state.channels.has(id)) state.channels.set(id, []);
     return state.channels.get(id);
   };
-  // Pełny, na żywo aktualizowany stan kanału (kategoria + wszystkie nadpisania uprawnień) — osobno od
+  // Pełny, na żywo aktualizowany stan kanału (kategoria + wszystkie nadpisania uprawnień) - osobno od
   // `state.overwrites`, który pamięta tylko ostatnie nadpisanie i zostaje jako uproszczenie dla
   // kanałów spoza createdChannels (np. „chan”), używane przez /lock i prywatność kanałów głosowych.
   const channelState = new Map(); // id -> { parent_id, permission_overwrites: [...] }
@@ -92,7 +92,7 @@ export function fakeDiscord({ dmFails = false, banError = null, endpoint = null 
 
   const routes = [
     ['GET', /^\/applications\/@me$/, () => ({ id: 'app', name: 'Hopkostki', verify_key: state.verifyKey ?? 'aa', bot: users.get('bot'), interactions_endpoint_url: state.endpoint, flags: state.appFlags, redirect_uris: state.redirectUris })],
-    // OAuth2 (logowanie przez Discord): state.oauthCodes = { kod: { userId, verifier } } — kod działa raz.
+    // OAuth2 (logowanie przez Discord): state.oauthCodes = { kod: { userId, verifier } } - kod działa raz.
     ['POST', /^\/oauth2\/token$/, (m, body, opts) => {
       state.lastTokenForm = opts.form ?? null;
       const grant = state.oauthCodes?.[opts.form?.code];
@@ -161,7 +161,7 @@ export function fakeDiscord({ dmFails = false, banError = null, endpoint = null 
       state.createdRoles.push(role);
       return role;
     }],
-    // Zmiana roli (np. uprawnień z panelu) — zapisywana w roleEdits, wspólna tablica ROLES zostaje bez zmian.
+    // Zmiana roli (np. uprawnień z panelu) - zapisywana w roleEdits, wspólna tablica ROLES zostaje bez zmian.
     ['PATCH', /^\/guilds\/g1\/roles\/([\w-]+)$/, ([, id], body, opts) => {
       const role = ROLES.find((r) => r.id === id) ?? notFound(10011);
       state.roleEdits.push({ id, body, reason: opts.reason });
@@ -273,7 +273,7 @@ export function fakeDiscord({ dmFails = false, banError = null, endpoint = null 
       state.webhook.push({ op: 'followup', token, body });
       return { id: snowflake(), channel_id: 'chan', ...body };
     }],
-    // Webhooki kanałów (strażnik alertów) — po trasach /webhooks/app/…, żeby ich nie przesłonić.
+    // Webhooki kanałów (strażnik alertów) - po trasach /webhooks/app/…, żeby ich nie przesłonić.
     ['POST', /^\/channels\/([\w-]+)\/webhooks$/, ([, channel], body) => {
       if (state.webhooksFail) throw new DiscordError(403, { message: 'Missing Permissions', code: 50013 });
       const hook = { id: `wh-${channel}-${state.channelWebhooks.length}`, token: 'sekret', channel_id: channel, name: body?.name };

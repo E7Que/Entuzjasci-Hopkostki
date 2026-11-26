@@ -47,7 +47,7 @@ export function templateVars(ctx) {
     moderator: `<@${ctx.moderator.id}>`,
     moderatorNick: escapeMarkdown(ctx.moderator.username),
     powod: ctx.reason,
-    czas: durationText(ctx) ?? '—',
+    czas: durationText(ctx) ?? '-',
     serwer: escapeMarkdown(ctx.guild.name),
     sprawa: `#${ctx.caseId}`,
     typ: ctx.action === 'ban' ? (ctx.duration ? 'tymczasowo' : 'permanentnie') : '',
@@ -166,7 +166,7 @@ export function buildDmEmbed(ctx, config) {
   if (APPEALABLE.includes(ctx.action)) {
     const lines = [];
     if (config.appealText) lines.push(config.appealText.slice(0, 900));
-    if (config.appeals?.enabled) lines.push(`Możesz kliknąć **Odwołaj się** poniżej — masz czas do ${discordTimestamp(ctx.createdAt + config.appeals.days * 86_400_000, 'D')}.`);
+    if (config.appeals?.enabled) lines.push(`Możesz kliknąć **Odwołaj się** poniżej - masz czas do ${discordTimestamp(ctx.createdAt + config.appeals.days * 86_400_000, 'D')}.`);
     if (lines.length) fields.push({ name: '💬 Odwołania', value: lines.join('\n') });
   }
   const icon = guildIconUrl(ctx.guild);
@@ -183,7 +183,7 @@ export function buildDmEmbed(ctx, config) {
   return embed;
 }
 
-// Embed do kanału logów moderacji — pełne informacje, także te ukryte przed użytkownikami.
+// Embed do kanału logów moderacji - pełne informacje, także te ukryte przed użytkownikami.
 export function buildLogEmbed(ctx, config, { dmStatus, messageUrl } = {}) {
   const style = config.actions[ctx.action];
   const label = ctx.action === 'ban' && ctx.duration ? 'Tymczasowy ban' : ACTION_LABELS[ctx.action];

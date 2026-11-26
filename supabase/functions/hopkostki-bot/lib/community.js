@@ -95,7 +95,7 @@ export const isGiveawayCustomId = (customId) => /^gw\|/.test(String(customId ?? 
 export function giveawayMessage(g) {
   const lines = g.ended
     ? [
-        g.winnerIds.length ? `**${g.winnerIds.length > 1 ? 'Zwycięzcy' : 'Zwycięzca'}:** ${g.winnerIds.map((id) => `<@${id}>`).join(', ')}` : '**Brak zwycięzców** — nikt nie wziął udziału.',
+        g.winnerIds.length ? `**${g.winnerIds.length > 1 ? 'Zwycięzcy' : 'Zwycięzca'}:** ${g.winnerIds.map((id) => `<@${id}>`).join(', ')}` : '**Brak zwycięzców** - nikt nie wziął udziału.',
         `**Zakończony:** ${discordTimestamp(g.endsAt, 'f')}`,
       ]
     : [`Kliknij **Weź udział**, żeby dołączyć!`, '', `**Koniec:** ${discordTimestamp(g.endsAt, 'R')} (${discordTimestamp(g.endsAt, 'f')})`, `**Zwycięzców:** ${g.winners}`];
@@ -149,7 +149,7 @@ export async function endGiveaway(bot, g, { reroll = false } = {}) {
   }
   const text = winners.length
     ? `${reroll ? 'Nowe losowanie! ' : ''}Gratulacje ${winners.map((id) => `<@${id}>`).join(', ')}! Wygrywasz **${escapeMarkdown(g.prize)}**!`
-    : `Konkurs **${escapeMarkdown(g.prize)}** zakończony — ${reroll ? 'nie ma już kogo wylosować' : 'nikt nie wziął udziału'}.`;
+    : `Konkurs **${escapeMarkdown(g.prize)}** zakończony - ${reroll ? 'nie ma już kogo wylosować' : 'nikt nie wziął udziału'}.`;
   await bot.discord
     .post(`/channels/${g.channelId}/messages`, {
       content: text,
@@ -196,7 +196,7 @@ export function handleGiveawayInteraction(ix, bot) {
 
 export async function postSuggestion(bot, { config, user, text }) {
   const s = config.suggestions;
-  if (!s.enabled || !s.channelId) throw new ActionError('Propozycje są wyłączone — administracja może je włączyć w panelu (zakładka Społeczność).');
+  if (!s.enabled || !s.channelId) throw new ActionError('Propozycje są wyłączone - administracja może je włączyć w panelu (zakładka Społeczność).');
   const number = ((await bot.store.getState('suggestion_count')) ?? 0) + 1;
   await bot.store.setState('suggestion_count', number);
   const message = await bot.discord.post(`/channels/${s.channelId}/messages`, {
@@ -217,7 +217,7 @@ export async function postSuggestion(bot, { config, user, text }) {
   }
   if (s.thread) {
     await bot.discord
-      .post(`/channels/${s.channelId}/messages/${message.id}/threads`, { name: `Propozycja #${number} — dyskusja`.slice(0, 100), auto_archive_duration: 10080 })
+      .post(`/channels/${s.channelId}/messages/${message.id}/threads`, { name: `Propozycja #${number} - dyskusja`.slice(0, 100), auto_archive_duration: 10080 })
       .catch((error) => console.warn(`[propozycja] wątek: ${error.message}`));
   }
   return { number, channelId: s.channelId, messageId: message.id };

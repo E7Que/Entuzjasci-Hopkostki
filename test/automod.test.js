@@ -88,7 +88,7 @@ test('masowe oznaczenia → timeout (sprawa automatyczna), ostrzeżenie za słow
   assert.equal((await s.store.warnSummary('target')).points, 2);
 });
 
-test('oznaczenia: liczy się każde — także 7× ta sama osoba (jak na serwerze), odpowiedź z pingiem, bez własnych', async () => {
+test('oznaczenia: liczy się każde - także 7× ta sama osoba (jak na serwerze), odpowiedź z pingiem, bez własnych', async () => {
   const ID = '1031166440297996379';
   const seven = Array(7).fill(`<@${ID}>`).join(' ');
   assert.equal(mentionCount({ content: seven, author: { id: 'x' }, mentions: [{ id: ID }] }), 7);
@@ -128,7 +128,7 @@ test('zakazane słowa w formacie AutoModa Discorda: przecinki i gwiazdki (całe 
   assert.equal((await onMessageAutomod(s.bot, msg('no zajebiste'))).filter, 'words');
 });
 
-test('CAPS i spam (flood oraz powtarzanie) — po karze chwila przerwy', async () => {
+test('CAPS i spam (flood oraz powtarzanie) - po karze chwila przerwy', async () => {
   const s = await setup({ caps: { enabled: true, percent: 70, minLength: 10, action: 'delete' }, spam: { enabled: true, messages: 4, seconds: 5, duplicates: 3, action: 'delete' } });
   assert.equal((await onMessageAutomod(s.bot, msg('NIE KRZYCZ NA MNIE!!!'))).filter, 'caps');
   assert.equal(await onMessageAutomod(s.bot, msg('OK')), null, 'za krótkie na CAPS');
@@ -203,7 +203,7 @@ test('anty-rajd: X wejść w Y s → alert z pingiem roli alertów i wyrzucenie 
   assert.deepEqual(kicked.sort(), [ids[0], ids[2]].sort(), 'stare konto zostaje');
   const alert = lastLog(s);
   assert.equal(alert.content, '<@&100000000000000303>');
-  assert.match(alert.embeds[0].description, /3 osób.*nowe konta \(młodsze niż 7 dni\) są wyrzucane — teraz: 2/s);
+  assert.match(alert.embeds[0].description, /3 osób.*nowe konta \(młodsze niż 7 dni\) są wyrzucane - teraz: 2/s);
   const later = await join(young(), 60);
   assert.deepEqual(later, { started: false, active: true, kicked: 1 }, 'w trybie anty-rajdu kolejne nowe konta też');
   assert.equal(await join(young(), 11 * 60), null, 'po 10 min tryb się kończy');

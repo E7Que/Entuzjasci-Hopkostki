@@ -21,7 +21,7 @@ import { ContestError, MemberAuthError, endMemberSession, exchangeMemberLink, ex
 
 // Supabase nie serwuje stron HTML z funkcji Edge (text/html zamienia na text/plain), więc sama strona
 // panelu stoi na GitHub Pages (PANEL_SITE w access.js), a tutaj zostaje jej API. Zapytania stron bot
-// przyjmuje tylko z ich domen (github.io i własna domena — SITE_ORIGINS).
+// przyjmuje tylko z ich domen (github.io i własna domena - SITE_ORIGINS).
 export { PANEL_SITE };
 const PANEL_ORIGINS = new Set([new URL(PANEL_SITE).origin, ...SITE_ORIGINS]);
 
@@ -119,7 +119,7 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
     const event = params.get('period') === 'event' ? rankedXpEvent(levels, params.get('event')) : null;
     const period = event ? 'event' : ['week', 'month'].includes(params.get('period')) ? params.get('period') : 'all';
     const search = String(params.get('search') ?? '').trim().slice(0, 64);
-    // Kolejność według wiadomości albo minut na głosowych — tylko w rankingu ogólnym.
+    // Kolejność według wiadomości albo minut na głosowych - tylko w rankingu ogólnym.
     const sort = period === 'all' && ['messages', 'voice'].includes(params.get('sort')) ? params.get('sort') : 'xp';
     const periodKey = period === 'week' ? weekKey() : period === 'month' ? monthKey() : period === 'event' ? event.id : null;
     const [rows, total, totals, gctx] = await Promise.all([
@@ -245,9 +245,9 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
     let body = {};
     if (!['GET', 'HEAD'].includes(request.method)) body = await request.json().catch(() => ({}));
     try {
-      // Publiczny ranking poziomów (strona ranking.html) — bez logowania, o ile włączony w panelu.
+      // Publiczny ranking poziomów (strona ranking.html) - bez logowania, o ile włączony w panelu.
       if (request.method === 'GET' && route === '/public/leaderboard') return json(await publicLeaderboard(url), 200, cors);
-      // Obrazki wgrane w panelu (banery „Serwer info”) — publicznie, żeby Discord mógł je pokazać w embedzie.
+      // Obrazki wgrane w panelu (banery „Serwer info”) - publicznie, żeby Discord mógł je pokazać w embedzie.
       const asset = /^\/public\/asset\/([a-f0-9]{24}\.(?:webp|png|jpg|gif))$/.exec(route);
       if (['GET', 'HEAD'].includes(request.method) && asset) {
         const file = await bot.store.getAsset(asset[1]);

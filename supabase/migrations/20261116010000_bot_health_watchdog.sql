@@ -1,6 +1,6 @@
 -- Strażnik w bazie: co 5 minut sprawdza, czy funkcja bota wykonuje zadania okresowe (bot.state 'cron_last_run').
 -- Gdy od X minut (ustawienie „Alerty” w panelu) nic się nie dzieje, wysyła alarm przez webhook Discorda
--- (zakłada go funkcja bota i zapisuje w bot.state 'alert_webhook'), a gdy bot wróci — wiadomość, że działa.
+-- (zakłada go funkcja bota i zapisuje w bot.state 'alert_webhook'), a gdy bot wróci - wiadomość, że działa.
 -- Działa nawet wtedy, gdy sama funkcja bota leży, bo wysyła z bazy (pg_net), a nie przez bota.
 
 create or replace function bot.health_watchdog() returns void
@@ -31,7 +31,7 @@ begin
       url := hook->>'url',
       body := jsonb_build_object(
         'username', 'Strażnik bota',
-        'content', coalesce('<@&' || ping || '> ', '') || '⚠️ **Bot nie działa** — od '
+        'content', coalesce('<@&' || ping || '> ', '') || '⚠️ **Bot nie działa** - od '
           || greatest(1, (now_ms - coalesce(last_run, now_ms)) / 60000)::text
           || ' min funkcja bota na Supabase nie wykonała żadnych zadań. Komendy, XP, automoderacja i logi mogą nie działać. '
           || 'Sprawdź Supabase → Edge Functions → hopkostki-bot → Logs.',

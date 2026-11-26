@@ -19,7 +19,7 @@ const bot = {
     guildId: env('GUILD_ID'),
     publicKey: env('DISCORD_PUBLIC_KEY'),
     panelPassword: env('PANEL_PASSWORD'),
-    // Region bazy (Frankfurt) — krótsze zapytania do Postgresa, szybsze odpowiedzi na komendy.
+    // Region bazy (Frankfurt) - krótsze zapytania do Postgresa, szybsze odpowiedzi na komendy.
     selfUrl: `${env('SUPABASE_URL')}/functions/v1/hopkostki-bot?forceFunctionRegion=eu-central-1`,
   },
   store: createStore((text: string, params?: unknown[]) => sql.unsafe(text, (params ?? []) as never[])),

@@ -1,10 +1,10 @@
-// Eventy serwera — mają własną stronę (/event, event.html); ranking poziomów pokazuje do niej pasek z linkiem, gdy
+// Eventy serwera - mają własną stronę (/event, event.html); ranking poziomów pokazuje do niej pasek z linkiem, gdy
 // jakiś event jest zaplanowany, trwa albo skończył się w ostatnich 3 dniach. Każdy event może mieć własny wygląd
-// (kolory — gradient — i baner w nagłówku strony). Każdy event ma warunek dostania się: zaprosić `invites` osób
+// (kolory - gradient - i baner w nagłówku strony). Każdy event ma warunek dostania się: zaprosić `invites` osób
 // i/lub napisać `messages` wiadomości (0 = bez tego warunku). Jak to działa dla osoby:
 //   1. łączy konto („Zaloguj przez Discord” na stronie albo link z /polacz) i klika „Zapisz się”,
-//   2. od chwili zapisu (najwcześniej od startu eventu) liczą się jej zaproszenia i wiadomości — pasek postępu,
-//   3. po spełnieniu warunku „Dostałeś się!” — bot ogłasza to na kanale wybranym w panelu,
+//   2. od chwili zapisu (najwcześniej od startu eventu) liczą się jej zaproszenia i wiadomości - pasek postępu,
+//   3. po spełnieniu warunku „Dostałeś się!” - bot ogłasza to na kanale wybranym w panelu,
 //   4. opcjonalnie losowanie nagród wśród tych, którzy się dostali: ręcznie (panel) albo samo po końcu eventu.
 // Zaproszenia liczą się tylko za osoby, które weszły z zaproszenia, nadal są na serwerze, nie były na nim wcześniej
 // i mają konto starsze niż minAccountDays dni. Wiadomości liczą się tak jak do poziomów (cooldown, kanały bez XP,
@@ -22,11 +22,11 @@ const LINK_TTL_MS = 15 * 60_000;
 const SESSION_TTL_MS = 90 * DAY;
 const SEEN_EVERY_MS = 60 * 60_000;
 const TOP = 100;
-// Strona rankingu — tu wraca też logowanie przez Discord (adres musi być na liście Redirects aplikacji w Developer Portal).
-// Eventy mają własną stronę (/event — event.html na GitHub Pages); ranking zostaje przy poziomach.
+// Strona rankingu - tu wraca też logowanie przez Discord (adres musi być na liście Redirects aplikacji w Developer Portal).
+// Eventy mają własną stronę (/event - event.html na GitHub Pages); ranking zostaje przy poziomach.
 export const CONTEST_SITE = `${PANEL_SITE}event`;
 // Logowanie przez Discord: adres, który warto mieć w Redirects aplikacji (pokazuje go panel), i wszystkie, które
-// strona obsłuży — pierwszy z nich obecny na liście wygrywa. Strona rankingu przekazuje powrót z Discorda dalej
+// strona obsłuży - pierwszy z nich obecny na liście wygrywa. Strona rankingu przekazuje powrót z Discorda dalej
 // (zgodność z adresem dodanym, zanim eventy dostały własną stronę).
 export const OAUTH_REDIRECT = CONTEST_SITE;
 const LEGACY_REDIRECT = `${GITHUB_SITE}ranking.html`;
@@ -42,9 +42,9 @@ const UNITS = { invites: ['osobę', 'osoby', 'osób'], messages: ['wiadomość',
 const UNITS_OF = { invites: ['osoby', 'osób', 'osób'], messages: ['wiadomości', 'wiadomości', 'wiadomości'] };
 const DRAWS = 'contest_draws';
 
-// Brak połączenia albo wygasła sesja — API odpowiada 401 (strona prosi o ponowne połączenie).
+// Brak połączenia albo wygasła sesja - API odpowiada 401 (strona prosi o ponowne połączenie).
 export class MemberAuthError extends Error {}
-// Nie da się zapisać (np. event się skończył) — API odpowiada 400 z tym komunikatem.
+// Nie da się zapisać (np. event się skończył) - API odpowiada 400 z tym komunikatem.
 export class ContestError extends Error {}
 
 const pl = (n) => Number(n).toLocaleString('pl-PL');
@@ -70,11 +70,11 @@ const contestList = (config) => (contestsOn(config) ? (config.contests?.list ?? 
 export const visibleContests = (config, now = Date.now()) => contestList(config).filter((c) => Date.parse(c.endsAt) + CONTEST_SHOW_AFTER_MS > now);
 export const liveContests = (config, now = Date.now()) => contestList(config).filter((c) => contestStatus(c, now) === 'live');
 
-// Trwające eventy z warunkiem wiadomości — policzona wiadomość zapisanej osoby to +1 (store.awardXp).
+// Trwające eventy z warunkiem wiadomości - policzona wiadomość zapisanej osoby to +1 (store.awardXp).
 export const messageContestIds = (config, now = Date.now()) => liveContests(config, now).filter((c) => c.messages > 0).map((c) => c.id);
-// Trwa event z zaproszeniami — bot musi sprawdzać, kto kogo zaprosił, nawet bez logów wejść.
+// Trwa event z zaproszeniami - bot musi sprawdzać, kto kogo zaprosił, nawet bez logów wejść.
 export const inviteContestLive = (config, now = Date.now()) => liveContests(config, now).some((c) => c.invites > 0);
-// Event z zaproszeniami zaplanowany albo trwający — gateway potrzebuje wtedy wejść i wyjść z serwera.
+// Event z zaproszeniami zaplanowany albo trwający - gateway potrzebuje wtedy wejść i wyjść z serwera.
 export const inviteContestPlanned = (config, now = Date.now()) => contestList(config).some((c) => c.invites > 0 && Date.parse(c.endsAt) > now);
 // Najwcześniejszy start trwającego eventu z zaproszeniami (stan zaproszeń sprzed niego trzeba odświeżyć).
 export function inviteContestStart(config, now = Date.now()) {
@@ -82,7 +82,7 @@ export function inviteContestStart(config, now = Date.now()) {
   return starts.length ? Math.min(...starts) : null;
 }
 
-// Czy warunek jest spełniony i jak daleko (0–1, średnia z warunków — do kolejności).
+// Czy warunek jest spełniony i jak daleko (0-1, średnia z warunków - do kolejności).
 export const meetsRequirement = (c, p) => (c.invites <= 0 || p.invites >= c.invites) && (c.messages <= 0 || p.messages >= c.messages);
 function progressRatio(c, p) {
   const parts = [];
@@ -158,11 +158,11 @@ export async function issueMemberLink(bot, ix) {
 export async function exchangeMemberLink(bot, token) {
   const text = String(token ?? '');
   const row = /^[\w-]{20,100}$/.test(text) ? await bot.store.takeMemberLink(await linkHash(text)) : null;
-  if (!row || row.expiresAt <= Date.now()) throw new MemberAuthError('Link wygasł albo był już użyty — zaloguj się jeszcze raz.');
+  if (!row || row.expiresAt <= Date.now()) throw new MemberAuthError('Link wygasł albo był już użyty - zaloguj się jeszcze raz.');
   return newSession(bot, { userId: row.userId, userTag: row.userTag, displayName: row.displayName, avatar: row.avatar });
 }
 
-// Logowanie przez Discord (OAuth2, kod z PKCE — bez sekretu aplikacji). Gotowe, gdy adres strony jest na liście
+// Logowanie przez Discord (OAuth2, kod z PKCE - bez sekretu aplikacji). Gotowe, gdy adres strony jest na liście
 // Redirects aplikacji (bot sprawdza to przy konfiguracji: setup.oauthRedirect; null = Discord nie podał listy).
 export async function oauthInfo(bot) {
   let setup = await bot.store.getState('setup');
@@ -173,7 +173,7 @@ export async function oauthInfo(bot) {
   return { clientId: setup.appId, redirectUri };
 }
 
-// Póki adresu nie ma na liście, bot zagląda do Discorda najwyżej raz na minutę (strona) albo od razu (panel) —
+// Póki adresu nie ma na liście, bot zagląda do Discorda najwyżej raz na minutę (strona) albo od razu (panel) -
 // logowanie włącza się chwilę po dopisaniu adresu w Developer Portal, bez czekania na pełne sprawdzenie co 10 minut.
 const OAUTH_RECHECK_MS = 60_000;
 async function refreshOAuthRedirect(bot, setup, { force = false } = {}) {
@@ -196,9 +196,9 @@ async function refreshOAuthRedirect(bot, setup, { force = false } = {}) {
 export async function exchangeOAuthCode(bot, { code, verifier, redirectUri = null }) {
   const info = await oauthInfo(bot);
   if (info && OAUTH_REDIRECTS.includes(redirectUri)) info.redirectUri = redirectUri;
-  if (!info || !bot.discord) throw new ContestError('Logowanie przez Discord nie jest jeszcze włączone — połącz konto komendą /polacz.');
+  if (!info || !bot.discord) throw new ContestError('Logowanie przez Discord nie jest jeszcze włączone - połącz konto komendą /polacz.');
   if (!/^[\w-]{10,200}$/.test(String(code ?? '')) || !/^[\w.~-]{43,128}$/.test(String(verifier ?? ''))) {
-    throw new MemberAuthError('Logowanie nie powiodło się — spróbuj jeszcze raz.');
+    throw new MemberAuthError('Logowanie nie powiodło się - spróbuj jeszcze raz.');
   }
   let token;
   try {
@@ -207,13 +207,13 @@ export async function exchangeOAuthCode(bot, { code, verifier, redirectUri = nul
       form: { grant_type: 'authorization_code', code: String(code), redirect_uri: info.redirectUri, client_id: info.clientId, code_verifier: String(verifier) },
     });
   } catch (error) {
-    if (error instanceof DiscordError && error.status < 500) throw new MemberAuthError('Logowanie wygasło albo zostało przerwane — spróbuj jeszcze raz.');
+    if (error instanceof DiscordError && error.status < 500) throw new MemberAuthError('Logowanie wygasło albo zostało przerwane - spróbuj jeszcze raz.');
     throw error;
   }
-  if (!String(token?.scope ?? '').split(' ').includes('identify')) throw new MemberAuthError('Discord nie podał, kim jesteś — spróbuj jeszcze raz.');
+  if (!String(token?.scope ?? '').split(' ').includes('identify')) throw new MemberAuthError('Discord nie podał, kim jesteś - spróbuj jeszcze raz.');
   const user = await bot.discord.get('/users/@me', { auth: `Bearer ${token.access_token}` });
-  if (!user?.id || user.bot) throw new MemberAuthError('Logowanie nie powiodło się — spróbuj jeszcze raz.');
-  // Pseudonim na serwerze (jeśli tu jest) — tak jak w rankingu.
+  if (!user?.id || user.bot) throw new MemberAuthError('Logowanie nie powiodło się - spróbuj jeszcze raz.');
+  // Pseudonim na serwerze (jeśli tu jest) - tak jak w rankingu.
   const gctx = await getGuildContext(bot).catch(() => null);
   const member = gctx ? await bot.discord.get(`/guilds/${gctx.guild.id}/members/${user.id}`).catch(() => null) : null;
   return newSession(bot, { userId: user.id, userTag: user.username ?? null, displayName: member?.nick ?? user.global_name ?? null, avatar: user.avatar ?? null });
@@ -224,7 +224,7 @@ export async function memberSession(bot, token) {
   if (!token) return null;
   const text = String(token);
   const session = /^[\w-]{20,100}$/.test(text) ? await bot.store.getMemberSession(await sessionHash(text)) : null;
-  if (!session) throw new MemberAuthError('Połączenie z kontem wygasło — zaloguj się jeszcze raz.');
+  if (!session) throw new MemberAuthError('Połączenie z kontem wygasło - zaloguj się jeszcze raz.');
   if (!session.lastSeenAt || Date.now() - session.lastSeenAt > SEEN_EVERY_MS) await bot.store.touchMemberSession(session.id).catch(() => {});
   return session;
 }
@@ -289,7 +289,7 @@ async function contestView(bot, c, { session, now, gctx, draws }) {
   };
 }
 
-// GET /panel/public/contests — eventy na stronie (z postępem połączonej osoby, gdy jest sesja).
+// GET /panel/public/contests - eventy na stronie (z postępem połączonej osoby, gdy jest sesja).
 // Nieważna sesja nie psuje strony: expired = true, a strona prosi o ponowne połączenie.
 export async function publicContests(bot, { token = null, now = Date.now() } = {}) {
   const config = await bot.store.getConfig();
@@ -321,15 +321,15 @@ async function stillMember(bot, userId) {
   }
 }
 
-// POST /panel/public/contests/:id/join — zapis. Od tej chwili liczą się zaproszenia i wiadomości tej osoby.
+// POST /panel/public/contests/:id/join - zapis. Od tej chwili liczą się zaproszenia i wiadomości tej osoby.
 export async function joinContest(bot, { token, contestId, now = Date.now() }) {
   const session = await memberSession(bot, token);
-  if (!session) throw new MemberAuthError('Najpierw połącz konto — zaloguj się przez Discord.');
+  if (!session) throw new MemberAuthError('Najpierw połącz konto - zaloguj się przez Discord.');
   const config = await bot.store.getConfig();
   const c = visibleContests(config, now).find((x) => x.id === contestId);
   if (!c) throw new ContestError('Nie ma takiego eventu.');
   if (contestStatus(c, now) === 'ended') throw new ContestError('Ten event już się skończył.');
-  if (!(await stillMember(bot, session.userId))) throw new ContestError('Nie ma Cię na serwerze — wróć na niego, żeby się zapisać.');
+  if (!(await stillMember(bot, session.userId))) throw new ContestError('Nie ma Cię na serwerze - wróć na niego, żeby się zapisać.');
   const entry = await bot.store.addContestEntry({
     contestId: c.id,
     userId: session.userId,
@@ -340,24 +340,24 @@ export async function joinContest(bot, { token, contestId, now = Date.now() }) {
   return { joined: true, already: !entry };
 }
 
-// POST /panel/public/contests/:id/leave — wypisanie się. Postęp przepada (ponowny zapis liczy od nowa); po końcu
-// eventu i po wylosowaniu już się nie da — wyniki są ostateczne, a rezygnację z nagrody załatwia administracja.
+// POST /panel/public/contests/:id/leave - wypisanie się. Postęp przepada (ponowny zapis liczy od nowa); po końcu
+// eventu i po wylosowaniu już się nie da - wyniki są ostateczne, a rezygnację z nagrody załatwia administracja.
 export async function leaveContest(bot, { token, contestId, now = Date.now() }) {
   const session = await memberSession(bot, token);
-  if (!session) throw new MemberAuthError('Najpierw połącz konto — zaloguj się przez Discord.');
+  if (!session) throw new MemberAuthError('Najpierw połącz konto - zaloguj się przez Discord.');
   const config = await bot.store.getConfig();
   const c = visibleContests(config, now).find((x) => x.id === contestId);
   if (!c) throw new ContestError('Nie ma takiego eventu.');
-  if (contestStatus(c, now) === 'ended') throw new ContestError('Ten event już się skończył — wyniki są ostateczne.');
+  if (contestStatus(c, now) === 'ended') throw new ContestError('Ten event już się skończył - wyniki są ostateczne.');
   const entry = (await bot.store.contestEntries(c.id)).find((e) => e.userId === session.userId);
   if (!entry) return { left: false, already: true };
-  if (entry.wonAt) throw new ContestError('Wylosowano Cię w tym evencie — jeśli chcesz zrezygnować z nagrody, napisz do administracji.');
+  if (entry.wonAt) throw new ContestError('Wylosowano Cię w tym evencie - jeśli chcesz zrezygnować z nagrody, napisz do administracji.');
   await bot.store.removeContestEntry(c.id, session.userId);
   return { left: true, already: false };
 }
 
 // ---------- Kto się dostał (cron) ----------
-// Trwające eventy (i te zakończone w ostatniej godzinie — ostatnie zaproszenia): osoby, które właśnie spełniły
+// Trwające eventy (i te zakończone w ostatniej godzinie - ostatnie zaproszenia): osoby, które właśnie spełniły
 // warunek, dostają znacznik qualified_at, a bot ogłasza to na kanale z panelu.
 export async function contestsTick(bot, { now = Date.now() } = {}) {
   const config = await bot.store.getConfig();
@@ -382,7 +382,7 @@ export async function contestsTick(bot, { now = Date.now() } = {}) {
 }
 
 // ---------- Losowanie ----------
-// Uczciwe tasowanie (Fisher–Yates na crypto.getRandomValues) — pierwsze `n` osób wygrywa.
+// Uczciwe tasowanie (Fisher-Yates na crypto.getRandomValues) - pierwsze `n` osób wygrywa.
 function pickRandom(list, n) {
   const pool = [...list];
   for (let i = pool.length - 1; i > 0; i -= 1) {
@@ -393,12 +393,12 @@ function pickRandom(list, n) {
 }
 
 // Losuje zwycięzców wśród osób, które teraz spełniają warunek (kolejne losowanie zastępuje poprzednie).
-// by — kto losował (null = automatycznie po końcu eventu). Zwraca { winners: [...], pool }.
+// by - kto losował (null = automatycznie po końcu eventu). Zwraca { winners: [...], pool }.
 export async function drawContest(bot, contestId, { by = null, now = Date.now() } = {}) {
   const config = await bot.store.getConfig();
   const c = (config.contests?.list ?? []).find((x) => x.id === contestId);
-  if (!c) throw new ContestError('Nie ma takiego eventu — może nie został jeszcze zapisany.');
-  if (contestStatus(c, now) === 'upcoming') throw new ContestError('Event jeszcze się nie zaczął — nie ma kogo losować.');
+  if (!c) throw new ContestError('Nie ma takiego eventu - może nie został jeszcze zapisany.');
+  if (contestStatus(c, now) === 'upcoming') throw new ContestError('Event jeszcze się nie zaczął - nie ma kogo losować.');
   const eligible = (await standings(bot, c, now)).filter((p) => p.reached);
   const picked = pickRandom(eligible, Math.max(1, c.drawWinners || 1));
   await bot.store.setContestWinners(c.id, picked.map((p) => p.userId));
@@ -420,11 +420,11 @@ async function logDraw(bot, config, c, picked, { by, pool }) {
     embeds: [
       {
         color: embeds.COLORS.success,
-        title: `🎲 Losowanie — ${c.name}`.slice(0, 256),
+        title: `🎲 Losowanie - ${c.name}`.slice(0, 256),
         description: [
           picked.length
             ? `**${picked.length === 1 ? 'Zwycięzca' : 'Zwycięzcy'}:**\n${names.join('\n')}`
-            : 'Nikt nie spełnił warunku — nie było kogo losować.',
+            : 'Nikt nie spełnił warunku - nie było kogo losować.',
           ...(c.prize ? [`**Nagroda:** ${c.prize}`] : []),
           `-# Losowanie wśród ${pool} ${pool === 1 ? 'osoby, która się dostała' : `${plural(pool, ['osoby', 'osób', 'osób'])}, które się dostały`}${by ? ` · losował(a): ${by}` : ' · automatycznie po końcu eventu'}.`,
         ].join('\n'),
@@ -447,7 +447,7 @@ async function logQualified(bot, config, c, p) {
     embeds: [
       {
         color: embeds.COLORS.success,
-        title: `✅ Dostał(a) się — ${c.name}`.slice(0, 256),
+        title: `✅ Dostał(a) się - ${c.name}`.slice(0, 256),
         description: [
           `<@${p.userId}> spełnił(a) warunek eventu: ${done.join(', ')}.`,
           ...(c.prize ? [`**Nagroda:** ${c.prize}`] : []),
@@ -505,23 +505,23 @@ const polacz = {
   data: { name: 'polacz', description: '🔗 Połącz konto ze stroną eventów (gdy logowanie przez Discord nie działa)', contexts: [0] },
   async execute(ix, bot) {
     const config = await bot.store.getConfig();
-    if (!contestsOn(config)) throw new ActionError('Eventy są wyłączone — administrator może je włączyć w panelu (zakładka „Eventy”).');
+    if (!contestsOn(config)) throw new ActionError('Eventy są wyłączone - administrator może je włączyć w panelu (zakładka „Eventy”).');
     const { url, expiresAt } = await issueMemberLink(bot, ix);
     const live = visibleContests(config).filter((c) => contestStatus(c) !== 'ended');
     const list = live.length
-      ? live.map((c) => `• **${c.name}** — trzeba ${requirementText(c)}${contestStatus(c) === 'upcoming' ? `, start ${discordTimestamp(Date.parse(c.startsAt), 'R')}` : `, koniec ${discordTimestamp(Date.parse(c.endsAt), 'R')}`}`).join('\n')
-      : 'Teraz nie trwa żaden event — połączenie i tak się przyda, gdy ruszy następny.';
+      ? live.map((c) => `• **${c.name}** - trzeba ${requirementText(c)}${contestStatus(c) === 'upcoming' ? `, start ${discordTimestamp(Date.parse(c.startsAt), 'R')}` : `, koniec ${discordTimestamp(Date.parse(c.endsAt), 'R')}`}`).join('\n')
+      : 'Teraz nie trwa żaden event - połączenie i tak się przyda, gdy ruszy następny.';
     return ix.edit({
       embeds: [
         {
           color: embeds.COLORS.info,
           title: '🔗 Połącz konto ze stroną eventów',
           description: [
-            'Kliknij przycisk poniżej — strona eventów otworzy się już połączona z Twoim kontem. Zapiszesz się tam do eventu i zobaczysz swój postęp.',
+            'Kliknij przycisk poniżej - strona eventów otworzy się już połączona z Twoim kontem. Zapiszesz się tam do eventu i zobaczysz swój postęp.',
             '',
             list,
             '',
-            `-# Link działa raz i wygasa ${discordTimestamp(expiresAt, 'R')}. Nie dawaj go nikomu — kto go otworzy, ten zostanie połączony z Twoim kontem.`,
+            `-# Link działa raz i wygasa ${discordTimestamp(expiresAt, 'R')}. Nie dawaj go nikomu - kto go otworzy, ten zostanie połączony z Twoim kontem.`,
           ].join('\n'),
           footer: { text: embeds.BRAND },
         },

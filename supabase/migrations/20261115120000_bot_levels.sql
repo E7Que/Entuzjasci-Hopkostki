@@ -1,5 +1,5 @@
 -- Poziomy (leveling jak w Arcane): XP za wiadomości, kanały głosowe i reakcje.
--- xp to suma od początku (z niej liczy się poziom), week_xp/month_xp — XP zdobyte w bieżącym tygodniu
+-- xp to suma od początku (z niej liczy się poziom), week_xp/month_xp - XP zdobyte w bieżącym tygodniu
 -- (od niedzieli, UTC) i miesiącu; po zmianie okresu licznik zaczyna się od nowa przy następnym XP, a ranking
 -- tygodniowy/miesięczny bierze osoby z kluczem właśnie zakończonego okresu.
 -- last_*_at to cooldowny osobno dla wiadomości, głosowych i reakcji.

@@ -25,7 +25,7 @@ export function bumpInfo(message) {
   if (/bot-command-image-bump/i.test(embed?.image?.url ?? '')) return { user };
   if (/wait|poczekaj|odczekaj|minut|cooldown/i.test(text)) return null;
   if (/bump done|:thumbsup:|👍|podbit/i.test(text)) return { user };
-  // Bez intencji treści wiadomości Discord nie pokazuje embedów — wtedy wystarcza nazwa komendy.
+  // Bez intencji treści wiadomości Discord nie pokazuje embedów - wtedy wystarcza nazwa komendy.
   if (!embed && !message.content && name === 'bump') return { user };
   return null;
 }
@@ -114,7 +114,7 @@ export async function bumpScan(bot) {
   const fresh = (messages ?? [])
     .filter((m) => m.author?.id === DISBOARD_ID && (!state?.messageId || BigInt(m.id) > BigInt(state.messageId)))
     .sort((a, b) => (BigInt(a.id) < BigInt(b.id) ? -1 : 1));
-  // Wiadomości z REST nie mają guild_id — kanał bumpów jest na naszym serwerze.
+  // Wiadomości z REST nie mają guild_id - kanał bumpów jest na naszym serwerze.
   const guildId = fresh.length ? await resolveGuildId(bot) : null;
   for (const message of fresh) {
     if (await onBumpMessage(bot, { guild_id: guildId, ...message })) found += 1;

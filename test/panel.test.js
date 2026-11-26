@@ -55,7 +55,7 @@ test('API panelu: metadane komend i nadpisania uprawnień', async () => {
   const guild = await (await s.call('/guild')).json();
   assert.ok(guild.roles.every((r) => typeof r.permissions === 'string' && typeof r.position === 'number'));
 
-  const roleId = '100000000000000099'; // ID jak prawdziwy snowflake — krótkie ID z atrapy Discorda odpadłyby w sanitizerze
+  const roleId = '100000000000000099'; // ID jak prawdziwy snowflake - krótkie ID z atrapy Discorda odpadłyby w sanitizerze
   const { config } = await (
     await s.call('/config', { method: 'PUT', body: { commandPermissions: { kick: [roleId], falszywa: ['x'] } } })
   ).json();
@@ -117,7 +117,7 @@ test('adres panelu w funkcji przekierowuje na GitHub Pages, a API wpuszcza tylko
   assert.equal(stranger.headers.get('access-control-allow-origin'), null);
 
   // Strony stoją pod własną domeną (enho.pl); dawny adres e7que.github.io dalej wpuszczony (stare karty), a jeszcze
-  // starszy notkairo.github.io (sprzed zmiany nazwy konta) już nie — tę domenę może zająć ktoś inny.
+  // starszy notkairo.github.io (sprzed zmiany nazwy konta) już nie - tę domenę może zająć ktoś inny.
   assert.equal(origin, 'https://enho.pl');
   const github = await s.handle(new Request(`${BASE}/status`, { headers: { origin: 'https://e7que.github.io', 'x-panel-password': 'tajne' } }));
   assert.equal(github.headers.get('access-control-allow-origin'), 'https://e7que.github.io');
@@ -153,7 +153,7 @@ test('lokalny panel serwuje frontend i przekazuje resztę żądań do bota z has
   try {
     // Statyka: serwowana lokalnie, bez pytania bota.
     const page = await fetch(`${base}/`);
-    assert.match(await page.text(), /Panel — Entuzjaści Hopkostki/);
+    assert.match(await page.text(), /Panel - Entuzjaści Hopkostki/);
     assert.equal((await fetch(`${base}/app.js`)).headers.get('content-type'), 'text/javascript; charset=utf-8');
     assert.equal((await fetch(`${base}/style.css`)).headers.get('content-type'), 'text/css; charset=utf-8');
     assert.equal(seen.length, 0);
@@ -163,7 +163,7 @@ test('lokalny panel serwuje frontend i przekazuje resztę żądań do bota z has
     assert.deepEqual(seen[0], { method: 'GET', url: '/functions/v1/hopkostki-bot/panel/cases?page=2', password: 'tajne', session: undefined });
 
     const write = await fetch(`${base}/config`, { method: 'PUT', body: '{}', headers: { 'x-panel-password': 'inne' } });
-    assert.equal(write.status, 200, 'proxy nie blokuje zapisów — hasło sprawdza sam bot');
+    assert.equal(write.status, 200, 'proxy nie blokuje zapisów - hasło sprawdza sam bot');
     assert.equal(seen[1].password, 'inne');
 
     // Sesja moderatora z kodu /login też idzie do bota (to on sprawdza jej role).

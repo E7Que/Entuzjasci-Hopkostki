@@ -13,7 +13,7 @@ create table bot.notes (
 create index notes_user_idx on bot.notes (user_id);
 revoke all on bot.notes from anon, authenticated;
 
--- Funkcja działa w regionie bazy (Frankfurt) — krótsze zapytania do Postgresa.
+-- Funkcja działa w regionie bazy (Frankfurt) - krótsze zapytania do Postgresa.
 select cron.schedule(
   'hopkostki-bot-cron',
   '30 seconds',

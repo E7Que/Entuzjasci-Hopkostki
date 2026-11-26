@@ -16,7 +16,7 @@ export function paginate(items, page, perPage) {
   return { page: current, pages, slice: items.slice((current - 1) * perPage, current * perPage), total: items.length };
 }
 
-// ◀ 1 2 3 ▶ — maksymalnie 5 przycisków w rzędzie (okno trzech numerów wokół bieżącej strony).
+// ◀ 1 2 3 ▶ - maksymalnie 5 przycisków w rzędzie (okno trzech numerów wokół bieżącej strony).
 export function pagerRow(kind, arg, page, pages) {
   if (pages <= 1) return null;
   const first = Math.max(1, Math.min(page - 1, pages - 2));
@@ -154,7 +154,7 @@ async function deleteWarns(bot, ix, userId, ids) {
         [
           `**Użytkownik:** <@${userId}>`,
           `**Usunął:** <@${ix.user.id}>`,
-          ...removed.map((w) => `• **#${w.id}** (${w.points} pkt) — ${clip(w.reason, 120)}`),
+          ...removed.map((w) => `• **#${w.id}** (${w.points} pkt) - ${clip(w.reason, 120)}`),
           `**Pozostało:** ${left.count} ostrzeżeń (${left.points} pkt)`,
         ].join('\n'),
       ),
@@ -217,7 +217,7 @@ async function casesView(bot, type, page) {
     embeds: [
       {
         color: embeds.COLORS.info,
-        title: `🗂️ Sprawy moderacyjne${filter ? ` — ${embeds.ACTION_LABELS[filter]}` : ''}`,
+        title: `🗂️ Sprawy moderacyjne${filter ? ` - ${embeds.ACTION_LABELS[filter]}` : ''}`,
         ...(items.length ? {} : { description: 'Brak spraw. Spokojnie jak na Hopkostkach.' }),
         fields: items.map((c) => caseField(c, { withUser: true })),
         footer: { text: footerText(current, pages, `${total} spraw`) },
@@ -238,7 +238,7 @@ async function rankingView(bot, page) {
         .map((row, i) => {
           const place = (view.page - 1) * 10 + i + 1;
           const next = row.warns.map((w) => w.expiresAt).filter(Boolean).sort((a, b) => a - b)[0];
-          return `${medals[place - 1] ?? `**${place}.**`} <@${row.userId}> — **${row.points} pkt** • ${row.count} ostrz.${
+          return `${medals[place - 1] ?? `**${place}.**`} <@${row.userId}> - **${row.points} pkt** • ${row.count} ostrz.${
             next ? ` • ⏳ ${discordTimestamp(next, 'R')}` : ''
           }`;
         })
@@ -358,7 +358,7 @@ async function deleteNotes(bot, ids) {
 
 // ---------- Rejestr widoków ----------
 
-// `command` wiąże widok z komendą, która go otwiera — panel ("Uprawnienia") nadpisuje dostęp per komenda,
+// `command` wiąże widok z komendą, która go otwiera - panel ("Uprawnienia") nadpisuje dostęp per komenda,
 // więc przyciski/listy tej komendy muszą sprawdzać dokładnie to samo nadpisanie.
 export const VIEWS = {
   ws: { permission: P.MODERATE_MEMBERS, command: 'warn', render: (bot, arg, page, opts) => warnsView(bot, arg, page, { ...opts, manage: false }) },

@@ -1,7 +1,7 @@
 {
   "name": "entuzjasci-hopkostki-bot",
   "version": "2.0.0",
-  "description": "Bot moderacyjny Discord dla serwera Entuzjaści Hopkostki — hostowany na Supabase (Edge Functions + Postgres), panel na GitHub Pages",
+  "description": "Bot moderacyjny Discord dla serwera Entuzjaści Hopkostki - hostowany na Supabase (Edge Functions + Postgres), panel na GitHub Pages",
   "private": true,
   "type": "module",
   "scripts": {

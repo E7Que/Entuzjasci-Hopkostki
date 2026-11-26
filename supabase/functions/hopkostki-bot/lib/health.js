@@ -1,8 +1,8 @@
 // Alerty o awarii bota, w dwóch warstwach:
-//  1. healthTick (w każdym przebiegu crona, co 30 s): funkcja bota działa, ale coś jest nie tak — nie łączy się
+//  1. healthTick (w każdym przebiegu crona, co 30 s): funkcja bota działa, ale coś jest nie tak - nie łączy się
 //     z Discordem (gateway), Discord nie przesyła komend albo któreś zadanie okresowe ciągle się wysypuje.
 //     Wiadomość o problemie i o jego końcu idzie przez API bota na kanał alertów.
-//  2. Strażnik w bazie (bot.health_watchdog, pg_cron co 5 min — migracja 20261116010000): gdy sama funkcja bota
+//  2. Strażnik w bazie (bot.health_watchdog, pg_cron co 5 min - migracja 20261116010000): gdy sama funkcja bota
 //     przestaje odpowiadać, wysyła alarm przez webhook na tym samym kanale. Webhook zakłada tu funkcja bota
 //     i zapisuje go w bot.state('alert_webhook') razem z ustawieniami, które czyta strażnik.
 
@@ -56,10 +56,10 @@ async function currentProblems(bot, config, report, health, now) {
   const limitMs = config.alerts.minutes * 60_000;
   const gw = await bot.store.getState('gateway_status');
   if (gw?.connectedAt) health.gatewayGoodAt = Math.max(health.gatewayGoodAt ?? 0, gw.connectedAt);
-  health.gatewayGoodAt ??= now; // pierwszy przebieg po wdrożeniu — dajemy botowi czas
+  health.gatewayGoodAt ??= now; // pierwszy przebieg po wdrożeniu - dajemy botowi czas
   if (bot.env.token && now - health.gatewayGoodAt > limitMs) {
     const why = gw?.error ? ` Ostatni błąd: ${gw.error}` : gw?.endedAt && now - gw.endedAt > limitMs ? ' Sesje połączenia w ogóle się nie uruchamiają (zadanie „hopkostki-bot-gateway” w pg_cron).' : '';
-    problems.gateway = `Bot nie łączy się z Discordem od ${minutesSince(now, health.gatewayGoodAt)} min — nie widzi wiadomości i zdarzeń serwera (XP, automoderacja, logi). Komendy i przyciski działają dalej.${why}`;
+    problems.gateway = `Bot nie łączy się z Discordem od ${minutesSince(now, health.gatewayGoodAt)} min - nie widzi wiadomości i zdarzeń serwera (XP, automoderacja, logi). Komendy i przyciski działają dalej.${why}`;
   }
   const setup = await bot.store.getState('setup');
   if (setup?.endpointError) problems.endpoint = `Discord nie przesyła komend do bota: ${setup.endpointError}`;
@@ -134,7 +134,7 @@ export async function sendAlertTest(bot, who = 'panel') {
   if (!hook.url) return { bot: true, watchdog: false, error: hook.error ?? 'Brak webhooka' };
   await bot.discord.post(`/webhooks/${hook.id}/${hook.url.split('/').at(-1)}`, {
     username: 'Strażnik bota',
-    content: '🔔 Test strażnika: ta wiadomość przyszła przez webhook — dotrze nawet wtedy, gdy funkcja bota przestanie działać.',
+    content: '🔔 Test strażnika: ta wiadomość przyszła przez webhook - dotrze nawet wtedy, gdy funkcja bota przestanie działać.',
     allowed_mentions: { parse: [] },
   });
   return { bot: true, watchdog: true };

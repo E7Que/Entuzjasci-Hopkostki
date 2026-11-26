@@ -19,7 +19,7 @@ const DAY = 24 * 60 * 60_000;
 // Role z prawdziwymi (liczbowymi) ID: jedna pod rolą bota (pozycja 8), druga nad nią.
 ROLES.push({ id: HELPER_ROLE, name: 'Test Helper', position: 2, permissions: String(P.KICK_MEMBERS | P.MANAGE_MESSAGES), color: 0 });
 ROLES.push({ id: HIGH_ROLE, name: 'Wysoka', position: 10, permissions: String(P.KICK_MEMBERS), color: 0 });
-// Rola z uprawnieniem Administrator (jak „| Admin” na serwerze) — z ID, które da się dopisać do list w panelu.
+// Rola z uprawnieniem Administrator (jak „| Admin” na serwerze) - z ID, które da się dopisać do list w panelu.
 const ADMIN_ROLE = '100000000000000094';
 ROLES.push({ id: ADMIN_ROLE, name: 'Admin', position: 7, permissions: ADMIN, color: 0 });
 
@@ -95,7 +95,7 @@ test('/login: tylko na wybranym kanale i z rolą; login i hasło widzi tylko ta 
   assert.equal(again.reply.components[0].components[0].url, `${PANEL_URL}#login=dfgbh65`);
   assert.equal((await signIn(s, login, password)).status, 200, 'stare hasło dalej działa');
 
-  // nowy:True — nowe hasło, stare i jego zalogowania przestają działać.
+  // nowy:True - nowe hasło, stare i jego zalogowania przestają działać.
   const session = (await signIn(s, login, password)).token;
   const renewed = credentials(await slash(s, { renew: true }));
   assert.equal(renewed.login, 'dfgbh65');
@@ -143,8 +143,8 @@ test('logowanie loginem i hasłem: sesja widzi i zapisuje tylko odblokowane czę
   });
   assert.equal(put.status, 200);
   const after = await s.store.getConfig();
-  assert.equal(after.tickets.maxOpen, 3, 'tickety odblokowane — zapisane');
-  assert.equal(after.logs.enabled, before.logs.enabled, 'logi niedostępne — bez zmian');
+  assert.equal(after.tickets.maxOpen, 3, 'tickety odblokowane - zapisane');
+  assert.equal(after.logs.enabled, before.logs.enabled, 'logi niedostępne - bez zmian');
   assert.deepEqual(after.panelAccess.roles.sprawy, [MOD_ROLE], 'dostęp do panelu zmienia tylko pełny dostęp');
 
   assert.equal((await s.call('/tickets')).status, 401);
@@ -183,7 +183,7 @@ test('pełny dostęp: właściciel i hasło panelu (nie samo uprawnienie Adminis
   const owner = await signIn(s, ownerCreds.login, ownerCreds.password);
   assert.equal(owner.me.full, true);
 
-  // Administrator niczego nie dostaje z automatu — tylko części panelu przypisane jego rolom.
+  // Administrator niczego nie dostaje z automatu - tylko części panelu przypisane jego rolom.
   s.discord.state.members.set('target', { user: s.discord.state.users.get('target'), roles: [ADMIN_ROLE] });
   const asAdmin = { user: 'target', roles: [ADMIN_ROLE], permissions: ADMIN };
   assert.match((await slash(s, asAdmin)).reply.embeds[0].description, /Żadna z Twoich ról nie odblokowuje panelu/);

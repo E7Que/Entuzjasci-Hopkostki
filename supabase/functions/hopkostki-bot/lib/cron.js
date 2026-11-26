@@ -47,7 +47,7 @@ export async function ensureSetup(bot, { force = false } = {}) {
     commandsRegisteredAt = Date.now();
   }
 
-  // Discord sprawdza nowy adres, wysyłając do niego PING — dlatego klucz publiczny zapisujemy wyżej.
+  // Discord sprawdza nowy adres, wysyłając do niego PING - dlatego klucz publiczny zapisujemy wyżej.
   let endpoint = app.interactions_endpoint_url ?? null;
   let endpointError = null;
   if (bot.env.selfUrl && endpoint !== bot.env.selfUrl) {

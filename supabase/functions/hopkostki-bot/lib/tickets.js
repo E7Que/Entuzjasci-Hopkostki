@@ -17,7 +17,7 @@ const MEMBER_ALLOW = P.VIEW_CHANNEL | P.SEND_MESSAGES | P.READ_MESSAGE_HISTORY |
 const HISTORY_PAGES = 10;
 
 // Ustawienia konkretnego rodzaju ticketu (Zgłoszenie, Partnerstwo, …): własna kategoria, archiwum, kanał logów
-// i role obsługi — puste pole = ustawienie ogólne z zakładki Tickety. Zgłoszenia i partnerstwa mogą więc
+// i role obsługi - puste pole = ustawienie ogólne z zakładki Tickety. Zgłoszenia i partnerstwa mogą więc
 // trafiać do innych kategorii i być widoczne dla innych ról. Ticket zapamiętuje tylko nazwę rodzaju.
 export function typeSettings(tickets, typeLabel) {
   const type = tickets.types.find((t) => t.label === typeLabel) ?? null;
@@ -90,11 +90,11 @@ const NUMBER_PART = /\d{1,3}(?:[ .,']\d{3})+(?!\d)|\d+/g;
 const NUMBER_SHORTHAND = /\d\s*(?:k|tys|mln)(?![a-ząćęłńóśźż])/i;
 const FIELD_MAX = { short: 200, long: 1000, number: 15, invite: 200 };
 
-// prefill: etykieta pola → wartość — przy poprawianiu formularza wpisane wcześniej odpowiedzi wracają do pól.
+// prefill: etykieta pola → wartość - przy poprawianiu formularza wpisane wcześniej odpowiedzi wracają do pól.
 function ticketForm(type, index, prefill = new Map()) {
   return {
     custom_id: `tkm|open|${index}`,
-    title: `Nowy ticket — ${type.label}`.slice(0, 45),
+    title: `Nowy ticket - ${type.label}`.slice(0, 45),
     components: ticketFields(type).map((field, i) => {
       const required = field.required !== false;
       const max = FIELD_MAX[field.kind] ?? FIELD_MAX.short;
@@ -129,7 +129,7 @@ function formAnswers(ix, fields) {
 }
 
 // Sprawdza i ujednolica odpowiedzi (liczba, link zaproszenia). Zwraca opis problemu albo null. Do odpowiedzi
-// z linkiem dopisuje dane serwera z Discorda — obsługa od razu widzi nazwę i prawdziwą liczbę członków.
+// z linkiem dopisuje dane serwera z Discorda - obsługa od razu widzi nazwę i prawdziwą liczbę członków.
 async function checkAnswers(bot, answers, guildId) {
   for (const answer of answers) {
     if (!answer.value) {
@@ -153,10 +153,10 @@ async function checkAnswers(bot, answers, guildId) {
       } catch (error) {
         // Nieznane zaproszenie = wygasło albo jest błędne. Inny błąd (np. limit zapytań) nie blokuje ticketu.
         if (isGone(error)) {
-          return `Link ${answer.value} nie działa — zaproszenie wygasło albo jest błędne. Wklej aktualny link (najlepiej bez limitu czasu).`;
+          return `Link ${answer.value} nie działa - zaproszenie wygasło albo jest błędne. Wklej aktualny link (najlepiej bez limitu czasu).`;
         }
       }
-      if (invite?.guild?.id === guildId) return 'To link do naszego serwera — wklej link do swojego.';
+      if (invite?.guild?.id === guildId) return 'To link do naszego serwera - wklej link do swojego.';
       if (invite?.guild) {
         answer.server = {
           name: invite.guild.name,
@@ -268,7 +268,7 @@ export async function createTicket(bot, { guildId, user, type, answers = [], rul
   }
   ticket = await bot.store.updateTicket(ticket.id, { channelId: channel.id });
 
-  // Tylko oznaczenie autora — obsługa i tak widzi kanał (ma do niego dostęp od razu po utworzeniu),
+  // Tylko oznaczenie autora - obsługa i tak widzi kanał (ma do niego dostęp od razu po utworzeniu),
   // więc pingowanie całej roli przy każdym nowym tickecie byłoby tylko spamem powiadomień.
   await bot.discord.post(`/channels/${channel.id}/messages`, {
     content: `<@${user.id}>`,
@@ -317,10 +317,10 @@ const plTime = (ms) => new Date(ms).toLocaleString('pl-PL', { timeZone: 'Europe/
 
 export function buildTranscript(ticket, messages, closer, reason = '') {
   const header = [
-    `Zapis ticketu #${ticketNumber(ticket.id)} — ${BRAND}`,
+    `Zapis ticketu #${ticketNumber(ticket.id)} - ${BRAND}`,
     `Autor: ${ticket.userTag ?? ticket.userId} (${ticket.userId})`,
-    `Typ: ${ticket.type ?? '—'}`,
-    // Kilka odpowiedzi z formularza („Pole: odpowiedź” w liniach) albo jedna — sama treść sprawy.
+    `Typ: ${ticket.type ?? '-'}`,
+    // Kilka odpowiedzi z formularza („Pole: odpowiedź” w liniach) albo jedna - sama treść sprawy.
     ticket.subject ? (ticket.subject.includes('\n') ? `Formularz:\n${ticket.subject.replace(/^/gm, '  ')}` : `Sprawa: ${ticket.subject}`) : null,
     `Otwarty: ${plTime(ticket.createdAt)}`,
     `Zamknął: ${closer.username} (${closer.id}), ${plTime(Date.now())}`,
@@ -346,8 +346,8 @@ function closedSummary(ticket, closer, messageCount, reason = '') {
     title: `Ticket #${number} zamknięty`,
     fields: [
       { name: 'Autor', value: `<@${ticket.userId}>`, inline: true },
-      { name: 'Zamknął', value: closer ? `<@${closer.id}>` : '—', inline: true },
-      { name: 'Typ', value: ticket.type ?? '—', inline: true },
+      { name: 'Zamknął', value: closer ? `<@${closer.id}>` : '-', inline: true },
+      { name: 'Typ', value: ticket.type ?? '-', inline: true },
       ...(ticket.claimedBy ? [{ name: 'Przejął', value: `<@${ticket.claimedBy}>`, inline: true }] : []),
       { name: 'Otwarty', value: discordTimestamp(ticket.createdAt, 'f'), inline: true },
       { name: 'Wiadomości', value: String(messageCount), inline: true },
@@ -357,7 +357,7 @@ function closedSummary(ticket, closer, messageCount, reason = '') {
   };
 }
 
-// reason: powód zamknięcia (wymagany w Discordzie i w panelu) — trafia do podsumowania, logów, DM i zapisu rozmowy.
+// reason: powód zamknięcia (wymagany w Discordzie i w panelu) - trafia do podsumowania, logów, DM i zapisu rozmowy.
 export async function closeTicket(bot, ticket, closer, reason = '') {
   const { tickets } = await bot.store.getConfig();
   const eff = typeSettings(tickets, ticket.type);
@@ -372,7 +372,7 @@ export async function closeTicket(bot, ticket, closer, reason = '') {
       const dm = await bot.discord.post('/users/@me/channels', { recipient_id: ticket.userId });
       await bot.discord.post(`/channels/${dm.id}/messages`, { embeds: [{ ...summary, title: `Twój ticket #${number} został zamknięty` }] }, { files: [file] });
     } catch {
-      // Zamknięte DM — trudno.
+      // Zamknięte DM - trudno.
     }
   }
   await bot.store.updateTicket(ticket.id, { status: 'closed', closedBy: closer.id });
@@ -380,7 +380,7 @@ export async function closeTicket(bot, ticket, closer, reason = '') {
     console.warn(`[tickety] Archiwizacja #${number}: ${error.message}`);
     return null;
   });
-  // Zapis rozmowy i informacja o zamknięciu — od razu, na kanał, który już widzi tylko obsługa.
+  // Zapis rozmowy i informacja o zamknięciu - od razu, na kanał, który już widzi tylko obsługa.
   // Przycisk pozwala usunąć kanał z archiwum, gdy sprawa przestanie być potrzebna.
   if (channel) {
     await bot.discord
@@ -399,8 +399,8 @@ export async function closeTicket(bot, ticket, closer, reason = '') {
   }
 }
 
-// Kanał NIE jest usuwany — zostaje jako archiwum. Przenosi się do kategorii zamkniętych ticketów (jeśli
-// ustawiona) i znika dla wszystkich poza obsługą (nawet dla autora) — usuwamy nadpisania uprawnień
+// Kanał NIE jest usuwany - zostaje jako archiwum. Przenosi się do kategorii zamkniętych ticketów (jeśli
+// ustawiona) i znika dla wszystkich poza obsługą (nawet dla autora) - usuwamy nadpisania uprawnień
 // każdego poza @everyone (już ma zakaz VIEW_CHANNEL z chwili utworzenia), botem i rolami obsługi.
 // Zwraca pobrany kanał (albo null, gdy ktoś go już ręcznie usunął).
 async function archiveTicketChannel(bot, ticket, eff) {
@@ -426,7 +426,7 @@ async function archiveTicketChannel(bot, ticket, eff) {
 
 // ---------- Przejęcie pierwszą odpowiedzią ----------
 // Pierwsza wiadomość kogoś z obsługi (te same role co przy przycisku „Przejmij” albo właściciel serwera)
-// w otwartym, nieprzejętym tickecie przejmuje go — bez klikania (można wyłączyć w panelu: tickets.autoClaim).
+// w otwartym, nieprzejętym tickecie przejmuje go - bez klikania (można wyłączyć w panelu: tickets.autoClaim).
 // Autor ticketu, boty i webhooki się nie liczą. Kanały, które nie są wolnymi ticketami, bot pamięta przez
 // chwilę, żeby nie pytać bazy przy każdej wiadomości na serwerze.
 const CLAIM_SKIP_MS = 30 * 60_000;
@@ -458,7 +458,7 @@ export async function onMessageTicketClaim(bot, message) {
     console.warn(`[tickety] Przycisk po przejęciu: ${error.message}`);
   }
   await bot.discord.post(`/channels/${ticket.channelId}/messages`, {
-    embeds: [{ color: COLORS.success, description: `Ticket przejęty przez <@${message.author.id}> — pierwsza odpowiedź obsługi.` }],
+    embeds: [{ color: COLORS.success, description: `Ticket przejęty przez <@${message.author.id}> - pierwsza odpowiedź obsługi.` }],
     allowed_mentions: { parse: [] },
   });
   return claimed;
@@ -470,7 +470,7 @@ export const isTicketCustomId = (customId) => /^tk[ms]?\|/.test(String(customId 
 
 // Obsługa ticketu (Przejmij, Zamknij i Dodaj osobę za autora, usuwanie z archiwum) = role z listy „Obsługa”
 // w panelu (z rodzaju ticketu albo ogólna z zakładki Tickety) plus właściciel serwera. Tickety nie należą do
-// żadnej komendy, więc ich listą ról jest właśnie „Obsługa” — tak jak przy komendach (zakładka Uprawnienia)
+// żadnej komendy, więc ich listą ról jest właśnie „Obsługa” - tak jak przy komendach (zakładka Uprawnienia)
 // decyduje lista z panelu, a samo uprawnienie Administrator czy „Zarządzanie kanałami” obsługi nie daje.
 async function isSupport(bot, member, eff) {
   if (!member) return false;
@@ -514,14 +514,14 @@ export async function handleTicketInteraction(ix, bot) {
     if (action === 'decline') {
       return { response: { type: 7, data: { content: '', embeds: [errorEmbed('Bez akceptacji regulaminu nie otworzymy tego ticketu. Gdy zmienisz zdanie, kliknij przycisk w panelu jeszcze raz.')], components: [] } } };
     }
-    // Ekran z regulaminem przed formularzem (np. regulamin partnerstw — tekst z zakładki Tickety w panelu).
+    // Ekran z regulaminem przed formularzem (np. regulamin partnerstw - tekst z zakładki Tickety w panelu).
     if (kind === 'tk' && action === 'open' && type.rules) {
       return {
         response: {
           type: 4,
           data: {
             flags: EPHEMERAL,
-            embeds: [{ color: colorInt(tickets.panel.color), title: `Regulamin — ${type.label}`.slice(0, 256), description: type.rules.slice(0, 4000), footer: { text: 'Aby przejść dalej, zaakceptuj regulamin.' } }],
+            embeds: [{ color: colorInt(tickets.panel.color), title: `Regulamin - ${type.label}`.slice(0, 256), description: type.rules.slice(0, 4000), footer: { text: 'Aby przejść dalej, zaakceptuj regulamin.' } }],
             components: [
               {
                 type: 1,
@@ -543,14 +543,14 @@ export async function handleTicketInteraction(ix, bot) {
     }
     const answers = kind === 'tkm' ? formAnswers(ix, fields) : [];
     // Formularz otwarty z wiadomości z błędem (widocznej tylko dla tej osoby) aktualizuje ją zamiast dodawać nową;
-    // ekran z regulaminem (bez formularza) też jest wiadomością tej osoby — aktualizujemy ją.
+    // ekran z regulaminem (bez formularza) też jest wiadomością tej osoby - aktualizujemy ją.
     const fromRetry = (kind === 'tkm' && (Number(ix.raw.message?.flags ?? 0) & EPHEMERAL) !== 0) || (kind === 'tk' && action === 'accept');
     return work(fromRetry ? 6 : 5, async () => {
       const problem = await checkAnswers(bot, answers, ix.guildId);
       if (problem) {
         await ix.edit({
           content: '',
-          embeds: [{ ...errorEmbed(`${problem}\nKliknij **Popraw formularz** — wpisane odpowiedzi wrócą do pól.`), fields: answerFields(answers, { withServer: false }) }],
+          embeds: [{ ...errorEmbed(`${problem}\nKliknij **Popraw formularz** - wpisane odpowiedzi wrócą do pól.`), fields: answerFields(answers, { withServer: false }) }],
           components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Popraw formularz', custom_id: `tk|retry|${arg}` }] }],
         });
         return null;
@@ -564,7 +564,7 @@ export async function handleTicketInteraction(ix, bot) {
   if (!ticket) return fail('Ten ticket już nie istnieje.');
   const eff = typeSettings(tickets, ticket.type);
 
-  // Przycisk pod zapisem rozmowy w archiwum — działa tylko na już zamkniętym tickecie, więc sprawdzany
+  // Przycisk pod zapisem rozmowy w archiwum - działa tylko na już zamkniętym tickecie, więc sprawdzany
   // jest przed ogólnym „musi być otwarty” niżej.
   if (kind === 'tk' && (action === 'delete' || action === 'deleteconfirm')) {
     if (ticket.status !== 'closed') return fail('Ten ticket nie jest jeszcze zamknięty.');
@@ -603,7 +603,7 @@ export async function handleTicketInteraction(ix, bot) {
       }
       if (added.length) {
         await bot.discord.post(`/channels/${ticket.channelId}/messages`, {
-          content: `${added.map((id) => `<@${id}>`).join(' ')} — <@${ix.user.id}> dodał(a) Cię do tego ticketu.`,
+          content: `${added.map((id) => `<@${id}>`).join(' ')} - <@${ix.user.id}> dodał(a) Cię do tego ticketu.`,
           allowed_mentions: { users: added },
         });
       }
@@ -615,7 +615,7 @@ export async function handleTicketInteraction(ix, bot) {
     case 'close':
       if (!(await allowed(eff.authorCanClose))) return fail(owner ? 'Ten rodzaj ticketu zamyka tylko obsługa.' : 'Ticket może zamknąć jego autor albo obsługa.');
       if (kind === 'tkm') {
-        // Wysłane okienko z powodem — dopiero teraz ticket się zamyka (kanał trafia do archiwum, a zapis rozmowy do logów, DM i na kanał).
+        // Wysłane okienko z powodem - dopiero teraz ticket się zamyka (kanał trafia do archiwum, a zapis rozmowy do logów, DM i na kanał).
         const reason = modalReason(ix);
         if (reason.length < 3) return fail('Podaj powód zamknięcia (co najmniej 3 znaki).');
         return work(5, async () => {

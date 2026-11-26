@@ -1,6 +1,6 @@
 // Kanały głosowe na żądanie: wejście na „kanał do dołączenia” tworzy osobny kanał tej osoby, przenosi ją tam,
 // a na czacie kanału pojawia się panel (przyciski + listy wyboru) do zarządzania nim. Pusty kanał znika sam.
-// Zdarzenia głosowe przychodzą z gatewaya (gateway.js); przyciski i okna z formularzem — przez interakcje.
+// Zdarzenia głosowe przychodzą z gatewaya (gateway.js); przyciski i okna z formularzem - przez interakcje.
 
 import { P, has } from './permissions.js';
 import { DiscordError } from './rest.js';
@@ -76,7 +76,7 @@ const moveMember = (bot, guildId, userId, channelId) =>
 
 // ---------- Zdarzenia z gatewaya ----------
 
-// Wyciszony/ogłuszony (sam albo przez serwer), bot i role — do XP za kanały głosowe.
+// Wyciszony/ogłuszony (sam albo przez serwer), bot i role - do XP za kanały głosowe.
 function voiceFlags(state, member = state.member) {
   return {
     muted: Boolean(state.self_mute || state.mute),
@@ -88,7 +88,7 @@ function voiceFlags(state, member = state.member) {
 
 export async function syncGuildVoiceStates(bot, guild) {
   if (!(await isOurGuild(bot, guild?.id))) return;
-  // GUILD_CREATE dosyła członków z kanałów głosowych — z nich role i to, czy to bot (do XP za głosowe).
+  // GUILD_CREATE dosyła członków z kanałów głosowych - z nich role i to, czy to bot (do XP za głosowe).
   const members = new Map((guild.members ?? []).map((m) => [m.user?.id, m]));
   const states = (guild.voice_states ?? [])
     .filter((s) => s.channel_id)
@@ -176,7 +176,7 @@ async function openTempChannel(bot, tempVoice, generator, state) {
   try {
     await moveMember(bot, guildId, userId, channel.id);
   } catch (error) {
-    // Zdążył wyjść z kanału do dołączenia — sprzątamy od razu.
+    // Zdążył wyjść z kanału do dołączenia - sprzątamy od razu.
     console.warn(`[voice] Nie udało się przenieść ${userId}: ${error.message}`);
     await bot.discord.delete(`/channels/${channel.id}`).catch(() => {});
     await bot.store.deleteTempVoice(channel.id);
@@ -310,7 +310,7 @@ export async function handleVoiceInteraction(ix, bot) {
   const [kind, action, channelId] = String(ix.customId).split('|');
   const temp = await bot.store.getTempVoice(channelId);
   if (!temp) return failure('Ten kanał już nie istnieje.');
-  // Panelem zarządza właściciel kanału (to jego kanał — bez listy ról) oraz ci, którzy ten kanał i tak mogą zmienić
+  // Panelem zarządza właściciel kanału (to jego kanał - bez listy ról) oraz ci, którzy ten kanał i tak mogą zmienić
   // w samym Discordzie: „Zarządzanie kanałami” liczone przez Discorda dla tego kanału (więc także Administrator).
   // To odpowiednik uprawnienia Discorda, a nie dostęp do komendy bota, dlatego nie ma tu listy z zakładki Uprawnienia.
   const isOwner = ix.user.id === temp.ownerId;
@@ -325,7 +325,7 @@ export async function handleVoiceInteraction(ix, bot) {
         await ix.edit({ content: '', embeds: [successEmbed(text)], components: [] });
       } catch (error) {
         const message = error instanceof DiscordError && error.status === 429
-          ? 'Discord pozwala zmieniać nazwę kanału tylko 2 razy na 10 minut — spróbuj za chwilę.'
+          ? 'Discord pozwala zmieniać nazwę kanału tylko 2 razy na 10 minut - spróbuj za chwilę.'
           : describeError(error);
         await ix.edit({ content: '', embeds: [errorEmbed(message)], components: [] }).catch(() => {});
       }
@@ -339,7 +339,7 @@ export async function handleVoiceInteraction(ix, bot) {
           const next = await bot.store.updateTempVoice(channelId, { private: !temp.private });
           await syncPrivacy(bot, next);
           await refreshDashboard(bot, next);
-          return next.private ? 'Kanał jest teraz prywatny — dołączą tylko osoby z dostępem.' : 'Kanał jest teraz publiczny.';
+          return next.private ? 'Kanał jest teraz prywatny - dołączą tylko osoby z dostępem.' : 'Kanał jest teraz publiczny.';
         });
       case 'members':
         return { response: ephemeral('Wybierz osoby, które mogą dołączyć (także gdy kanał jest prywatny). Odznacz, żeby odebrać dostęp.', userSelect('members', channelId, 'Wybierz osoby', { max: 25, selected: temp.allowed })) };

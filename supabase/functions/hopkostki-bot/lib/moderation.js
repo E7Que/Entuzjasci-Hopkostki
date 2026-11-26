@@ -1,7 +1,7 @@
 // Wspólna logika wszystkich kar: hierarchia ról, zapis sprawy, DM, wykonanie akcji przez REST API,
 // ogłoszenie na kanale i log. Komendy tylko zbierają dane i wołają funkcje z tego pliku.
 //
-// "bot" = { env, store, discord (klient REST), cache (Map) } — przekazywany wszędzie.
+// "bot" = { env, store, discord (klient REST), cache (Map) } - przekazywany wszędzie.
 
 import { DiscordError, messageUrl } from './rest.js';
 import { toMs, MAX_TIMEOUT_MS } from './duration.js';
@@ -15,7 +15,7 @@ const API_ERRORS = {
   10013: 'Nie znaleziono takiego użytkownika.',
   10026: 'Ten użytkownik nie jest zbanowany.',
   50001: 'Bot nie ma dostępu do tego kanału.',
-  50013: 'Brakuje mi uprawnień — sprawdź, czy moja rola jest wyżej niż rola tego użytkownika.',
+  50013: 'Brakuje mi uprawnień - sprawdź, czy moja rola jest wyżej niż rola tego użytkownika.',
 };
 
 export function describeError(error) {
@@ -45,7 +45,7 @@ export async function resolveGuildId(bot) {
     const stored = await bot.store.getState('guild_id');
     if (stored) return stored;
     const guilds = await bot.discord.get('/users/@me/guilds');
-    if (!guilds?.length) throw new ActionError('Bot nie jest na żadnym serwerze — zaproś go linkiem z README.');
+    if (!guilds?.length) throw new ActionError('Bot nie jest na żadnym serwerze - zaproś go linkiem z README.');
     await bot.store.setState('guild_id', guilds[0].id);
     return guilds[0].id;
   });
@@ -89,13 +89,13 @@ export async function getGuildContext(bot, { force = false } = {}) {
 // ---------- Uprawnienia ----------
 
 // Kto może użyć komendy. O dostępie decyduje lista ról komendy z panelu (zakładka "Uprawnienia",
-// config.commandPermissions[commandName]) — także dla ról z uprawnieniem Administratora:
+// config.commandPermissions[commandName]) - także dla ról z uprawnieniem Administratora:
 // 1. Właściciel serwera (ownerId) ma dostęp zawsze. To bezpiecznik: serwer nigdy nie zablokuje sam siebie,
 //    nawet gdy ktoś zapisze puste listy. ownerId podaje bramka (canUseCommand niżej: guild.ownerId
 //    z getGuildContext); bez ownerId liczą się same listy.
-// 2. Komenda ma listę: wpuszcza „wszystkich” (EVERYONE) albo osoby z którąś z ról z listy. Nic więcej —
+// 2. Komenda ma listę: wpuszcza „wszystkich” (EVERYONE) albo osoby z którąś z ról z listy. Nic więcej -
 //    Administrator, uprawnienia Discorda i modRoleIds nie omijają listy.
-// 3. Komenda bez listy (stara konfiguracja): uprawnienie Discorda (has() — Administrator ma każde) albo rola
+// 3. Komenda bez listy (stara konfiguracja): uprawnienie Discorda (has() - Administrator ma każde) albo rola
 //    moderatora z modRoleIds; komenda bez wymaganego uprawnienia jest otwarta dla wszystkich.
 export function hasModAccess(member, permission, config, commandName, ownerId = null) {
   if (!member) return false;
@@ -107,7 +107,7 @@ export function hasModAccess(member, permission, config, commandName, ownerId = 
   return config.modRoleIds.some((id) => member.roles?.includes(id));
 }
 
-// Ta sama logika, ale dla pojedynczej roli (bez konkretnego członka) — podgląd w panelu, kto może użyć jakiej
+// Ta sama logika, ale dla pojedynczej roli (bez konkretnego członka) - podgląd w panelu, kto może użyć jakiej
 // komendy (panel liczy to samo w app.js/roleCanUse). Właściciela tu nie ma: to osoba, nie rola.
 export function roleHasAccess(role, permission, config, commandName) {
   const list = commandName ? config.commandPermissions?.[commandName] : undefined;
@@ -118,7 +118,7 @@ export function roleHasAccess(role, permission, config, commandName) {
 }
 
 // ID właściciela serwera z kontekstu serwera (pamięć podręczna, odświeżana co minutę). Gdy Discord
-// nie odpowiada, zwraca null — wtedy liczą się same listy ról.
+// nie odpowiada, zwraca null - wtedy liczą się same listy ról.
 export async function guildOwnerId(bot) {
   try {
     return (await getGuildContext(bot)).guild.ownerId ?? null;
@@ -128,7 +128,7 @@ export async function guildOwnerId(bot) {
   }
 }
 
-// Bramka komend, autouzupełniania i list ze stronami. Najpierw sama lista ról — bez pytania Discorda, więc
+// Bramka komend, autouzupełniania i list ze stronami. Najpierw sama lista ról - bez pytania Discorda, więc
 // zwykłe użycie komendy na nic nie czeka. Właściciela serwera sprawdzamy dopiero, gdy lista odmówi.
 export async function canUseCommand(bot, member, permission, config, commandName) {
   if (hasModAccess(member, permission, config, commandName)) return true;
@@ -155,7 +155,7 @@ export function checkTarget({ gctx, moderator, target, targetMember, action }) {
 
   const botPerms = memberPermissions(botMember.roles, roles, guild.id);
   if (REQUIRED[action] && !has(botPerms, REQUIRED[action])) {
-    return `Nie mam uprawnienia **${PERMISSION_NAMES[action]}** — nadaj je mojej roli.`;
+    return `Nie mam uprawnienia **${PERMISSION_NAMES[action]}** - nadaj je mojej roli.`;
   }
   if (!targetMember) return action === 'ban' ? null : 'Tego użytkownika nie ma na serwerze.';
 
@@ -168,7 +168,7 @@ export function checkTarget({ gctx, moderator, target, targetMember, action }) {
     return 'Nie można wyciszyć administratora.';
   }
   if (action !== 'warn' && highestPosition(botMember.roles, roles) <= targetPosition) {
-    return 'Nie mam uprawnień, żeby to zrobić — moja rola musi być wyżej niż rola tego użytkownika.';
+    return 'Nie mam uprawnień, żeby to zrobić - moja rola musi być wyżej niż rola tego użytkownika.';
   }
   return null;
 }
@@ -219,7 +219,7 @@ async function publishAnnouncement({ bot, config, interaction, channelId, payloa
 /**
  * Wykonuje akcję moderacyjną od początku do końca.
  * perform(caseEntry) wykonuje operację na Discordzie i może zwrócić dodatkowe dane do embedów.
- * dmFirst: DM wysyłany przed akcją (ban/kick — potem nie będzie wspólnego serwera).
+ * dmFirst: DM wysyłany przed akcją (ban/kick - potem nie będzie wspólnego serwera).
  */
 export async function runAction(bot, {
   action,
@@ -516,7 +516,7 @@ export async function expireTempBan(bot, ban) {
       announce: false,
     });
   } catch (error) {
-    // Ktoś już zdjął bana ręcznie — wystarczy usunąć wpis.
+    // Ktoś już zdjął bana ręcznie - wystarczy usunąć wpis.
     await bot.store.removeTempBan(ban.guildId, ban.userId);
     console.warn(`[tempban] ${target.username}: ${error.message}`);
   }

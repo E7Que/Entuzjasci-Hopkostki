@@ -1,6 +1,6 @@
 // Kto kogo zaprosił. Discord nie podaje zaproszenia przy wejściu, więc (jak boty typu Invite Tracker)
 // bot pamięta liczniki użyć wszystkich zaproszeń i po wejściu nowej osoby sprawdza, któremu licznik
-// wzrósł. Zaproszenie z limitem użyć znika po ostatnim użyciu — wtedy wskazuje je brak na liście.
+// wzrósł. Zaproszenie z limitem użyć znika po ostatnim użyciu - wtedy wskazuje je brak na liście.
 // Wymaga uprawnienia „Zarządzanie serwerem” (lista zaproszeń z licznikami).
 
 import { resolveGuildId } from './moderation.js';
@@ -43,7 +43,7 @@ export function findUsedInvite(before, after, now = Date.now()) {
   return null;
 }
 
-// Wejścia sprawdzamy po kolei — dwa naraz porównywałyby ten sam stan „przed”.
+// Wejścia sprawdzamy po kolei - dwa naraz porównywałyby ten sam stan „przed”.
 let chain = Promise.resolve();
 export function detectInvite(bot, member) {
   const run = chain.then(() => detect(bot, member));
@@ -74,7 +74,7 @@ async function detect(bot, member) {
 }
 
 // Cron: pierwszy stan zaproszeń (potem aktualizuje go każde wejście), żeby już pierwsze wejście miało porównanie.
-// Event zaproszeń (contests.js) włącza śledzenie także bez logu wejść — wtedy stan sprzed startu eventu mógł się
+// Event zaproszeń (contests.js) włącza śledzenie także bez logu wejść - wtedy stan sprzed startu eventu mógł się
 // zestarzeć (wejścia nie były sprawdzane), więc na start eventu pobieramy go od nowa.
 export async function ensureInviteSnapshot(bot, config) {
   const logs = inviteTrackingOn(config);
@@ -97,6 +97,6 @@ export function inviteLine(used) {
   if (used.type === 'vanity') return `**Zaproszenie:** własny link serwera \`discord.gg/${used.code}\``;
   if (used.type === 'ambiguous') return `**Zaproszenie:** jedno z: ${used.codes.map((c) => `\`${c}\``).join(', ')} (kilka osób weszło naraz)`;
   const who = used.inviterId ? `<@${used.inviterId}>` : 'nieznanej osoby';
-  const count = used.invitedCount ? ` — zaprosił(a) już **${used.invitedCount}** ${plural(used.invitedCount, ['osobę', 'osoby', 'osób'])}` : '';
+  const count = used.invitedCount ? ` - zaprosił(a) już **${used.invitedCount}** ${plural(used.invitedCount, ['osobę', 'osoby', 'osób'])}` : '';
   return `**Zaprosił(a):** ${who} (zaproszenie \`${used.code}\`, użyte ${used.uses}×${used.deleted ? ', wyczerpane' : ''})${count}`;
 }

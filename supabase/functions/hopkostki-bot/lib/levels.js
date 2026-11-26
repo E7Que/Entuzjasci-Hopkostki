@@ -19,7 +19,7 @@ export const LEVEL_CURVES = ['linear', 'standard', 'flat'];
 // ---------- Formuła ----------
 
 // XP potrzebne, żeby z poziomu `level` wejść na następny.
-// linear — jak Arcane („Linear”): 100·poziom + 75, standard — jak MEE6: 5·poziom² + 50·poziom + 100, flat — zawsze 100.
+// linear - jak Arcane („Linear”): 100·poziom + 75, standard - jak MEE6: 5·poziom² + 50·poziom + 100, flat - zawsze 100.
 export function xpToNext(level, formula) {
   const base = formula.curve === 'standard' ? 5 * level * level + 50 * level + 100 : formula.curve === 'flat' ? 100 : 100 * level + 75;
   return Math.max(1, Math.round(base * (formula.multiplier || 1)));
@@ -46,14 +46,14 @@ export function totalXpForLevel(level, formula) {
   return total;
 }
 
-// ---------- Okresy rankingów (tydzień od niedzieli, UTC — jak Arcane; miesiąc kalendarzowy) ----------
+// ---------- Okresy rankingów (tydzień od niedzieli, UTC - jak Arcane; miesiąc kalendarzowy) ----------
 
 export function weekKey(ms = Date.now()) {
   const d = new Date(ms);
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - d.getUTCDay())).toISOString().slice(0, 10);
 }
 export const monthKey = (ms = Date.now()) => new Date(ms).toISOString().slice(0, 7);
-// Doba według czasu polskiego — dzienny limit XP i historia w bot.level_daily.
+// Doba według czasu polskiego - dzienny limit XP i historia w bot.level_daily.
 export const dayKey = (ms = Date.now()) => new Date(ms).toLocaleDateString('sv-SE', { timeZone: 'Europe/Warsaw' });
 
 // Skrót treści do wykrywania powtórek: bez wielkości liter, polskich znaków, interpunkcji i powtórzonych liter
@@ -77,7 +77,7 @@ const random = (min, max) => {
 };
 const userTag = (user) => user?.username ?? null;
 
-// Rodzaj kanału (wątek, forum, czat kanału głosowego) — z Discorda, z pamięcią na 30 minut.
+// Rodzaj kanału (wątek, forum, czat kanału głosowego) - z Discorda, z pamięcią na 30 minut.
 async function channelInfo(bot, channelId) {
   if (!channelId) return null;
   return cached(bot, `chan:${channelId}`, 30 * 60_000, async () => {
@@ -103,7 +103,7 @@ export function channelAllowed(config, channel) {
   if (channel.forum && !r.forums) return false;
   if (channel.thread && !channel.forum && !r.threads) return false;
   if (channel.voiceText && !r.voiceText) return false;
-  // Wątek liczy się jak jego kanał nadrzędny, a kanał — także jak jego kategoria.
+  // Wątek liczy się jak jego kanał nadrzędny, a kanał - także jak jego kategoria.
   const ids = [channel.id, channel.parentId].filter(Boolean);
   const listed = ids.some((id) => r.channelIds.includes(id));
   return r.channelMode === 'allow' ? r.channelIds.length === 0 || listed : !listed;
@@ -124,7 +124,7 @@ export function boostPercent(config, { roles = [], channelIds = [], effort = fal
 }
 const boosted = (amount, percent) => Math.max(0, Math.round(amount * (1 + percent / 100)));
 
-// Członek z rolami (dla autora komendy slash i autora wiadomości przy reakcji) — z pamięcią na 10 minut.
+// Członek z rolami (dla autora komendy slash i autora wiadomości przy reakcji) - z pamięcią na 10 minut.
 async function memberInfo(bot, userId) {
   return cached(bot, `member:${userId}`, 10 * 60_000, async () => {
     const { guild } = await getGuildContext(bot);
@@ -190,7 +190,7 @@ export async function applyRewards(bot, config, { userId, level, previous = 0, r
   return rewards.filter((r) => r.level > previous && r.level <= level);
 }
 
-// Tagi jak w Arcane: {user.mention} {user.name} {user.level} {user.xp} oraz {earned:…} — tekst pokazywany tylko,
+// Tagi jak w Arcane: {user.mention} {user.name} {user.level} {user.xp} oraz {earned:…} - tekst pokazywany tylko,
 // gdy awans dał rolę ({name} = nazwa roli, {mention} = oznaczenie roli).
 export function levelUpText(template, { user, level, xp, earned = [], roleName = (id) => id }) {
   let text = String(template ?? '');
@@ -222,7 +222,7 @@ export function levelUpText(template, { user, level, xp, earned = [], roleName =
     .trim();
 }
 
-// Wiadomość o awansie — ta sama przy prawdziwym awansie i przy teście z panelu.
+// Wiadomość o awansie - ta sama przy prawdziwym awansie i przy teście z panelu.
 export async function levelUpMessage(bot, config, { user, level, previous, xp, earned = [] }) {
   const gctx = await getGuildContext(bot);
   const person = await levelPerson(bot, user);
@@ -420,7 +420,7 @@ export function profileLook(user, member = null) {
   };
   const nitro = Boolean(String(user?.avatar ?? '').startsWith('a_') || user?.banner || member?.avatar || member?.banner || nameColors.length || font || effect);
   const empty = !font && !effect && !nameColors.length && !look.decoration && !look.nameplate && !look.tag;
-  // accent_color to kolor banera „bez obrazka” — przy ustawionym obrazku Discord go nie pokazuje (bywa nieaktualny),
+  // accent_color to kolor banera „bez obrazka” - przy ustawionym obrazku Discord go nie pokazuje (bywa nieaktualny),
   // więc wtedy kolory karty bierze strona z samego banera i avatara.
   const hasBanner = Boolean(user?.banner || member?.banner);
   return { nitro, accentColor: hasBanner ? null : hexColor(user?.accent_color), nameColors, look: empty ? null : look };
@@ -569,7 +569,7 @@ const listText = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')
 export const multiplierText = (m) => `×${String(m).replace('.', ',')}`;
 const eventTime = (e, key) => Date.parse(e[key]);
 
-// Wydarzenie trwające w chwili `now` (dla rodzaju XP `kind`, jeśli podany); przy kilku — największy mnożnik.
+// Wydarzenie trwające w chwili `now` (dla rodzaju XP `kind`, jeśli podany); przy kilku - największy mnożnik.
 export function activeXpEvent(config, { kind = null, now = Date.now() } = {}) {
   let best = null;
   for (const e of config.events ?? []) {
@@ -656,7 +656,7 @@ function peopleEarned(n) {
 
 export function xpEventEndEmbed(config, event, top, summary, guild = null) {
   const style = eventStyle(event);
-  const lines = top.map((row, i) => `${MEDALS[i] ?? `\`${String(i + 1).padStart(2, ' ')}.\``} <@${row.userId}> — **${pl(row.periodXp)} XP**`);
+  const lines = top.map((row, i) => `${MEDALS[i] ?? `\`${String(i + 1).padStart(2, ' ')}.\``} <@${row.userId}> - **${pl(row.periodXp)} XP**`);
   const description = top.length
     ? `Najwięcej XP w czasie wydarzenia:\n\n${lines.join('\n')}\n\nŁącznie ${peopleEarned(summary.people)} **${pl(summary.xp)} XP**. Dzięki za udział!`
     : 'Nikt nie zdobył XP w czasie wydarzenia.';
@@ -727,14 +727,14 @@ export async function xpEventsTick(bot, { now = Date.now() } = {}) {
 const MEDALS = ['🥇', '🥈', '🥉'];
 const pl = (n) => Number(n).toLocaleString('pl-PL');
 
-// Avatar zwycięzcy (serwerowy, jeśli jest) — miniatura embedów z rankingami.
+// Avatar zwycięzcy (serwerowy, jeśli jest) - miniatura embedów z rankingami.
 function winnerThumbnail(winner, guild) {
   if (!winner) return null;
   if (winner.guildAvatar && guild?.id) return cdnImage(`guilds/${guild.id}/users/${winner.userId}/avatars`, winner.guildAvatar, 256);
   return winner.avatar ? cdnImage(`avatars/${winner.userId}`, winner.avatar, 256) : avatarUrl({ id: winner.userId }, 256);
 }
 
-// Ranking tygodnia — turkus, miesiąca — złoto; miniatura: avatar zwycięzcy.
+// Ranking tygodnia - turkus, miesiąca - złoto; miniatura: avatar zwycięzcy.
 export function highlightsEmbed(config, period, key, top, guild = null) {
   const title = period === 'week' ? '🏆 Najaktywniejsi tygodnia' : '🏆 Najaktywniejsi miesiąca';
   const range =
@@ -742,10 +742,10 @@ export function highlightsEmbed(config, period, key, top, guild = null) {
       ? (() => {
           const start = Date.parse(`${key}T00:00:00Z`);
           const fmt = (ms) => new Date(ms).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', timeZone: 'UTC' });
-          return `${fmt(start)} – ${fmt(start + 6 * DAY)}`;
+          return `${fmt(start)} - ${fmt(start + 6 * DAY)}`;
         })()
       : new Date(`${key}-01T00:00:00Z`).toLocaleDateString('pl-PL', { month: 'long', year: 'numeric', timeZone: 'UTC' });
-  const lines = top.map((row, i) => `${MEDALS[i] ?? `\`${String(i + 1).padStart(2, ' ')}.\``} <@${row.userId}> — **${pl(row.periodXp)} XP** · poziom ${row.level}`);
+  const lines = top.map((row, i) => `${MEDALS[i] ?? `\`${String(i + 1).padStart(2, ' ')}.\``} <@${row.userId}> - **${pl(row.periodXp)} XP** · poziom ${row.level}`);
   const winnerAvatar = winnerThumbnail(top[0], guild);
   return {
     color: config.card.autoColor === false ? colorInt(config.card.color, LEVEL_COLOR) : period === 'week' ? LEVEL_COLOR : 0xffc83d,
@@ -797,7 +797,7 @@ export async function highlightsTick(bot, { now = Date.now() } = {}) {
 // ---------- Archiwum zwycięzców ----------
 
 // Przy końcu tygodnia i miesiąca zapisuje 10 najlepszych osób zakończonego okresu (niezależnie od ogłoszeń
-// na Discordzie). Przy pierwszym uruchomieniu tylko zapamiętuje okres — wcześniejsze dane mogą być niepełne.
+// na Discordzie). Przy pierwszym uruchomieniu tylko zapamiętuje okres - wcześniejsze dane mogą być niepełne.
 export async function winnersArchiveTick(bot, { now = Date.now() } = {}) {
   const config = (await bot.store.getConfig()).levels;
   if (!config.enabled) return null;
@@ -820,7 +820,7 @@ export function periodLabel(period, key) {
     const start = Date.parse(`${key}T00:00:00Z`);
     const fmt = (ms, month = true) => new Date(ms).toLocaleDateString('pl-PL', { day: 'numeric', ...(month ? { month: 'long' } : {}), timeZone: 'UTC' });
     const sameMonth = new Date(start).getUTCMonth() === new Date(start + 6 * DAY).getUTCMonth();
-    return `${fmt(start, !sameMonth)} – ${fmt(start + 6 * DAY)}`;
+    return `${fmt(start, !sameMonth)} - ${fmt(start + 6 * DAY)}`;
   }
   const label = new Date(`${key}-01T00:00:00Z`).toLocaleDateString('pl-PL', { month: 'long', year: 'numeric', timeZone: 'UTC' });
   return label.charAt(0).toUpperCase() + label.slice(1);
@@ -872,7 +872,7 @@ export function progressBar(current, needed) {
 
 // ---------- Wygląd embedów poziomów ----------
 
-// Kolor: rola za najwyższy osiągnięty poziom (jeśli ma kolor), a bez niej — kolor progu poziomu.
+// Kolor: rola za najwyższy osiągnięty poziom (jeśli ma kolor), a bez niej - kolor progu poziomu.
 // Wyłączone „kolory zależne od poziomu” = jeden stały kolor z panelu.
 export const LEVEL_COLOR = 0x3cc3d6;
 const TIER_COLORS = [[100, 0xff4d6d], [75, 0xffc83d], [50, 0xff8a3d], [25, 0x9b6bff], [10, 0x3b9dff], [5, 0x2fc9a0], [0, LEVEL_COLOR]];
@@ -888,7 +888,7 @@ export function levelColor(config, level, roles = null) {
 
 const definedOnly = (obj) => Object.fromEntries(Object.entries(obj ?? {}).filter(([, v]) => v !== undefined && v !== null));
 
-// Osoba do embedów: pseudonim i avatar z serwera (też animowany), baner z profilu — dane z Discorda z pamięcią.
+// Osoba do embedów: pseudonim i avatar z serwera (też animowany), baner z profilu - dane z Discorda z pamięcią.
 // Dzięki temu karta ma prawdziwe zdjęcia także przy awansie z kanału głosowego i w teście z panelu.
 async function levelPerson(bot, user, { banner = false } = {}) {
   const { guild } = await getGuildContext(bot);
@@ -911,7 +911,7 @@ async function levelPerson(bot, user, { banner = false } = {}) {
   return { user: u, name: member?.nick ?? u.global_name ?? u.username ?? 'Użytkownik', avatar, banner: bannerUrl, guild };
 }
 
-// Linki do załączników Discorda wygasają po ~24 h — przed wysłaniem bot prosi Discorda o świeży link.
+// Linki do załączników Discorda wygasają po ~24 h - przed wysłaniem bot prosi Discorda o świeży link.
 const DISCORD_ATTACHMENT = /^https:\/\/(cdn\.discordapp\.com|media\.discordapp\.net)\/(attachments|ephemeral-attachments)\//;
 export async function freshImageUrl(bot, url) {
   if (!url) return null;
@@ -942,7 +942,7 @@ export async function levelUpEmbed(bot, config, { user, level, previous, xp, ear
   const fields = [
     { name: 'Poziom', value: `${previous ?? Math.max(0, level - 1)} → **${level}**`, inline: true },
     { name: 'Łącznie XP', value: pl(total), inline: true },
-    { name: 'Miejsce', value: row?.rank ? `#${row.rank}` : '—', inline: true },
+    { name: 'Miejsce', value: row?.rank ? `#${row.rank}` : '-', inline: true },
   ];
   if (earned.length) fields.push({ name: earned.length > 1 ? 'Nowe role' : 'Nowa rola', value: earned.map((r) => `<@&${r.roleId}>`).join(' '), inline: false });
   else if (next) fields.push({ name: 'Następna nagroda', value: `<@&${next.roleId}> na poziomie **${next.level}**`, inline: false });
@@ -989,15 +989,15 @@ export function levelBadges({ level = 0, messages = 0, voiceMinutes = 0 } = {}, 
       description: `Zdobyta za ${label(min)}.${next ? ` Następny stopień: ${next[1].toLowerCase() === label(next[0]) ? label(next[0]) : `${next[1]} (${label(next[0])})`}.` : ' Najwyższy stopień!'}`,
     });
   }
-  if (wins.month) badges.push({ id: 'month', emoji: '👑', name: 'Zwycięzca miesiąca', count: wins.month, description: `Najaktywniejsza osoba miesiąca — ${timesText(wins.month)}.` });
-  if (wins.week) badges.push({ id: 'week', emoji: '🏆', name: 'Zwycięzca tygodnia', count: wins.week, description: `Najaktywniejsza osoba tygodnia — ${timesText(wins.week)}.` });
+  if (wins.month) badges.push({ id: 'month', emoji: '👑', name: 'Zwycięzca miesiąca', count: wins.month, description: `Najaktywniejsza osoba miesiąca - ${timesText(wins.month)}.` });
+  if (wins.week) badges.push({ id: 'week', emoji: '🏆', name: 'Zwycięzca tygodnia', count: wins.week, description: `Najaktywniejsza osoba tygodnia - ${timesText(wins.week)}.` });
   const podium = (wins.weekPodium ?? 0) + (wins.monthPodium ?? 0) - (wins.week ?? 0) - (wins.month ?? 0);
-  if (podium > 0) badges.push({ id: 'podium', emoji: '🥉', name: 'Na podium', count: podium, description: `Miejsce 2–3 w tygodniu albo miesiącu — ${timesText(podium)}.` });
+  if (podium > 0) badges.push({ id: 'podium', emoji: '🥉', name: 'Na podium', count: podium, description: `Miejsce 2-3 w tygodniu albo miesiącu - ${timesText(podium)}.` });
   return badges;
 }
 export const badgesText = (badges) => badges.map((b) => `${b.emoji} **${b.name}**${b.count > 1 ? ` ×${b.count}` : ''}`).join(' · ');
 
-// self — własna karta: link na stronę rankingu zapamiętuje tę osobę jako „ja” (przycisk „Moje miejsce”).
+// self - własna karta: link na stronę rankingu zapamiętuje tę osobę jako „ja” (przycisk „Moje miejsce”).
 export async function rankCardEmbed(bot, config, user, { self = false } = {}) {
   const person = await levelPerson(bot, user, { banner: config.card.userBanner !== false });
   const { roles } = await getGuildContext(bot);
@@ -1058,7 +1058,7 @@ export function parseImport(text) {
   return { entries, invalid };
 }
 
-// Nazwy z odczytu zrzutu bywają przekręcone (l/i/1, o/0) — porównujemy też w uproszczonej postaci.
+// Nazwy z odczytu zrzutu bywają przekręcone (l/i/1, o/0) - porównujemy też w uproszczonej postaci.
 const looseName = (name) => String(name).toLowerCase().replace(/[il1|]/g, 'i').replace(/[o0]/g, 'o').replace(/[^a-z0-9]/g, '');
 
 async function guildMembers(bot) {
@@ -1135,7 +1135,7 @@ export async function changeXp(bot, userId, { mode, amount = 0, user = null }) {
 }
 
 // Czy ktoś może używać /xp (blokada „tylko właściciel”) i resetować XP. Kto w ogóle może używać /xp, decyduje
-// lista ról tej komendy z panelu (zakładka Uprawnienia) — ta sama, którą sprawdza bramka komend; samo
+// lista ról tej komendy z panelu (zakładka Uprawnienia) - ta sama, którą sprawdza bramka komend; samo
 // „Zarządzanie serwerem” (albo Administrator) jej nie zastępuje. Tu dochodzą tylko blokady z zakładki Poziomy.
 export async function canManageXp(bot, member, { reset = false } = {}) {
   const config = await bot.store.getConfig();

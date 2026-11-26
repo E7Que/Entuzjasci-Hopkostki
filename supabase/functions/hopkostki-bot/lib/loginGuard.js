@@ -1,4 +1,4 @@
-// Ochrona logowania do panelu przed zgadywaniem hasła. Nieudane próby (hasło panelu i login z /login — nie
+// Ochrona logowania do panelu przed zgadywaniem hasła. Nieudane próby (hasło panelu i login z /login - nie
 // tokeny sesji) liczymy na adres IP; po LIMIT błędach w WINDOW_MIN minut adres jest blokowany na LOCK_MIN minut
 // (także dla poprawnego hasła), a moderacja dostaje alert. Adres zapisujemy tylko jako skrót.
 
@@ -55,7 +55,7 @@ export async function loginFailed(bot, key, { kind = 'hasło panelu', ip = null,
         {
           color: 0xe67e22,
           title: '🔐 Zablokowano logowanie do panelu',
-          description: `${LOGIN_LIMIT} nieudanych prób (${kind}) w ${WINDOW_MIN} min z adresu \`${masked}\` — blokada na ${LOCK_MIN} min.\nJeśli to nie Ty, rozważ zmianę hasła panelu.`,
+          description: `${LOGIN_LIMIT} nieudanych prób (${kind}) w ${WINDOW_MIN} min z adresu \`${masked}\` - blokada na ${LOCK_MIN} min.\nJeśli to nie Ty, rozważ zmianę hasła panelu.`,
           timestamp: new Date(now).toISOString(),
         },
       ],

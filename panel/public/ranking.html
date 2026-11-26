@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ranking poziomów — Entuzjaści Hopkostki</title>
+  <title>Ranking poziomów - Entuzjaści Hopkostki</title>
   <meta name="description" content="Ranking poziomów serwera Entuzjaści Hopkostki: XP za wiadomości i kanały głosowe, rankingi tygodnia i miesiąca, nagrody za poziomy.">
   <meta name="theme-color" content="#0d1113">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Entuzjaści Hopkostki">
-  <meta property="og:title" content="Ranking poziomów — Entuzjaści Hopkostki">
+  <meta property="og:title" content="Ranking poziomów - Entuzjaści Hopkostki">
   <meta property="og:description" content="Kto ma najwięcej XP na serwerze? Ranking ogólny, tygodniowy i miesięczny.">
   <meta property="og:image" content="https://enho.pl/img/banner-og.jpg">
   <meta property="og:url" content="https://enho.pl/ranking">
@@ -76,7 +76,7 @@
     }
     @keyframes grid { to { background-position: 0 48px, 48px 0; } }
 
-    /* Boczki: przygaszone piły, zębatki, kolumny i strzałki — tylko na szerokich ekranach */
+    /* Boczki: przygaszone piły, zębatki, kolumny i strzałki - tylko na szerokich ekranach */
     .rail { position: absolute; top: 0; bottom: 0; width: calc((100vw - 1120px) / 2 - 24px); display: none; opacity: 0.55; }
     .rail-l { left: 0; }
     .rail-r { right: 0; }
@@ -164,7 +164,7 @@
     .note { margin: 0 0 14px; color: var(--muted); font-size: 0.88rem; }
     .note b { color: var(--text); font-weight: 500; }
 
-    /* ---------- Podium (top 3): wtopione w stronę — bez ramki i własnego tła; kolumny wyrastają z karty listy
+    /* ---------- Podium (top 3): wtopione w stronę - bez ramki i własnego tła; kolumny wyrastają z karty listy
        (ten sam materiał, wklęsłe narożniki u podstawy), reflektory delikatnie świecą z góry na osoby ---------- */
     .top3 {
       --pad: 40px; --apex: 130px; --fil: 8px;
@@ -185,7 +185,7 @@
     .top.t3 { --m: var(--bronze); --ph: 62px; --num: 2rem; --sp: 8.6deg; --d: 0.04s; --sway: 9.5s; --sway-d: -6s; grid-column: 3; }
     .top:focus-visible { outline-offset: -3px; }
 
-    /* Reflektor: stożek światła z góry (źródło ponad stroną) — łagodnie się wyłania i gaśnie przy kolumnie */
+    /* Reflektor: stożek światła z góry (źródło ponad stroną) - łagodnie się wyłania i gaśnie przy kolumnie */
     .beam {
       --bc: color-mix(in srgb, var(--m) var(--glow), transparent); --bc2: color-mix(in srgb, var(--m) var(--core), transparent);
       position: absolute; z-index: -1; left: -30%; right: -30%; top: calc(-1 * var(--pad)); bottom: calc(var(--ph) - 4px); pointer-events: none;
@@ -249,7 +249,7 @@
     .spark.s4 { left: -8px; bottom: 9%; width: 7px; height: 7px; animation-delay: 2.1s; }
     @keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(0.3) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
 
-    /* Kolumna z numerem miejsca — z tego samego materiału co lista, w którą przechodzi; u góry pasek w kolorze medalu */
+    /* Kolumna z numerem miejsca - z tego samego materiału co lista, w którą przechodzi; u góry pasek w kolorze medalu */
     .pod-col {
       position: relative; flex: none; width: 100%; height: var(--ph); margin-top: 12px; display: grid; place-items: center;
       border: 1px solid var(--border); border-top: 2px solid var(--m); border-bottom: 0; border-radius: 10px 10px 0 0;
@@ -481,7 +481,7 @@
     .pf-stats dt { color: var(--muted); font-size: 0.78rem; }
     .pf-stats dd { margin: 0; font-weight: 600; }
     .pf-stats dd small { color: var(--muted); font-weight: 400; margin-left: 4px; }
-    /* Wykres: XP dziennie z ostatnich 30 dni (jeden szereg — bez legendy, tytuł mówi, co jest na wykresie) */
+    /* Wykres: XP dziennie z ostatnich 30 dni (jeden szereg - bez legendy, tytuł mówi, co jest na wykresie) */
     .hist-sum { margin: 0 0 10px; color: var(--muted); font-size: 0.84rem; }
     .hist-sum b { color: var(--text); font-weight: 600; }
     .hist { position: relative; }
@@ -618,7 +618,7 @@
     .fx-ground { position: fixed; bottom: 0; z-index: 39; pointer-events: none; }
     /* Matrix: deszcz znaków odbity w poziomie, jak w filmie */
     canvas.mx { transform: scaleX(-1); }
-    /* Narzędzia (łopata, gaśnica) są rysowane na płótnie nad stroną — tu tylko przezroczyste pole do chwytania */
+    /* Narzędzia (łopata, gaśnica) są rysowane na płótnie nad stroną - tu tylko przezroczyste pole do chwytania */
     .fx-tool { position: fixed; z-index: 45; left: 0; top: 0; width: 0; height: 0; padding: 0; border: 0; border-radius: 10px; background: none; cursor: grab; touch-action: none; -webkit-tap-highlight-color: transparent; }
     .fx-tool:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     html.fx-holding, html.fx-holding * { -webkit-user-select: none !important; user-select: none !important; }
@@ -784,7 +784,7 @@
     @keyframes dc-bob { from { transform: translateY(-2px); } to { transform: translateY(2px); } }
 
 
-    /* Śnieg: szron w rogach (śnieg na kartach i zaspa — w świecie nad stroną) */
+    /* Śnieg: szron w rogach (śnieg na kartach i zaspa - w świecie nad stroną) */
     .dc-frost {
       position: absolute; inset: 0;
       --fr: rgba(222, 240, 255, calc(var(--evk) * 0.15));
@@ -869,7 +869,7 @@
     .dc-fog i + i { animation-duration: 23s; animation-direction: alternate-reverse; opacity: 0.8; }
     @keyframes dc-fog { from { transform: translateX(-8%); } to { transform: translateX(8%); } }
 
-    /* Jesień i sakura: gałąź w rogu strony; sakura — różowe światło */
+    /* Jesień i sakura: gałąź w rogu strony; sakura - różowe światło */
     .dc-branch { position: absolute; top: -4px; width: min(clamp(150px, 24vw, 300px), 38vw); opacity: calc(0.6 + var(--evk) * 0.4); filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35)); animation: dc-sway 7s ease-in-out infinite alternate; }
     .dc-branch svg { display: block; width: 100%; height: auto; overflow: visible; }
     .dc-branch.l { left: -6px; transform-origin: 0 0; }
@@ -951,7 +951,7 @@
     @keyframes mx-glitch { 0% { transform: translate(3px, 0); } 25% { transform: translate(-4px, 1px) skewX(-2deg); } 50% { transform: translate(2px, -1px); } 75% { transform: translate(-1px, 0) skewX(1deg); } 100% { transform: none; } }
     body.ev-page[data-ev="matrix"] .num.xp { color: color-mix(in srgb, var(--evc) 60%, #fff); text-shadow: 0 0 8px color-mix(in srgb, var(--evc) 50%, transparent); }
 
-    /* Tryb osadzony (ranking.html?embed=1) — podgląd efektu w panelu: sam baner wydarzenia i efekty w tle */
+    /* Tryb osadzony (ranking.html?embed=1) - podgląd efektu w panelu: sam baner wydarzenia i efekty w tle */
     html.embed, html.embed body { overflow: hidden; }
     html.embed main { padding: 16px 14px; }
     html.embed header, html.embed .toolbar, html.embed .layout, html.embed footer, html.embed .backdrop, html.embed .rail, html.embed .bg-banner { display: none !important; }
@@ -969,7 +969,7 @@
     .tab[data-period="event"]::before { content: ''; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--evc); box-shadow: 0 0 8px var(--evc); }
     body[data-ev-live] .tab[data-period="event"]::before { animation: ev-blink 1.4s ease-in-out infinite; }
     @keyframes ev-blink { 50% { opacity: 0.35; } }
-    /* Podium wydarzenia: poświata w kolorze wydarzenia za podium, medale jak zawsze — złoty, srebrny i brązowy */
+    /* Podium wydarzenia: poświata w kolorze wydarzenia za podium, medale jak zawsze - złoty, srebrny i brązowy */
     .board.ev-mode .top3 { background: radial-gradient(64% 78% at 50% 100%, color-mix(in srgb, var(--evc) 15%, transparent), transparent 72%); }
     .board.ev-mode .num .plus { color: var(--evc2); }
     .board.ev-mode .row.sel { box-shadow: inset 3px 0 0 var(--evc); }
@@ -1044,7 +1044,7 @@
   <script>if (/[?&]embed=1(&|$)/.test(location.search)) document.documentElement.classList.add('embed');</script>
   <script>
     // Eventy serwera mają własną stronę (/event): stare linki do zakładki „Eventy”, linki z /polacz i powrót
-    // z logowania przez Discord (adres tej strony na liście Redirects) idą tam — razem z resztą adresu.
+    // z logowania przez Discord (adres tej strony na liście Redirects) idą tam - razem z resztą adresu.
     (function () {
       var h = location.hash, q = new URLSearchParams(location.search);
       if (h === '#eventy' || h.indexOf('#polacz=') === 0 || (q.has('state') && (q.has('code') || q.has('error')))) {
@@ -1082,10 +1082,10 @@
           <h1>Ranking poziomów</h1>
         </div>
         <dl class="totals">
-          <div><dt>osób w rankingu</dt><dd data-total="members">—</dd></div>
-          <div><dt>zdobytego XP</dt><dd data-total="xp">—</dd></div>
-          <div><dt>wiadomości</dt><dd data-total="messages">—</dd></div>
-          <div><dt>na kanałach głosowych</dt><dd data-total="voice">—</dd></div>
+          <div><dt>osób w rankingu</dt><dd data-total="members">-</dd></div>
+          <div><dt>zdobytego XP</dt><dd data-total="xp">-</dd></div>
+          <div><dt>wiadomości</dt><dd data-total="messages">-</dd></div>
+          <div><dt>na kanałach głosowych</dt><dd data-total="voice">-</dd></div>
         </dl>
       </div>
     </header>
@@ -1166,7 +1166,7 @@
           </section>
           <section class="card">
             <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.1 7.5 9.5 4.4-1.4 7.5-4.9 7.5-9.5V6z"/><path d="m9 12 2.2 2.2L15.5 10"/></svg>Prywatność</h2>
-            <p>Strona pokazuje pseudonim, avatar i statystyki aktywności osób, które zdobyły XP na serwerze. Nie chcesz tu być? Wpisz na serwerze <code>/prywatnosc</code> i wybierz <b>Ukryj mnie</b> — Twoje miejsce zostanie jako „Ukryta osoba”, bez pseudonimu, avatara i profilu.</p>
+            <p>Strona pokazuje pseudonim, avatar i statystyki aktywności osób, które zdobyły XP na serwerze. Nie chcesz tu być? Wpisz na serwerze <code>/prywatnosc</code> i wybierz <b>Ukryj mnie</b> - Twoje miejsce zostanie jako „Ukryta osoba”, bez pseudonimu, avatara i profilu.</p>
           </section>
         </div>
       </aside>
@@ -1194,7 +1194,7 @@
       get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
       set: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
     };
-    // Kim jestem na tej stronie (link z /rank albo przycisk „To ja” w profilu) — tylko w tej przeglądarce.
+    // Kim jestem na tej stronie (link z /rank albo przycisk „To ja” w profilu) - tylko w tej przeglądarce.
     const ME_KEY = 'ranking-me';
     const validId = (id) => (/^\d{15,25}$/.test(String(id ?? '')) ? String(id) : null);
     try {
@@ -1235,7 +1235,7 @@
       const m = min % 60;
       return h ? `${fmt(h)} h${m ? ` ${m} min` : ''}` : `${m} min`;
     }
-    const range = (r) => (r.min === r.max ? `${fmt(r.min)} XP` : `${fmt(r.min)}–${fmt(r.max)} XP`);
+    const range = (r) => (r.min === r.max ? `${fmt(r.min)} XP` : `${fmt(r.min)}-${fmt(r.max)} XP`);
     const every = (sec) => (sec <= 0 ? 'bez limitu' : sec === 60 ? 'raz na minutę' : sec % 60 === 0 ? `co ${sec / 60} min` : `co ${sec} s`);
     const roleHtml = (r) => `<span class="role" style="${r.color ? `--rc:${esc(r.color)}` : ''}"><i></i><span>${esc(r.name)}</span></span>`;
     const display = (e) => e.displayName || e.name;
@@ -1253,7 +1253,7 @@
       return d ? `${d} d ${h} h` : h ? `${h} h ${m} min` : `${m} min`;
     }
     const validColor = (c) => typeof c === 'string' && (/^#[0-9a-f]{6}$/i.test(c) || /^rgb\(\d{1,3}, \d{1,3}, \d{1,3}\)$/.test(c));
-    // Osoby z Nitro: kolor akcentu z Discorda, a gdy go nie ma — kolor wzięty z avatara (dociągany w tle).
+    // Osoby z Nitro: kolor akcentu z Discorda, a gdy go nie ma - kolor wzięty z avatara (dociągany w tle).
     const nitroAttrs = () => '';
 
     // Dominujący kolor obrazka (jak Discord, gdy ktoś nie ustawił koloru): średnia ważona nasyceniem.
@@ -1299,7 +1299,7 @@
       });
     }
 
-    // Czcionki stylu nazwy z Discorda (Nitro). Gdzie oryginału nie ma w Google Fonts — najbliższy zamiennik.
+    // Czcionki stylu nazwy z Discorda (Nitro). Gdzie oryginału nie ma w Google Fonts - najbliższy zamiennik.
     const DN_FONTS = {
       1: ['Bangers', 'Bangers'],
       2: ['BioRhyme', 'BioRhyme:wght@700'],
@@ -1341,7 +1341,7 @@
       return `<span class="av"><img class="${cls}" src="${esc(e.avatar)}"${e.avatarAnim ? ` data-anim="${esc(e.avatarAnim)}"` : ''} alt="" loading="lazy" width="${size}" height="${size}">${deco}</span>`;
     }
 
-    const ring = (p, level) => `<div class="lvl" title="Poziom ${level} — ${p}% do kolejnego"><svg viewBox="0 0 36 36" aria-hidden="true"><circle class="track" cx="18" cy="18" r="15"/><circle class="val" cx="18" cy="18" r="15" pathLength="100" stroke-dasharray="${Math.max(p, 1)} 100"/></svg><b>${level}</b></div>`;
+    const ring = (p, level) => `<div class="lvl" title="Poziom ${level} - ${p}% do kolejnego"><svg viewBox="0 0 36 36" aria-hidden="true"><circle class="track" cx="18" cy="18" r="15"/><circle class="val" cx="18" cy="18" r="15" pathLength="100" stroke-dasharray="${Math.max(p, 1)} 100"/></svg><b>${level}</b></div>`;
 
     const LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
     const anonAvatar = (size) => `<span class="av"><span class="avatar anon-av" style="width:${size}px;height:${size}px" aria-hidden="true">${LOCK_SVG}</span></span>`;
@@ -1414,7 +1414,7 @@
         who: e.userId,
         sig: JSON.stringify([e.userId, stat, e.level, name, e.name, e.avatar, e.avatarAnim ?? null, e.look ?? null, mine]),
         cls: `${e.nitro ? ' nitro' : ''}${e.look?.decoration ? ' has-deco' : ''}`,
-        attrs: { 'data-id': e.userId, tabindex: '0', role: 'button', 'aria-label': `Miejsce ${place}: ${name}, poziom ${e.level}, ${stat} — profil` },
+        attrs: { 'data-id': e.userId, tabindex: '0', role: 'button', 'aria-label': `Miejsce ${place}: ${name}, poziom ${e.level}, ${stat} - profil` },
         html: `${lead}<span class="pod-av">${winner}${avatarHtml(e, POD_AVATAR[i])}${level}${mine ? '<span class="me-tag">Ty</span>' : ''}</span>
           <span class="nick">${styledName(name, e.look, true)} ${tagHtml(e.look)}</span>
           ${e.displayName ? `<span class="tag">${esc(e.name)}</span>` : ''}
@@ -1507,7 +1507,7 @@
       const xp = `${fmt(p.xp)} XP`;
       const crown = p.rank === 1 ? `<span class="arch-crown">${CROWN_SVG}</span>` : '';
       if (p.hidden) return `<div class="arch-p p${p.rank} anon" title="${ANON_TITLE}">${crown}${anonAvatar(32)}<span class="who-n">Ukryta osoba</span><small>${xp}</small></div>`;
-      return `<button type="button" class="arch-p p${p.rank}" data-id="${esc(p.userId)}" title="${esc(display(p))} — profil">${crown}
+      return `<button type="button" class="arch-p p${p.rank}" data-id="${esc(p.userId)}" title="${esc(display(p))} - profil">${crown}
         <img class="avatar" src="${esc(p.avatar ?? FALLBACK_AVATAR)}" alt="" loading="lazy" width="32" height="32">
         <span class="who-n">${esc(display(p))}</span><small>${xp}</small></button>`;
     }
@@ -1549,7 +1549,7 @@
         $('#card-archive').hidden = false;
         archiveFade();
       } catch {
-        // Archiwum to dodatek — bez niego strona działa normalnie.
+        // Archiwum to dodatek - bez niego strona działa normalnie.
       }
     }
     document.querySelectorAll('[data-archive]').forEach((b) =>
@@ -1616,12 +1616,12 @@
       $('#xp-col').textContent = { all: 'XP', week: 'XP w tyg.', month: 'XP w mies.', event: 'XP wydarz.' }[state.period] ?? 'XP';
       if (state.period === 'all') {
         note.hidden = state.sort === 'xp';
-        if (state.sort !== 'xp') note.innerHTML = `Kolejność według <b>${state.sort === 'messages' ? 'liczby wiadomości' : 'czasu na kanałach głosowych'}</b> — miejsca liczone w tej kolejności.`;
+        if (state.sort !== 'xp') note.innerHTML = `Kolejność według <b>${state.sort === 'messages' ? 'liczby wiadomości' : 'czasu na kanałach głosowych'}</b> - miejsca liczone w tej kolejności.`;
         return;
       }
       if (state.period === 'event') {
         const e = state.data?.event;
-        note.innerHTML = e ? `XP zdobyte w czasie wydarzenia <b>${esc(e.name)}</b> (${esc(whenText(e.startsAt))} – ${esc(whenText(e.endsAt))}) — już z mnożnikiem ${multText(e.multiplier)}.` : '';
+        note.innerHTML = e ? `XP zdobyte w czasie wydarzenia <b>${esc(e.name)}</b> (${esc(whenText(e.startsAt))} - ${esc(whenText(e.endsAt))}) - już z mnożnikiem ${multText(e.multiplier)}.` : '';
         note.hidden = !e;
         return;
       }
@@ -1637,7 +1637,7 @@
       if (state.search) return '<li class="empty"><b>Nikogo nie znaleziono</b>Sprawdź pisownię pseudonimu albo nazwy użytkownika.</li>';
       if (state.period === 'week') return '<li class="empty"><b>Nikt jeszcze nie zdobył XP w tym tygodniu</b>Ranking zapełni się, gdy ktoś napisze na serwerze albo wejdzie na kanał głosowy.</li>';
       if (state.period === 'month') return '<li class="empty"><b>Nikt jeszcze nie zdobył XP w tym miesiącu</b></li>';
-      if (state.period === 'event') return '<li class="empty"><b>Nikt jeszcze nie zdobył XP w czasie wydarzenia</b>Napisz coś na serwerze albo wejdź na kanał głosowy — XP liczy się z mnożnikiem.</li>';
+      if (state.period === 'event') return '<li class="empty"><b>Nikt jeszcze nie zdobył XP w czasie wydarzenia</b>Napisz coś na serwerze albo wejdź na kanał głosowy - XP liczy się z mnożnikiem.</li>';
       return '<li class="empty"><b>Ranking jest pusty</b></li>';
     }
 
@@ -1735,7 +1735,7 @@
     const HIST_DAYS = 30;
     const HIST_START = '2026-11-16'; // od tego dnia bot zapisuje XP dzień po dniu
     const warsawToday = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Warsaw' });
-    // Ostatnie 30 dni kalendarza (czas polski) — dni bez XP jako zera.
+    // Ostatnie 30 dni kalendarza (czas polski) - dni bez XP jako zera.
     function historyDays(history) {
       const byDay = new Map((history ?? []).map((d) => [d.day, d]));
       const [y, m, d] = warsawToday().split('-').map(Number);
@@ -1762,7 +1762,7 @@
         : 'Brak XP w ostatnich 30 dniach.';
       const note = days[0].day < HIST_START ? `<p class="hist-note">Historia dzień po dniu jest zapisywana od ${esc(dayText(HIST_START, { day: 'numeric', month: 'long', year: 'numeric' }))}.</p>` : '';
       return `<div class="pf-sec">
-            <div class="pf-h">XP dziennie — ostatnie 30 dni</div>
+            <div class="pf-h">XP dziennie - ostatnie 30 dni</div>
             <p class="hist-sum">${summary}</p>
             <div class="hist" data-hist='${esc(JSON.stringify(days))}'>
               ${total ? `<span class="hist-max">${fmt(best.xp)}</span>` : ''}
@@ -1812,7 +1812,7 @@
       const decoration = p.look?.decoration ?? p.decoration;
       const skel = '<div class="pf-skel" style="width:70%"></div><div class="pf-skel" style="width:45%"></div>';
       const item = (label, value) => `<div><dt>${label}</dt><dd>${value}</dd></div>`;
-      const period = (xp, rank) => (xp ? `+${fmt(xp)} XP${rank ? `<small>#${rank}</small>` : ''}` : '—');
+      const period = (xp, rank) => (xp ? `+${fmt(xp)} XP${rank ? `<small>#${rank}</small>` : ''}` : '-');
       return `
         <button type="button" class="pf-close" id="pf-close" aria-label="Zamknij profil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
         <div class="pf-banner${p.banner ? '' : ' plain'}" style="${banner}"></div>
@@ -1829,7 +1829,7 @@
         <div class="pf-body">
           <div class="pf-name">${styledName(p.displayName || p.username || 'Użytkownik', look, true)}${tagHtml(look)}</div>
           <div class="pf-user">${esc(p.username ?? '')}</div>
-          <button type="button" class="pf-me" data-me-toggle aria-pressed="${String(state.selected === state.me)}" title="Zapamiętaj w tej przeglądarce, który profil jest Twój — przycisk „Moje miejsce” przewinie do niego">${state.selected === state.me ? '✓ To Ty' : 'To ja'}</button>
+          <button type="button" class="pf-me" data-me-toggle aria-pressed="${String(state.selected === state.me)}" title="Zapamiętaj w tej przeglądarce, który profil jest Twój - przycisk „Moje miejsce” przewinie do niego">${state.selected === state.me ? '✓ To Ty' : 'To ja'}</button>
           ${p.boostingSince ? `<div class="pf-boost">Boostuje serwer od ${esc(dateText(p.boostingSince))}</div>` : ''}
 
           <div class="pf-sec">
@@ -1845,12 +1845,12 @@
             <div class="pf-h">Statystyki</div>
             ${p.error ? `<p class="pf-err">${esc(p.error)}</p>` : ''}
             ${loading && !p.stats ? skel : `<dl class="pf-stats">
-              ${item('Miejsce w rankingu', s.rank ? `#${s.rank}` : '—')}
+              ${item('Miejsce w rankingu', s.rank ? `#${s.rank}` : '-')}
               ${item('Łączne XP', fmt(s.xp))}
               ${item('Wiadomości', fmt(s.messages))}
               ${item('Na kanałach głosowych', voiceText(s.voiceMinutes))}
               ${item('Reakcje', fmt(s.reactions))}
-              ${loading ? '' : item('Ostatnio aktywny', p.lastActive ? esc(ago(p.lastActive)) : '—')}
+              ${loading ? '' : item('Ostatnio aktywny', p.lastActive ? esc(ago(p.lastActive)) : '-')}
               ${loading ? '' : item('Ten tydzień', period(s.weekXp, s.weekRank))}
               ${loading ? '' : item('Ten miesiąc', period(s.monthXp, s.monthRank))}
               ${loading || !s.event ? '' : item(`<span title="${esc(s.event.name)}">Wydarzenie XP</span>`, period(s.event.xp, s.event.rank))}
@@ -1866,7 +1866,7 @@
           <div class="pf-sec">
             <div class="pf-h">Na serwerze</div>
             ${loading ? skel : `<dl class="pf-stats">
-              ${p.joinedAt ? item('Dołączył(a)', esc(dateText(p.joinedAt))) + item('Na serwerze', `${fmt(daysSince(p.joinedAt))} dni`) : item('Na serwerze', p.inGuild === false ? 'już nie' : '—')}
+              ${p.joinedAt ? item('Dołączył(a)', esc(dateText(p.joinedAt))) + item('Na serwerze', `${fmt(daysSince(p.joinedAt))} dni`) : item('Na serwerze', p.inGuild === false ? 'już nie' : '-')}
               ${p.createdAt ? item('Konto Discord od', esc(dateText(p.createdAt))) : ''}
             </dl>`}
           </div>
@@ -1896,7 +1896,7 @@
       el.style.removeProperty('--c2');
     }
     // Karta w kolorach osoby z Nitro: kolor akcentu (albo z banera) u góry, kolor avatara u dołu.
-    // Kolory profili wyłączone — karta profilu ma zawsze ten sam wygląd.
+    // Kolory profili wyłączone - karta profilu ma zawsze ten sam wygląd.
     const PROFILE_COLORS = false;
     async function applyTheme(p, id) {
       if (!PROFILE_COLORS || !p.nitro) return;
@@ -1939,7 +1939,7 @@
         if (!profile.nitro) resetTheme();
         applyTheme(profile, id);
       } catch {
-        if (state.selected === id) showProfile(profileHtml({ ...quick, error: 'Nie udało się wczytać pełnego profilu — spróbuj za chwilę.' }, false));
+        if (state.selected === id) showProfile(profileHtml({ ...quick, error: 'Nie udało się wczytać pełnego profilu - spróbuj za chwilę.' }, false));
       }
     }
 
@@ -1967,8 +1967,8 @@
     const QS = new URLSearchParams(location.search);
     const EMBED = QS.get('embed') === '1';
     const PREVIEW = EV_THEMES.includes(QS.get('preview')) ? QS.get('preview') : EMBED ? 'confetti' : null;
-    // fxKey — efekt, który teraz działa (zmiana samej nazwy czy mnożnika nie restartuje cząsteczek); burstFx — efekt
-    // ostatniego wybuchu w podglądzie; paused — podgląd w panelu jest poza ekranem.
+    // fxKey - efekt, który teraz działa (zmiana samej nazwy czy mnożnika nie restartuje cząsteczek); burstFx - efekt
+    // ostatniego wybuchu w podglądzie; paused - podgląd w panelu jest poza ekranem.
     const ev = { events: null, pick: null, key: '', fxKey: '', burstFx: '', paused: false, back: null, banner: null, world: null, fx: null };
 
     function evStatus(e, now = Date.now()) {
@@ -2010,7 +2010,7 @@
       const cta = p.ranked && !PREVIEW
         ? `<button type="button" class="ev-cta" data-ev-go>${status === 'active' ? 'Ranking wydarzenia' : status === 'ended' ? 'Wyniki wydarzenia' : 'Wyniki poprzedniego'} →</button>`
         : '';
-      const next = p.next ? `<div class="ev-next">Następne: <b>${esc(p.next.name)}</b> (${multText(p.next.multiplier)} XP) — ${esc(whenText(p.next.startsAt))}</div>` : '';
+      const next = p.next ? `<div class="ev-next">Następne: <b>${esc(p.next.name)}</b> (${multText(p.next.multiplier)} XP) - ${esc(whenText(p.next.startsAt))}</div>` : '';
       const mult = multText(e.multiplier);
       const playful = status === 'active' && FX_LEVEL[evIntensity(e)] > 0;
       return `<button type="button" class="ev-mult" aria-label="Mnożnik XP ${mult}"${playful ? ' title="Jeszcze raz!"' : ''}><b data-len="${Math.min(mult.length, 6)}">${mult}</b><small>XP</small></button>
@@ -2033,7 +2033,7 @@
           b.classList.add('tick');
         }
       });
-      // Start albo koniec wydarzenia przy otwartej stronie — przełączamy widok bez przeładowania.
+      // Start albo koniec wydarzenia przy otwartej stronie - przełączamy widok bez przeładowania.
       if (ev.pick && evStatus(ev.pick.e) !== ev.pick.status) renderEvent();
     }
     setInterval(clockTick, 1000);
@@ -2043,7 +2043,7 @@
       renderEvent();
     }
 
-    // Kolory wydarzenia: z motywu albo — gdy ustawiony — z własnego koloru (baner, kropka zakładki, poświata strony).
+    // Kolory wydarzenia: z motywu albo - gdy ustawiony - z własnego koloru (baner, kropka zakładki, poświata strony).
     function applyAccent(box, accent) {
       const vars = accent
         ? { '--e1': hexMix(accent, '#07060f', 0.62), '--e2': hexMix(accent, '#07060f', 0.22), '--e3': hexMix(accent, '#ffffff', 0.28), '--eg': hexMix(accent, '#ffffff', 0.55) }
@@ -2085,7 +2085,7 @@
       const intensity = evIntensity(e);
       const accent = evAccent(e);
       const level = FX_LEVEL[intensity];
-      // floor — efekt przy dole ekranu (płomienie przy „Ogniu”); można go wyłączyć w panelu.
+      // floor - efekt przy dole ekranu (płomienie przy „Ogniu”); można go wyłączyć w panelu.
       const floor = e.floor !== false;
       const fxKey = [theme, intensity, accent, floor, pick.status].join(':');
       const keepFx = fxKey === ev.fxKey && Boolean(box.querySelector(':scope > .ev-canvas'));
@@ -2104,12 +2104,12 @@
       clockTick();
       ev.fx = { theme, level, colors: accent ? accentColors(accent) : null };
       if (keepFx) return;
-      // Cała strona i dekoracje efektu (przy ograniczonym ruchu — bez animacji, same kolory i ozdoby).
+      // Cała strona i dekoracje efektu (przy ograniczonym ruchu - bez animacji, same kolory i ozdoby).
       const live = pick.status === 'active' && level > 0;
       pageFx(live ? { theme, intensity, colors: ev.fx.colors ?? FX_COLORS[theme] } : null);
       if (!live || reduceMotion.matches || ev.paused) return;
       ev.fxKey = fxKey;
-      // Animacje: cząsteczki w banerze i w tle strony, a przy pierwszej wizycie (albo starcie na żywo) — wybuch.
+      // Animacje: cząsteczki w banerze i w tle strony, a przy pierwszej wizycie (albo starcie na żywo) - wybuch.
       // Intensywność mnoży liczbę cząsteczek; „mocne” wybucha przy każdym wejściu na stronę.
       const [inBanner, inBack] = FX_AMBIENT[theme];
       ev.banner = particles(box.querySelector('.ev-canvas'), theme, { ambient: Math.max(1, Math.round(inBanner * level)), colors: ev.fx.colors });
@@ -2137,7 +2137,7 @@
       if (fxReady()) ev.world.happen?.();
     }
     // Wciśnięcie przycisku na stronie: lepienie śnieżki z leżącego śniegu, klikanie w dynie, dmuchanie bańki, magnes
-    // na monety, a przy normalnej i mocnej intensywności — efekt kliknięcia (piorun, wir liści, armatka konfetti…).
+    // na monety, a przy normalnej i mocnej intensywności - efekt kliknięcia (piorun, wir liści, armatka konfetti…).
     document.addEventListener('pointerdown', (event) => {
       if (event.button !== 0 || !fxReady() || event.target.closest?.('.ev-mult, .pv-bar, .fx-tool')) return;
       ev.world.press(event);
@@ -2154,7 +2154,7 @@
 
     // ---------- Cała strona: siła efektu i dekoracje, które ma tylko dany efekt ----------
     // Gdy wydarzenie trwa (i efekty są włączone), kolor akcentu, ramki, tło, poświata kart, tytuł i podium biorą kolor
-    // wydarzenia — tym mocniej, im większa intensywność (--evk). Do tego każdy efekt ma własne dekoracje: warstwa
+    // wydarzenia - tym mocniej, im większa intensywność (--evk). Do tego każdy efekt ma własne dekoracje: warstwa
     // za treścią (back), u góry strony (top, przewija się z nią) i przy krawędziach ekranu nad treścią (front).
     const FX_PAGE = { none: 0, low: 0.32, medium: 0.65, high: 1 };
     const lum = (hex) => {
@@ -2163,7 +2163,7 @@
     };
     const svgUrl = (svg) => `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
     const f1 = (v) => v.toFixed(1);
-    // Tafla wody oglądana od spodu: powtarzalny kafel fali (całkowita liczba okresów — przesuwany bez szwu):
+    // Tafla wody oglądana od spodu: powtarzalny kafel fali (całkowita liczba okresów - przesuwany bez szwu):
     // srebrzysta powierzchnia nad linią fali, jasny grzbiet z poświatą i drobne zmarszczki.
     function surfSvg(base, amp, seed) {
       const W = 480;
@@ -2295,7 +2295,7 @@
       const pins = [0, 350, 700, 1050, 1400].map((x, k) => `<circle cx="${x}" cy="${pinY[k]}" r="3.4" fill="#d9dde6" stroke="#5b6170" stroke-width="1.2"/>`).join('');
       return `<svg class="dc-bunting" viewBox="0 0 ${W} 72" preserveAspectRatio="xMidYMin slice" aria-hidden="true"><defs>${grads}</defs><path d="${rope}" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="2.2" transform="translate(1 2)"/><path d="${rope}" fill="none" stroke="#e9e4d8" stroke-width="1.6"/>${flags}${pins}</svg>`;
     }
-    // Chmury burzowe (obraz SVG): rozmyte pasma i plamy przepuszczone przez turbulencję i przemieszczenie — puszyste,
+    // Chmury burzowe (obraz SVG): rozmyte pasma i plamy przepuszczone przez turbulencję i przemieszczenie - puszyste,
     // postrzępione brzegi. Od tyłu: dalekie smugi, masa chmury, jaśniejsze kłęby, ciemne spody i ciemna góra.
     function stormSvg(seed) {
       let s = seed;
@@ -2319,7 +2319,7 @@
         + `<g filter="url(#c)" fill="#0d111f">${blobs(16, 122, 144, 50, 95, 12, 20)}</g>`
         + `<path d="${band(44, 16, 140)}" fill="#0e1221" filter="url(#c)" opacity="0.92"/></svg>`;
     }
-    // Gałąź od lewej krawędzi (jesień: liście, sakura: kwiaty — w CSS lustrzane odbicie dla prawego rogu).
+    // Gałąź od lewej krawędzi (jesień: liście, sakura: kwiaty - w CSS lustrzane odbicie dla prawego rogu).
     function branchSvg(kind, colors) {
       const c = (i) => colors[i % colors.length];
       const autumn = kind === 'leaves';
@@ -2392,7 +2392,7 @@
           // Szron w rogach ekranu (śnieg na kartach i zaspa na dole zbierają się w świecie nad stroną).
           return { front: '<div class="dc-frost"></div>' };
         case 'stars': {
-          // Księżyc i gwiazdozbiory w tle, gwiezdny pył na kartach (spadające gwiazdy — cząsteczki).
+          // Księżyc i gwiazdozbiory w tle, gwiezdny pył na kartach (spadające gwiazdy - cząsteczki).
           const dipper = [[10, 40], [60, 30], [100, 42], [140, 58], [225, 62], [215, 112], [150, 105]];
           const cas = [[0, 20], [30, 52], [62, 28], [94, 58], [130, 30]];
           const dots = (pts) => pts.map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="${i % 3 ? 1.7 : 2.4}" style="animation-delay:${f1(-i * 0.7)}s"/>`).join('');
@@ -2403,7 +2403,7 @@
           };
         }
         case 'neon':
-          // Siatka w stylu synthwave na dole tła; neonowe ramki i migoczący tytuł — w CSS.
+          // Siatka w stylu synthwave na dole tła; neonowe ramki i migoczący tytuł - w CSS.
           return { back: '<div class="dc-grid"><i></i></div>' };
         case 'hearts':
           // Ekran pulsuje jak bicie serca (poświata przy krawędziach); mnożnik i poświata zwycięzcy też.
@@ -2443,9 +2443,9 @@
           return {};
       }
     }
-    // Zwycięzca (1. miejsce) w czasie wydarzenia: nakrycie głowy w stylu efektu zamiast korony. w — szerokość, top — górna
-    // krawędź, x — przesunięcie w bok (wszystko × rozmiar awatara), r — obrót (deg), a — proporcje, anim — animacja,
-    // prof — kontur czapki (u, v od 0 do 1), na którym zbiera się śnieg.
+    // Zwycięzca (1. miejsce) w czasie wydarzenia: nakrycie głowy w stylu efektu zamiast korony. w - szerokość, top - górna
+    // krawędź, x - przesunięcie w bok (wszystko × rozmiar awatara), r - obrót (deg), a - proporcje, anim - animacja,
+    // prof - kontur czapki (u, v od 0 do 1), na którym zbiera się śnieg.
     const HATS = {
       snow: { w: 1.1, top: -0.46, x: 0.05, r: -7, a: "120 / 92", prof: [[0.06, 0.69], [0.14, 0.44], [0.3, 0.18], [0.5, 0.09], [0.66, 0.07], [0.8, 0.12], [0.9, 0.27], [0.93, 0.44], [0.96, 0.63], [0.98, 0.69]], svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 92'><defs><linearGradient id='r' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#ff4d4d'/><stop offset='1' stop-color='#b0121a'/></linearGradient><radialGradient id='f' cx='.4' cy='.3' r='.8'><stop offset='0' stop-color='#ffffff'/><stop offset='1' stop-color='#dbe6f2'/></radialGradient></defs><path d='M14 68 C15 42 33 15 63 9 C86 5 103 15 109 32 C110 39 107 46 101 49 C97 40 91 33 83 32 C86 44 93 56 106 68 Z' fill='url(#r)' stroke='#8a0e14' stroke-width='2.2' stroke-linejoin='round'/><path d='M30 54 C34 36 47 21 66 15' fill='none' stroke='#ff9a9a' stroke-width='3.4' stroke-linecap='round' opacity='.5'/><path d='M7 63 Q60 52 113 63 Q118 72 113 81 Q60 70 7 83 Q2 73 7 63 Z' fill='url(#f)' stroke='#c3d1e1' stroke-width='1.4'/><g fill='#ffffff'><circle cx='14' cy='66' r='4.6'/><circle cx='27' cy='62.5' r='4.8'/><circle cx='41' cy='60.5' r='4.6'/><circle cx='55' cy='59.5' r='4.8'/><circle cx='69' cy='59.5' r='4.6'/><circle cx='83' cy='60.5' r='4.8'/><circle cx='97' cy='62' r='4.6'/><circle cx='109' cy='65' r='4.2'/></g><circle cx='102' cy='52' r='11.5' fill='url(#f)' stroke='#c3d1e1' stroke-width='1.4'/><g fill='#ffffff'><circle cx='97' cy='47' r='4'/><circle cx='105' cy='45.5' r='3.6'/><circle cx='109' cy='52' r='3.4'/><circle cx='95' cy='55' r='3.4'/></g></svg>" },
       confetti: { w: 0.7, top: -0.74, x: 0.06, r: 14, a: "70 / 92", anim: "hat-wobble 2.6s ease-in-out infinite", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 70 92'><defs><clipPath id='c'><path d='M35 12 L64 84 Q35 92 6 84 Z'/></clipPath></defs><g clip-path='url(#c)'><rect width='70' height='92' fill='#8a5cff'/><path d='M-10 30 L80 0 L80 14 L-10 44 Z M-10 58 L80 28 L80 42 L-10 72 Z M-10 86 L80 56 L80 70 L-10 100 Z' fill='#ffd23f'/><path d='M-10 44 L80 14 L80 21 L-10 51 Z M-10 72 L80 42 L80 49 L-10 79 Z' fill='#ff4fa3'/></g><path d='M35 12 L64 84 Q35 92 6 84 Z' fill='none' stroke='#3d2a7a' stroke-width='2' stroke-linejoin='round'/><path d='M27 30 L14 74' stroke='#ffffff' stroke-width='3' stroke-linecap='round' opacity='.4'/><g fill='#2ec5ff'><circle cx='30' cy='10' r='6'/></g><g fill='#ff4fa3'><circle cx='38' cy='7' r='5.5'/></g><g fill='#ffd23f'><circle cx='35' cy='14' r='5'/></g><g fill='#5dffb0'><circle cx='41' cy='13' r='4.5'/></g><circle cx='34' cy='9' r='3' fill='#ffffff' opacity='.8'/></svg>" },
@@ -2526,7 +2526,7 @@
       const v = rnd(...speed);
       return { x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, ...extra };
     };
-    // Miękka, świecąca kropka (iskry, gwiazdy, płatki śniegu) — rysowana raz na kolor i potem tylko skalowana.
+    // Miękka, świecąca kropka (iskry, gwiazdy, płatki śniegu) - rysowana raz na kolor i potem tylko skalowana.
     const glowCache = new Map();
     function glowSprite(color) {
       if (!glowCache.has(color)) {
@@ -2546,7 +2546,7 @@
       }
       return glowCache.get(color);
     }
-    // Kształty (serce, liść, płatek, kwiat, moneta, dynia, bańka) — rysowane raz na kolor na płótnie 64×64.
+    // Kształty (serce, liść, płatek, kwiat, moneta, dynia, bańka) - rysowane raz na kolor na płótnie 64×64.
     const spriteCache = new Map();
     function sprite(kind, color) {
       const id = `${kind}:${color}`;
@@ -2762,7 +2762,7 @@
       spriteCache.set(id, c);
       return c;
     }
-    // Błyskawica: łamana od góry płótna w dół plus jedno–dwa odgałęzienia.
+    // Błyskawica: łamana od góry płótna w dół plus jedno-dwa odgałęzienia.
     function boltPaths(w, h) {
       const zigzag = (x, y, yEnd, spread) => {
         const pts = [x, y];
@@ -2810,8 +2810,8 @@
       return paths;
     }
 
-    // Nowa cząsteczka: kind 'ambient' — spokojne tło banera i strony, 'burst' — wybuch po kliknięciu mnożnika.
-    // env: w, h — wymiary płótna; side — strona „armatki”; i — numer w wybuchu; own — własny kolor; state — wspólne
+    // Nowa cząsteczka: kind 'ambient' - spokojne tło banera i strony, 'burst' - wybuch po kliknięciu mnożnika.
+    // env: w, h - wymiary płótna; side - strona „armatki”; i - numer w wybuchu; own - własny kolor; state - wspólne
     // dla jednego wybuchu (np. miejsce uderzenia pioruna).
     function fxSpawn(theme, kind, { w, h, side = 0, i = 0, own = null, state = {} }) {
       const burst = kind === 'burst';
@@ -2919,7 +2919,7 @@
       }
     }
 
-    // Kształt z pamięci podręcznej, obrócony i ściśnięty (fx, fy — „obrót w 3D”).
+    // Kształt z pamięci podręcznej, obrócony i ściśnięty (fx, fy - „obrót w 3D”).
     function drawSpriteAt(ctx, p, kind, size, fx = 1, fy = 1) {
       ctx.save();
       ctx.translate(p.x, p.y);
@@ -2928,7 +2928,7 @@
       ctx.drawImage(sprite(kind, p.c), -size / 2, -size / 2, size, size);
       ctx.restore();
     }
-    // Rysuje jedną cząsteczkę. env: w, h — płótno; onFlash — błysk pioruna; lens — kursor (Matrix: znaki się rozsuwają).
+    // Rysuje jedną cząsteczkę. env: w, h - płótno; onFlash - błysk pioruna; lens - kursor (Matrix: znaki się rozsuwają).
     function fxDraw(ctx, p, alpha, env) {
       ctx.globalAlpha = alpha;
       switch (p.t) {
@@ -2944,7 +2944,7 @@
         }
         case 'ember':
         case 'spark': {
-          // Iskry migoczą; „lighter” — nakładające się świecą mocniej. Iskry z ognia ciągną za sobą smugę.
+          // Iskry migoczą; „lighter” - nakładające się świecą mocniej. Iskry z ognia ciągną za sobą smugę.
           if (p.t === 'ember') ctx.globalAlpha = alpha * (0.7 + 0.3 * Math.sin(p.age * 0.35 + (p.sway ?? p.rot)));
           ctx.globalCompositeOperation = 'lighter';
           if (p.streak) {
@@ -3153,7 +3153,7 @@
           break;
         }
         case 'bolt': {
-          // Migotanie: jest — znika na chwilę — wraca i gaśnie.
+          // Migotanie: jest - znika na chwilę - wraca i gaśnie.
           if (p.age < 0 || (p.age > 4 && p.age < 7)) break;
           if (p.flash && !p.lit) {
             p.lit = true;
@@ -3350,9 +3350,9 @@
     // Co się dzieje po spadnięciu: śnieg się zbiera (mapa wysokości), liście, konfetti i płatki leżą (i dają się
     // strącić kursorem), monety i dynie odbijają się i układają w kupki, deszcz się rozpryskuje.
     const LAND = { flake: 'pile', clump: 'pile', leaf: 'rest', paper: 'rest', petal: 'rest', blossom: 'rest', coin: 'bounce', pumpkin: 'bounce', rain: 'splash' };
-    // Opór powietrza: prędkość opadania lekkich cząsteczek (px na klatkę) — płatki i liście szybują.
+    // Opór powietrza: prędkość opadania lekkich cząsteczek (px na klatkę) - płatki i liście szybują.
     const TERM = { flake: 1, leaf: 1.5, paper: 1.7, petal: 1.05, blossom: 1.2 };
-    // Grubość leżącej cząsteczki (px) — z tego rośnie kupka.
+    // Grubość leżącej cząsteczki (px) - z tego rośnie kupka.
     const THICK = { leaf: 2.4, paper: 1.3, petal: 1.1, blossom: 1.8, coin: 2.6 };
     const WIND = { snow: 0.15, leaves: 0.35, sakura: 0.55, confetti: 0.05, hearts: 0.05, bubbles: 0.05 };
     // Ile cząsteczek w powietrzu nad stroną (intensywność „normalne”, ekran 1366×768).
@@ -3364,32 +3364,32 @@
     const SLOPE = 0.35;
     const SLOPE_ROUND = 1;
     const KERNEL = [0.06, 0.12, 0.18, 0.28, 0.18, 0.12, 0.06];
-    // Elementy, w które się klika — na nich przytrzymanie nie dmucha baniek i nie włącza magnesu.
+    // Elementy, w które się klika - na nich przytrzymanie nie dmucha baniek i nie włącza magnesu.
     const INTERACTIVE = 'a, button, input, select, textarea, label, summary, [role="button"], [role="tab"], [tabindex]';
     // Kontur korony zwycięzcy (viewBox 32×24): śnieg leży też na koronie.
     const CROWN_TOP = [[0.6, 6.5], [2.3, 4.1], [4, 7.6], [9.5, 12.1], [14.4, 5.6], [16, 0.4], [17.6, 5.6], [22.5, 12.1], [28, 7.6], [29.7, 4.1], [31.4, 6.5]].map(([x, y]) => [x / 32, y / 24]);
     // Matrix: teksty, które „dekodują się” po najechaniu i same z siebie.
     const MX_SEL = 'h1, .ev-name, .ev-sub, .dn, .pod-col b, .rank, .num, dd, dt, .pod-lvl, .meta, .cmds code, .found';
-    // Kliknięcia w Matrixie — deszcz znaków w tle rusza od tego miejsca.
+    // Kliknięcia w Matrixie - deszcz znaków w tle rusza od tego miejsca.
     const MX = { pulses: [] };
-    // Narzędzia: łopata (śnieg) i gaśnica (ogień). ax, ay — środek dolnej krawędzi szufli / wylot dyszy (w viewBox);
-    // restA — przechylenie, gdy stoi oparte o krawędź ekranu; hull — punkty obrysu (do ustawienia i pola do chwytania).
+    // Narzędzia: łopata (śnieg) i gaśnica (ogień). ax, ay - środek dolnej krawędzi szufli / wylot dyszy (w viewBox);
+    // restA - przechylenie, gdy stoi oparte o krawędź ekranu; hull - punkty obrysu (do ustawienia i pola do chwytania).
     const TOOL = {
       shovel: {
-        title: 'Łopata — chwyć i odśnieżaj (szybki ruch w górę wyrzuca śnieg)', vw: 100, vh: 240, ax: 50, ay: 234, size: 58, restA: 0.12,
+        title: 'Łopata - chwyć i odśnieżaj (szybki ruch w górę wyrzuca śnieg)', vw: 100, vh: 240, ax: 50, ay: 234, size: 58, restA: 0.12,
         hull: [[5, 226], [95, 226], [13, 234], [87, 234], [8, 166], [92, 166], [29, 6], [71, 6]],
         svg: '<svg viewBox="0 0 100 240" aria-hidden="true"><path fill-rule="evenodd" d="M35 5 H65 Q72 5 70.3 12 L61.5 41 H38.5 L29.7 12 Q28 5 35 5 Z M40.5 13 H59.5 Q61.6 13 61 15.2 L56 33 H44 L39 15.2 Q38.4 13 40.5 13 Z" fill="#e3262b" stroke="#a3151a" stroke-width="1.6" stroke-linejoin="round"/><path d="M33.2 9.6 Q34.4 7.6 37 7.6 H52" fill="none" stroke="#ff7b7e" stroke-width="1.6" stroke-linecap="round"/><rect x="40.5" y="38.5" width="19" height="12" rx="2.6" fill="#d11f25" stroke="#a3151a" stroke-width="1.3"/><rect x="45" y="50" width="10" height="112" fill="#8d9299"/><rect x="46.2" y="50" width="2.6" height="112" fill="#c2c7cd"/><rect x="52.2" y="50" width="2.8" height="112" fill="#686d74"/><path d="M41.5 157 H58.5 L61 171 H39 Z" fill="#d11f25" stroke="#a3151a" stroke-width="1.3" stroke-linejoin="round"/><path d="M12 166 H88 Q92.2 166 92.5 170.2 L95.2 225.5 Q95.6 234 87 234 H13 Q4.4 234 4.8 225.5 L7.5 170.2 Q7.8 166 12 166 Z" fill="#e3262b" stroke="#a3151a" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 166 H88 Q92.2 166 92.5 170.2 L92.8 176 H7.2 L7.5 170.2 Q7.8 166 12 166 Z" fill="#c21b21"/><path d="M7.4 176 H92.6" stroke="#ff6d70" stroke-width="1.2"/><path d="M21.6 179 V214.5 M31.6 179 V211 M41.6 179 V207.5 M61.6 179 V207.5 M71.6 179 V211 M81.6 179 V214.5" stroke="#b5171d" stroke-width="1.6" stroke-linecap="round"/><path d="M20 179 V214 M30 179 V210.6 M40 179 V207.2 M60 179 V207.2 M70 179 V210.6 M80 179 V214" stroke="#ff6d70" stroke-width="2.2" stroke-linecap="round"/><path d="M50 176 V219" stroke="#b5171d" stroke-width="4.2" stroke-linecap="round"/><path d="M49 176 V218" stroke="#ff6d70" stroke-width="1.4" stroke-linecap="round"/><path d="M8.5 229.6 L50 215.6 L91.5 229.6" fill="none" stroke="#b5171d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M8.5 227.4 L50 213.4 L91.5 227.4" fill="none" stroke="#ff6d70" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/><path d="M5.6 229.4 Q5.6 234 13 234 H87 Q94.4 234 94.4 229.4" fill="none" stroke="#8a1015" stroke-width="2.6" stroke-linecap="round"/><path d="M11.6 181 Q10.6 202 11.8 221" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="2.4" stroke-linecap="round"/></svg>',
       },
       ext: {
-        title: 'Gaśnica — chwyć i gaś ogień', vw: 64, vh: 64, ax: 8.6, ay: 50, size: 78, restA: 0.04,
+        title: 'Gaśnica - chwyć i gaś ogień', vw: 64, vh: 64, ax: 8.6, ay: 50, size: 78, restA: 0.04,
         hull: [[26, 17.5], [46, 17.5], [46, 61.5], [26, 61.5], [5.6, 49], [13.2, 38.8], [53, 4.5], [53, 13.5], [31.5, 9.5]],
         svg: '<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="fxex-r" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8e1209"/><stop offset="0.38" stop-color="#e2412b"/><stop offset="0.62" stop-color="#ff7258"/><stop offset="1" stop-color="#9c160c"/></linearGradient></defs><path d="M31 14 C21 12.5 13.5 18 11.5 28 L10.2 38.5" fill="none" stroke="#1d1f24" stroke-width="3.4" stroke-linecap="round"/><path d="M7.2 37.6 L13.2 38.8 L11.6 50.2 L5.6 49 Z" fill="#33363d"/><rect x="26" y="17.5" width="20" height="44" rx="8" fill="url(#fxex-r)" stroke="#6c0c06" stroke-width="1.2"/><rect x="26.6" y="30" width="18.8" height="11" fill="#fff4e8"/><path d="M30 34 H42 M30 37.4 H38" stroke="#c62a1a" stroke-width="1.5" stroke-linecap="round"/><path d="M30.5 21 V58" stroke="#ffffff" stroke-opacity="0.35" stroke-width="2.4" stroke-linecap="round"/><rect x="31.5" y="9.5" width="9" height="9" rx="2" fill="#a7b0ba" stroke="#5a626d" stroke-width="1"/><path d="M36 9.5 L53 4.5" stroke="#202227" stroke-width="3.2" stroke-linecap="round"/><path d="M38.5 13.5 L53 13.5" stroke="#202227" stroke-width="3.2" stroke-linecap="round"/><circle cx="40.5" cy="24.5" r="3.6" fill="#f6f6f6" stroke="#3a3d44" stroke-width="1"/><path d="M40.5 24.5 L42.6 22.8" stroke="#1aa34a" stroke-width="1.3" stroke-linecap="round"/></svg>',
       },
     };
 
-    // Śnieg na powierzchni: różnica wysokości sąsiednich słupków (razem z kształtem pod spodem — awatar, korona)
+    // Śnieg na powierzchni: różnica wysokości sąsiednich słupków (razem z kształtem pod spodem - awatar, korona)
     // najwyżej tyle, ile pozwala kąt zsypu; nadmiar zsuwa się na boki, a przy brzegach karty spada (spill: [lewy,
-    // prawy] w px²). Bez górnego limitu — zaspa rośnie, dopóki ktoś jej nie odśnieży.
+    // prawy] w px²). Bez górnego limitu - zaspa rośnie, dopóki ktoś jej nie odśnieży.
     function relaxSnow(st, spill = st.spill) {
       const s = st.snow;
       const b = st.base;
@@ -3434,7 +3434,7 @@
       const b = Math.min(arr.length - 1, a + 1);
       return arr[a] + (arr[b] - arr[a]) * (i - a);
     };
-    // Najwyższy punkt czapy nad krawędzią (śnieg razem z kształtem pod nim — awatarem, koroną).
+    // Najwyższy punkt czapy nad krawędzią (śnieg razem z kształtem pod nim - awatarem, koroną).
     const crestOf = (st) => {
       const s = st.snow;
       const b = st.base;
@@ -3446,7 +3446,7 @@
       return m;
     };
 
-    // Matrix: cyfrowy deszcz (w tle strony i w banerze). Każda kolumna ma „głowę” — jasny znak, za którym zostaje
+    // Matrix: cyfrowy deszcz (w tle strony i w banerze). Każda kolumna ma „głowę” - jasny znak, za którym zostaje
     // gasnąca zielona smuga; znaki w smugach migoczą. Płótno jest odbite w poziomie (jak w filmie). Kursor rozsuwa
     // deszcz na boki, kliknięcie (MX.pulses) puszcza od tego miejsca falę szybkich, jasnych kolumn.
     function matrixRain(canvas, { density = 1, colors }) {
@@ -3520,7 +3520,7 @@
           const cy = Math.floor(c.y);
           if (cy === c.cell) continue;
           const x = i * size + size / 2;
-          // Poprzednia głowa gaśnie do zieleni (po kliknięciu — jaśniejszej).
+          // Poprzednia głowa gaśnie do zieleni (po kliknięciu - jaśniejszej).
           if (c.cell >= 0) cell(x, c.cell * size + size / 2, c.hot > 0 ? c1 : c0, 0.92);
           c.cell = cy;
           if (c.hot > 0) c.hot -= 1;
@@ -3579,7 +3579,7 @@
       };
     }
 
-    // Bąbelki: tekstura świetlnych refleksów wody (kaustyka) — sieć jasnych linii na granicach komórek (szum Worleya),
+    // Bąbelki: tekstura świetlnych refleksów wody (kaustyka) - sieć jasnych linii na granicach komórek (szum Worleya),
     // powtarzalna, liczona raz.
     let causticCache = '';
     function causticUrl() {
@@ -3593,7 +3593,7 @@
       const T = TAU;
       for (let y = 0; y < N; y++) {
         for (let x = 0; x < N; x++) {
-          // Zniekształcenie (całkowite częstotliwości — tekstura dalej się powtarza bez szwu): komórki falują jak w wodzie.
+          // Zniekształcenie (całkowite częstotliwości - tekstura dalej się powtarza bez szwu): komórki falują jak w wodzie.
           const u0 = x / N;
           const v0 = y / N;
           const u = (u0 + 0.05 * Math.sin(T * (2 * v0 + 0.3)) + 0.022 * Math.sin(T * (5 * u0 + 3 * v0)) + 1) % 1;
@@ -3701,7 +3701,7 @@
       const layers = new Map();
       let els = [];
       const surfs = [];
-      const unders = []; // spody kart — tam zbierają się bąbelki
+      const unders = []; // spody kart - tam zbierają się bąbelki
       function anchorOf(el) {
         if (getComputedStyle(el).position === 'sticky') return el;
         for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
@@ -3730,7 +3730,7 @@
         return st;
       }
       const ground = makeSurface(null);
-      // Wysokość płótna czapy — śnieg nie ma limitu, więc płótno rośnie razem z zaspą.
+      // Wysokość płótna czapy - śnieg nie ma limitu, więc płótno rośnie razem z zaspą.
       function capHeight(st) {
         if (!snowy) return Math.ceil(st.max + (piles ? 20 : 10));
         const need = st.peak + 16;
@@ -3773,7 +3773,7 @@
         }
         st.base = b;
       }
-      // Na start już trochę napadało: równa warstwa (na awatarach — czapa).
+      // Na start już trochę napadało: równa warstwa (na awatarach - czapa).
       function prefill(st) {
         const s = st.snow;
         const depth = (4 + 8 * kk) * rnd(0.85, 1.15) * (st.round ? 0.8 : st.el ? 1 : 1.25);
@@ -3813,7 +3813,7 @@
         els = [...document.querySelectorAll(SEL)];
         if (!caps) return;
         for (const el of els) if (!surfMap.has(el)) surfMap.set(el, makeSurface(el));
-        // Awatary podium: kolumna (article.top) zostaje, a awatar w niej bywa podmieniany — śnieg zostaje z kolumną.
+        // Awatary podium: kolumna (article.top) zostaje, a awatar w niej bywa podmieniany - śnieg zostaje z kolumną.
         if (snowy && !EMBED) {
           for (const el of document.querySelectorAll(SEL_ROUND)) {
             const key = el.closest('.top') ?? el;
@@ -3847,7 +3847,7 @@
         restCount -= st.rest.length;
         st.rest = [];
       }
-      // Po wybuchu wszystko, co leży na kartach, dwa razy podskakuje — fala rozchodzi się od mnożnika (bliżej — wcześniej).
+      // Po wybuchu wszystko, co leży na kartach, dwa razy podskakuje - fala rozchodzi się od mnożnika (bliżej - wcześniej).
       // Odległość od mnożnika do najbliższego punktu krawędzi (śnieg na banerze z mnożnikiem podskakuje od razu).
       const hopDist = (st) => Math.hypot(Math.max(st.x - shake.x, 0, shake.x - (st.x + st.w)), st.y - shake.y);
       function hopOffset(st) {
@@ -3938,7 +3938,7 @@
             const cy = r.top + r.height / 2;
             st.x = r.left + r.width / 2 - width / 2;
             st.y = cy;
-            // Korona albo czapka zwycięzcy (w czasie wydarzenia) — śnieg leży też na niej.
+            // Korona albo czapka zwycięzcy (w czasie wydarzenia) - śnieg leży też na niej.
             const hatProf = document.body.classList.contains('has-hat') ? HATS[theme]?.prof : null;
             const crownEl = el.querySelector(hatProf ? '.crown' : '.crown svg');
             let crown = null;
@@ -3982,7 +3982,7 @@
           // Pod przyklejonym paskiem nic nie widać, więc nic tam nie spada.
           if (tr && el !== tb && r.top > tr.top - 4 && r.top < tr.bottom + 2 && r.right > tr.left && r.left < tr.right) continue;
           // Głębokość: cząsteczka spada przed stroną w pewnej odległości od niej (p.z) i zatrzymuje się na pierwszej
-          // krawędzi, która wystaje dość daleko. Im niżej na ekranie, tym dalej — więc śnieg i liście trafiają na
+          // krawędzi, która wystaje dość daleko. Im niżej na ekranie, tym dalej - więc śnieg i liście trafiają na
           // wszystkie karty, a nie tylko na tę najwyżej.
           st.reach = clamp(0.15 + (0.75 * (st.y - (st.round ? st.w / 2 : 0))) / Math.max(h, 1), 0.12, 0.95);
           surfs.push(st);
@@ -4006,7 +4006,7 @@
       }
 
       // ---- Śnieg na powierzchniach ----
-      // spread > 0 — szeroko, jak rozbita śnieżka (kopczyk o szerokości 2·spread).
+      // spread > 0 - szeroko, jak rozbita śnieżka (kopczyk o szerokości 2·spread).
       function addSnow(st, lx, vol, spread = 0) {
         const s = st.snow;
         const bin = st.bin;
@@ -4116,7 +4116,7 @@
         const th = p.t === 'pumpkin' ? p.s * 1.7 : THICK[p.t] ?? 2;
         const base = sample(st.pile, PILE_BIN, lx);
         if (base + th > st.max) {
-          // Za wysoka kupka — zsuwa się w bok.
+          // Za wysoka kupka - zsuwa się w bok.
           p.vx = (lx < st.w / 2 ? -1 : 1) * rnd(0.6, 1.4);
           p.vy = -0.3;
           p.y = st.y - base - 1;
@@ -4128,7 +4128,7 @@
         restCount += 1;
         st.dirty = true;
         if (restCount > REST_MAX) {
-          // Za dużo leży — najstarsze znika (z tej karty albo z dołu ekranu).
+          // Za dużo leży - najstarsze znika (z tej karty albo z dołu ekranu).
           const from = st.rest.length > 6 ? st : ground;
           const old = from.rest.shift();
           if (old) {
@@ -4310,7 +4310,7 @@
         const b = held;
         b.x = pointer.x;
         b.y = pointer.y;
-        // Ślad ręki z ostatnich ~0,2 s — z niego siła rzutu (zdarzenia myszy bywają łączone).
+        // Ślad ręki z ostatnich ~0,2 s - z niego siła rzutu (zdarzenia myszy bywają łączone).
         b.trail.push({ t: now, x: b.x, y: b.y });
         while (b.trail.length > 2 && now - b.trail[0].t > 200) b.trail.shift();
         b.rot += (pointer.vx / Math.max(4, b.r)) * dt;
@@ -4356,7 +4356,7 @@
           add({ ...ball, vx: 0, vy: 0.4, vr: 0, g: 0.34, drag: 0.998, flight: Infinity });
           return;
         }
-        // Rzucona leci w stronę strony (maleje) i po chwili na nią plaska — im szybciej, tym krócej leci.
+        // Rzucona leci w stronę strony (maleje) i po chwili na nią plaska - im szybciej, tym krócej leci.
         const k = Math.min(1, 20 / speed);
         const vx = hvx * k;
         const vy = hvy * k;
@@ -4376,7 +4376,7 @@
           // Rzucona „w ekran” (odwet ludzika) leci nad stroną i plaska dopiero na szybie.
           if (p.toward) continue;
           if (crowd && crowd.hit(p)) return false;
-          // Krawędzie ekranu to ściany — śnieżka plaska o nie.
+          // Krawędzie ekranu to ściany - śnieżka plaska o nie.
           if (p.x < p.r * 0.6 || p.x > w - p.r * 0.6 || p.y < p.r * 0.6) {
             splatAt(clamp(p.x, p.r * 0.7, w - p.r * 0.7), Math.max(p.y, p.r * 0.7), p.r * 1.3, p.vx, p.vy);
             return false;
@@ -4455,7 +4455,7 @@
         add({ t: 'squash', x, y, vx: 0, vy: 0, r, ang: dir, life: 7, z: 0, noLand: true, instant: true });
         for (let i = 0; i < Math.round(3 * k); i++) add(radial(x, y, [1.2, 3.2], { t: 'glint', s: rnd(3, 5), life: rnd(10, 16), c: '#eaf6ff', noLand: true }));
       }
-      // Trafienie w awatar: z góry śnieg zostaje na czapie, w „twarz” — plaśnięcie, a awatar się chwieje.
+      // Trafienie w awatar: z góry śnieg zostaje na czapie, w „twarz” - plaśnięcie, a awatar się chwieje.
       function hitRound(p, st, cx, d) {
         const nx = (p.x - cx) / (d || 1);
         const ny = (p.y - st.y) / (d || 1);
@@ -4648,7 +4648,7 @@
 
       // ---- Narzędzia: łopata (stoi na śniegu oparta o prawą krawędź ekranu) i gaśnica (stoi w prawym dolnym rogu) ----
       // Rysowane na płótnie nad stroną; przezroczysty przycisk w tym samym miejscu pozwala je chwycić i przeciągać.
-      // Chwyta się w miejscu kliknięcia (np. łopatę za uchwyt) — narzędzie wisi na kursorze i lekko się kołysze.
+      // Chwyta się w miejscu kliknięcia (np. łopatę za uchwyt) - narzędzie wisi na kursorze i lekko się kołysze.
       function makeTool(kind) {
         const def = TOOL[kind];
         const btn = document.createElement('button');
@@ -4762,7 +4762,7 @@
         const span = Math.max(16, now - o.t);
         t.vx = ((t.cx - o.x) / span) * 16.67;
         t.vy = ((t.cy - o.y) / span) * 16.67;
-        // Kołysanie: trzymane wyżej (za uchwyt) — dół zostaje w tyle za ruchem.
+        // Kołysanie: trzymane wyżej (za uchwyt) - dół zostaje w tyle za ruchem.
         const swing = clamp(-t.vx * 0.026, -0.5, 0.5) * (t.gy < -12 ? 1 : -0.5);
         t.a += (swing - t.a) * Math.min(1, 0.14 * dt);
         if (t.flick > 0) t.flick -= dt;
@@ -4776,7 +4776,7 @@
         else sprayTick(t, dt);
       }
       const loadHeight = (t) => Math.min(28, t.load / 100) * toolScale;
-      // Łopata: dolna krawędź szufli zgarnia śnieg, który jest nad nią (aż do samej karty). Pełna łopata nie bierze więcej —
+      // Łopata: dolna krawędź szufli zgarnia śnieg, który jest nad nią (aż do samej karty). Pełna łopata nie bierze więcej -
       // z kopczyka spadają grudki, trzeba ją opróżnić (szybki ruch w górę albo puszczenie).
       function shovelTick(t, dt) {
         const half = 40 * toolK(t);
@@ -4824,7 +4824,7 @@
           t.load -= v;
           add({ t: 'clump', x: t.x + rnd(-half, half) * 0.7, y: t.y - loadHeight(t) * 0.8, vx: -t.vx * 0.2 + rnd(-1, 1), vy: -rnd(0.5, 1.5), g: 0.22, drag: 0.99, r: rnd(1.4, 2.6), vol: v, z: 0, wall: true });
         }
-        // Szybki ruch w górę — śnieg z łopaty leci w powietrze.
+        // Szybki ruch w górę - śnieg z łopaty leci w powietrze.
         if (t.load > 40 && t.vy < -6 && t.flick <= 0) {
           dumpLoad(t, true);
           t.flick = 18;
@@ -5156,7 +5156,7 @@
       }
 
       // ---- Ogień: płomienie jak w Doomie (siatka w niskiej rozdzielczości) dodane światłem na dole ekranu ----
-      // Bez płomieni na dole (wyłączone w panelu) zostają iskry i dym w tle — i nie ma czego gasić.
+      // Bez płomieni na dole (wyłączone w panelu) zostają iskry i dym w tle - i nie ma czego gasić.
       const fire = theme === 'fire' && floor ? makeFire() : null;
       function makeFire() {
         const L = 36;
@@ -5181,7 +5181,7 @@
         const cv = document.createElement('canvas');
         const fc = cv.getContext('2d');
         const F = { L, cols: 0, rows: 0, cell: 4, fh: 0, top: 0, grid: null, soft: null, cold: null, fade: null, img: null, boost: 0, fuel: 1 };
-        // Siatka jest dużo wyższa niż płomienie, a górne wiersze łagodnie przygasają — języki ognia nigdy się nie urywają.
+        // Siatka jest dużo wyższa niż płomienie, a górne wiersze łagodnie przygasają - języki ognia nigdy się nie urywają.
         F.size = () => {
           F.fh = Math.min(h * (0.035 + kk * 0.05), 130);
           F.cell = Math.max(3, Math.round(F.fh / 22));
@@ -5198,7 +5198,7 @@
           cv.height = F.rows;
           F.img = fc.createImageData(F.cols, F.rows);
         };
-        // Żar w kółku wokół punktu (kursor, kliknięcie) — tylko w dolnej części, żeby płomienie miały gdzie wygasnąć.
+        // Żar w kółku wokół punktu (kursor, kliknięcie) - tylko w dolnej części, żeby płomienie miały gdzie wygasnąć.
         F.heat = (x, y, r, k = 1) => {
           const cx = Math.round(x / F.cell) + 1;
           const cy = Math.round((Math.max(y, h - F.fh * 0.8) - F.top) / F.cell);
@@ -5236,7 +5236,7 @@
         };
         F.step = (t) => {
           const { cols, rows, grid } = F;
-          // Średnio o ile słabnie żar z wiersza na wiersz (ułamek → losowo 1 albo 2) — z tego wysokość płomieni.
+          // Średnio o ile słabnie żar z wiersza na wiersz (ułamek → losowo 1 albo 2) - z tego wysokość płomieni.
           const decay = Math.max(0.2, (L * F.cell) / (F.fh * 1.3 * (1 + F.boost * 0.9)));
           const base = (rows - 1) * cols;
           let cold = 0;
@@ -5273,7 +5273,7 @@
         F.draw = () => {
           const { grid, soft, img, cols, rows, fade } = F;
           const d = img.data;
-          // Rozmycie [1 2 1] w poziomie i w pionie — miękkie języki ognia zamiast zaszumionych pikseli.
+          // Rozmycie [1 2 1] w poziomie i w pionie - miękkie języki ognia zamiast zaszumionych pikseli.
           for (let y = 0; y < rows; y++) {
             const row = y * cols;
             for (let x = 0; x < cols; x++) {
@@ -5302,7 +5302,7 @@
           ctx.globalCompositeOperation = 'lighter';
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
-          // Poświata nad ogniem — migocze razem z płomieniami, słabnie, gdy ogień przygaszony.
+          // Poświata nad ogniem - migocze razem z płomieniami, słabnie, gdy ogień przygaszony.
           const flick = 0.8 + 0.2 * Math.sin(now * 0.013) * Math.sin(now * 0.031);
           const gh = F.fh * (1.7 + F.boost);
           const glow = ctx.createLinearGradient(0, h, 0, h - gh);
@@ -5500,7 +5500,7 @@
           const u = unders.find((q) => q.el === p.stick);
           if (!u) p.stick = null;
           else {
-            // Spód karty nigdy nie jest idealnie poziomy — bańka powoli sunie do bliższego brzegu i się wymyka.
+            // Spód karty nigdy nie jest idealnie poziomy - bańka powoli sunie do bliższego brzegu i się wymyka.
             p.vx = clamp(p.vx + p.side * 0.006 * dt, -1.4, 1.4);
             p.x += p.vx * dt;
             p.y = u.y + p.r * (0.97 + 0.03 * Math.sin(p.age * 0.15 + p.sway));
@@ -5660,7 +5660,7 @@
         ctx.restore();
       }
 
-      // ---- Monety: przytrzymaj przycisk — magnes zbiera monety (licznik w rogu) ----
+      // ---- Monety: przytrzymaj przycisk - magnes zbiera monety (licznik w rogu) ----
       function magnetTick(dt) {
         const R = 320;
         for (const p of list) {
@@ -5807,7 +5807,7 @@
           add({ t: 'streamer', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 0.16, drag: 0.982, life: rnd(150, 210), wd: rnd(2.2, 3.2), hist: [], sway: rnd(0, TAU), noLand: true });
         }
       }
-      // Neon: fala uderzeniowa — trzy świecące pierścienie, wszystko w pobliżu odlatuje.
+      // Neon: fala uderzeniowa - trzy świecące pierścienie, wszystko w pobliżu odlatuje.
       function shockwave(x, y) {
         [[0, 7], [6, 5.5], [12, 4.2]].forEach(([delay, grow], i) => add({ t: 'ring', x, y, vx: 0, vy: 0, r: 4, grow, life: 44, age: -delay, c: colors[i % colors.length], noLand: true }));
         impulse(x, y, 280, 8);
@@ -5820,7 +5820,7 @@
         impulse(x, y, 240, 6);
         for (let k = 0; k < 16; k++) add(fxPop(theme, x, y));
       }
-      // Gwiazdy: klikaj — stawiasz gwiazdy połączone liniami; kliknięcie przy pierwszej zamyka gwiazdozbiór.
+      // Gwiazdy: klikaj - stawiasz gwiazdy połączone liniami; kliknięcie przy pierwszej zamyka gwiazdozbiór.
       function placeStar(x, y) {
         const t = performance.now();
         const lastStar = chain[chain.length - 1];
@@ -6334,12 +6334,12 @@
         ctx.restore();
       }
 
-      // ---- Ludziki: osoby z topki bawią się na dole ekranu — każdy efekt ma własną zabawę ----
+      // ---- Ludziki: osoby z topki bawią się na dole ekranu - każdy efekt ma własną zabawę ----
       // Wspólne: awatar jako głowa, nick, szkielet z pozami, chód, dymki i rozmowy (zaczepiają się po nickach
       // i odpowiadają sobie). Sceny: wchodzą z boków, bawią się dłuższą chwilę, żegnają się i wychodzą, a po krótkiej
       // przerwie przychodzą następni. Motyw (S) dokłada: co robią, co mają na głowie i w rękach, co mówią.
       function makeCrowd() {
-        // Teksty: kwestia albo para [kwestia, odpowiedź] — wtedy zaczepiona osoba (albo ktoś obok) odpowiada właśnie tym.
+        // Teksty: kwestia albo para [kwestia, odpowiedź] - wtedy zaczepiona osoba (albo ktoś obok) odpowiada właśnie tym.
         const CHAT = [
           ['{n}, ile masz już XP?', 'Więcej niż ty, spokojnie'],
           ['Kto tyle pisze na ogólnym?', 'Nie patrz tak na mnie'],
@@ -6401,7 +6401,7 @@
           }
           return out;
         }
-        // Okrągły awatar rysowany raz do osobnego płótna; bez obrazka — kółko z pierwszą literą nicku.
+        // Okrągły awatar rysowany raz do osobnego płótna; bez obrazka - kółko z pierwszą literą nicku.
         function face(src, name, bg) {
           const c = document.createElement('canvas');
           c.width = c.height = 64;
@@ -6440,8 +6440,8 @@
           f.sayT = t ?? 55 + text.length * 3.2;
           f.sayAt = now;
         }
-        // Podstawienia: {n} — nick kogoś obok (w odpowiedzi: nick pytającego), {lvl} — własny poziom,
-        // {mult} — mnożnik wydarzenia, {c} — licznik motywu (np. zebrane monety).
+        // Podstawienia: {n} - nick kogoś obok (w odpowiedzi: nick pytającego), {lvl} - własny poziom,
+        // {mult} - mnożnik wydarzenia, {c} - licznik motywu (np. zebrane monety).
         function fill(text, f, other = null) {
           let to = other;
           const out = text.replace(/\{(n|lvl|mult|c)\}/g, (_, k) => {
@@ -6464,7 +6464,7 @@
           if (recent.length > 18) recent.shift();
           return pick;
         }
-        // Pojedyncza kwestia; para [kwestia, odpowiedź] albo zaczepka po nicku — krótka wymiana zdań twarzą w twarz.
+        // Pojedyncza kwestia; para [kwestia, odpowiedź] albo zaczepka po nicku - krótka wymiana zdań twarzą w twarz.
         function talk(f, lines, t) {
           const pick = fresh(lines);
           const [lineText, back] = Array.isArray(pick) ? pick : [pick, null];
@@ -6478,7 +6478,7 @@
         }
 
         // ---- Rozmowy: dwie osoby podchodzą do siebie (siedzący rozmawiają w miejscu), odwracają się twarzą
-        // i mówią na zmianę, z gestami. Linia dialogu: [kto (0 — A, 1 — B), tekst, gest?, akcja?]. ----
+        // i mówią na zmianę, z gestami. Linia dialogu: [kto (0 - A, 1 - B), tekst, gest?, akcja?]. ----
         const convos = [];
         const SEATED = ['picnic', 'roast', 'sit', 'lie', 'scope'];
         const CHATTY = ['idle', 'walk', 'dance', 'disco', 'rake', 'hunt', 'gaze', 'hold', 'wait', 'chat'];
@@ -6545,7 +6545,7 @@
             } else if (c.t > 420) endTalk(c);
             return;
           }
-          // Twarzą do siebie (chyba że ktoś jest w trakcie innej czynności — wtedy tylko mówi).
+          // Twarzą do siebie (chyba że ktoś jest w trakcie innej czynności - wtedy tylko mówi).
           for (const [o, p] of [[A, B], [B, A]]) if (o.state === 'chat' || o.state === 'idle' || SEATED.includes(o.state)) o.dir = Math.sign(p.x - o.x) || o.dir;
           c.wait -= dt;
           if (c.wait > 0) return;
@@ -6708,8 +6708,8 @@
           }
         }
 
-        // Pozy: kąty od pionu w dół (dodatnie — do przodu): uda a, kolana k, ramiona s, łokcie e; lean — tułów,
-        // tilt — głowa, rot — obrót całej postaci (upadek, leżenie, pływanie).
+        // Pozy: kąty od pionu w dół (dodatnie - do przodu): uda a, kolana k, ramiona s, łokcie e; lean - tułów,
+        // tilt - głowa, rot - obrót całej postaci (upadek, leżenie, pływanie).
         function target(f) {
           const q = { lean: 0.04, tilt: 0, a1: 0.06, a2: -0.06, k1: 0.12, k2: 0.12, s1: 0.2, s2: -0.15, e1: 0.5, e2: 0.4, rot: 0 };
           const t = f.t;
@@ -6823,7 +6823,7 @@
           f.duo?.def.pose?.(f, q, t, f.duo);
           return q;
         }
-        // Kinematyka: z kątów — punkty stawów w układzie strony (lustrzane odbicie dla patrzących w lewo, obrót).
+        // Kinematyka: z kątów - punkty stawów w układzie strony (lustrzane odbicie dla patrzących w lewo, obrót).
         function solve(f) {
           const p = f.pose;
           const s = f.s;
@@ -8323,7 +8323,7 @@
                   add({ t: 'ring', x: a.x, y: a.y, vx: 0, vy: 0, r: 6, grow: 3, lw: 2, c: '#ff5c8a', a: 0.9, life: 18, noLand: true });
                   for (const o of [a.to, a.to?.mate]) if (o && !o.gone) hop(o, 3);
                   if (a.to && a.to.mate && !a.to.gone && !a.to.mate.gone) {
-                    // Pierwsza strzała to odkrycie; kolejne w tę samą parę — już tylko zmęczenie Kupidynem.
+                    // Pierwsza strzała to odkrycie; kolejne w tę samą parę - już tylko zmęczenie Kupidynem.
                     const again = [
                       [[0, 'Znowu?'], [1, 'Chyba ma za dużo strzał']],
                       [[0, 'Już jesteśmy razem, wystarczy', 'shrug'], [1, 'Powiedz to jemu', 'point']],
@@ -9014,7 +9014,7 @@
               }
             },
             hand(f, j) {
-              // Worek na monety za plecami — rośnie z każdą monetą.
+              // Worek na monety za plecami - rośnie z każdą monetą.
               const s = f.s;
               const r = (4.2 + Math.min(f.count, 24) * 0.28) * s;
               const [x, y0] = j.h2;
@@ -9613,7 +9613,7 @@
           happening = null;
           pageReset();
         }
-        // Matrix: „włamanie” — teksty strony rozsypują się w znaki, ekran szarpie, zielony błysk.
+        // Matrix: „włamanie” - teksty strony rozsypują się w znaki, ekran szarpie, zielony błysk.
         function hackPage() {
           glitch();
           let n = 0;
@@ -9630,7 +9630,7 @@
           );
           add({ t: 'tint', x: 0, y: 0, vx: 0, vy: 0, life: 22, c: '#00ff66', instant: true, noLand: true });
         }
-        // Matrix: przejęcie strony — haker na pierwszym miejscu, nagłówek i liczby podmienione, strona na zielono.
+        // Matrix: przejęcie strony - haker na pierwszym miejscu, nagłówek i liczby podmienione, strona na zielono.
         function takeover(f) {
           mode('evx-hack');
           const t1 = document.querySelector('.top3 .t1:not(.vacant)');
@@ -9646,7 +9646,7 @@
           ];
           for (const [el, text] of put) {
             if (!el) continue;
-            // Trwające „dekodowanie” starego tekstu nadpisałoby podmianę — przerwij je i zacznij od nowa.
+            // Trwające „dekodowanie” starego tekstu nadpisałoby podmianę - przerwij je i zacznij od nowa.
             mx.delete(el);
             mxSeen.delete(el);
             swap(el, text);
@@ -9722,7 +9722,7 @@
           try {
             g.drawImage(canvas, Math.max(0, x0) * k, (h - sh) * k, sw * k, sh * k, 0, 0, W, H);
           } catch {
-            // płótno mogło się zmienić — zostaje samo tło
+            // płótno mogło się zmienić - zostaje samo tło
           }
           return c;
         }
@@ -9776,7 +9776,7 @@
 
         // ==== Wydarzenia ruszają też stroną ====
         // Karty, podium i wiersze podskakują, trzęsą się, chwieją i świecą; teksty na chwilę się zmieniają.
-        // Wszystko chwilowe: animacje WAAPI na osobnych właściwościach (translate/rotate/scale — nie psują
+        // Wszystko chwilowe: animacje WAAPI na osobnych właściwościach (translate/rotate/scale - nie psują
         // transform strony), klasy na <body> i podmiany tekstu, które wracają po wydarzeniu.
         const PAGE = '.head, .event, .toolbar, .top3 .top, #list .row, .side .card';
         const CARDS = '.top3 .top, #list .row, .side .card, .toolbar, .event';
@@ -9882,7 +9882,7 @@
           }
           return best;
         }
-        // Punkt na elemencie (u, v — ułamki szerokości i wysokości), liczony na bieżąco (strona się przewija).
+        // Punkt na elemencie (u, v - ułamki szerokości i wysokości), liczony na bieżąco (strona się przewija).
         const at = (el, u, v) => {
           const r = box(el);
           return [r.left + u * r.width, r.top + v * r.height, r];
@@ -9895,7 +9895,7 @@
           const T = clamp(Math.hypot(x - sx, y - sy) / 9, 24, 50);
           add({ t: 'ball', x: sx, y: sy, vx: (x - sx) / T, vy: (y - sy) / T - (g * (T + 1)) / 2, r: 3.6 * f.s, vol: 90, rot: 0, vr: 0.1, g, drag: 1, flight: T, toward: true, owner: f, z: 0, noLand: true, instant: true });
         }
-        // Ciemność nad stroną; z r > 0 — z jaśniejszym kręgiem (latarka) w (cx, cy).
+        // Ciemność nad stroną; z r > 0 - z jaśniejszym kręgiem (latarka) w (cx, cy).
         function darkness(k, cx = w / 2, cy = h / 2, r = 0, rgb = '4, 3, 12') {
           if (k <= 0) return;
           if (r > 0) {
@@ -10035,7 +10035,7 @@
         }
 
         const ACTS = {
-          // Piątka (czasem pudło — ręce mijają się w powietrzu).
+          // Piątka (czasem pudło - ręce mijają się w powietrzu).
           five: {
             start(X) {
               closeIn(X, 27);
@@ -10191,7 +10191,7 @@
               if (X.step === 1) Object.assign(q, { lean: 0.5, s1: 0.55, e1: 0.3, s2: 0.5, e2: 0.35, k1: 0.35, k2: 0.3 });
             },
           },
-          // Kamień, papier, nożyce (remis — jeszcze raz).
+          // Kamień, papier, nożyce (remis - jeszcze raz).
           rps: {
             start(X) {
               closeIn(X, 34);
@@ -10414,7 +10414,7 @@
               else if (f === X.A && X.step >= 1 && X.step < 3) Object.assign(q, { lean: 0.36, s1: -0.5, e1: 1.3, s2: -0.4, e2: 1.2 });
             },
           },
-          // Ktoś pokazuje coś na stronie (miejsce na podium, wiersz, kartę) — element świeci, a oni komentują.
+          // Ktoś pokazuje coś na stronie (miejsce na podium, wiersz, kartę) - element świeci, a oni komentują.
           point: {
             reach: 320,
             start(X) {
@@ -10448,7 +10448,7 @@
               else q.tilt = -0.3;
             },
           },
-          // Skok na kartę (albo podium) — postoi, pomacha i zeskoczy; czasem się zsunie.
+          // Skok na kartę (albo podium) - postoi, pomacha i zeskoczy; czasem się zsunie.
           climb: {
             solo: true,
             start(X) {
@@ -10726,7 +10726,7 @@
               },
             },
           ],
-          // Lepienie bałwana; zostaje do końca sceny — można go zestrzelić śnieżką.
+          // Lepienie bałwana; zostaje do końca sceny - można go zestrzelić śnieżką.
           snow: [
             {
               start() {
@@ -10911,7 +10911,7 @@
               },
             },
           ],
-          // Z płomieniami: wjeżdża wóz strażacki (koguty odbijają się na stronie) i gasi — działkiem z dachu (przy okazji
+          // Z płomieniami: wjeżdża wóz strażacki (koguty odbijają się na stronie) i gasi - działkiem z dachu (przy okazji
           // „myje” karty), wężem (strażacy wysiadają) albo… kończy mu się woda i wraca na drugą rundę.
           // Przy ognisku: ktoś gra na gitarze.
           fire: fire
@@ -11719,7 +11719,7 @@
               },
             },
           ],
-          // Wspólne zdjęcie z samowyzwalaczem: 3, 2, 1, błysk — i oczywiście ktoś ma zamknięte oczy.
+          // Wspólne zdjęcie z samowyzwalaczem: 3, 2, 1, błysk - i oczywiście ktoś ma zamknięte oczy.
           sakura: [
             {
               start() {
@@ -11848,7 +11848,7 @@
               },
             },
           ],
-          // Skrzynia skarbów spada z nieba; kto pierwszy, ten otwiera — fontanna monet.
+          // Skrzynia skarbów spada z nieba; kto pierwszy, ten otwiera - fontanna monet.
           coins: [
             {
               start() {
@@ -11875,7 +11875,7 @@
                   if (E.t > 90 && !E.burst) {
                     E.burst = true;
                     if (E.kind === 'mimic') {
-                      // Mimik: skrzynia ma zęby — wszyscy w nogi, a ona skacze za nimi.
+                      // Mimik: skrzynia ma zęby - wszyscy w nogi, a ona skacze za nimi.
                       E.teeth = true;
                       pageShake(0.9, 320);
                       for (const c of E.cast) if (c.event === E) walkTo(c, clamp(c.x + (c.x < E.x ? -1 : 1) * rnd(170, 280), 20, right()), 'run');
@@ -12088,7 +12088,7 @@
               },
             },
           ],
-          // Rekin przepływa przez ekran — nurkowie uciekają, a potem spór, czy to był delfin.
+          // Rekin przepływa przez ekran - nurkowie uciekają, a potem spór, czy to był delfin.
           bubbles: [
             {
               start() {
@@ -12220,7 +12220,7 @@
             },
           ],
         };
-        // ==== Kolejne rzadkie wydarzenia (dobierane losowo razem z poprzednimi) — każde rusza też stroną ====
+        // ==== Kolejne rzadkie wydarzenia (dobierane losowo razem z poprzednimi) - każde rusza też stroną ====
         const bez = (P, u) => {
           const v = 1 - u;
           return [0, 1].map((i) => v * v * v * P[0][i] + 3 * v * v * u * P[1][i] + 3 * v * u * u * P[2][i] + u * u * u * P[3][i]);
@@ -12237,7 +12237,7 @@
           return nm ? withName(nm) : plain;
         };
 
-        // Matrix: „przewinięcie” strony (déjà vu) — strona szarpie, teksty migają znakami.
+        // Matrix: „przewinięcie” strony (déjà vu) - strona szarpie, teksty migają znakami.
         function rewind() {
           glitch();
           flash('#00ff66', 0.22, 14);
@@ -12407,7 +12407,7 @@
           if (big) pageShake(0.9);
         }
 
-        // Halloween: „psikus” — imiona w rankingu na chwilę zamieniają się w straszydła, karty się trzęsą.
+        // Halloween: „psikus” - imiona w rankingu na chwilę zamieniają się w straszydła, karty się trzęsą.
         function prank() {
           let i = Math.floor(rnd(0, SPOOKY.length));
           for (const el of visible('.dn, h1')) swap(el, el.tagName === 'H1' ? 'Ranking strachów' : SPOOKY[i++ % SPOOKY.length]);
@@ -12795,7 +12795,7 @@
               },
             },
           ],
-          // „Na trzy… w ekran!” — cała grupa obrzuca śnieżkami szybę, przez którą patrzysz.
+          // „Na trzy… w ekran!” - cała grupa obrzuca śnieżkami szybę, przez którą patrzysz.
           snow: [
             {
               start() {
@@ -13027,7 +13027,7 @@
               },
             },
           ],
-          // Przy ognisku: ktoś odpala fajerwerki — wybuchy nad całą stroną, karty błyskają kolorami.
+          // Przy ognisku: ktoś odpala fajerwerki - wybuchy nad całą stroną, karty błyskają kolorami.
           camp: [
             {
               start() {
@@ -13162,7 +13162,7 @@
               },
             },
           ],
-          // Kupidyn chybia ludzi i wbija strzałę w kartę rankingu — karta „zakochuje się” (pulsuje, serduszka).
+          // Kupidyn chybia ludzi i wbija strzałę w kartę rankingu - karta „zakochuje się” (pulsuje, serduszka).
           hearts: [
             {
               start() {
@@ -13304,7 +13304,7 @@
               },
             },
             {
-              // UFO zabiera kawałek strony (avatar z podium, wiersz albo kartę), po chwili oddaje — trochę bardziej zielony.
+              // UFO zabiera kawałek strony (avatar z podium, wiersz albo kartę), po chwili oddaje - trochę bardziej zielony.
               start() {
                 const el = pickOne(visible('.top3 .top:not(.vacant) .pod-av, #list .row, .side .card').filter((e) => box(e).top > 120)) ?? pickOne(visible('.event .ev-mult, .head .server-icon, .event').filter((e) => box(e).top > 90));
                 if (!el) return null;
@@ -14324,7 +14324,7 @@
             drawBubbles();
             ctx.globalAlpha = 1;
           },
-          // Podgląd: wymusza rzadkie wydarzenie (jak nikogo nie ma — scena zaczyna się od razu); i — konkretne (testy).
+          // Podgląd: wymusza rzadkie wydarzenie (jak nikogo nie ma - scena zaczyna się od razu); i - konkretne (testy).
           force(i) {
             if (happening) return;
             forced = true;
@@ -14356,7 +14356,7 @@
             }
             return false;
           },
-          // Efekt kliknięcia (piorun, wir liści, armatka…) obok ludzików — reagują.
+          // Efekt kliknięcia (piorun, wir liści, armatka…) obok ludzików - reagują.
           near(x, y) {
             for (const f of ppl) {
               if (f.gone || !onScreen(f) || Math.abs(f.x - x) > 160 * f.s) continue;
@@ -14458,7 +14458,7 @@
           if (!tl.held) placeTool(tl);
           drawTool(tl, dt);
         }
-        // Czapy odświeżane po kolei (najwyżej co 3 klatki każda) — śnieg rośnie powoli, nie trzeba częściej.
+        // Czapy odświeżane po kolei (najwyżej co 3 klatki każda) - śnieg rośnie powoli, nie trzeba częściej.
         let k = 0;
         for (const st of surfMap.values()) {
           k += 1;
@@ -14696,7 +14696,7 @@
         el.classList.add('flash');
       } else {
         const note = $('#note');
-        note.innerHTML = '<b>Nie ma Cię w tym rankingu</b> — zdobądź trochę XP na serwerze.';
+        note.innerHTML = '<b>Nie ma Cię w tym rankingu</b> - zdobądź trochę XP na serwerze.';
         note.hidden = false;
       }
       openProfile(id);
@@ -14784,7 +14784,7 @@
     }, true);
 
     // ---------- Eventy serwera (osobna strona /event) ----------
-    // Trwający (albo najbliższy) event: pasek z linkiem w kolorach eventu; przy kilku — „i jeszcze N”.
+    // Trwający (albo najbliższy) event: pasek z linkiem w kolorach eventu; przy kilku - „i jeszcze N”.
     const CT_STRIP_COLORS = { messages: ['#3cc3d6', '#a5ecf5'], invites: ['#8b7bff', '#cfc7ff'], mixed: ['#f5a524', '#ffd88f'] };
     async function eventsStrip() {
       let contests = [];
@@ -14810,7 +14810,7 @@
     }
 
     const initial = location.hash.slice(1);
-    // Czysty adres: /ranking — bez .html i bez #okresu. Stare linki (ranking.html, #week, #event) działają dalej:
+    // Czysty adres: /ranking - bez .html i bez #okresu. Stare linki (ranking.html, #week, #event) działają dalej:
     // okres odczytany wyżej, a adres w pasku przeglądarki od razu się czyści.
     if (!PREVIEW && !EMBED) {
       try { history.replaceState(null, '', `${location.pathname.replace(/\/ranking\.html$/, '/ranking')}${location.search}`); } catch {}

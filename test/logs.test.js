@@ -150,7 +150,7 @@ test('logi głosowe: wejście, przejście i wyjście', async () => {
 test('intencje sesji: dziennik zdarzeń przy logach, treść wiadomości i członkowie tylko z flagami aplikacji', async () => {
   const s = await setup();
   const base = (1 << 0) | (1 << 7) | (1 << 9);
-  assert.equal(await sessionIntents(s.bot), base | (1 << 2), 'bez flag aplikacji — bez uprzywilejowanych');
+  assert.equal(await sessionIntents(s.bot), base | (1 << 2), 'bez flag aplikacji - bez uprzywilejowanych');
   s.discord.state.appFlags = (1 << 15) | (1 << 19);
   s.bot.cache.delete('app');
   assert.equal(await sessionIntents(s.bot), base | (1 << 2) | (1 << 1) | (1 << 15));
@@ -216,7 +216,7 @@ test('zdjęcie profilowe: log ze starym i nowym zdjęciem (dołączone pliki, ga
   await update({ avatar: 'a_bbb' }, { avatar: 'ccc' });
   assert.equal(fetched.at(-1), 'https://cdn.discordapp.com/guilds/g1/users/target/avatars/ccc.png?size=512');
 
-  // Gdy obrazka nie da się pobrać — zostają linki.
+  // Gdy obrazka nie da się pobrać - zostają linki.
   s.bot.fetch = async () => new Response('nie ma', { status: 404 });
   await update({ avatar: 'a_bbb' }, { avatar: null });
   const fallback = s.discord.state.calls.findLast((c) => c.method === 'POST' && c.path === '/channels/100000000000000058/messages');
@@ -228,7 +228,7 @@ test('zdjęcie profilowe: log ze starym i nowym zdjęciem (dołączone pliki, ga
   assert.match(name.description, /zmienił\(a\) nazwę użytkownika/);
   assert.deepEqual(name.fields.map((f) => f.value), ['(`hurownik_og`)', 'Nowy (`nowy_nick`)']);
 
-  // Wyłączone zdjęcia profilowe — nic nie trafia do logów.
+  // Wyłączone zdjęcia profilowe - nic nie trafia do logów.
   await s.store.updateConfig({ logs: { events: { memberAvatar: false } } });
   const before = logged(s, '100000000000000058').length;
   await update({ avatar: 'zzz', username: 'nowy_nick', global_name: 'Nowy' });
@@ -283,7 +283,7 @@ test('zaproszenia: kto kogo zaprosił w logu wejścia i wyjścia, /zaproszenia p
 
   s.discord.state.invites[0].uses = 4;
   await join(aged(1));
-  assert.match(log(), /\*\*Zaprosił\(a\):\*\* <@mod> \(zaproszenie `abc`, użyte 4×\) — zaprosił\(a\) już \*\*1\*\* osobę/);
+  assert.match(log(), /\*\*Zaprosił\(a\):\*\* <@mod> \(zaproszenie `abc`, użyte 4×\) - zaprosił\(a\) już \*\*1\*\* osobę/);
 
   // Jednorazowe zaproszenie znika po użyciu.
   s.discord.state.invites = s.discord.state.invites.filter((i) => i.code !== 'raz');
@@ -304,7 +304,7 @@ test('zaproszenia: kto kogo zaprosił w logu wejścia i wyjścia, /zaproszenia p
 
   const ranking = await handleInteraction(commandPayload('zaproszenia', []), s.bot);
   await ranking.task();
-  assert.match(s.discord.state.webhook.at(-1).body.embeds[0].description, /1\. <@mod> — \*\*1\*\*\n2\. <@owner> — \*\*1\*\*|1\. <@owner> — \*\*1\*\*\n2\. <@mod> — \*\*1\*\*/);
+  assert.match(s.discord.state.webhook.at(-1).body.embeds[0].description, /1\. <@mod> - \*\*1\*\*\n2\. <@owner> - \*\*1\*\*|1\. <@owner> - \*\*1\*\*\n2\. <@mod> - \*\*1\*\*/);
   const person = await handleInteraction(commandPayload('zaproszenia', [{ name: 'uzytkownik', type: 6, value: 'mod' }], { resolvedIds: ['mod'] }), s.bot);
   await person.task();
   assert.match(s.discord.state.webhook.at(-1).body.embeds[0].description, /\*\*Zaprosił\(a\):\*\* 1 osobę/);

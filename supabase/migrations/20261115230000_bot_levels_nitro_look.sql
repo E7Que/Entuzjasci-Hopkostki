@@ -1,4 +1,4 @@
--- Kolor akcentu (kolor banera z profilu Discorda) i Nitro osób z rankingu — do publicznej strony rankingu.
+-- Kolor akcentu (kolor banera z profilu Discorda) i Nitro osób z rankingu - do publicznej strony rankingu.
 -- Odświeżane przez crona po kilka osób naraz, najwyżej co 12 godzin dla każdej osoby.
 alter table bot.levels
   add column if not exists accent_color text,

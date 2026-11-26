@@ -60,7 +60,7 @@ create table bot.temp_bans (
   primary key (guild_id, user_id)
 );
 
--- Wiadomości bota o karach — odpowiedzi na nie dostają reakcję 🫓.
+-- Wiadomości bota o karach - odpowiedzi na nie dostają reakcję 🫓.
 create table bot.mod_messages (
   message_id text primary key,
   channel_id text not null,

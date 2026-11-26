@@ -19,7 +19,7 @@ test('dziennik zmian ustawień: zapisy z panelu, kto i które części, wpis do 
   assert.deepEqual(list.body.items.map((h) => [h.sections, h.changedBy]), [
     [['Ustawienia'], 'kasia'],
     [['Poziomy', 'Automoderacja'], 'hasło panelu'],
-  ], 'zapis bez zmian nie tworzy wpisu; Poziomy u moderatora bez dostępu — pominięte');
+  ], 'zapis bez zmian nie tworzy wpisu; Poziomy u moderatora bez dostępu - pominięte');
   assert.equal((await store.getConfig()).levels.enabled, true);
 
   const entry = await call('GET', `/config/history/${list.body.items[1].id}`);
@@ -27,7 +27,7 @@ test('dziennik zmian ustawień: zapisy z panelu, kto i które części, wpis do 
   assert.deepEqual(Object.keys(entry.body.changes), ['levels', 'automod']);
   assert.equal((await call('GET', '/config/history/999')).status, 404);
 
-  // Dziennik pokazuje wszystkie części — tylko dla pełnego dostępu.
+  // Dziennik pokazuje wszystkie części - tylko dla pełnego dostępu.
   assert.equal((await call('GET', '/config/history', { auth: limited })).status, 403);
   assert.equal((await call('GET', `/config/history/${list.body.items[0].id}`, { auth: limited })).status, 403);
 });
@@ -39,7 +39,7 @@ test('dziennik zmian: tylko zmienione klucze i najwyżej 100 wpisów', async () 
   });
   assert.deepEqual(configChanges({ a: 1 }, { a: 1 }), {});
   const { store } = await createTestStore();
-  assert.equal(await store.addConfigHistory({ changedBy: 'x', changes: {} }), null, 'bez zmian — bez wpisu');
+  assert.equal(await store.addConfigHistory({ changedBy: 'x', changes: {} }), null, 'bez zmian - bez wpisu');
   for (let i = 0; i < 105; i++) await store.addConfigHistory({ changedBy: `osoba ${i}`, changes: { appealText: { before: `${i}`, after: `${i + 1}` } } });
   const items = await store.listConfigHistory(200);
   assert.equal(items.length, 100);
@@ -47,7 +47,7 @@ test('dziennik zmian: tylko zmienione klucze i najwyżej 100 wpisów', async () 
   assert.deepEqual(items[0].keys, ['appealText']);
 });
 
-test('pulpit: stan bota — błędy zadań, problemy strażnika, dzisiejsza aktywność, odwołania, baza', async () => {
+test('pulpit: stan bota - błędy zadań, problemy strażnika, dzisiejsza aktywność, odwołania, baza', async () => {
   const { store } = await createTestStore();
   const bot = makeBot({ store, discord: fakeDiscord() });
   await store.setState('cron_last_run', { at: Date.now(), report: { voiceXp: { error: 'timeout bazy' }, bump: { found: 0 } } });

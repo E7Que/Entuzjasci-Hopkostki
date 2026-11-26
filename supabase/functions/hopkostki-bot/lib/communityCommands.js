@@ -21,7 +21,7 @@ const channelOpt = (description, required = false) => ({ type: T.CHANNEL, name: 
 const roleOpt = (name, description, required = false) => ({ type: T.ROLE, name, description, required });
 
 const snowflakeTime = (id) => (/^\d+$/.test(String(id)) ? Number((BigInt(id) >> 22n) + 1420070400000n) : null);
-const stamp = (ms) => (ms ? `${discordTimestamp(ms, 'D')} (${discordTimestamp(ms, 'R')})` : '—');
+const stamp = (ms) => (ms ? `${discordTimestamp(ms, 'D')} (${discordTimestamp(ms, 'R')})` : '-');
 const clip = (text, max) => (String(text ?? '').length > max ? `${String(text).slice(0, max - 1)}…` : String(text ?? ''));
 const MAX_WAIT_MS = 365 * 24 * 60 * 60_000;
 
@@ -62,7 +62,7 @@ const ankieta = {
     ...GUILD_ONLY,
     options: [
       str('pytanie', '❓ O co pytasz?', { required: true, max_length: 300 }),
-      str('odpowiedzi', '📝 Odpowiedzi rozdzielone średnikiem, np. Pizza; Kebab; 🍔 Burger (2–10)', { required: true, max_length: 600 }),
+      str('odpowiedzi', '📝 Odpowiedzi rozdzielone średnikiem, np. Pizza; Kebab; 🍔 Burger (2-10)', { required: true, max_length: 600 }),
       int('godziny', '⏱️ Ile godzin trwa ankieta (domyślnie 24, maks. 768 = 32 dni)', { min_value: 1, max_value: 768 }),
       bool('wielokrotny', '☑️ Czy można wybrać kilka odpowiedzi?'),
       channelOpt('📢 Gdzie wysłać (domyślnie ten kanał)'),
@@ -81,7 +81,7 @@ const ankieta = {
         layout_type: 1,
       },
     });
-    return ix.edit({ embeds: [embeds.successEmbed(`Ankieta wysłana na <#${channelId}> — [zobacz](${messageUrl(ix.guildId, channelId, message.id)}).`)] });
+    return ix.edit({ embeds: [embeds.successEmbed(`Ankieta wysłana na <#${channelId}> - [zobacz](${messageUrl(ix.guildId, channelId, message.id)}).`)] });
   },
 };
 
@@ -91,7 +91,7 @@ const przypomnij = {
   defer: 'ephemeral',
   data: {
     name: 'przypomnij',
-    description: '⏰ Przypomnienia — bot napisze do Ciebie o wybranej porze',
+    description: '⏰ Przypomnienia - bot napisze do Ciebie o wybranej porze',
     ...GUILD_ONLY,
     options: [
       sub('dodaj', '⏰ Ustaw przypomnienie', [
@@ -107,7 +107,7 @@ const przypomnij = {
   async execute(ix, bot) {
     if (ix.sub === 'lista') {
       const list = await bot.store.listReminders(ix.user.id);
-      const lines = list.map((r) => `**#${r.id}** ${discordTimestamp(r.dueAt, 'R')}${r.channelId === 'dm' ? ' (DM)' : ` na <#${r.channelId}>`} — ${clip(r.text, 80)}`);
+      const lines = list.map((r) => `**#${r.id}** ${discordTimestamp(r.dueAt, 'R')}${r.channelId === 'dm' ? ' (DM)' : ` na <#${r.channelId}>`} - ${clip(r.text, 80)}`);
       return ix.edit({ embeds: [embeds.simpleEmbed('info', 'Twoje przypomnienia', lines.join('\n') || 'Nie masz żadnych przypomnień.')] });
     }
     if (ix.sub === 'usun') {
@@ -152,14 +152,14 @@ const konkurs = {
   async execute(ix, bot) {
     if (ix.sub === 'lista') {
       const list = await bot.store.listGiveaways({ limit: 15 });
-      const lines = list.map((g) => `**#${g.id}** ${clip(g.prize, 60)} — ${g.ended ? 'zakończony' : `koniec ${discordTimestamp(g.endsAt, 'R')}`} • ${g.entrants.length} os. • <#${g.channelId}>`);
+      const lines = list.map((g) => `**#${g.id}** ${clip(g.prize, 60)} - ${g.ended ? 'zakończony' : `koniec ${discordTimestamp(g.endsAt, 'R')}`} • ${g.entrants.length} os. • <#${g.channelId}>`);
       return ix.edit({ embeds: [embeds.simpleEmbed('info', 'Konkursy', lines.join('\n') || 'Nie było jeszcze żadnych konkursów.')] });
     }
     if (ix.sub === 'zakoncz' || ix.sub === 'losuj') {
       const g = await bot.store.getGiveaway(ix.opt('numer'));
       if (!g) throw new ActionError('Nie ma konkursu o takim numerze.');
-      if (ix.sub === 'zakoncz' && g.ended) throw new ActionError('Ten konkurs już się zakończył — użyj `/konkurs losuj`, żeby wylosować ponownie.');
-      if (ix.sub === 'losuj' && !g.ended) throw new ActionError('Ten konkurs jeszcze trwa — najpierw `/konkurs zakoncz`.');
+      if (ix.sub === 'zakoncz' && g.ended) throw new ActionError('Ten konkurs już się zakończył - użyj `/konkurs losuj`, żeby wylosować ponownie.');
+      if (ix.sub === 'losuj' && !g.ended) throw new ActionError('Ten konkurs jeszcze trwa - najpierw `/konkurs zakoncz`.');
       const done = await endGiveaway(bot, g, { reroll: ix.sub === 'losuj' });
       return ix.edit({ embeds: [embeds.successEmbed(done.winnerIds.length ? `Zwycięzcy: ${done.winnerIds.map((id) => `<@${id}>`).join(', ')}` : 'Nie było kogo wylosować.')] });
     }
@@ -173,7 +173,7 @@ const konkurs = {
       requiredRoleId: ix.opt('wymagana_rola') ?? null,
       endsAt: Date.now() + ms,
     });
-    return ix.edit({ embeds: [embeds.successEmbed(`Konkurs **#${g.id}** wystartował na <#${channelId}> — [zobacz](${messageUrl(ix.guildId, channelId, g.messageId)}).`)] });
+    return ix.edit({ embeds: [embeds.successEmbed(`Konkurs **#${g.id}** wystartował na <#${channelId}> - [zobacz](${messageUrl(ix.guildId, channelId, g.messageId)}).`)] });
   },
 };
 
@@ -228,7 +228,7 @@ const profil = {
     const color = memberRoles.find((r) => r.color)?.color ?? embeds.COLORS.info;
     const fields = [
       { name: 'Konto założone', value: stamp(snowflakeTime(target.id)), inline: true },
-      { name: 'Na serwerze od', value: member?.joined_at ? stamp(new Date(member.joined_at).getTime()) : '—', inline: true },
+      { name: 'Na serwerze od', value: member?.joined_at ? stamp(new Date(member.joined_at).getTime()) : '-', inline: true },
     ];
     if (member?.premium_since) fields.push({ name: 'Boostuje od', value: stamp(new Date(member.premium_since).getTime()), inline: true });
     if (member) fields.push({ name: `Role (${memberRoles.length})`, value: clip(memberRoles.map((r) => `<@&${r.id}>`).join(' ') || 'brak', 1024) });
@@ -304,7 +304,7 @@ async function imageDataUri(bot, url) {
   const type = res.headers.get('content-type') ?? 'image/png';
   if (!/^image\/(png|gif|jpeg|webp)/.test(type)) throw new ActionError('To nie jest obrazek PNG, GIF, JPG ani WEBP.');
   const bytes = new Uint8Array(await res.arrayBuffer());
-  if (bytes.length > 256 * 1024) throw new ActionError('Obrazek jest za duży — emoji może mieć najwyżej 256 KB.');
+  if (bytes.length > 256 * 1024) throw new ActionError('Obrazek jest za duży - emoji może mieć najwyżej 256 KB.');
   let binary = '';
   for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   return `data:${type.split(';')[0]};base64,${btoa(binary)}`;
@@ -320,7 +320,7 @@ const emoji = {
     options: [
       sub('dodaj', '➕ Dodaj emoji na serwer', [
         str('emoji', '😀 Wklej emoji z innego serwera albo link do obrazka (https://…)', { required: true, max_length: 500 }),
-        str('nazwa', '🏷️ Nazwa (litery, cyfry, _) — domyślnie ta sama', { max_length: 32 }),
+        str('nazwa', '🏷️ Nazwa (litery, cyfry, _) - domyślnie ta sama', { max_length: 32 }),
       ]),
       sub('info', '🔎 Pokaż emoji w dużym rozmiarze z linkiem', [str('emoji', '😀 Wklej własne emoji', { required: true, max_length: 100 })]),
     ],
@@ -344,7 +344,7 @@ const emoji = {
     } else {
       throw new ActionError('Wklej własne emoji (np. z innego serwera) albo link https:// do obrazka.');
     }
-    if (!/^\w{2,32}$/.test(name)) throw new ActionError('Nazwa emoji: 2–32 znaki, tylko litery, cyfry i _.');
+    if (!/^\w{2,32}$/.test(name)) throw new ActionError('Nazwa emoji: 2-32 znaki, tylko litery, cyfry i _.');
     const created = await bot.discord.post(`/guilds/${ix.guildId}/emojis`, { name, image: await imageDataUri(bot, url) }, { reason: `Emoji dodane przez ${ix.user.username}` });
     const tag = `<${created.animated ? 'a' : ''}:${created.name}:${created.id}>`;
     return ix.edit({ embeds: [embeds.successEmbed(`Dodano emoji ${tag} \`:${created.name}:\`.`)] });
@@ -365,7 +365,7 @@ const powiedz = {
     description: '💬 Napisz wiadomość jako bot (także jako odpowiedź na czyjąś wiadomość)',
     ...GUILD_ONLY,
     options: [
-      str('tresc', '📝 Treść — nową linię zrobisz wpisując \\n', { required: true, max_length: 2000 }),
+      str('tresc', '📝 Treść - nową linię zrobisz wpisując \\n', { required: true, max_length: 2000 }),
       channelOpt('📢 Gdzie napisać (domyślnie ten kanał)'),
       str('odpowiedz_na', '↩️ Link albo ID wiadomości, na którą bot ma odpowiedzieć (opcjonalnie)', { max_length: 200 }),
     ],
@@ -373,13 +373,13 @@ const powiedz = {
   async execute(ix, bot) {
     const channelId = pickChannel(ix);
     const replyId = ix.opt('odpowiedz_na') ? messageIdFrom(ix.opt('odpowiedz_na')) : null;
-    if (ix.opt('odpowiedz_na') && !replyId) throw new ActionError('Nie rozpoznaję tej wiadomości — wklej link („Kopiuj link do wiadomości”) albo ID.');
+    if (ix.opt('odpowiedz_na') && !replyId) throw new ActionError('Nie rozpoznaję tej wiadomości - wklej link („Kopiuj link do wiadomości”) albo ID.');
     const message = await bot.discord.post(`/channels/${channelId}/messages`, {
       content: String(ix.opt('tresc')).replace(/\\n/g, '\n'),
       allowed_mentions: { parse: [], replied_user: true },
       ...(replyId ? { message_reference: { message_id: replyId, channel_id: channelId, fail_if_not_exists: true } } : {}),
     });
-    return ix.edit({ embeds: [embeds.successEmbed(`Wysłano na <#${channelId}> — [zobacz](${messageUrl(ix.guildId, channelId, message.id)}).`)] });
+    return ix.edit({ embeds: [embeds.successEmbed(`Wysłano na <#${channelId}> - [zobacz](${messageUrl(ix.guildId, channelId, message.id)}).`)] });
   },
 };
 
@@ -411,7 +411,7 @@ const czlonkowie = {
 const afk = {
   permission: null,
   defer: 'public',
-  data: { name: 'afk', description: '💤 Ustaw status AFK — kto Cię oznaczy, dostanie odpowiedź', ...GUILD_ONLY, options: [str('powod', '📝 Dlaczego Cię nie ma (opcjonalnie)', { max_length: 200 })] },
+  data: { name: 'afk', description: '💤 Ustaw status AFK - kto Cię oznaczy, dostanie odpowiedź', ...GUILD_ONLY, options: [str('powod', '📝 Dlaczego Cię nie ma (opcjonalnie)', { max_length: 200 })] },
   async execute(ix, bot) {
     const reason = ix.opt('powod') ?? '';
     await setAfk(bot, ix.user.id, reason);
@@ -426,11 +426,11 @@ const afk = {
 const propozycja = {
   permission: null,
   defer: 'ephemeral',
-  data: { name: 'propozycja', description: '💡 Zgłoś propozycję — trafi na kanał propozycji z głosowaniem', ...GUILD_ONLY, options: [str('tresc', '💡 Twoja propozycja', { required: true, max_length: 2000 })] },
+  data: { name: 'propozycja', description: '💡 Zgłoś propozycję - trafi na kanał propozycji z głosowaniem', ...GUILD_ONLY, options: [str('tresc', '💡 Twoja propozycja', { required: true, max_length: 2000 })] },
   async execute(ix, bot) {
     const result = await postSuggestion(bot, { config: await bot.store.getConfig(), user: ix.user, text: ix.opt('tresc') });
     const link = messageUrl(ix.guildId, result.channelId, result.messageId);
-    return ix.edit({ embeds: [embeds.successEmbed(`Twoja propozycja **#${result.number}** trafiła na <#${result.channelId}> — [zobacz](${link}).`)] });
+    return ix.edit({ embeds: [embeds.successEmbed(`Twoja propozycja **#${result.number}** trafiła na <#${result.channelId}> - [zobacz](${link}).`)] });
   },
 };
 
@@ -470,7 +470,7 @@ const losuj = {
     } else if (ix.sub === 'liczba') {
       const a = ix.opt('od') ?? 1;
       const b = ix.opt('do');
-      title = `Losowa liczba ${Math.min(a, b)}–${Math.max(a, b)}`;
+      title = `Losowa liczba ${Math.min(a, b)}-${Math.max(a, b)}`;
       text = `**${random(Math.min(a, b), Math.max(a, b))}**`;
     } else {
       const options = String(ix.opt('opcje')).split(/[;,]/).map((o) => o.trim()).filter(Boolean);
@@ -496,13 +496,13 @@ const zaproszenia = {
     const target = ix.getUser('uzytkownik');
     if (target) {
       const [count, list, invitedBy] = await Promise.all([bot.store.inviteCount(target.id), bot.store.invitedBy(target.id, 10), bot.store.inviteJoinFor(target.id)]);
-      const lines = list.map((j) => `<@${j.userId}> — ${discordTimestamp(j.joinedAt, 'R')} (\`${j.code}\`)`);
+      const lines = list.map((j) => `<@${j.userId}> - ${discordTimestamp(j.joinedAt, 'R')} (\`${j.code}\`)`);
       const from = invitedBy?.inviterId ? `\n**Sam(a) wszedł/weszła z zaproszenia:** <@${invitedBy.inviterId}>` : '';
       return ix.edit({
         embeds: [
           {
             color: embeds.COLORS.info,
-            author: { name: `Zaproszenia — ${target.global_name ?? target.username}`, icon_url: avatarUrl(target, 64) },
+            author: { name: `Zaproszenia - ${target.global_name ?? target.username}`, icon_url: avatarUrl(target, 64) },
             description: `**Zaprosił(a):** ${count} ${count === 1 ? 'osobę' : count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14) ? 'osoby' : 'osób'}${from}${lines.length ? `\n\n**Ostatnio:**\n${lines.join('\n')}` : ''}`,
             footer: { text: 'Liczone od włączenia logów zaproszeń' },
           },
@@ -511,7 +511,7 @@ const zaproszenia = {
       });
     }
     const ranking = await bot.store.inviteRanking(10);
-    const lines = ranking.map((r, i) => `${i + 1}. <@${r.inviterId}> — **${r.count}**`);
+    const lines = ranking.map((r, i) => `${i + 1}. <@${r.inviterId}> - **${r.count}**`);
     return ix.edit({
       embeds: [{ ...embeds.simpleEmbed('info', 'Ranking zaproszeń', lines.join('\n') || 'Nikt jeszcze nikogo nie zaprosił (liczone od włączenia logów zaproszeń).'), footer: { text: 'Liczone od włączenia logów zaproszeń' } }],
       allowed_mentions: { parse: [] },
@@ -544,7 +544,7 @@ const bumpy = {
           embeds.simpleEmbed(
             'info',
             ready ? 'Można bumpować!' : 'Bump jeszcze niedostępny',
-            `**Ostatni bump:** <@${state.userId}> ${discordTimestamp(state.at, 'R')}\n**Następny:** ${ready ? 'teraz — użyj </bump:947088344167366698>' : discordTimestamp(state.remindAt, 'R')}`,
+            `**Ostatni bump:** <@${state.userId}> ${discordTimestamp(state.at, 'R')}\n**Następny:** ${ready ? 'teraz - użyj </bump:947088344167366698>' : discordTimestamp(state.remindAt, 'R')}`,
           ),
         ],
         allowed_mentions: { parse: [] },
@@ -553,7 +553,7 @@ const bumpy = {
     const days = ix.opt('dni') ?? null;
     const ranking = await bot.store.bumpRanking({ limit: 10, days });
     const medals = ['1.', '2.', '3.'];
-    const lines = ranking.map((r, i) => `${medals[i] ?? `${i + 1}.`} <@${r.userId}> — **${r.count}** ${r.count === 1 ? 'bump' : r.count % 10 >= 2 && r.count % 10 <= 4 && (r.count % 100 < 12 || r.count % 100 > 14) ? 'bumpy' : 'bumpów'}`);
+    const lines = ranking.map((r, i) => `${medals[i] ?? `${i + 1}.`} <@${r.userId}> - **${r.count}** ${r.count === 1 ? 'bump' : r.count % 10 >= 2 && r.count % 10 <= 4 && (r.count % 100 < 12 || r.count % 100 > 14) ? 'bumpy' : 'bumpów'}`);
     return ix.edit({
       embeds: [embeds.simpleEmbed('info', `Ranking bumpów${days ? ` (${days} dni)` : ''}`, lines.join('\n') || 'Nikt jeszcze nie bumpował.')],
       allowed_mentions: { parse: [] },

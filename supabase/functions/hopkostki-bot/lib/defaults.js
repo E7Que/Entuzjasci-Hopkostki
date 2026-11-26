@@ -7,14 +7,14 @@ export const DEFAULT_CONFIG = {
   // Kanał z logami moderacji (pełne szczegóły, punkty ostrzeżeń, status DM). Puste = brak logów.
   modLogChannelId: '',
   // Alerty, gdy bot przestaje działać (brak połączenia z Discordem, komendy nie docierają, funkcja bota nie odpowiada).
-  // channelId puste = kanał logów moderacji; minutes — po ilu minutach problemu wysłać alert (3–120).
+  // channelId puste = kanał logów moderacji; minutes - po ilu minutach problemu wysłać alert (3-120).
   alerts: { enabled: true, channelId: '', pingRoleId: '', minutes: 5 },
   // Kanał, na który trafiają ogłoszenia o karach. Puste = odpowiedź na kanale, na którym użyto komendy.
   announceChannelId: '',
   // Role, które mogą używać komend moderacyjnych (oprócz osób z odpowiednimi uprawnieniami Discorda).
   modRoleIds: [],
   // Nadpisania dostępu dla POJEDYNCZYCH komend (panel → Uprawnienia): { nazwaKomendy: ['idRoli', ...] }.
-  // Gdy komenda ma tu wpis, liczy się TYLKO ta lista ról — także dla ról z Administratorem, niezależnie od
+  // Gdy komenda ma tu wpis, liczy się TYLKO ta lista ról - także dla ról z Administratorem, niezależnie od
   // uprawnień Discorda i modRoleIds powyżej. Jedyny wyjątek: właściciel serwera ma dostęp zawsze (bezpiecznik,
   // patrz moderation.js/hasModAccess). Brak wpisu = zasady domyślne. null = obiekt dynamiczny,
   // scalany/sanitizowany specjalnie (patrz configSchema.js), nie strukturą jak zwykłe pola.
@@ -29,7 +29,7 @@ export const DEFAULT_CONFIG = {
   // Tekst dopisywany do DM (np. informacja o odwołaniach). Puste = brak.
   appealText: 'Jeśli uważasz, że kara była niesłuszna, skontaktuj się z administracją serwera.',
   // Odwołania od kar: przycisk „Odwołaj się” pod DM z karą (ban, wyrzucenie, timeout, ostrzeżenie) → formularz →
-  // kanał channelId (puste = kanał logów moderacji) z przyciskami Przyjmij/Odrzuć; pingRoleId — ping przy nowym
+  // kanał channelId (puste = kanał logów moderacji) z przyciskami Przyjmij/Odrzuć; pingRoleId - ping przy nowym
   // odwołaniu. Przyjęcie cofa karę. Jedno odwołanie na sprawę, najwyżej `days` dni po karze.
   appeals: { enabled: false, channelId: '', pingRoleId: '', days: 14 },
 
@@ -80,13 +80,13 @@ export const DEFAULT_CONFIG = {
   },
 
   // Tickety: przycisk w wiadomości-panelu tworzy prywatny kanał dla tej osoby i obsługi.
-  // Zmienne: {uzytkownik} {nick} {numer} {typ}. types: przyciski w panelu — każdy z własnym formularzem
+  // Zmienne: {uzytkownik} {nick} {numer} {typ}. types: przyciski w panelu - każdy z własnym formularzem
   // (fields: maks. 5 pól w okienku Discorda; brak pól = ticket otwiera się od razu) i opcjonalnym powitaniem.
   tickets: {
     enabled: false,
     categoryId: '',
     // Dokąd trafia kanał po zamknięciu ticketu (puste = zostaje w tej samej kategorii). Kanał nie jest
-    // usuwany — znika tylko z widoku osoby, która go otworzyła, i każdego poza obsługą.
+    // usuwany - znika tylko z widoku osoby, która go otworzyła, i każdego poza obsługą.
     archiveCategoryId: '',
     supportRoleIds: [],
     logChannelId: '',
@@ -95,11 +95,11 @@ export const DEFAULT_CONFIG = {
     dmTranscript: true,
     // Pierwsza wiadomość kogoś z obsługi w nieprzejętym tickecie przejmuje go (jak przycisk „Przejmij”).
     autoClaim: true,
-    welcome: 'Cześć {uzytkownik}! Opisz dokładnie swoją sprawę — ktoś z obsługi zaraz odpowie.',
+    welcome: 'Cześć {uzytkownik}! Opisz dokładnie swoją sprawę - ktoś z obsługi zaraz odpowie.',
     panel: {
       title: 'Pomoc i zgłoszenia',
       description:
-        'Masz problem albo pytanie do administracji? Wybierz **Zgłoszenie**.\nChcesz nawiązać z nami partnerstwo? Wybierz **Partnerstwo** — poprosimy o link do serwera, liczbę członków i powód.\n\nUtworzymy prywatny kanał, na którym ktoś Ci odpowie.',
+        'Masz problem albo pytanie do administracji? Wybierz **Zgłoszenie**.\nChcesz nawiązać z nami partnerstwo? Wybierz **Partnerstwo** - poprosimy o link do serwera, liczbę członków i powód.\n\nUtworzymy prywatny kanał, na którym ktoś Ci odpowie.',
       color: '#5865F2',
     },
     types: [
@@ -122,9 +122,9 @@ export const DEFAULT_CONFIG = {
         label: 'Partnerstwo',
         style: 'zielony',
         emoji: '🤝',
-        welcome: 'Cześć {uzytkownik}! Dzięki za chęć nawiązania partnerstwa — administracja sprawdzi Twój serwer i odpowie tutaj.',
-        // Regulamin partnerstw — pokazywany przed formularzem; edytujesz go w panelu (Tickety → Partnerstwo).
-        rules: '**1.** Serwer partnera musi być aktywny i przestrzegać regulaminu Discorda (bez treści NSFW, nienawiści i oszustw).\n**2.** Podany link do serwera musi być stałym zaproszeniem (bez limitu czasu i użyć).\n**3.** Podana liczba członków musi być prawdziwa — sprawdzamy ją w Discordzie. Boty i fałszowanie liczby = odmowa.\n**4.** Partnerstwo opiera się na wzajemnej reklamie: obie strony publikują reklamę drugiej na ustalonym kanale i nie usuwają jej bez uzgodnienia.\n**5.** Linki w reklamie nie mogą być ukryte — żadnych linków schowanych pod tekstem (np. [kliknij](link)), w spoilerach, za skracaczami ani przekierowaniami. Zaproszenie musi być widoczne w całości.\n**6.** Zakaz promowania się pieniędzmi, konkursami, giveawayami i innymi nagrodami za dołączenie (np. Nitro, płatne zaproszenia, „dołącz i wygraj”) — dotyczy serwera partnera i treści reklamy.\n**7.** Zastrzegamy sobie prawo do zerwania partnerstwa, gdy serwer partnera złamie regulamin lub przestanie spełniać wymagania.\n**8.** Decyzję o partnerstwie podejmuje administracja — odpowiedź może zająć kilka dni.',
+        welcome: 'Cześć {uzytkownik}! Dzięki za chęć nawiązania partnerstwa - administracja sprawdzi Twój serwer i odpowie tutaj.',
+        // Regulamin partnerstw - pokazywany przed formularzem; edytujesz go w panelu (Tickety → Partnerstwo).
+        rules: '**1.** Serwer partnera musi być aktywny i przestrzegać regulaminu Discorda (bez treści NSFW, nienawiści i oszustw).\n**2.** Podany link do serwera musi być stałym zaproszeniem (bez limitu czasu i użyć).\n**3.** Podana liczba członków musi być prawdziwa - sprawdzamy ją w Discordzie. Boty i fałszowanie liczby = odmowa.\n**4.** Partnerstwo opiera się na wzajemnej reklamie: obie strony publikują reklamę drugiej na ustalonym kanale i nie usuwają jej bez uzgodnienia.\n**5.** Linki w reklamie nie mogą być ukryte - żadnych linków schowanych pod tekstem (np. [kliknij](link)), w spoilerach, za skracaczami ani przekierowaniami. Zaproszenie musi być widoczne w całości.\n**6.** Zakaz promowania się pieniędzmi, konkursami, giveawayami i innymi nagrodami za dołączenie (np. Nitro, płatne zaproszenia, „dołącz i wygraj”) - dotyczy serwera partnera i treści reklamy.\n**7.** Zastrzegamy sobie prawo do zerwania partnerstwa, gdy serwer partnera złamie regulamin lub przestanie spełniać wymagania.\n**8.** Decyzję o partnerstwie podejmuje administracja - odpowiedź może zająć kilka dni.',
         categoryId: '',
         archiveCategoryId: '',
         logChannelId: '',
@@ -141,7 +141,7 @@ export const DEFAULT_CONFIG = {
     ],
   },
 
-  // Nowe osoby na serwerze. Wymaga intencji „Server Members” — bot włącza ją sam, gdy coś tu jest włączone.
+  // Nowe osoby na serwerze. Wymaga intencji „Server Members” - bot włącza ją sam, gdy coś tu jest włączone.
   // Zmienne w wiadomościach: {uzytkownik} {nick} {serwer} {liczba}
   members: {
     autoRole: { enabled: false, roleIds: [], botRoleIds: [] },
@@ -149,7 +149,7 @@ export const DEFAULT_CONFIG = {
       enabled: false,
       channelId: '',
       title: 'Witaj na serwerze!',
-      message: 'Cześć {uzytkownik}! Witamy na **{serwer}** — jesteś naszym **{liczba}.** członkiem.',
+      message: 'Cześć {uzytkownik}! Witamy na **{serwer}** - jesteś naszym **{liczba}.** członkiem.',
       color: '#57F287',
     },
     goodbye: { enabled: false, channelId: '', message: '**{nick}** opuścił(a) serwer. Zostało nas {liczba}.' },
@@ -170,7 +170,7 @@ export const DEFAULT_CONFIG = {
     ignoreBots: true,
     ignoredChannelIds: [],
     // Nowe konta (np. multikonta): przy wejściu osoby z kontem młodszym niż `days` dni log jest żółty,
-    // a gdy ping jest włączony — oznacza @here, @everyone albo wybrane role (mention: here | everyone | roles).
+    // a gdy ping jest włączony - oznacza @here, @everyone albo wybrane role (mention: here | everyone | roles).
     newAccount: {
       ping: true,
       days: 1,
@@ -227,7 +227,7 @@ export const DEFAULT_CONFIG = {
       enabled: true,
       reply: true,
       title: 'Dzięki za Bumpnięcie serwera!',
-      message: '{uzytkownik} — to już Twój **{liczba}.** bump. Kolejny możliwy {nastepny}.',
+      message: '{uzytkownik} - to już Twój **{liczba}.** bump. Kolejny możliwy {nastepny}.',
       color: '#5865F2',
     },
     reminder: {
@@ -266,14 +266,14 @@ export const DEFAULT_CONFIG = {
     message: { enabled: true, mode: 'random', min: 15, max: 40, cooldown: 60 },
     voice: { enabled: false, min: 15, max: 40, cooldown: 180, minMembers: 2, antiAfk: true },
     reaction: { enabled: false, awards: 'both', min: 25, max: 25, cooldown: 300 },
-    // Ochrona przed nabijaniem: dailyCap — najwyżej tyle XP na dobę (czas polski; 0 = bez limitu, w wydarzeniu XP
-    // limit rośnie razem z mnożnikiem); ignoreRepeats — ta sama wiadomość co ostatnio nagrodzona nie daje XP;
-    // minChars — krótsze wiadomości (bez załączników) nie dają XP.
+    // Ochrona przed nabijaniem: dailyCap - najwyżej tyle XP na dobę (czas polski; 0 = bez limitu, w wydarzeniu XP
+    // limit rośnie razem z mnożnikiem); ignoreRepeats - ta sama wiadomość co ostatnio nagrodzona nie daje XP;
+    // minChars - krótsze wiadomości (bez załączników) nie dają XP.
     antiFarm: { dailyCap: 0, ignoreRepeats: true, minChars: 0 },
     // Wydarzenia XP: od startsAt do endsAt XP (wybranych rodzajów: message/voice/reaction) mnożone przez multiplier
-    // (dowolny od 1,1 do 10); gdy kilka się nakłada — liczy się największy mnożnik. theme — efekt na stronie rankingu
-    // (XP_EVENT_THEMES w configSchema.js), intensity — none/low/medium/high, accent — własny kolor #rrggbb albo null,
-    // floor — efekt przy dole ekranu (płomienie przy „Ogniu”), false wyłącza.
+    // (dowolny od 1,1 do 10); gdy kilka się nakłada - liczy się największy mnożnik. theme - efekt na stronie rankingu
+    // (XP_EVENT_THEMES w configSchema.js), intensity - none/low/medium/high, accent - własny kolor #rrggbb albo null,
+    // floor - efekt przy dole ekranu (płomienie przy „Ogniu”), false wyłącza.
     // Ogłoszenie początku i końca (z najlepszymi osobami) na eventsAnnounce.channelId (puste = kanał awansów),
     // rola roleId dostaje ping przy starcie.
     events: [],
@@ -295,9 +295,9 @@ export const DEFAULT_CONFIG = {
       channels: [],
     },
     // Raz w tygodniu (niedziela 00:00 UTC) i raz w miesiącu ranking osób, które w tym czasie zdobyły najwięcej XP;
-    // roleId — rola pingowana przy każdym nowym rankingu.
+    // roleId - rola pingowana przy każdym nowym rankingu.
     highlights: { weekly: { enabled: false, channelId: '' }, monthly: { enabled: false, channelId: '' }, roleId: '' },
-    // autoColor — kolor embedów z roli za poziom (albo progu poziomu); userBanner — baner osoby z Discorda jako obrazek.
+    // autoColor - kolor embedów z roli za poziom (albo progu poziomu); userBanner - baner osoby z Discorda jako obrazek.
     card: { color: '#3CC3D6', image: '', autoColor: true, userBanner: true },
     management: { lockXpCommand: false, lockReset: false },
     autoReset: true,
@@ -305,7 +305,7 @@ export const DEFAULT_CONFIG = {
     publicLeaderboard: true,
   },
 
-  // Eventy (konkursy) na stronie rankingu — zakładka „Eventy” pokazuje się tylko, gdy jakiś event jest zaplanowany,
+  // Eventy (konkursy) na stronie rankingu - zakładka „Eventy” pokazuje się tylko, gdy jakiś event jest zaplanowany,
   // trwa albo skończył się w ostatnich 3 dniach. Udział wymaga połączenia konta: /polacz na Discordzie daje link,
   // który loguje na stronie. list: eventy (contests.js), logChannelId: kanał, na który trafiają zgłoszenia osób,
   // które osiągnęły próg (puste = bez powiadomień), pingRoleId: rola oznaczana przy zgłoszeniu.
@@ -317,7 +317,7 @@ export const DEFAULT_CONFIG = {
   },
 
   // Logowanie moderacji do panelu: /login na wybranym kanale daje osobie jej login i hasło, ważne loginDays
-  // dni (7, 14 albo 30 — potem /login daje nowe; /login nowy:True wymusza nowe wcześniej).
+  // dni (7, 14 albo 30 - potem /login daje nowe; /login nowy:True wymusza nowe wcześniej).
   // roles: które role odblokowują którą część panelu (bot sprawdza aktualne role na bieżąco).
   // Administratorzy serwera i logowanie hasłem panelu mają zawsze dostęp do wszystkiego.
   // Automoderacja (domyślnie wyłączona). action: delete = tylko usunięcie wiadomości, warn = usunięcie + ostrzeżenie
@@ -330,7 +330,7 @@ export const DEFAULT_CONFIG = {
     exemptChannelIds: [],
     // Pomijanie administracji i moderacji (role moderatorów, właściciel, uprawnienia do usuwania wiadomości / timeoutów).
     exemptStaff: true,
-    // Pomijanie ticketów (wszystkich rodzajów, otwartych i zamkniętych) — rozmowy z obsługą, linki przy partnerstwach.
+    // Pomijanie ticketów (wszystkich rodzajów, otwartych i zamkniętych) - rozmowy z obsługą, linki przy partnerstwach.
     exemptTickets: true,
     notify: true,
     timeoutMinutes: 10,
@@ -360,7 +360,7 @@ export const DEFAULT_CONFIG = {
         id: 'levels',
         kind: 'levels',
         title: 'Role za poziomy 📈',
-        intro: 'Za aktywność na serwerze zdobywasz XP — za wiadomości i czas na kanałach głosowych. Kolejne poziomy dają nowe role. Swój poziom sprawdzisz komendą {/rank}.',
+        intro: 'Za aktywność na serwerze zdobywasz XP - za wiadomości i czas na kanałach głosowych. Kolejne poziomy dają nowe role. Swój poziom sprawdzisz komendą {/rank}.',
         banner: '',
         items: [],
       },

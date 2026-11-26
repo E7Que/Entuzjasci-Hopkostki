@@ -1,7 +1,7 @@
 // Automoderacja: zaproszenia do innych serwerów, masowe oznaczenia, CAPS, zakazane słowa, flood i powtarzanie
 // wiadomości, anty-rajd (dużo wejść naraz). Każdy filtr ma własną karę: usunięcie wiadomości, ostrzeżenie
 // (punkty → progi z zakładki Ostrzeżenia) albo timeout. Moderatorzy, administratorzy, role i kanały z wyjątków
-// są pomijani — tak samo tickety (rozmowy z obsługą, np. partnerstwa z linkami do serwerów).
+// są pomijani - tak samo tickety (rozmowy z obsługą, np. partnerstwa z linkami do serwerów).
 // Wszystko trafia na kanał logów automoderacji (albo logów moderacji).
 
 import { P, memberPermissions } from './permissions.js';
@@ -20,7 +20,7 @@ const NOTICES = {
   mentions: 'nie oznaczaj tylu osób naraz.',
   caps: 'nie pisz samymi wielkimi literami.',
   words: 'ta wiadomość zawierała niedozwolone słowo.',
-  spam: 'zwolnij — za dużo wiadomości naraz.',
+  spam: 'zwolnij - za dużo wiadomości naraz.',
 };
 const INVITE_RE = /(?:https?:\/\/)?(?:www\.)?(?:discord(?:app)?\.com\/invite|discord\.gg|dsc\.gg)\/([a-z0-9-]{2,32})/gi;
 const EXEMPT_PERMS = P.ADMINISTRATOR | P.MANAGE_MESSAGES | P.MANAGE_GUILD | P.MODERATE_MEMBERS;
@@ -93,7 +93,7 @@ export function inviteCodes(text) {
   return [...String(text ?? '').matchAll(INVITE_RE)].map((m) => m[1]);
 }
 
-// Każde oznaczenie się liczy — także ta sama osoba wpisana kilka razy (7× @ktoś = 7). Do tego oznaczenie
+// Każde oznaczenie się liczy - także ta sama osoba wpisana kilka razy (7× @ktoś = 7). Do tego oznaczenie
 // z odpowiedzi (jest w mentions, ale nie w treści). Własne oznaczenie się nie liczy.
 export function mentionCount(message) {
   const content = String(message.content ?? '');
@@ -112,7 +112,7 @@ const mentionsText = (n) => `${n} ${n === 1 ? 'oznaczenie' : n % 10 >= 2 && n % 
 // ---------- Wyjątki ----------
 
 // Kanał ticketu (otwartego albo zamkniętego, także w archiwum)? Wynik trzymany w pamięci: „tak” długo,
-// „nie” tylko chwilę — żeby świeżo utworzony ticket nie czekał na odświeżenie.
+// „nie” tylko chwilę - żeby świeżo utworzony ticket nie czekał na odświeżenie.
 async function isTicketChannel(bot, channelId) {
   const key = `automodTicket:${channelId}`;
   const hit = bot.cache.get(key);
@@ -128,7 +128,7 @@ async function isExempt(bot, config, message) {
   if (a.exemptChannelIds.includes(message.channel_id)) return true;
   if (a.exemptTickets !== false && (await isTicketChannel(bot, message.channel_id))) return true;
   if (roles.some((id) => a.exemptRoleIds.includes(id))) return true;
-  // Administracja i moderacja — chyba że w panelu wyłączono ten wyjątek (np. żeby przetestować filtry na sobie).
+  // Administracja i moderacja - chyba że w panelu wyłączono ten wyjątek (np. żeby przetestować filtry na sobie).
   if (a.exemptStaff === false) return false;
   if (roles.some((id) => config.modRoleIds.includes(id))) return true;
   const { guild, roles: byId } = await getGuildContext(bot);
@@ -136,7 +136,7 @@ async function isExempt(bot, config, message) {
   return (memberPermissions(roles, byId, guild.id) & EXEMPT_PERMS) !== 0n;
 }
 
-// ---------- Spam (pamięć w trakcie sesji połączenia — okna liczone w sekundach) ----------
+// ---------- Spam (pamięć w trakcie sesji połączenia - okna liczone w sekundach) ----------
 
 const recent = new Map(); // userId → [{ at, id, channelId, text }]
 const cooldowns = new Map(); // userId → do kiedy nie karać ponownie za spam
@@ -198,7 +198,7 @@ async function punish(bot, config, message, { filter, detail, action, messages }
       outcome = `timeout na ${a.timeoutMinutes} min`;
     }
   } catch (error) {
-    outcome += ` — kara się nie udała: ${error.message}`;
+    outcome += ` - kara się nie udała: ${error.message}`;
   }
 
   const tasks = [];
@@ -306,7 +306,7 @@ const snowflakeTime = (id) => {
 };
 
 // GUILD_MEMBER_ADD: tyle wejść w tyle sekund = rajd. Alert (z pingiem roli alertów) i opcjonalnie wyrzucanie
-// nowych kont (młodszych niż X dni) przez czas trwania trybu anty-rajdu — także tych, które weszły w tej fali.
+// nowych kont (młodszych niż X dni) przez czas trwania trybu anty-rajdu - także tych, które weszły w tej fali.
 export async function onMemberJoinAutomod(bot, data, { now = Date.now() } = {}) {
   const config = await bot.store.getConfig();
   const a = config.automod;
@@ -354,8 +354,8 @@ export async function onMemberJoinAutomod(bot, data, { now = Date.now() } = {}) 
               description: [
                 `**${state.joins.length} osób** weszło na serwer w ${raid.seconds} s.`,
                 raid.action === 'kick'
-                  ? `Tryb anty-rajdu do **${until}**: nowe konta${raid.accountAgeDays ? ` (młodsze niż ${raid.accountAgeDays} dni)` : ''} są wyrzucane — teraz: ${kicked}.`
-                  : `Tryb anty-rajdu do **${until}** — sprawdźcie nowe osoby (kara automatyczna wyłączona).`,
+                  ? `Tryb anty-rajdu do **${until}**: nowe konta${raid.accountAgeDays ? ` (młodsze niż ${raid.accountAgeDays} dni)` : ''} są wyrzucane - teraz: ${kicked}.`
+                  : `Tryb anty-rajdu do **${until}** - sprawdźcie nowe osoby (kara automatyczna wyłączona).`,
                 `Ostatnie wejścia: ${state.joins.slice(-10).map((j) => `<@${j.id}>`).join(' ')}`,
               ].join('\n'),
               timestamp: new Date().toISOString(),

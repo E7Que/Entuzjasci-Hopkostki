@@ -7,7 +7,7 @@
 // - wejścia/wyjścia: GUILD_MEMBER_ADD/REMOVE (intencja „Server Members”),
 // - zdjęcie profilowe i nazwa użytkownika: GUILD_MEMBER_UPDATE + bot.member_profiles (poprzednia wersja),
 // - głosowe: VOICE_STATE_UPDATE + bot.voice_states (poprzedni kanał),
-// - reszta: GUILD_AUDIT_LOG_ENTRY_CREATE — dziennik zdarzeń mówi też, KTO coś zrobił i ze zmianami przed/po.
+// - reszta: GUILD_AUDIT_LOG_ENTRY_CREATE - dziennik zdarzeń mówi też, KTO coś zrobił i ze zmianami przed/po.
 
 import { getApp, isOurGuild, resolveGuildId } from './moderation.js';
 import { avatarUrl, messageUrl } from './rest.js';
@@ -47,7 +47,7 @@ export function logChannelFor(logs, event) {
 export const messageLogsOn = (config) => GROUPS.messages.some((e) => logChannelFor(config.logs, e));
 export const auditLogsOn = (config) => AUDIT_EVENTS.some((e) => logChannelFor(config.logs, e));
 export const joinLogsOn = (config) => Boolean(logChannelFor(config.logs, 'memberJoin') || logChannelFor(config.logs, 'memberLeave'));
-// Zmiany zdjęć profilowych i nazw użytkowników — też przez GUILD_MEMBER_UPDATE (intencja „Server Members”).
+// Zmiany zdjęć profilowych i nazw użytkowników - też przez GUILD_MEMBER_UPDATE (intencja „Server Members”).
 export const profileLogsOn = (config) => Boolean(logChannelFor(config.logs, 'memberAvatar') || logChannelFor(config.logs, 'memberNick'));
 
 async function send(bot, config, event, payload, options) {
@@ -117,7 +117,7 @@ export async function onMessageDelete(bot, data) {
   const config = await bot.store.getConfig();
   if (!messageLogsOn(config) || !(await isOurGuild(bot, data?.guild_id))) return;
   const [message] = await bot.store.deleteCachedMessages([data.id]);
-  // Wiadomości sprzed włączenia logów (albo botów) nie znamy — takich nie logujemy.
+  // Wiadomości sprzed włączenia logów (albo botów) nie znamy - takich nie logujemy.
   if (!message || !config.logs.events.messageDelete) return;
   await send(bot, config, 'messageDelete', {
     embeds: [
@@ -202,7 +202,7 @@ export async function logMemberJoin(bot, member, memberCount, invite = undefined
   const alert = config.logs.newAccount;
   const young = Date.now() - created < alert.days * 24 * 60 * 60_000;
   const limit = alert.days === 1 ? '1 dzień' : `${alert.days} dni`;
-  // Kto zaprosił — liczone przed wysłaniem logu, żeby było w tej samej wiadomości.
+  // Kto zaprosił - liczone przed wysłaniem logu, żeby było w tej samej wiadomości.
   const used = config.logs.events.memberInvite ? (invite !== undefined ? invite : await detectInvite(bot, member).catch(() => null)) : undefined;
   const inviteText = config.logs.events.memberInvite ? `\n${inviteLine(used)}` : '';
   await send(bot, config, 'memberJoin', {
@@ -212,7 +212,7 @@ export async function logMemberJoin(bot, member, memberCount, invite = undefined
         color: young ? COLOR.yellow : COLOR.green,
         author: authorOf(user, ' dołączył(a)'),
         thumbnail: { url: avatarUrl(user, 128) },
-        description: `<@${user.id}> ${escapeMarkdown(userTag(user))}${user.bot ? ' (bot)' : ''}\n**Konto założone:** ${discordTimestamp(created, 'f')} (${discordTimestamp(created, 'R')})${young ? `\n**Uwaga:** nowe konto — ma mniej niż ${limit}.` : ''}${inviteText}`,
+        description: `<@${user.id}> ${escapeMarkdown(userTag(user))}${user.bot ? ' (bot)' : ''}\n**Konto założone:** ${discordTimestamp(created, 'f')} (${discordTimestamp(created, 'R')})${young ? `\n**Uwaga:** nowe konto - ma mniej niż ${limit}.` : ''}${inviteText}`,
         footer: { text: `ID: ${user.id}${memberCount ? ` • Członków: ${memberCount}` : ''}` },
         timestamp: now(),
       },
@@ -252,7 +252,7 @@ export function profileAvatarUrl(guildId, userId, profile, size = 512) {
   return avatarUrl({ id: userId });
 }
 
-// Obrazek pobieramy od razu i dołączamy do logu — stary link z CDN Discorda po zmianie może przestać działać.
+// Obrazek pobieramy od razu i dołączamy do logu - stary link z CDN Discorda po zmianie może przestać działać.
 async function download(bot, url) {
   try {
     const res = await (bot.fetch ?? fetch)(url);
@@ -307,7 +307,7 @@ export async function onMemberUpdateLog(bot, member) {
   if (!profileLogsOn(config) || (user.bot && config.logs.ignoreBots) || !(await isOurGuild(bot, member.guild_id))) return;
   const next = { avatar: user.avatar ?? null, guildAvatar: member.avatar ?? null, username: user.username ?? null, globalName: user.global_name ?? null };
   const prev = await bot.store.swapMemberProfile(user.id, next);
-  if (!prev) return; // pierwszy raz widzimy tę osobę — tylko zapamiętujemy
+  if (!prev) return; // pierwszy raz widzimy tę osobę - tylko zapamiętujemy
 
   const before = profileAvatarUrl(member.guild_id, user.id, prev);
   const after = profileAvatarUrl(member.guild_id, user.id, next);
@@ -485,7 +485,7 @@ function changeLines(changes = []) {
       continue;
     }
     const label = CHANGE_LABELS[change.key];
-    if (!label) continue; // pozycja, flagi, nadpisania itp. — szum
+    if (!label) continue; // pozycja, flagi, nadpisania itp. - szum
     lines.push(`**${label}:** ${formatValue(change.key, change.old_value)} → ${formatValue(change.key, change.new_value)}`);
   }
   return lines;
@@ -515,7 +515,7 @@ export async function onAuditLogEntry(bot, entry) {
 
   // Kary nałożone komendami bota są już w logach moderacji z pełnymi szczegółami.
   const botModeration = byBot && Boolean(config.modLogChannelId);
-  // Kanały na żądanie i tickety bot tworzy i zmienia sam — to byłby tylko szum.
+  // Kanały na żądanie i tickety bot tworzy i zmienia sam - to byłby tylko szum.
   const botChannel = byBot && ((type >= AUDIT.CHANNEL_CREATE && type <= AUDIT.OVERWRITE_DELETE) || (type >= AUDIT.THREAD_CREATE && type <= AUDIT.THREAD_DELETE));
   if (botChannel) return;
 
@@ -552,7 +552,7 @@ export async function onAuditLogEntry(bot, entry) {
       const text =
         until > Date.now()
           ? `**<@${target}> dostał(a) timeout do ${discordTimestamp(until, 'f')}** (${discordTimestamp(until, 'R')})`
-          : `**<@${target}> — zdjęto timeout**`;
+          : `**<@${target}> - zdjęto timeout**`;
       const event = until > Date.now() ? 'memberTimeout' : 'memberTimeoutRemove';
       await send(bot, config, event, { embeds: [userEmbed(user, until > Date.now() ? COLOR.orange : COLOR.green, text, entry)] });
     }
@@ -573,7 +573,7 @@ export async function onAuditLogEntry(bot, entry) {
 
   const simple = async (event, color, title, lines = []) => {
     const body = [title, ...lines].join('\n') + (entry.user_id ? `\n**Przez:** <@${entry.user_id}>` : '') + reasonLine(entry);
-    return send(bot, config, event, { embeds: [{ color, description: clip(body, 4000), footer: { text: `ID: ${target ?? '—'}` }, timestamp: now() }] });
+    return send(bot, config, event, { embeds: [{ color, description: clip(body, 4000), footer: { text: `ID: ${target ?? '-'}` }, timestamp: now() }] });
   };
   const name = (key = 'name') => changeOf(entry, key)?.new_value ?? changeOf(entry, key)?.old_value ?? '?';
 

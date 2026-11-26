@@ -77,7 +77,7 @@ export async function replyError(ix, message) {
   try {
     if (ix.isComponent) return await ix.followUp({ ...payload, flags: EPHEMERAL });
     if (ix.ephemeral) return await ix.edit(payload);
-    // Publiczna odpowiedź była odroczona — usuwamy ją, żeby błąd nie wisiał na kanale.
+    // Publiczna odpowiedź była odroczona - usuwamy ją, żeby błąd nie wisiał na kanale.
     await ix.delete().catch(() => {});
     return await ix.followUp({ ...payload, flags: EPHEMERAL });
   } catch (error) {
@@ -89,11 +89,11 @@ export async function replyError(ix, message) {
 const ephemeralMessage = (text) => ({ type: RESPONSE.MESSAGE, data: { flags: EPHEMERAL, embeds: [errorEmbed(text)] } });
 
 /**
- * Zwraca { response } — odpowiedź HTTP dla Discorda — oraz opcjonalnie task() do wykonania w tle.
+ * Zwraca { response } - odpowiedź HTTP dla Discorda - oraz opcjonalnie task() do wykonania w tle.
  */
 export async function handleInteraction(body, bot) {
   if (body.type === TYPE.PING) return { response: { type: RESPONSE.PONG } };
-  // Odwołania od kar: przycisk i formularz w wiadomości prywatnej (bez serwera), decyzje — na serwerze.
+  // Odwołania od kar: przycisk i formularz w wiadomości prywatnej (bez serwera), decyzje - na serwerze.
   if ((body.type === TYPE.COMPONENT || body.type === TYPE.MODAL_SUBMIT) && isAppealCustomId(body.data?.custom_id)) {
     return handleAppealInteraction(body, bot);
   }
@@ -104,7 +104,7 @@ export async function handleInteraction(body, bot) {
 
   if (body.type === TYPE.COMPONENT || body.type === TYPE.MODAL_SUBMIT) {
     const customId = body.data?.custom_id;
-    // Panel kanału głosowego i wybór ról — własne przyciski, poza widokami ze stronami.
+    // Panel kanału głosowego i wybór ról - własne przyciski, poza widokami ze stronami.
     if (isVoiceCustomId(customId)) return handleVoiceInteraction(wrapInteraction(body, bot), bot);
     if (isRoleCustomId(customId)) return handleRoleInteraction(wrapInteraction(body, bot), bot);
     if (isTicketCustomId(customId)) return handleTicketInteraction(wrapInteraction(body, bot), bot);
@@ -114,7 +114,7 @@ export async function handleInteraction(body, bot) {
   }
 
   const command = COMMAND_MAP.get(body.data?.name);
-  if (!command) return { response: ephemeralMessage('Nieznana komenda — spróbuj ponownie za chwilę.') };
+  if (!command) return { response: ephemeralMessage('Nieznana komenda - spróbuj ponownie za chwilę.') };
 
   const ix = wrapInteraction(body, bot);
   const config = await bot.store.getConfig();
@@ -157,7 +157,7 @@ async function handleComponent(body, bot) {
   const ix = wrapInteraction(body, bot);
   const config = await bot.store.getConfig();
   const view = VIEWS[parsed.kind];
-  // Widok sprawdza listę ról komendy, która go otwiera (view.command) — tak samo jak sama komenda.
+  // Widok sprawdza listę ról komendy, która go otwiera (view.command) - tak samo jak sama komenda.
   if (!(await canUseCommand(bot, ix.member, view.permission, config, view.command))) {
     return { response: ephemeralMessage('Nie masz uprawnień do tej listy.') };
   }

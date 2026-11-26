@@ -12,7 +12,7 @@ const EPHEMERAL = 64;
 const DAY = 24 * 60 * 60_000;
 export const APPEAL_ACTIONS = ['ban', 'kick', 'timeout', 'warn'];
 const ACTION_NAMES = { ban: 'Ban', kick: 'Wyrzucenie', timeout: 'Wyciszenie (timeout)', warn: 'Ostrzeżenie' };
-// Kto rozpatruje: lista ról komendy, która tę karę cofa (zakładka Uprawnienia) — przyjęcie odwołania od bana to
+// Kto rozpatruje: lista ról komendy, która tę karę cofa (zakładka Uprawnienia) - przyjęcie odwołania od bana to
 // /unban, od timeoutu /untimeout, od ostrzeżenia jego usunięcie (/warn usun). Wyrzucenia nie da się cofnąć, więc
 // o odwołaniu od niego decydują ci, którzy mogą wyrzucać (/kick). Uprawnienie Discorda (pierwszy element)
 // liczy się tylko wtedy, gdy komenda nie ma własnej listy ról.
@@ -55,8 +55,8 @@ export function appealEmbed(appeal, entry) {
   const fields = [
     { name: '👤 Osoba', value: `<@${entry.userId}>\n\`${entry.userTag ?? entry.userId}\``, inline: true },
     { name: '⚖️ Kara', value: `${punishmentText(entry)}\n<t:${Math.floor(entry.createdAt / 1000)}:R>`, inline: true },
-    { name: '🛡️ Ukarał(a)', value: entry.auto ? '🤖 automatycznie' : entry.moderatorId ? `<@${entry.moderatorId}>` : '—', inline: true },
-    { name: '📝 Powód kary', value: String(entry.reason ?? '—').slice(0, 1000) },
+    { name: '🛡️ Ukarał(a)', value: entry.auto ? '🤖 automatycznie' : entry.moderatorId ? `<@${entry.moderatorId}>` : '-', inline: true },
+    { name: '📝 Powód kary', value: String(entry.reason ?? '-').slice(0, 1000) },
     { name: '💬 Odwołanie', value: appeal.text.slice(0, 1024) },
   ];
   if (decided) {
@@ -101,7 +101,7 @@ async function submitAppeal(bot, config, entry, user, text, body) {
     });
     await bot.store.setAppealMessage(appeal.id, { channelId, messageId: message.id });
   } catch (error) {
-    // Moderacja nie zobaczy odwołania — cofamy je, żeby osoba mogła spróbować później.
+    // Moderacja nie zobaczy odwołania - cofamy je, żeby osoba mogła spróbować później.
     await bot.store.deleteAppeal(appeal.id);
     throw new ActionError(`Nie udało się przekazać odwołania moderacji (${describeError(error)}). Spróbuj później.`);
   }
@@ -111,7 +111,7 @@ async function submitAppeal(bot, config, entry, user, text, body) {
   return appeal;
 }
 
-// Cofnięcie kary po przyjęciu odwołania — zwraca opis, co się stało (do embedów i DM).
+// Cofnięcie kary po przyjęciu odwołania - zwraca opis, co się stało (do embedów i DM).
 async function undoPunishment(bot, entry, moderator) {
   const target = { id: entry.userId, username: entry.userTag ?? entry.userId };
   const reason = `Przyjęte odwołanie od kary #${entry.id}`;
@@ -128,7 +128,7 @@ async function undoPunishment(bot, entry, moderator) {
         return removed ? 'ostrzeżenie usunięte' : 'ostrzeżenie już wygasło albo zostało usunięte';
       }
       default:
-        return 'wyrzucenia nie da się cofnąć — osoba może wrócić na serwer';
+        return 'wyrzucenia nie da się cofnąć - osoba może wrócić na serwer';
     }
   } catch (error) {
     return `nie udało się cofnąć automatycznie (${describeError(error)})`;
@@ -140,7 +140,7 @@ function decisionDm(entry, appeal, guildName) {
   const lines = [
     accepted
       ? `Twoje odwołanie od kary **#${entry.id}** (${punishmentText(entry).toLowerCase()}) zostało **przyjęte**.`
-      : `Twoje odwołanie od kary **#${entry.id}** (${punishmentText(entry).toLowerCase()}) zostało **odrzucone** — kara zostaje.`,
+      : `Twoje odwołanie od kary **#${entry.id}** (${punishmentText(entry).toLowerCase()}) zostało **odrzucone** - kara zostaje.`,
   ];
   if (accepted && appeal.undoResult) lines.push(`Kara: ${appeal.undoResult}.`);
   if (appeal.decisionNote) lines.push(`\n**Odpowiedź moderacji:**\n${appeal.decisionNote}`);
@@ -154,7 +154,7 @@ function decisionDm(entry, appeal, guildName) {
 }
 
 export async function decideAppeal(bot, config, { appeal, entry, moderator, accept, note = '' }) {
-  // Najpierw zapis decyzji (tylko z „oczekuje”) — dwa kliknięcia naraz nie cofną kary dwa razy.
+  // Najpierw zapis decyzji (tylko z „oczekuje”) - dwa kliknięcia naraz nie cofną kary dwa razy.
   let decided = await bot.store.decideAppeal(appeal.id, { status: accept ? 'accepted' : 'rejected', decidedBy: moderator.id, decidedTag: moderator.username ?? null, note: note || null });
   if (!decided) throw new ActionError('To odwołanie zostało już rozpatrzone.');
   if (accept) {
@@ -187,7 +187,7 @@ export async function decideAppeal(bot, config, { appeal, entry, moderator, acce
       ],
     });
   }
-  return accept ? `Odwołanie przyjęte — ${decided.undoResult}. Osoba dostała odpowiedź (${dmStatus}).` : `Odwołanie odrzucone. Osoba dostała odpowiedź (${dmStatus}).`;
+  return accept ? `Odwołanie przyjęte - ${decided.undoResult}. Osoba dostała odpowiedź (${dmStatus}).` : `Odwołanie odrzucone. Osoba dostała odpowiedź (${dmStatus}).`;
 }
 
 // Właściciel serwera rozpatruje zawsze (jak przy komendach). Sprawdzamy go po ID, bo ten handler sam składa dane

@@ -1,4 +1,4 @@
--- Ostatnio znane zdjęcie profilowe i nazwa każdej osoby — Discord przy zmianie podaje tylko nową wersję,
+-- Ostatnio znane zdjęcie profilowe i nazwa każdej osoby - Discord przy zmianie podaje tylko nową wersję,
 -- a log ma pokazać „przed” i „po” (logi serwera: zmiany zdjęć profilowych i nazw użytkowników).
 create table bot.member_profiles (
   user_id text primary key,
