@@ -73,20 +73,19 @@ default effect (sensible defaults), peak-end rule (end pages on a strong call to
 
 ## Tokens (keep every page on these)
 
-Navy and blue with the banner's neon cyan (owner's pick: "niebieski i granat", darker page, no purple).
-The source of truth is `:root` in `panel/public/site.css`:
+Colours come from the banner's pixels (owner: "kolory z baneru", not navy, not purple): near-black with a
+teal-green cast, the banner's neon cyan and sea green. Source of truth: `:root` in `panel/public/site.css`.
 
 ```css
---bg: #060b17; --surface: #0c1628; --raised: #13213a; --raised-hover: #1a2b4a;
---text: #e6eefb; --muted: #99aac4; --faint: #8396b3; --field-border: #5a7099;
---accent: #2fd9e0; --accent-hover: #63e5ea; --on-accent: #03272a; --accent-2: #5b9cff;
---glow-1/2/3, --tint (top bar);  --panel / --panel-edge / --panel-shadow (card surfaces)
+--bg: #050b0b; --surface: #0b1716; --raised: #11221f; --raised-hover: #163029;
+--text: #e4f4f2; --muted: #93b3ae; --faint: #7fa19b; --field-border: #56807a;
+--accent: #28e9ea; --accent-hover: #6ff1f2; --on-accent: #032a2a; --accent-2: #2ccf98;
+--gold / --silver / --bronze (podium), --ok / --warn / --danger (states)
 ```
 
-Cards and sections use `--panel` (lit from the top by the accent), a thin `--panel-edge` and `--panel-shadow`.
-Only the events page (`/event`) recolours itself: `Motion.paint(Motion.eventColors(event))` swaps the accent,
-second accent, top bar tint, glows, the aurora and the waves to the selected event's colours. Other pages keep
-navy and cyan. Type: Manrope (700 sections, 800 main heading) and Inter (400 text, 600 buttons), `latin-ext`.
+Cards and sections are plain: solid `--surface` and the layered `--shadow` (owner rejected tinted gradient
+panels as AI slop). Only the events page (`/event`) recolours itself with the selected event's colours
+(`Motion.paint`). Type: Manrope (700 sections, 800 main heading) and Inter (400 text, 600 buttons), `latin-ext`.
 
 ## Backgrounds (one per page, all from React Bits, ported in `rb.js` + `rb-*.js` / `particles.js`)
 
@@ -100,8 +99,11 @@ Do not stack a second full-page background on a page.
 
 ## Page frame
 
-- Same sticky top bar on every page (brand, Ranking, Eventy, "Dołącz" button), translucent `--tint` with blur.
-- Full-width banner (`img/banner.webp` 3840×2160 from the owner, `srcset` 960/1600/2400/3840). On scroll the image
+- Same top bar on every page (brand, Ranking, Eventy, "Dołącz" button): floats 12 px from the top over the banner as
+  dark blurred glass, no coloured fills or lines; the current page is brighter text with a filled accent icon.
+- Full-width banner (`img/banner.webp` 3840×2160 from the owner, `srcset` 960/1600/2400/3840). The owner can set
+  the icon and a separate banner for the landing, ranking and events pages in the panel (Ustawienia → Wygląd
+  strony, best 3840×2160 / icon 512×512); pages read them from `/public/site` in `motion.js`. On scroll the image
   moves slower than the page (parallax), zooms out slightly and darkens. It never shrinks into a box.
 - `motion.js` gives every public page the same motion: title words rise on load, section headings rise and
   sections slide up once, numbers count up (whole numbers, fixed width), the card under the cursor gets a light
