@@ -3615,7 +3615,7 @@ $('#si-send-new').addEventListener('click', () => sendServerInfoMessage(true));
 // ---------- Ustawienia → Wygląd strony (ikona i banery stron enho.pl) ----------
 // Obrazek idzie do bota w pełnej jakości: plik do 3 MB bez zmian; większy przeliczamy do WebP (najwyżej 3840 px szerokości).
 const SITE_DEFAULTS = { icon: 'img/icon.webp', bannerHome: 'img/banner.webp', bannerRanking: 'img/banner.webp', bannerEvents: 'img/banner.webp' };
-const SITE_MIN = { icon: [256, 256], bannerHome: [1920, 1080], bannerRanking: [1920, 1080], bannerEvents: [1920, 1080] };
+const SITE_MIN = { icon: [256, 256], bannerHome: [1920, 1080], bannerRanking: [1920, 600], bannerEvents: [1920, 600] };
 async function siteImageData(file, key) {
   if (!/^image\/(png|jpeg|webp)$/.test(file.type)) throw new Error('Wybierz obrazek PNG, JPG albo WebP.');
   let bitmap;

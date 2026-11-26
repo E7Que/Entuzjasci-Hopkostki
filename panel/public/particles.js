@@ -872,20 +872,22 @@
   const area = (window.innerWidth * window.innerHeight) / (1440 * 900);
   mountParticles(box, canvas, {
     particleColors: ['#ffffff', '#ffffff', 'var(--accent-hover)', 'var(--accent)', 'var(--accent-2)'],
-    // Mocniej niż w pliku „tło 1” (prośba właściciela): więcej punktów, jaśniej, więcej połączeń, spokojniej przy kursorze.
-    particleCount: Math.round(280 * Math.min(1, Math.max(0.5, area))),
+    // Mocniej niż w pliku „tło 1” (prośby właściciela): więcej punktów, jaśniej, więcej połączeń, spokojniej przy kursorze, bez obrotu.
+    particleCount: Math.round(340 * Math.min(1, Math.max(0.5, area))),
     particleSpread: 12,
     speed: 0.1,
-    particleBaseSize: 115,
-    glow: 0.6,
-    twinkle: 0.25,
+    particleBaseSize: 130,
+    glow: 0.8,
+    twinkle: 0.3,
     moveParticlesOnHover: true,
     hoverEffect: 'repel',
     particleHoverFactor: 0.35,
     hoverRadius: 110,
     connections: true,
-    connectionDistance: 150,
+    connectionDistance: 165,
     opacity: 1,
-    scrollParallax: 5
+    scrollParallax: 5,
+    // Bez obrotu całego pola: punkty pływają w miejscu zamiast powoli uciekać w bok.
+    disableRotation: true
   });
 })();
