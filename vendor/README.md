@@ -19,7 +19,7 @@ Przeniesione z Reacta, shadery i logika bez zmian:
 | --- | --- | --- |
 | `particles.js` | Particles („tło 1” od właściciela) | tło strony głównej, rankingu i eventów |
 | `rb-scanner.js` | Scanner („tło 4” od właściciela) | dół strony głównej, od nad kartą z zaproszeniem do końca |
-| `rb-galaxy.js` | Galaxy | tło rankingu (spokojne gwiazdy w cyjanie) |
+| `rb-gridscan.js` | GridScan | tło rankingu (neonowa siatka 3D ze skanem; kamera wyłączona) |
 | `rb-aurora.js` | Aurora | tło eventów w kolorach wybranego eventu |
 | `rb-terminal.js` | FaultyTerminal | tło strony 404 |
 | `motion.js` | wzorce MaskedHeading, AnimatedContent, CountUp, SpotlightCard, Magnet, TiltedCard, ClickSpark, GlareHover, StarBorder, ScrollReveal | wszystkie strony publiczne |

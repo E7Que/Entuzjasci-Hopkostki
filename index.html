@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://ucjmbdogtzztrkorqzjq.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="site.css?v=39d2192">
+  <link rel="stylesheet" href="site.css?v=008a31c">
   <link rel="stylesheet" href="vendor/lenis.css">
   <style>
     /* Strona główna. Zasady: .claude/skills/site-design; struktura: hero, hasło, teraz na serwerze, najaktywniejsi, jak dołączyć, pytania, zaproszenie. */
@@ -108,12 +108,9 @@
     .faq .answer b { color: var(--text); font-weight: 600; }
     .faq .answer ul { margin: 0 0 var(--sp-2); padding-left: 1.2em; }
 
-    /* Końcowe zaproszenie: pełna szerokość, baner serwera w tle (przyciemniony i wygaszony u góry i u dołu), na środku
-       twarze osób z topki, duży tytuł, liczba osób i dwa przyciski. */
+    /* Końcowe zaproszenie: na środku twarze osób z topki, duży tytuł, liczba osób i dwa przyciski, na tle strony
+       (pod spodem fale ze skanera). */
     .end { position: relative; isolation: isolate; overflow: hidden; margin-top: var(--section); padding: clamp(72px, 10vw, 136px) var(--sp-6); text-align: center; }
-    .end-bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 45%; }
-    .end::before { content: ''; position: absolute; inset: 0; z-index: -1; background: rgb(5 11 11 / 0.74); -webkit-mask-image: none; }
-    .end { -webkit-mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent); mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent); }
     .end-in { max-width: 760px; margin: 0 auto; }
     .end h2 { font-size: clamp(2.25rem, 5.2vw, 4rem); font-weight: 800; line-height: 1.05; }
     .end-lead { max-width: 52ch; margin: var(--sp-4) auto var(--sp-8); color: var(--text); opacity: 0.85; font-size: var(--fs-lg); }
@@ -242,9 +239,8 @@
       </details>
     </section>
 
-    <!-- Koniec strony: duże zaproszenie na tle banera serwera, z osobami z topki i liczbą osób online. -->
+    <!-- Koniec strony: duże zaproszenie z osobami z topki i liczbą osób online. -->
     <section class="end bleed" aria-labelledby="end-h">
-      <img class="end-bg" src="img/banner-1600.webp" srcset="img/banner-960.webp 960w, img/banner-1600.webp 1600w, img/banner-2400.webp 2400w" sizes="100vw" alt="" loading="lazy">
       <div class="end-in">
         <div class="end-faces" id="end-faces" aria-hidden="true"></div>
         <h2 id="end-h">Wpadnij na serwer</h2>
@@ -276,7 +272,7 @@
   <script src="vendor/gsap.min.js"></script>
   <script src="vendor/ScrollTrigger.min.js"></script>
   <script src="vendor/lenis.min.js"></script>
-  <script src="motion.js?v=39d2192"></script>
+  <script src="motion.js?v=008a31c"></script>
   <script>
     'use strict';
     const BASE = ['localhost', '127.0.0.1'].includes(location.hostname)
@@ -479,8 +475,8 @@
       window.Motion?.refresh();
     })();
   </script>
-  <script src="particles.js?v=39d2192" defer></script>
-  <script src="rb.js?v=39d2192" defer></script>
-  <script src="rb-scanner.js?v=39d2192" defer></script>
+  <script src="particles.js?v=008a31c" defer></script>
+  <script src="rb.js?v=008a31c" defer></script>
+  <script src="rb-scanner.js?v=008a31c" defer></script>
 </body>
 </html>
