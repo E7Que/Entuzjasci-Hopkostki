@@ -26,7 +26,7 @@ const STATIC_FILES = new Set([
   'motion.js',
   'rb.js',
   'rb-scanner.js',
-  'rb-galaxy.js',
+  'rb-gridscan.js',
   'rb-aurora.js',
   'rb-terminal.js',
   'vendor/gsap.min.js',
