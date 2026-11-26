@@ -149,7 +149,7 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
       sort,
       total,
       offset,
-      guild: gctx ? { name: gctx.guild.name, icon: guildIconUrl(gctx.guild), memberCount: gctx.guild.memberCount } : null,
+      guild: gctx ? { name: gctx.guild.name, icon: guildIconUrl(gctx.guild), memberCount: gctx.guild.memberCount, onlineCount: gctx.guild.onlineCount ?? null } : null,
       color: levels.card.color,
       totals,
       events: xpEventsOverview(levels),

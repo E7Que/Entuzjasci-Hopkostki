@@ -21,6 +21,7 @@ const STATIC_FILES = new Set([
   'app.js',
   'style.css',
   'icons.svg',
+  'site.css',
   'ranking.html',
   'ranking',
   'event.html',

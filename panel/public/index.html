@@ -3,32 +3,292 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Entuzjaści Hopkostki</title>
-  <meta name="description" content="Serwer Discord Entuzjaści Hopkostki - ranking poziomów i eventy serwera.">
-  <meta name="theme-color" content="#0d1113">
+  <script>
+    // Stare linki do panelu (był pod tym adresem): #sekcja albo #login=… z komendy /login idą na /panel z tym samym #.
+    if (location.hash.length > 1) location.replace('panel' + location.search + location.hash);
+  </script>
+  <title>Entuzjaści Hopkostki - serwer Discord</title>
+  <meta name="description" content="Serwer Discord Entuzjaści Hopkostki. Dołącz, zdobywaj poziomy w rankingu i bierz udział w eventach z nagrodami.">
+  <meta name="theme-color" content="#0f141b">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Entuzjaści Hopkostki">
-  <meta property="og:title" content="Entuzjaści Hopkostki">
-  <meta property="og:description" content="Ranking poziomów i eventy serwera Entuzjaści Hopkostki.">
+  <meta property="og:title" content="Entuzjaści Hopkostki - serwer Discord">
+  <meta property="og:description" content="Dołącz do serwera, zdobywaj poziomy i bierz udział w eventach z nagrodami.">
   <meta property="og:image" content="https://enho.pl/img/banner-og.jpg">
+  <meta property="og:url" content="https://enho.pl/">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" type="image/png" href="img/favicon.png">
-  <script>
-    // Strona główna → ranking poziomów. Panel jest pod /panel; stare linki do panelu (był tutaj) - #sekcja albo
-    // #login=… z komendy /login - idą na /panel z tym samym #.
-    (function () {
-      var h = location.hash;
-      location.replace((h && h.length > 1 ? 'panel' : 'ranking') + location.search + (h && h.length > 1 ? h : ''));
-    })();
-  </script>
-  <noscript><meta http-equiv="refresh" content="0; url=ranking"></noscript>
+  <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Oxanium:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="site.css?v=dev">
   <style>
-    :root { color-scheme: dark; }
-    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0d1113; color: #8b989e; font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
-    a { color: #e6ebed; }
+    .hero { margin-top: 4px; }
+    .hero-banner { display: block; width: 100%; height: auto; aspect-ratio: 16 / 6; object-fit: cover; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); }
+    .hero-body { padding: 0 8px; }
+    .hero-icon { display: block; width: 104px; height: 104px; margin-top: -52px; border-radius: 50%; background: var(--surface); box-shadow: 0 0 0 6px var(--bg), var(--shadow); position: relative; }
+    .hero h1 { margin-top: 20px; font-size: clamp(2.25rem, 1.3rem + 3.4vw, 3.5rem); font-weight: 700; line-height: 1.08; }
+    .lead { max-width: 54ch; margin: 14px 0 30px; color: var(--muted); font-size: 18px; }
+    .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+    .members { min-height: 24px; margin: 18px 0 0; color: var(--muted); font-size: 15px; font-variant-numeric: tabular-nums; }
+    .members b { color: var(--text); font-weight: 600; }
+    .online { display: inline-block; width: 8px; height: 8px; margin: 0 6px 1px 2px; border-radius: 50%; background: var(--ok); }
+
+    .block { margin-top: 80px; }
+    .block > h2 { margin-bottom: 20px; font-size: 26px; }
+    .block-foot { margin-top: 20px; }
+    .card { padding: 22px 26px; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); }
+
+    .now-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    .ev { display: flex; flex-direction: column; gap: 14px; }
+    .ev h3 { display: flex; align-items: flex-start; gap: 10px; font-size: 20px; }
+    .ev h3 .i { margin-top: 1px; color: var(--c, var(--accent)); }
+    .ev-when { display: flex; align-items: center; gap: 8px; margin: -6px 0 0; color: var(--muted); font-size: 15px; }
+    .facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0; font-size: 15px; }
+    .facts dt { color: var(--faint); }
+    .facts dd { margin: 0; }
+    .ev .btn { align-self: flex-start; margin-top: auto; }
+    .empty { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; }
+    .empty p { max-width: 56ch; margin: 0; color: var(--muted); }
+
+    .top-list { margin: 0; padding: 10px 14px; list-style: none; }
+    .top-list li { display: grid; grid-template-columns: 28px 44px 1fr auto; align-items: center; gap: 14px; padding: 10px 12px; border-radius: var(--r-sm); }
+    .top-list li:hover { background: var(--raised); }
+    .pos { font-family: var(--display); font-weight: 700; font-size: 20px; text-align: center; }
+    .av { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: var(--raised); display: grid; place-items: center; color: var(--muted); font-weight: 600; }
+    .who { min-width: 0; }
+    .who b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+    .who small { color: var(--faint); font-size: 14px; }
+    .xp { font-variant-numeric: tabular-nums; text-align: right; font-weight: 600; }
+    .xp small { color: var(--faint); font-weight: 400; font-size: 14px; }
+
+    .end { margin-top: 96px; padding: 40px 40px 44px; }
+    .end h2 { font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.25rem); }
+    .end p { max-width: 52ch; margin: 12px 0 26px; color: var(--muted); }
+
+    @media (max-width: 640px) {
+      .hero-body { padding: 0; }
+      .hero-icon { width: 84px; height: 84px; margin-top: -42px; margin-left: 12px; }
+      .lead { font-size: 17px; }
+      .block { margin-top: 64px; }
+      .card { padding: 18px 18px; }
+      .top-list { padding: 6px; }
+      .top-list li { grid-template-columns: 22px 40px 1fr auto; gap: 10px; padding: 10px 8px; }
+      .av { width: 40px; height: 40px; }
+      .end { padding: 28px 20px 30px; }
+    }
   </style>
 </head>
 <body>
-  <p><a href="ranking">Ranking poziomów</a> · <a href="event">Eventy serwera</a></p>
+  <header class="site-nav">
+    <div class="wrap">
+      <a class="site-brand" href="./"><img src="img/icon.webp" alt="" width="32" height="32"><span>Entuzjaści Hopkostki</span></a>
+      <ul class="site-links">
+        <li><a href="ranking"><svg class="i" aria-hidden="true"><use href="icons.svg#trophy"></use></svg>Ranking</a></li>
+        <li><a href="event"><svg class="i" aria-hidden="true"><use href="icons.svg#calendar-days"></use></svg>Eventy</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <img class="hero-banner" src="img/banner.webp" alt="" width="1600" height="900" fetchpriority="high">
+      <div class="hero-body">
+        <img class="hero-icon" src="img/icon.webp" alt="" width="104" height="104">
+        <h1>Entuzjaści Hopkostki</h1>
+        <p class="lead">Serwer na Discordzie, na którym się gada, zdobywa poziomy za aktywność i bierze udział w eventach z nagrodami.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary btn-big" href="https://discord.gg/FuqNCJhVYs" rel="noopener">
+            <svg class="discord" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.6 5.3A16.6 16.6 0 0 0 15.5 4l-.5 1a15.4 15.4 0 0 0-6 0L8.5 4a16.6 16.6 0 0 0-4.1 1.3C1.8 9.2 1.1 13 1.4 16.7a16.7 16.7 0 0 0 5.1 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a11.9 11.9 0 0 0 11.4 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a16.6 16.6 0 0 0 5.1-2.6c.4-4.3-.7-8.1-3-11.4zM8.7 14.4c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>
+            Dołącz do serwera
+          </a>
+          <a class="btn btn-big btn-quiet" href="ranking">Zobacz ranking</a>
+        </div>
+        <p class="members" id="members"></p>
+      </div>
+    </section>
+
+    <section class="block" aria-labelledby="now-h">
+      <h2 id="now-h">Teraz na serwerze</h2>
+      <div class="now-grid" id="now">
+        <div class="card empty">
+          <p>Sprawdzam, co się dzieje na serwerze…</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="top-block" aria-labelledby="top-h" hidden>
+      <h2 id="top-h">Najaktywniejsi w tym tygodniu</h2>
+      <ol class="card top-list" id="top"></ol>
+      <div class="block-foot"><a class="btn" href="ranking">Zobacz cały ranking</a></div>
+    </section>
+
+    <section class="card end" aria-labelledby="end-h">
+      <h2 id="end-h">Wpadnij na serwer</h2>
+      <p>Zaproszenie otworzy się w aplikacji Discord albo w przeglądarce.</p>
+      <a class="btn btn-primary btn-big" href="https://discord.gg/FuqNCJhVYs" rel="noopener">
+        <svg class="discord" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.6 5.3A16.6 16.6 0 0 0 15.5 4l-.5 1a15.4 15.4 0 0 0-6 0L8.5 4a16.6 16.6 0 0 0-4.1 1.3C1.8 9.2 1.1 13 1.4 16.7a16.7 16.7 0 0 0 5.1 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.8l.4-.3a11.9 11.9 0 0 0 11.4 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a16.6 16.6 0 0 0 5.1-2.6c.4-4.3-.7-8.1-3-11.4zM8.7 14.4c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>
+        Dołącz do serwera
+      </a>
+    </section>
+  </main>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <span>Entuzjaści Hopkostki</span>
+      <nav aria-label="Strony">
+        <a href="ranking">Ranking poziomów</a>
+        <a href="event">Eventy serwera</a>
+        <a href="panel">Panel moderacji</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    'use strict';
+    const BASE = ['localhost', '127.0.0.1'].includes(location.hostname)
+      ? 'public'
+      : 'https://ucjmbdogtzztrkorqzjq.supabase.co/functions/v1/hopkostki-bot/panel/public';
+    const INVITE = 'https://discord.gg/FuqNCJhVYs';
+    const $ = (s) => document.querySelector(s);
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+    const num = (n) => new Intl.NumberFormat('pl-PL').format(n);
+    const plural = (n, one, few, many) => (n === 1 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? few : many);
+    const icon = (name) => `<svg class="i" aria-hidden="true"><use href="icons.svg#${name}"></use></svg>`;
+    const XP_THEME_ICON = { confetti: 'party-popper', fire: 'flame', snow: 'snowflake', stars: 'sparkles', neon: 'zap', hearts: 'heart', halloween: 'ghost', leaves: 'leaf', sakura: 'flower-2', coins: 'coins', storm: 'cloud-lightning', bubbles: 'droplets', matrix: 'binary' };
+    const KIND_ICON = { invites: 'user-plus', messages: 'message-square', mixed: 'users' };
+    const XP_KINDS = { message: 'wiadomości', voice: 'czas na głosowych', reaction: 'reakcje' };
+
+    async function get(path) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 10000);
+      try {
+        const res = await fetch(`${BASE}/${path}`, { signal: ctrl.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    function timeLeft(ms) {
+      const m = Math.max(1, Math.round(ms / 60000));
+      const d = Math.floor(m / 1440);
+      const h = Math.floor((m % 1440) / 60);
+      const min = m % 60;
+      if (d) return `${d} ${plural(d, 'dzień', 'dni', 'dni')}${h ? ` ${h} h` : ''}`;
+      if (h) return `${h} h${min ? ` ${min} min` : ''}`;
+      return `${min} min`;
+    }
+
+    function task(c) {
+      const inv = c.invites > 0 ? `zaproś ${c.invites} ${plural(c.invites, 'osobę', 'osoby', 'osób')}` : '';
+      const msg = c.messages > 0 ? `napisz ${c.messages} ${plural(c.messages, 'wiadomość', 'wiadomości', 'wiadomości')}` : '';
+      const text = [inv, msg].filter(Boolean).join(' i ');
+      return text.charAt(0).toUpperCase() + text.slice(1);
+    }
+
+    function contestCard(c, now) {
+      const live = c.status === 'live';
+      const when = live ? `Koniec za ${timeLeft(Date.parse(c.endsAt) - now)}` : `Start za ${timeLeft(Date.parse(c.startsAt) - now)}`;
+      const facts = [['Zadanie', task(c)], c.prize ? ['Nagroda', c.prize] : null, ['Zapisani', `${num(c.participants)} ${plural(c.participants, 'osoba', 'osoby', 'osób')}`]]
+        .filter(Boolean)
+        .map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`)
+        .join('');
+      const color = /^#[0-9a-f]{6}$/i.test(c.color ?? '') ? ` style="--c:${c.color}"` : '';
+      return `<article class="card ev"${color}>
+        <h3>${icon(KIND_ICON[c.type] ?? 'calendar-days')}<span>${esc(c.name)}</span></h3>
+        <p class="ev-when">${icon('clock')}${when}</p>
+        <dl class="facts">${facts}</dl>
+        <a class="btn" href="event#${encodeURIComponent(c.id)}">${live ? 'Zobacz event i zapisz się' : 'Zobacz event'}</a>
+      </article>`;
+    }
+
+    function xpCard(e, now) {
+      const kinds = (e.kinds ?? []).map((k) => XP_KINDS[k]).filter(Boolean).join(', ');
+      const facts = [['Mnożnik', `XP ×${num(e.multiplier)}`], kinds ? ['Liczy się', kinds] : null]
+        .filter(Boolean)
+        .map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`)
+        .join('');
+      return `<article class="card ev">
+        <h3>${icon(XP_THEME_ICON[e.theme] ?? 'sparkles')}<span>${esc(e.name)}</span></h3>
+        <p class="ev-when">${icon('clock')}Koniec za ${timeLeft(Date.parse(e.endsAt) - now)}</p>
+        <dl class="facts">${facts}</dl>
+        <a class="btn" href="ranking">Zobacz ranking wydarzenia</a>
+      </article>`;
+    }
+
+    function renderNow(contests, board) {
+      const now = Date.now();
+      const list = (contests?.contests ?? []).filter((c) => c.status === 'live' || c.status === 'upcoming');
+      list.sort((a, b) => (a.status === b.status ? Date.parse(a.endsAt) - Date.parse(b.endsAt) : a.status === 'live' ? -1 : 1));
+      const cards = list.slice(0, 3).map((c) => contestCard(c, now));
+      const xp = board?.events?.current;
+      if (xp) cards.unshift(xpCard(xp, now));
+      $('#now').innerHTML = cards.length
+        ? cards.join('')
+        : `<div class="card empty">
+            <p>Teraz nie trwa żaden event. Nowe ogłaszamy na serwerze, więc dołącz, żeby nie przegapić następnego.</p>
+            <a class="btn btn-primary" href="${INVITE}" rel="noopener">Dołącz do serwera</a>
+          </div>`;
+    }
+
+    function row(p, i, week) {
+      const name = p.displayName || p.name;
+      const color = ['var(--gold)', 'var(--silver)', 'var(--bronze)'][i];
+      const initial = `<span class="av" aria-hidden="true">${esc((name || '?').trim().charAt(0).toUpperCase())}</span>`;
+      const avatar = p.avatar ? `<img class="av" src="${esc(p.avatar)}" alt="" width="44" height="44" loading="lazy">` : initial;
+      const xp = week ? p.periodXp : p.xp;
+      return `<li>
+        <span class="pos" style="color:${color}">${i + 1}</span>
+        ${avatar}
+        <span class="who"><b>${esc(name)}</b><small>poziom ${num(p.level)}</small></span>
+        <span class="xp">${num(xp ?? 0)} <small>XP</small></span>
+      </li>`;
+    }
+
+    async function renderTop(weekBoard) {
+      let board = weekBoard;
+      let week = true;
+      if (!board?.enabled) return;
+      if ((board.entries ?? []).length < 3) {
+        board = await get('leaderboard?limit=3').catch(() => null);
+        week = false;
+        $('#top-h').textContent = 'Najwyżej w rankingu';
+      }
+      const top = (board?.entries ?? []).slice(0, 3);
+      if (!top.length) return;
+      $('#top').innerHTML = top.map((p, i) => row(p, i, week)).join('');
+      // Avatar, który się nie wczytał (np. usunięty), zastępuje pierwsza litera nazwy.
+      $('#top').querySelectorAll('img.av').forEach((img) => {
+        img.addEventListener('error', () => {
+          const span = document.createElement('span');
+          span.className = 'av';
+          span.setAttribute('aria-hidden', 'true');
+          span.textContent = (img.closest('li').querySelector('.who b').textContent.trim().charAt(0) || '?').toUpperCase();
+          img.replaceWith(span);
+        }, { once: true });
+      });
+      $('#top-block').hidden = false;
+    }
+
+    function renderMembers(board) {
+      const g = board?.guild;
+      if (!g?.memberCount) return;
+      const online = g.onlineCount ? `, <span class="online" aria-hidden="true"></span><b>${num(g.onlineCount)}</b> teraz online` : '';
+      $('#members').innerHTML = `<b>${num(g.memberCount)}</b> ${plural(g.memberCount, 'osoba', 'osoby', 'osób')} na serwerze${online}`;
+    }
+
+    (async () => {
+      const [board, contests] = await Promise.all([
+        get('leaderboard?period=week&limit=3').catch(() => null),
+        get('contests').catch(() => null),
+      ]);
+      renderMembers(board);
+      renderNow(contests, board);
+      await renderTop(board);
+    })();
+  </script>
 </body>
 </html>
