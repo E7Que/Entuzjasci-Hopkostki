@@ -18,7 +18,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="site.css?v=59f1be1">
+  <link rel="stylesheet" href="site.css?v=45c286e">
+  <link rel="stylesheet" href="vendor/lenis.css">
   <style>
     /* Kolory, fonty, tło i górny pasek: site.css. Tu tylko nazwy używane przez tę stronę. */
     :root {
@@ -981,7 +982,7 @@
   </header>
   <main id="tresc">
     <header>
-      <div class="banner bleed"><img src="img/banner.webp" alt="" width="1600" height="900"></div>
+      <div class="banner bleed"><img src="img/banner.webp" srcset="img/banner-960.webp 960w, img/banner-1600.webp 1600w, img/banner-2400.webp 2400w, img/banner-3840.webp 3840w" sizes="100vw" alt="" width="1600" height="900" fetchpriority="high"></div>
       <div class="head">
         <div class="title">
           <h1>Ranking poziomów</h1>
@@ -1477,10 +1478,13 @@
     function renderMeta(data) {
       const t = data.totals ?? {};
       const short = (n) => (n >= 10000 ? compact.format(n) : fmt(n));
-      $('[data-total="members"]').textContent = fmt(t.members);
-      $('[data-total="xp"]').textContent = short(t.xp ?? 0);
-      $('[data-total="messages"]').textContent = short(t.messages ?? 0);
-      $('[data-total="voice"]').textContent = `${fmt(Math.round((t.voiceMinutes ?? 0) / 60))} h`;
+      // Liczby odliczają od zera, gdy są widoczne (React Bits CountUp w motion.js); bez niego po prostu się pojawiają.
+      const countTo = (sel, n, f) => (window.Motion ? Motion.count($(sel), n, f) : ($(sel).textContent = f(n)));
+      const whole = (f) => (n) => f(Math.round(n));
+      countTo('[data-total="members"]', t.members ?? 0, whole(fmt));
+      countTo('[data-total="xp"]', t.xp ?? 0, whole(short));
+      countTo('[data-total="messages"]', t.messages ?? 0, whole(short));
+      countTo('[data-total="voice"]', Math.round((t.voiceMinutes ?? 0) / 60), (n) => `${fmt(Math.round(n))} h`);
 
       const hl = data.highlights ?? {};
       if (hl.weekly || hl.monthly) {
@@ -14723,7 +14727,21 @@
       if (linked) openProfile(linked);
     }
   </script>
-  <script src="vendor/tsparticles.basic.bundle.min.js" defer></script>
-  <script src="particles.js?v=59f1be1" defer></script>
+  <script src="vendor/gsap.min.js"></script>
+  <script src="vendor/ScrollTrigger.min.js"></script>
+  <script src="vendor/lenis.min.js"></script>
+  <script src="motion.js?v=45c286e"></script>
+  <script>
+    // Ruch jak na stronie głównej (motion.js): baner zwija się do kolumny przy przewijaniu, tytuł wjeżdża
+    // słowo po słowie, liczby w nagłówku odliczają, lista i karty z boku wjeżdżają od dołu (React Bits).
+    window.Motion?.init({
+      banner: '.banner.bleed',
+      title: 'main h1',
+      intro: '.totals > div',
+      reveal: '.toolbar, .table, .side .info > .card:not([hidden])',
+      spot: '.side .card, .ct-strip',
+    });
+  </script>
+  <script src="particles.js?v=45c286e" defer></script>
 </body>
 </html>

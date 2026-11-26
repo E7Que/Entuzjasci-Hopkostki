@@ -6,7 +6,10 @@
   <title>Panel - Entuzjaści Hopkostki</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%235865f2'/><text x='50' y='66' font-size='46' font-weight='700' font-family='sans-serif' text-anchor='middle' fill='white'>EH</text></svg>">
   <!-- ?v= zmienia się przy każdej publikacji, żeby telefony nie trzymały starej wersji z pamięci -->
-  <link rel="stylesheet" href="style.css?v=59f1be1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=45c286e">
 </head>
 <body>
   <div id="login-gate" class="login-gate">
@@ -617,9 +620,9 @@
               <label class="field"><span>Koniec</span><input type="datetime-local" id="ev-end"></label>
               <label class="field"><span>Efekt na stronie rankingu</span>
                 <select id="ev-theme">
-                  <option value="confetti">🎉 Konfetti</option><option value="fire">🔥 Ogień</option><option value="snow">❄️ Śnieg</option><option value="stars">✨ Gwiazdy</option><option value="neon">⚡ Neon</option>
-                  <option value="hearts">💖 Serduszka</option><option value="halloween">🎃 Halloween</option><option value="leaves">🍂 Jesienne liście</option><option value="sakura">🌸 Sakura</option>
-                  <option value="coins">🪙 Złote monety</option><option value="storm">⛈️ Burza</option><option value="bubbles">🫧 Bąbelki</option><option value="matrix">💚 Matrix</option>
+                  <option value="confetti">Konfetti</option><option value="fire">Ogień</option><option value="snow">Śnieg</option><option value="stars">Gwiazdy</option><option value="neon">Neon</option>
+                  <option value="hearts">Serduszka</option><option value="halloween">Halloween</option><option value="leaves">Jesienne liście</option><option value="sakura">Sakura</option>
+                  <option value="coins">Złote monety</option><option value="storm">Burza</option><option value="bubbles">Bąbelki</option><option value="matrix">Matrix</option>
                 </select>
               </label>
               <label class="field"><span>Intensywność efektów</span>
@@ -851,9 +854,9 @@
                 <button type="button" data-md="`" title="Kod (`tekst`)">&lt;/&gt;</button>
                 <button type="button" data-md-line="# " title="Nagłówek (# tekst)">H</button>
                 <button type="button" data-md-line="- " title="Lista (- tekst)">•</button>
-                <button type="button" data-md-line="> " title="Cytat (> tekst)">❝</button>
+                <button type="button" data-md-line="> " title="Cytat (> tekst)" aria-label="Cytat"><svg class="i" aria-hidden="true"><use href="icons.svg#quotes"></use></svg></button>
                 <button type="button" data-md-line="-# " title="Mały tekst - stopka (-# tekst)"><small>-#</small></button>
-                <button type="button" data-md-link title="Link ([tekst](https://…))">🔗</button>
+                <button type="button" data-md-link title="Link ([tekst](https://…))" aria-label="Link"><svg class="i" aria-hidden="true"><use href="icons.svg#link"></use></svg></button>
               </div>
               <textarea id="ct-desc" rows="4" maxlength="1500" placeholder="Zasady i nagrody - widać je na stronie nad postępem. Zaznacz tekst i kliknij przycisk powyżej, żeby go sformatować. Emoji z serwera: wklej np. <:nazwa:123…>."></textarea>
               <div class="md-preview rich" id="ct-desc-preview" hidden></div>
@@ -888,7 +891,7 @@
         </div>
 
         <div class="card" id="ct-people-card" hidden>
-          <div class="card-head"><h3 id="ct-people-title">Zapisani</h3><div class="bulk-row"><button type="button" class="btn small" id="ct-draw-btn" hidden>🎲 Losuj zwycięzców</button><button type="button" class="btn ghost small" id="ct-people-refresh">Odśwież</button></div></div>
+          <div class="card-head"><h3 id="ct-people-title">Zapisani</h3><div class="bulk-row"><button type="button" class="btn small" id="ct-draw-btn" hidden><svg class="i" aria-hidden="true"><use href="icons.svg#dice-five"></use></svg>Losuj zwycięzców</button><button type="button" class="btn ghost small" id="ct-people-refresh">Odśwież</button></div></div>
           <p class="muted small" id="ct-draw-note" hidden></p>
           <p class="muted small" id="ct-people-note"></p>
           <div class="table-wrap"><table class="table compact form-cards" id="ct-people"></table></div>
@@ -1294,6 +1297,6 @@
   </div>
   <div id="toast" class="toast"></div>
 
-  <script src="app.js?v=59f1be1"></script>
+  <script src="app.js?v=45c286e"></script>
 </body>
 </html>
