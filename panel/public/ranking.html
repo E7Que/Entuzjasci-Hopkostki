@@ -371,49 +371,60 @@
     .cmds code { justify-self: start; }
     code { padding: 1px 8px; border-radius: var(--r-xs); background: var(--surface-2); color: var(--text); font: 500 0.88em ui-monospace, 'SFMono-Regular', Menlo, monospace; }
 
-    /* ---------- Profil (jak okienko profilu na Discordzie) ---------- */
+    /* ---------- Panel osoby: ten sam materiał co karty strony (--surface i cień), u góry baner z Discorda albo
+       rozmyty avatar, wygaszony w dół jak banery stron. Avatar bez obwódki, ramka z Discorda liczona od samego
+       obrazka (120%, jak na liście). Nagłówki sekcji z ikonami jak w kartach bocznych, liczby krojem nagłówków.
+       Wejście, sekcje po kolei, odliczanie liczb, pierścień i słupki animuje animateProfile (raz na otwarcie). ---------- */
     .profile { position: relative; border-radius: var(--radius); overflow: hidden; background: var(--surface); box-shadow: var(--shadow); }
     @media (min-width: 980px) {
-      .profile { max-height: calc(100vh - 90px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+      .profile { max-height: calc(100vh - 100px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
       .side.has-profile .info { display: none; }
       .backdrop { display: none !important; }
     }
-    .pf-banner { height: 110px; background: #23434a center / cover no-repeat; }
-    .pf-close { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(0, 0, 0, 0.5); color: #fff; cursor: pointer; }
-    .pf-close:hover { background: rgba(0, 0, 0, 0.7); }
+    .pf-banner { position: relative; height: 128px; overflow: hidden; background: var(--raised); -webkit-mask-image: linear-gradient(#000 40%, transparent); mask-image: linear-gradient(#000 40%, transparent); }
+    .pf-banner .bg { position: absolute; inset: 0; background: center / cover no-repeat; }
+    .pf-banner.plain .bg { inset: -48px; filter: blur(28px) saturate(1.35) brightness(0.7); }
+    .pf-close { position: absolute; z-index: 2; top: 12px; right: 12px; width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--bg) 60%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1); color: var(--text); cursor: pointer; transition: background-color 200ms var(--ease); }
+    .pf-close:hover { background: color-mix(in srgb, var(--bg) 85%, transparent); }
     .pf-close svg { width: 16px; height: 16px; }
-    .pf-top { position: relative; height: 48px; }
-    .pf-avatar { position: absolute; left: 14px; top: -46px; width: 92px; height: 92px; }
-    .pf-avatar .pic { width: 100%; height: 100%; border-radius: 50%; border: 6px solid var(--surface); background: var(--surface-2); object-fit: cover; }
-    .pf-deco { position: absolute; left: -9%; top: -9%; width: 118%; height: 118%; pointer-events: none; }
-    .pf-place { position: absolute; right: 14px; top: 10px; font-family: var(--display); font-weight: 700; color: var(--muted); }
+    .pf-top { position: relative; height: 44px; }
+    .pf-avatar { position: absolute; left: 20px; top: -60px; width: 88px; height: 88px; }
+    .pf-avatar .pic { display: block; width: 100%; height: 100%; border-radius: 50%; background: var(--raised); object-fit: cover; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1), 0 16px 32px -14px rgb(0 0 0 / 0.95); }
+    .pf-deco { position: absolute; left: -10%; top: -10%; width: 120%; height: 120%; max-width: none; pointer-events: none; }
+    .pf-tags { position: absolute; right: 20px; top: 8px; display: flex; align-items: center; gap: 8px; }
+    .pf-place { font-family: var(--display); font-size: var(--fs-xl); font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
     .pf-place.p1 { color: var(--gold); } .pf-place.p2 { color: var(--silver); } .pf-place.p3 { color: var(--bronze); }
-    .pf-body { padding: 4px 16px 16px; }
-    .pf-name { font-family: var(--display); font-size: 1.35rem; font-weight: 600; line-height: 1.2; word-break: break-word; }
-    .pf-user { color: var(--muted); font-size: 0.9rem; }
-    .pf-boost { margin-top: 8px; color: #e59cf5; font-size: 0.82rem; }
-    .pf-sec { margin-top: 24px; }
-    .pf-h { margin: 0 0 12px; color: var(--muted); font-size: var(--fs-sm); font-weight: 600; }
-    .pf-level { display: flex; align-items: center; gap: 12px; }
-    .pf-level .lvl { width: 46px; height: 46px; justify-self: auto; flex: none; }
-    .pf-level .lvl b { font-size: 0.95rem; }
-    .pf-level p { margin: 0; color: var(--muted); font-size: 0.86rem; }
-    .pf-level p b { color: var(--text); font-weight: 500; }
-    .pf-next { margin-top: 12px; font-size: 0.86rem; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .pf-body { padding: 4px 20px 20px; }
+    .pf-name { font-family: var(--display); font-size: var(--fs-2xl); font-weight: 700; line-height: 1.15; letter-spacing: -0.01em; word-break: break-word; }
+    .pf-user { margin-top: 2px; color: var(--muted); font-size: var(--fs-sm); }
+    .pf-me { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; margin-top: 14px; padding: 0 14px; border: 0; border-radius: 12px; background: var(--raised); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06); color: var(--muted); font: inherit; font-size: var(--fs-sm); font-weight: 600; cursor: pointer; transition: color 200ms var(--ease), background-color 200ms var(--ease); }
+    .pf-me[aria-pressed="true"] { color: var(--accent); }
+    .pf-boost { display: flex; align-items: center; gap: 8px; margin-top: 12px; color: var(--muted); font-size: var(--fs-sm); }
+    .pf-boost .i { color: var(--accent-2); }
+    .pf-sec { margin-top: 28px; }
+    .pf-h { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; color: var(--text); font-family: var(--display); font-size: var(--fs-base); font-weight: 600; }
+    .pf-h .i { width: 20px; height: 20px; flex: none; color: var(--accent); }
+    .pf-level { display: flex; align-items: center; gap: 14px; }
+    .pf-level .lvl { width: 56px; height: 56px; justify-self: auto; flex: none; }
+    .pf-level .lvl b { font-family: var(--display); font-size: 1.05rem; font-weight: 700; }
+    .pf-level p { margin: 0; color: var(--muted); font-size: var(--fs-sm); }
+    .pf-level p b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+    .pf-next { margin-top: 14px; font-size: var(--fs-sm); color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .pf-next .role span { color: var(--text); }
-    .pf-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; margin: 0; }
+    .pf-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 0; }
     .pf-stats div { display: flex; flex-direction: column-reverse; justify-content: flex-end; min-width: 0; }
-    .pf-stats dt { color: var(--muted); font-size: 0.78rem; }
-    .pf-stats dd { margin: 0; font-weight: 600; }
-    .pf-stats dd small { color: var(--muted); font-weight: 400; margin-left: 4px; }
+    .pf-stats dt { margin-top: 2px; color: var(--muted); font-size: var(--fs-xs); }
+    .pf-stats dd { margin: 0; font-family: var(--display); font-size: var(--fs-lg); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .pf-stats dd small { color: var(--muted); font-family: var(--font); font-size: var(--fs-xs); font-weight: 500; margin-left: 4px; }
+    .pf-stats .txt dd { font-family: var(--font); font-size: var(--fs-sm); font-weight: 600; line-height: 1.4; padding-top: 3px; }
     /* Wykres: XP dziennie z ostatnich 30 dni (jeden szereg - bez legendy, tytuł mówi, co jest na wykresie) */
-    .hist-sum { margin: 0 0 12px; color: var(--muted); font-size: 0.84rem; }
+    .hist-sum { margin: 0 0 12px; color: var(--muted); font-size: var(--fs-sm); }
     .hist-sum b { color: var(--text); font-weight: 600; }
     .hist { position: relative; }
     .hist-max { position: absolute; top: -2px; right: 0; color: var(--faint); font-size: 0.7rem; line-height: 1; pointer-events: none; }
-    .hist-bars { display: flex; align-items: stretch; gap: 2px; height: 72px; padding-top: 12px; border-bottom: 1px solid var(--border); background: linear-gradient(var(--border), var(--border)) 0 12px / 100% 1px no-repeat; }
+    .hist-bars { display: flex; align-items: stretch; gap: 2px; height: 76px; padding-top: 12px; border-bottom: 1px solid var(--border); background: linear-gradient(var(--border), var(--border)) 0 12px / 100% 1px no-repeat; }
     .hist-col { position: relative; flex: 1 1 0; max-width: 24px; cursor: default; }
-    .hist-col i { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 3px 3px 0 0; background: var(--accent); }
+    .hist-col i { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 3px 3px 0 0; background: var(--accent); transform-origin: 50% 100%; }
     .hist-col.today i { background: color-mix(in srgb, var(--accent) 70%, #fff); }
     .hist-col:hover i, .hist-col.on i { background: color-mix(in srgb, var(--accent) 55%, #fff); }
     .hist-col.on::after { content: ''; position: absolute; inset: -12px 0 0; border-radius: var(--r-xs); background: rgba(255, 255, 255, 0.05); }
@@ -423,37 +434,22 @@
     .hist-tip span { color: var(--muted); }
     .hist-note { margin: 8px 0 0; color: var(--faint); font-size: 0.75rem; }
     .pf-roles { display: flex; flex-wrap: wrap; gap: 8px; }
-    .pf-badges { display: flex; flex-wrap: wrap; gap: 8px; }
-    .pf-badges { display: grid; gap: 8px; }
-    .pf-badge { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); font-weight: 500; cursor: help; }
-    .pf-badge .i { color: var(--accent); }
+    .pf-badges { display: grid; gap: 10px; }
+    .pf-badge { display: flex; align-items: center; gap: 10px; font-size: var(--fs-sm); font-weight: 500; cursor: help; }
+    .pf-badge .i { width: 18px; height: 18px; color: var(--accent); }
     .pf-badge small { color: var(--muted); font-size: var(--fs-sm); font-weight: 400; }
     .pf-badge.top .i { color: var(--gold); }
-    .pf-role { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 3px 8px; border-radius: var(--r-sm); background: var(--surface-2); font-size: 0.8rem; }
-    .pf-role i { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--rc, var(--faint)); }
+    .pf-role { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 4px 10px; border-radius: 999px; background: var(--raised); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.05); font-size: var(--fs-xs); font-weight: 500; }
+    .pf-role i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--rc, var(--faint)); }
     .pf-role span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .pf-skel { height: 12px; margin: 8px 0; border-radius: var(--r-sm); background: var(--surface-2); animation: sk 1.2s ease-in-out infinite alternate; }
-    .pf-err { margin: 0 0 8px; color: var(--muted); font-size: 0.86rem; }
+    .pf-skel { height: 12px; margin: 8px 0; border-radius: var(--r-sm); background: var(--raised); animation: sk 1.2s ease-in-out infinite alternate; }
+    .pf-err { margin: 0 0 8px; color: var(--muted); font-size: var(--fs-sm); }
     .backdrop { position: fixed; inset: 0; z-index: 19; background: rgba(0, 0, 0, 0.6); }
     @keyframes up { from { transform: translateY(40px); opacity: 0; } }
     @media (max-width: 979px) {
-      .profile { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; max-height: 86vh; overflow-y: auto; overscroll-behavior: contain; border-radius: 14px 14px 0 0; animation: up 0.25s ease-out both; }
+      .profile { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; max-height: 86vh; overflow-y: auto; overscroll-behavior: contain; border-radius: 16px 16px 0 0; animation: up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
     }
-
-    .pf-tags { position: absolute; right: 14px; top: 10px; display: flex; align-items: center; gap: 8px; }
-    .pf-tags .pf-place { position: static; }
-    .pf-nitro { color: #f3c4ff; font-size: var(--fs-xs); font-weight: 600; }
-    .profile.themed {
-      --muted: rgba(255, 255, 255, 0.7);
-      --faint: rgba(255, 255, 255, 0.5);
-      --border: rgba(255, 255, 255, 0.14);
-      --surface-2: rgba(0, 0, 0, 0.28);
-      background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.62)), linear-gradient(180deg, var(--c1), var(--c2));
-      border-color: color-mix(in srgb, var(--c1) 55%, #242d32);
-    }
-    .profile.themed .pf-avatar .pic { border-color: color-mix(in srgb, var(--c1) 50%, #000); }
-    .profile.themed .pf-banner.plain { background: var(--c1); }
-    .profile.themed .lvl .val { stroke: color-mix(in srgb, var(--c1) 60%, #fff); }
+    @media (prefers-reduced-motion: reduce) { .profile { animation: none; } }
 
     /* Personalizacja z Discorda: czcionka i efekt nazwy, tag serwera, dekoracja avatara, tabliczka z nazwą */
     .av { position: relative; flex: none; display: inline-block; line-height: 0; }
@@ -1681,8 +1677,8 @@
         ? `<b>${fmt(total)} XP</b> w 30 dni, najlepszy dzień: ${esc(dayText(best.day))} (${fmt(best.xp)} XP)`
         : 'Brak XP w ostatnich 30 dniach.';
       const note = days[0].day < HIST_START ? `<p class="hist-note">Historia dzień po dniu jest zapisywana od ${esc(dayText(HIST_START, { day: 'numeric', month: 'long', year: 'numeric' }))}.</p>` : '';
-      return `<div class="pf-sec">
-            <div class="pf-h">XP dziennie - ostatnie 30 dni</div>
+      return `<div class="pf-sec" data-sec="history">
+            <div class="pf-h">${uiIcon('lightning')}XP dziennie - ostatnie 30 dni</div>
             <p class="hist-sum">${summary}</p>
             <div class="hist" data-hist='${esc(JSON.stringify(days))}'>
               ${total ? `<span class="hist-max">${fmt(best.xp)}</span>` : ''}
@@ -1690,7 +1686,7 @@
               <div class="hist-axis" aria-hidden="true"><span>${esc(dayText(days[0].day))}</span><span>dziś</span></div>
               <div class="hist-tip" hidden></div>
             </div>
-            <table class="sr-only"><caption>XP dziennie w ostatnich 30 dniach</caption><thead><tr><th>Dzień</th><th>XP</th><th>Wiadomości</th><th>Na głosowych</th></tr></thead><tbody>${rows}</tbody></table>
+            <div class="sr-only"><table><caption>XP dziennie w ostatnich 30 dniach</caption><thead><tr><th>Dzień</th><th>XP</th><th>Wiadomości</th><th>Na głosowych</th></tr></thead><tbody>${rows}</tbody></table></div>
             ${note}
           </div>`;
     }
@@ -1727,22 +1723,26 @@
 
     function profileHtml(p, loading) {
       const s = p.stats ?? {};
-      const banner = p.banner ? `background-image:url('${esc(p.banner)}')` : validColor(p.accentColor) ? `background:${p.accentColor}` : '';
+      // Baner z Discorda, a bez niego rozmyty avatar (pierwsza klatka, bez rozmywania animacji co klatkę).
+      const still = (u) => String(u ?? '').replace(/\.gif(?=\?|$)/, '.png');
+      const bannerBg = p.banner ? p.banner : still(p.avatar ?? FALLBACK_AVATAR);
       const look = p.look ?? (p.nameColors?.length ? { colors: p.nameColors } : null);
       const decoration = p.look?.decoration ?? p.decoration;
       const skel = '<div class="pf-skel" style="width:70%"></div><div class="pf-skel" style="width:45%"></div>';
-      const item = (label, value) => `<div><dt>${label}</dt><dd>${value}</dd></div>`;
+      // cls "txt": wartość słowna (data, „godzinę temu”) mniejszym krojem tekstu, żeby się nie łamała.
+      const item = (label, value, cls = '') => `<div${cls ? ` class="${cls}"` : ''}><dt>${label}</dt><dd>${value}</dd></div>`;
       const period = (xp, rank) => (xp ? `+${fmt(xp)} XP${rank ? `<small>#${rank}</small>` : ''}` : '-');
+      // Liczby, które przy otwarciu odliczają się od zera (animateProfile).
+      const counted = (v) => `<span data-count="${Number(v) || 0}">${fmt(v)}</span>`;
       return `
         <button type="button" class="pf-close" id="pf-close" aria-label="Zamknij profil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-        <div class="pf-banner${p.banner ? '' : ' plain'}" style="${banner}"></div>
+        <div class="pf-banner${p.banner ? '' : ' plain'}"><i class="bg" style="background-image:url('${esc(bannerBg)}')"></i></div>
         <div class="pf-top">
           <div class="pf-avatar">
             <img class="pic" src="${esc(p.avatar ?? FALLBACK_AVATAR)}" alt="" width="92" height="92">
             ${decoration ? `<img class="pf-deco" src="${esc(decoration)}" alt="">` : ''}
           </div>
           <div class="pf-tags">
-            ${p.nitro ? '<span class="pf-nitro" title="Ma Nitro (animowany avatar, baner albo profil serwerowy)">Nitro</span>' : ''}
             ${s.rank ? `<span class="pf-place${s.rank <= 3 ? ` p${s.rank}` : ''}">#${s.rank}</span>` : ''}
           </div>
         </div>
@@ -1750,10 +1750,10 @@
           <div class="pf-name">${styledName(p.displayName || p.username || 'Użytkownik', look, true)}${tagHtml(look)}</div>
           <div class="pf-user">${esc(p.username ?? '')}</div>
           <button type="button" class="pf-me" data-me-toggle aria-pressed="${String(state.selected === state.me)}" title="Zapamiętaj w tej przeglądarce, który profil jest Twój - przycisk „Moje miejsce” przewinie do niego">${state.selected === state.me ? '✓ To Ty' : 'To ja'}</button>
-          ${p.boostingSince ? `<div class="pf-boost">Boostuje serwer od ${esc(dateText(p.boostingSince))}</div>` : ''}
+          ${p.boostingSince ? `<div class="pf-boost">${uiIcon('sparkle')}Boostuje serwer od ${esc(dateText(p.boostingSince))}</div>` : ''}
 
-          <div class="pf-sec">
-            <div class="pf-h">Poziom</div>
+          <div class="pf-sec" data-sec="level">
+            <div class="pf-h">${uiIcon('target')}Poziom</div>
             <div class="pf-level">
               ${ring(pct(s), s.level ?? 0)}
               <p><b>${fmt(s.current)} / ${fmt(s.needed)} XP</b><br>do poziomu ${(s.level ?? 0) + 1}</p>
@@ -1761,44 +1761,85 @@
             ${p.nextReward ? `<div class="pf-next">Następna nagroda na poziomie ${p.nextReward.level}: ${roleHtml(p.nextReward)}</div>` : ''}
           </div>
 
-          <div class="pf-sec">
-            <div class="pf-h">Statystyki</div>
+          <div class="pf-sec" data-sec="stats">
+            <div class="pf-h">${uiIcon('chart-bar')}Statystyki</div>
             ${p.error ? `<p class="pf-err">${esc(p.error)}</p>` : ''}
             ${loading && !p.stats ? skel : `<dl class="pf-stats">
               ${item('Miejsce w rankingu', s.rank ? `#${s.rank}` : '-')}
-              ${item('Łączne XP', fmt(s.xp))}
-              ${item('Wiadomości', fmt(s.messages))}
+              ${item('Łączne XP', counted(s.xp))}
+              ${item('Wiadomości', counted(s.messages))}
               ${item('Na kanałach głosowych', voiceText(s.voiceMinutes))}
-              ${item('Reakcje', fmt(s.reactions))}
-              ${loading ? '' : item('Ostatnio aktywny', p.lastActive ? esc(ago(p.lastActive)) : '-')}
+              ${item('Reakcje', counted(s.reactions))}
+              ${loading ? '' : item('Ostatnio aktywny', p.lastActive ? esc(ago(p.lastActive)) : '-', 'txt')}
               ${loading ? '' : item('Ten tydzień', period(s.weekXp, s.weekRank))}
               ${loading ? '' : item('Ten miesiąc', period(s.monthXp, s.monthRank))}
               ${loading || !s.event ? '' : item(`<span title="${esc(s.event.name)}">Wydarzenie XP</span>`, period(s.event.xp, s.event.rank))}
             </dl>`}
           </div>
 
-          ${!loading && p.badges?.length ? `<div class="pf-sec"><div class="pf-h">Odznaki</div><div class="pf-badges">${p.badges
+          ${!loading && p.badges?.length ? `<div class="pf-sec" data-sec="badges"><div class="pf-h">${uiIcon('medal')}Odznaki</div><div class="pf-badges">${p.badges
             .map((b) => `<span class="pf-badge${b.tier && b.tier === b.tiers ? ' top' : ''}" title="${esc(b.description)}">${uiIcon({ month: 'crown', week: 'trophy', podium: 'medal' }[b.id] ?? 'medal-military')}${esc(b.name)}${b.count > 1 ? `<small>×${b.count}</small>` : b.tiers ? `<small>${b.tier}/${b.tiers}</small>` : ''}</span>`)
             .join('')}</div></div>` : ''}
 
           ${loading ? '' : historyHtml(p.history)}
 
-          <div class="pf-sec">
-            <div class="pf-h">Na serwerze</div>
+          <div class="pf-sec" data-sec="server">
+            <div class="pf-h">${uiIcon('calendar-dots')}Na serwerze</div>
             ${loading ? skel : `<dl class="pf-stats">
-              ${p.joinedAt ? item('Dołączył(a)', esc(dateText(p.joinedAt))) + item('Na serwerze', `${fmt(daysSince(p.joinedAt))} dni`) : item('Na serwerze', p.inGuild === false ? 'już nie' : '-')}
-              ${p.createdAt ? item('Konto Discord od', esc(dateText(p.createdAt))) : ''}
+              ${p.joinedAt ? item('Dołączył(a)', esc(dateText(p.joinedAt)), 'txt') + item('Na serwerze', `${fmt(daysSince(p.joinedAt))} dni`) : item('Na serwerze', p.inGuild === false ? 'już nie' : '-')}
+              ${p.createdAt ? item('Konto Discord od', esc(dateText(p.createdAt)), 'txt') : ''}
             </dl>`}
           </div>
 
-          ${!loading && p.roles?.length ? `<div class="pf-sec"><div class="pf-h">Role</div><div class="pf-roles">${p.roles
+          ${!loading && p.roles?.length ? `<div class="pf-sec" data-sec="roles"><div class="pf-h">${uiIcon('shield-check')}Role</div><div class="pf-roles">${p.roles
             .map((r) => `<span class="pf-role" style="${r.color ? `--rc:${esc(r.color)}` : ''}"><i></i><span>${esc(r.name)}</span></span>`)
             .join('')}</div></div>` : ''}
         </div>`;
     }
 
+    // Panel osoby: te same animacje co reszta strony. Przy otwarciu karta wjeżdża od dołu, a każda sekcja, gdy pierwszy
+    // raz pokazuje dane, wjeżdża po kolei: liczby odliczają się od zera, pierścień poziomu się wypełnia, słupki wykresu
+    // rosną. Drugie wczytanie (pełny profil) dokłada tylko nowe sekcje, bez powtarzania. Bez ruchu przy reduce.
+    let pfSeen = null;
+    function animateProfile(el, id, carry = null) {
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches || !el.animate) return;
+      const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
+      if (pfSeen?.id !== id) {
+        pfSeen = { id, secs: new Set() };
+        if (desktop.matches) el.animate([{ opacity: 0, transform: 'translateY(28px)' }, { opacity: 1, transform: 'none' }], { duration: 650, easing: ease });
+      }
+      let n = 0;
+      el.querySelectorAll('.pf-sec[data-sec]').forEach((sec) => {
+        const key = sec.dataset.sec;
+        if (sec.querySelector('.pf-skel')) return;
+        if (pfSeen.secs.has(key)) {
+          // Sekcja już wjechała, a pełny profil podmienił treść: trwające odliczanie jedzie dalej od pokazanej liczby.
+          if (carry) {
+            const left = Math.max(0.2, (pfSeen.countUntil - performance.now()) / 1000);
+            sec.querySelectorAll('[data-count]').forEach((c, i) => {
+              if (carry[i] == null) return;
+              c._countFrom = carry[i];
+              window.Motion?.count?.(c, Number(c.dataset.count), fmt, { duration: left });
+            });
+          }
+          return;
+        }
+        pfSeen.secs.add(key);
+        const delay = 90 + n++ * 70;
+        sec.animate([{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }], { duration: 650, delay, easing: ease, fill: 'backwards' });
+        if (sec.querySelector('[data-count]')) pfSeen.countUntil = performance.now() + delay + 1300;
+        sec.querySelectorAll('[data-count]').forEach((c) => window.Motion?.count?.(c, Number(c.dataset.count), fmt, { duration: 1.3 }));
+        sec.querySelectorAll('.lvl .val').forEach((v) => v.animate([{ strokeDasharray: '0 100' }, { strokeDasharray: v.getAttribute('stroke-dasharray') }], { duration: 1200, delay: delay + 80, easing: ease, fill: 'backwards' }));
+        sec.querySelectorAll('.hist-col i').forEach((b, j) => b.animate([{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)' }], { duration: 700, delay: delay + 120 + j * 16, easing: ease, fill: 'backwards' }));
+      });
+    }
+
     function showProfile(html) {
       const el = $('#profile');
+      // Liczby w trakcie odliczania (przed podmianą treści) - pełny profil odlicza dalej od nich.
+      const carry = pfSeen?.id === state.selected && (pfSeen.countUntil ?? 0) > performance.now()
+        ? [...el.querySelectorAll('[data-count]')].map((c) => parseInt((c.firstElementChild ?? c).textContent.replace(/\D/g, ''), 10) || 0)
+        : null;
       el.innerHTML = html;
       el.hidden = false;
       $('#side').classList.add('has-profile');
@@ -1807,6 +1848,7 @@
       $('#pf-close').addEventListener('click', closeProfile);
       bindHistory(el);
       el.querySelector('[data-me-toggle]')?.addEventListener('click', () => setMe(state.selected === state.me ? null : state.selected));
+      if (state.selected) animateProfile(el, state.selected, carry);
     }
 
     function resetTheme() {
@@ -1865,6 +1907,7 @@
 
     function closeProfile() {
       state.selected = null;
+      pfSeen = null;
       $('#profile').hidden = true;
       $('#profile').innerHTML = '';
       resetTheme();
@@ -14782,7 +14825,7 @@
       title: 'main h1',
       intro: '.totals > div',
       reveal: '.toolbar, .table, .side .info > .card:not([hidden])',
-      spot: '.side .card, .ct-strip',
+      spot: '.side .card, .ct-strip, #profile',
       tilt: '.top3 .top',
     });
   </script>

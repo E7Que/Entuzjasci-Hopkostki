@@ -113,6 +113,12 @@ Do not stack a second full-page background on a page.
   a half-hidden bar finishes to the nearer end when scrolling stops. Only the top bar moves on every page
   (`data-nav-hidden-top` can still make a sticky part follow it, nothing uses it now). Keyboard focus inside it
   keeps it shown. The owner rejected the earlier narrowing capsule (layout transition, not smooth).
+- Ranking person panel (profile): a plain site card. Top: the person's Discord banner, or their blurred avatar,
+  fading into the card like page banners. Avatar without the Discord cut-out border; the Discord avatar frame is
+  120% of the image, centred (same as in the list). No Nitro tag. Section headings with Phosphor icons like the side
+  cards, numbers in the display font. On open: the card rises, sections come in one by one, numbers count up, the
+  level ring fills and chart bars grow; the full profile load only adds new sections and continues a running count.
+  Screen-reader tables go inside a `.sr-only` wrapper (a table with `.sr-only` keeps its height and stretches cards).
 - Ranking filter bar: part of the page (scrolls with it, never sticky or floating; the owner disliked two floating
   bars). One layer: controls sit straight on the page, no panel behind them; all 44 px high, `--surface` with a
   1 px inner edge, 14 px radius; the selected period has a raised highlight that slides between tabs.
