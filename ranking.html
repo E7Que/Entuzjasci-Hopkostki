@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="site.css?v=9099342">
+  <link rel="stylesheet" href="site.css?v=24a06f8">
   <link rel="stylesheet" href="vendor/lenis.css">
   <style>
     /* Kolory, fonty, tło i górny pasek: site.css. Tu tylko nazwy używane przez tę stronę. */
@@ -971,8 +971,10 @@
 </head>
 <body>
   <a class="skip" href="#tresc">Przejdź do treści</a>
-  <!-- Tło rankingu (wybór właściciela): słup światła w kolorach banera (React Bits LightPillar), przesunięty za podium. -->
-  <div class="page-bg pillar" aria-hidden="true" data-rb="LightPillar" data-props='{"topColor":"#28e9ea","bottomColor":"#166f94","intensity":0.9,"rotationSpeed":0.25,"flow":0.9,"interactive":true,"clickPulse":true,"glowAmount":0.002,"bloom":0.55,"pillarWidth":2.6,"pillarHeight":0.4,"pillarRotation":12,"twist":0.35,"detail":4,"noiseIntensity":0.4,"fade":0.15}'></div>
+  <!-- Tło rankingu: gwiazdy z połączeniami jak na stronie głównej (particles.js, kolory strony) i słup światła
+       (wybór właściciela, React Bits LightPillar) z boku treści. Słup przesuwa w bok sam shader („offset”), jest
+       przygaszony, zaczyna się pod banerem i lekko jedzie w górę przy przewijaniu (data-drift), nie znikając z ekranu. -->
+  <div class="page-bg pillar" aria-hidden="true" data-drift="0.12" data-rb="LightPillar" data-props='{"topColor":"var(--accent)","bottomColor":"var(--glow-3)","intensity":0.5,"rotationSpeed":0.22,"flow":0.8,"interactive":true,"clickPulse":true,"glowAmount":0.0018,"bloom":0.35,"pillarWidth":3.4,"pillarHeight":0.4,"pillarRotation":10,"twist":0.35,"detail":4,"noiseIntensity":0.3,"fade":0.06,"offset":-0.7}'></div>
   <header class="site-nav">
     <div class="wrap">
       <a class="site-brand" href="./" translate="no"><img src="img/icon.webp" alt="" width="32" height="32"><span>Entuzjaści Hopkostki</span></a>
@@ -14745,7 +14747,7 @@
   <script src="vendor/gsap.min.js"></script>
   <script src="vendor/ScrollTrigger.min.js"></script>
   <script src="vendor/lenis.min.js"></script>
-  <script src="motion.js?v=9099342"></script>
+  <script src="motion.js?v=24a06f8"></script>
   <script>
     // Ruch jak na stronie głównej (motion.js): baner zwija się do kolumny przy przewijaniu, tytuł wjeżdża
     // słowo po słowie, liczby w nagłówku odliczają, lista i karty z boku wjeżdżają od dołu (React Bits).
@@ -14759,8 +14761,9 @@
       tilt: '.top3 .top',
     });
   </script>
-  <script src="rb.js?v=9099342" defer></script>
-  <script src="rb-pillar.js?v=9099342" defer></script>
-  <script src="rb-scanner.js?v=9099342" defer></script>
+  <script src="particles.js?v=24a06f8" defer></script>
+  <script src="rb.js?v=24a06f8" defer></script>
+  <script src="rb-pillar.js?v=24a06f8" defer></script>
+  <script src="rb-scanner.js?v=24a06f8" defer></script>
 </body>
 </html>

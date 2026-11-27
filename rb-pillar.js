@@ -1,6 +1,6 @@
-/* Tło rankingu (wybór właściciela): słup światła w kolorach banera, stoi za podium. Reaguje na kursor, kliknięcie puszcza impuls.
+/* Tło rankingu (wybór właściciela): słup światła w kolorach strony, z boku treści. Reaguje na kursor, kliknięcie puszcza impuls.
    Komponent „LightPillar” z React Bits (https://reactbits.dev, David Haz, MIT + Commons Clause), kod bez zmian poza
-   wymianą JSX na RB.dom. Działa przez rb.js; podpinany do elementów z data-rb="LightPillar". */
+   wymianą JSX na RB.dom i propem „offset” (przesunięcie słupa w bok w konfiguracji). Działa przez rb.js; podpinany do elementów z data-rb="LightPillar". */
 (() => {
   'use strict';
   const { useRef, useEffect, useState, useMemo, useCallback, useId, useLayoutEffect } = RB.hooks;
@@ -249,6 +249,7 @@
     detail = 4,
     noiseIntensity = 0.5,
     fade = 0,
+    offset = 0,
     intro = true,
     mixBlendMode = 'screen',
     quality = 'high',
@@ -280,6 +281,7 @@
       detail: Math.round(clamp(detail, 1, 6)),
       noiseIntensity: Math.max(0, noiseIntensity),
       fade: clamp(fade, 0, 1),
+      offset: clamp(Number(offset) || 0, -1, 1),
       intro,
       scale: clamp(resolution ?? QUALITY[quality] ?? QUALITY.high, MIN_SCALE, 2),
       lightMode,
@@ -485,7 +487,13 @@
         const follow = 1 - Math.exp(-dt * 2.4);
         state.spin += (aim * 1.4 - state.spin) * follow;
         state.lean += (aim * 9 - state.lean) * follow;
-        state.shift += (aim * 0.35 * (view.width / view.height) - state.shift) * follow;
+        // Słup stoi w miejscu z konfiguracji (offset: -1 lewa krawędź, 0 środek, 1 prawa) i lekko idzie za kursorem.
+        const home = s.offset * (view.width / view.height);
+        if (!state.placed) {
+          state.shift = home;
+          state.placed = true;
+        }
+        state.shift += (home + aim * 0.35 * (view.width / view.height) - state.shift) * follow;
         state.touch += ((engaged ? 1 : 0) - state.touch) * (1 - Math.exp(-dt * 3));
 
         for (let i = pulses.length - 1; i >= 0; i--) {
@@ -515,6 +523,10 @@
         view.width = width;
         view.height = height;
         view.ratio = ratio;
+        if (!state.placed) {
+          state.shift = settingsRef.current.offset * (width / height);
+          state.placed = true;
+        }
         canvas.width = Math.max(1, Math.round(width * ratio));
         canvas.height = Math.max(1, Math.round(height * ratio));
         render();

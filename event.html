@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="site.css?v=9099342">
+  <link rel="stylesheet" href="site.css?v=24a06f8">
   <link rel="stylesheet" href="vendor/lenis.css">
   <style>
     [hidden] { display: none !important; }
@@ -238,7 +238,7 @@
   <a class="skip" href="#tresc">Przejdź do treści</a>
   <!-- Tło eventów: zorza w kolorach wybranego eventu (React Bits Aurora; kolory zmienia ctPaintPage). Zaczyna się
        pod banerem i przewija się razem ze stroną. -->
-  <div class="page-bg flow" aria-hidden="true" data-rb="Aurora" data-from=".banner.bleed" data-edge="bottom" data-lift="120" data-props='{"colorStops":["#28e9ea","#166f94","#0b3d5c"],"amplitude":1,"blend":0.5,"speed":0.8,"height":0.5,"glow":0.6,"opacity":0.8}'></div>
+  <div class="page-bg flow" aria-hidden="true" data-rb="Aurora" data-from=".banner.bleed" data-edge="bottom" data-lift="160" style="--flow-in: 160px" data-props='{"colorStops":["#28e9ea","#166f94","#0b3d5c"],"amplitude":1,"blend":0.5,"speed":0.8,"height":0.5,"glow":0.45,"opacity":0.5}'></div>
   <header class="site-nav">
     <div class="wrap">
       <a class="site-brand" href="./" translate="no"><img src="img/icon.webp" alt="" width="32" height="32"><span>Entuzjaści Hopkostki</span></a>
@@ -913,7 +913,7 @@
   <script src="vendor/gsap.min.js"></script>
   <script src="vendor/ScrollTrigger.min.js"></script>
   <script src="vendor/lenis.min.js"></script>
-  <script src="motion.js?v=9099342"></script>
+  <script src="motion.js?v=24a06f8"></script>
   <script>
     // Ruch jak na stronie głównej (motion.js): baner zwija się do kolumny przy przewijaniu, tytuł wjeżdża
     // słowo po słowie, eventy i karty z boku wjeżdżają od dołu, a karta pod kursorem dostaje światło (React Bits).
@@ -926,8 +926,8 @@
     });
     if (ctPainted) ctPaintPage(ctPainted);
   </script>
-  <script src="rb.js?v=9099342" defer></script>
-  <script src="rb-aurora.js?v=9099342" defer></script>
-  <script src="rb-scanner.js?v=9099342" defer></script>
+  <script src="rb.js?v=24a06f8" defer></script>
+  <script src="rb-aurora.js?v=24a06f8" defer></script>
+  <script src="rb-scanner.js?v=24a06f8" defer></script>
 </body>
 </html>
