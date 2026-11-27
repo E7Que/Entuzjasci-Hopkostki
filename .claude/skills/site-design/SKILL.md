@@ -104,7 +104,12 @@ panels as AI slop). Only the events page (`/event`) recolours itself with the se
   (`--flow-in` mask, no hard top edge) and scrolls with the page. The whole page (background, cards, fields,
   accents) takes the event's hue. Owner may still swap the aurora.
 - 404: LiquidChrome (owner's pick, "tło 2") in the banner's cyan, darker on the left behind the text. No Scanner
-  band at the bottom (owner removed it there).
+  band at the bottom (owner removed it there). The page fits one screen and does not scroll (owner's request):
+  body is a full-height flex column, and a script locks scrolling (`html.no-scroll`, also no rubber-band bounce)
+  whenever everything fits, at most minus the footer's bottom padding. Short phones get a tighter layout (smaller
+  secondary buttons, footer keeps only the panel link, the others are buttons above), landscape phones get tighter
+  spacing, and only a screen still too low for the content falls back to scrolling. Footer text has a dark halo
+  for legibility over the bright chrome.
 - Bottom of the landing, ranking and events pages: Scanner waves (owner's "tło 4") in `var(--accent)` /
   `var(--accent-2)`, from above the last section down to the end of the page (`.page-scan`, `data-from`).
 Do not stack full-page backgrounds beyond the combinations above (all were the owner's requests).
