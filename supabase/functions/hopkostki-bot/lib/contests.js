@@ -100,7 +100,15 @@ async function standings(bot, c, now = Date.now()) {
     minAccountMs: (c.minAccountDays ?? 0) * DAY,
   });
   return rows
-    .map((r) => ({ ...r, reached: contestStatus(c, now) !== 'upcoming' && meetsRequirement(c, r), ratio: progressRatio(c, r) }))
+    .map((r) => ({
+      ...r,
+      reached: contestStatus(c, now) !== 'upcoming' && meetsRequirement(c, r),
+      ratio: progressRatio(c, r),
+      // Ponad cel event nie liczy: 5 zaproszeń przy celu 3 to 3/3 na stronie, w panelu i w ogłoszeniach
+      // (kolejność i tak bierze, kto pierwszy spełnił warunek).
+      invites: c.invites > 0 ? Math.min(r.invites, c.invites) : r.invites,
+      messages: c.messages > 0 ? Math.min(r.messages, c.messages) : r.messages,
+    }))
     .sort(
       (a, b) =>
         Number(b.reached) - Number(a.reached) ||

@@ -9,7 +9,7 @@ import { ensureSetup } from '../supabase/functions/hopkostki-bot/lib/cron.js';
 import { onMessageLevels } from '../supabase/functions/hopkostki-bot/lib/levels.js';
 import { membersFeaturesOn, onMemberJoin, onMemberLeave } from '../supabase/functions/hopkostki-bot/lib/members.js';
 import { ensureInviteSnapshot } from '../supabase/functions/hopkostki-bot/lib/invites.js';
-import { OAUTH_REDIRECT, OAUTH_REDIRECTS, contestsTick, messageContestIds, requirementText } from '../supabase/functions/hopkostki-bot/lib/contests.js';
+import { OAUTH_REDIRECT, OAUTH_REDIRECTS, contestDetails, contestsTick, messageContestIds, requirementText } from '../supabase/functions/hopkostki-bot/lib/contests.js';
 import { pruneBannerAssets } from '../supabase/functions/hopkostki-bot/lib/serverInfo.js';
 
 const BASE = 'https://x.supabase.co/functions/v1/hopkostki-bot/panel';
@@ -146,9 +146,13 @@ test('event wiadomości i oba warunki: liczą się tylko wiadomości zapisanych 
   w = await view(s, link.session, 'wiad0001');
   assert.deepEqual([w.me.messages, w.me.reached], [2, true]);
   const both = await view(s, link.session, 'oba00001');
-  assert.deepEqual([both.type, both.me.messages, both.me.invites, both.me.reached], ['mixed', 2, 0, false], 'brakuje zaproszenia');
+  assert.deepEqual([both.type, both.me.messages, both.me.invites, both.me.reached], ['mixed', 1, 0, false], 'brakuje zaproszenia; 2 wiadomości przy celu 1 to 1 (ponad cel się nie liczy)');
   await s.store.addInviteJoin({ userId: account(50), inviterId: 'target', code: 'abc' });
-  assert.equal((await view(s, link.session, 'oba00001')).me.reached, true);
+  await s.store.addInviteJoin({ userId: account(51), inviterId: 'target', code: 'abc' });
+  const done = await view(s, link.session, 'oba00001');
+  assert.deepEqual([done.me.invites, done.me.reached], [1, true], 'drugie zaproszenie ponad cel się nie liczy');
+  const panel = (await contestDetails(s.bot, 'oba00001')).entries[0];
+  assert.deepEqual([panel.invites, panel.messages], [1, 1], 'panel też bez nadwyżki');
   const later = await view(s, link.session, 'pozn0001');
   assert.deepEqual([later.status, later.me.joined, later.me.reached], ['upcoming', true, false], 'przed startem nic się nie liczy');
   assert.equal(await contestsTick(s.bot), 2);
