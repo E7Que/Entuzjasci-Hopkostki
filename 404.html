@@ -21,10 +21,17 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="site.css?v=57cd44a">
+  <link rel="stylesheet" href="site.css?v=0b0264d">
   <style>
     /* 404: jedna rzecz do zrobienia (wrócić na stronę główną) i dwie inne drogi. Zasady: .claude/skills/site-design. */
-    .lost { min-height: calc(100dvh - 64px - 96px); display: flex; flex-direction: column; justify-content: center; padding: var(--sp-16) 0; }
+    /* Strona mieści się na jednym ekranie i nie da się jej przewijać (prośba właściciela). Body to kolumna na całą
+       wysokość ekranu (min-height: 100dvh z site.css), treść wypełnia miejsce między paskiem a stopką i stoi na
+       środku. Skrypt na dole blokuje przewijanie (też gumowe odbicie na telefonie), gdy wszystko się mieści; na
+       bardzo niskim ekranie (np. telefon poziomo) przewijanie zostaje, żeby przyciski i stopka były osiągalne. */
+    body { display: flex; flex-direction: column; }
+    main.below-nav { flex: 1 0 auto; display: flex; flex-direction: column; padding-top: 84px; }
+    .lost { flex: 1 0 auto; display: flex; flex-direction: column; justify-content: center; padding: var(--sp-8) 0; }
+    html.no-scroll { overflow: hidden; overscroll-behavior: none; }
     .lost h1 { max-width: 680px; font-size: var(--fs-5xl); line-height: 1.1; }
     .lost p.lead { max-width: 560px; margin: var(--sp-4) 0 var(--sp-8); color: var(--muted); font-size: var(--fs-lg); line-height: 1.55; }
     .lost .cta-row { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
@@ -32,9 +39,35 @@
     /* Lekka ciemna warstwa nad chromem w tle trzyma czytelność tekstu. */
     .lost-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgb(5 11 11 / 0.85) 0%, rgb(5 11 11 / 0.7) 55%, rgb(5 11 11 / 0.15) 100%); }
     .lost p.lead { color: var(--text); }
+    /* Stopka leży też na jasnym chromie (prawa strona tła jest najmniej przyciemniona): ciemna poświata pod
+       tekstem trzyma czytelność bez dokładania paska na dole. */
+    .site-foot { text-shadow: 0 0 2px rgb(5 11 11 / 0.9), 0 1px 10px rgb(5 11 11 / 0.85); }
     @media (max-width: 640px) {
       .lost h1 { font-size: var(--fs-4xl); }
       .lost .cta-row .btn { flex: 1 1 100%; }
+    }
+    /* Niższy telefon (np. iPhone SE, iPhone 13, mniejsze Androidy): ciaśniej, żeby całość mieściła się bez
+       przewijania. Ranking i Eventy są już przyciskami wyżej, więc w stopce zostaje tylko Panel moderacji. */
+    @media (max-width: 640px) and (max-height: 760px) {
+      main.below-nav { padding-top: 80px; }
+      .lost { padding: var(--sp-4) 0; }
+      .lost p.lead { margin: var(--sp-3) 0 var(--sp-6); }
+      .lost .cta-row { gap: var(--sp-2); }
+      .lost .cta-row .btn-big:not(.btn-primary) { min-height: 44px; border-radius: var(--r-sm); font-size: var(--fs-base); }
+      .site-foot { padding: var(--sp-4) 0; }
+      .site-foot nav a:not([href="panel"]) { display: none; }
+    }
+    /* Bardzo wąski telefon (320 px): trochę mniejszy tytuł, żeby wszystko zmieściło się na ekranie. */
+    @media (max-width: 340px) {
+      .lost h1 { font-size: var(--fs-3xl); }
+    }
+    /* Telefon poziomo albo bardzo niskie okno: mniej odstępów, przyciski zostają w rzędzie. */
+    @media (max-height: 480px) {
+      main.below-nav { padding-top: 80px; }
+      .lost { padding: var(--sp-2) 0; }
+      .lost p.lead { margin: var(--sp-2) 0 var(--sp-4); }
+      .site-foot { padding: var(--sp-3) 0; }
+      .site-foot nav a:not([href="panel"]) { display: none; }
     }
   </style>
 </head>
@@ -78,12 +111,25 @@
 
   <script src="vendor/gsap.min.js"></script>
   <script src="vendor/ScrollTrigger.min.js"></script>
-  <script src="motion.js?v=57cd44a"></script>
+  <script src="motion.js?v=0b0264d"></script>
   <script>
     // Ten sam ruch co na innych stronach: tytuł wjeżdża słowo po słowie, potem opis i przyciski (bez płynnego przewijania).
     window.Motion?.init({ title: '.lost h1', intro: '.lost .lead, .lost .cta-row', magnet: '.lost .btn-primary' });
+    // Wszystko mieści się na ekranie (najwyżej bez dolnego odstępu stopki): przewijanie zablokowane.
+    // Za niski ekran: przewijanie zostaje, żeby przyciski i stopka były osiągalne.
+    const lockScroll = () => {
+      const root = document.documentElement;
+      const spare = parseFloat(getComputedStyle(document.querySelector('.site-foot')).paddingBottom) || 0;
+      const fits = root.scrollHeight - window.innerHeight <= spare;
+      root.classList.toggle('no-scroll', fits);
+      if (fits && window.scrollY) window.scrollTo(0, 0);
+    };
+    lockScroll();
+    addEventListener('resize', lockScroll);
+    addEventListener('load', lockScroll);
+    document.fonts?.ready.then(lockScroll);
   </script>
-  <script src="rb.js?v=57cd44a" defer></script>
-  <script src="rb-chrome.js?v=57cd44a" defer></script>
+  <script src="rb.js?v=0b0264d" defer></script>
+  <script src="rb-chrome.js?v=0b0264d" defer></script>
 </body>
 </html>
