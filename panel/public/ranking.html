@@ -52,21 +52,24 @@
     .totals dt { color: var(--muted); font-size: var(--fs-sm); }
     .totals dd { margin: 0; font-family: var(--display); font-weight: 600; font-size: 1.3rem; text-align: left; }
 
-    /* ---------- Pasek ---------- */
-    .toolbar {
-      position: sticky; top: 84px; z-index: 5; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-      margin: 32px 0 24px; padding: 8px; border: 1px solid transparent; border-radius: 16px; background: color-mix(in srgb, var(--bg) 62%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07), 0 16px 40px -16px rgb(0 0 0 / 0.8);
-    }
-    .tabs { display: flex; gap: 4px; flex: 1 1 auto; }
-    .tab { min-height: 40px; padding: 0 16px; border: 0; border-radius: var(--r-sm); background: none; color: var(--muted); font-weight: 500; cursor: pointer; }
-    .tab[aria-selected="true"] { color: var(--text); background: var(--hover); }
+    /* ---------- Pasek filtrów: część strony (przewija się razem z nią, nie wisi nad listą), jedna warstwa: same
+       kontrolki na tle strony, bez panelu pod spodem. Wszystkie 44 px wysokości, ten sam materiał i zaokrąglenie;
+       podświetlenie wybranej zakładki przesuwa się płynnie między zakładkami (.ink, skrypt na końcu strony). ---------- */
+    .toolbar { --ctl: var(--surface); --ctl-edge: inset 0 0 0 1px rgb(255 255 255 / 0.06); position: relative; z-index: 2; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 32px 0 24px; }
+    .tabs { position: relative; isolation: isolate; display: flex; flex: 0 1 auto; padding: 4px; border-radius: 14px; background: var(--ctl); box-shadow: var(--ctl-edge); }
+    .tabs .ink { position: absolute; z-index: -1; top: 4px; bottom: 4px; left: 0; width: 0; border-radius: 10px; background: var(--raised); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07), 0 6px 16px -8px rgb(0 0 0 / 0.9); opacity: 0; pointer-events: none; }
+    .tabs.ink-ready .ink { transition: transform 420ms var(--ease), width 420ms var(--ease), opacity 200ms var(--ease); }
+    @media (prefers-reduced-motion: reduce) { .tabs.ink-ready .ink, .tab, .views button { transition: none; } }
+    .tab { min-height: 36px; padding: 0 16px; border: 0; border-radius: 10px; background: none; color: var(--muted); font-weight: 500; cursor: pointer; transition: color 200ms var(--ease); }
+    .tab[aria-selected="true"] { color: var(--text); }
+    .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .tab .ts { display: none; }
-    .search { position: relative; flex: 0 1 260px; }
-    .search svg { position: absolute; left: 11px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%); color: var(--faint); pointer-events: none; }
-    .search input { width: 100%; height: 40px; padding: 0 12px 0 40px; border: 0; border-radius: var(--r-sm); background: var(--surface-2); color: var(--text); font: inherit; font-size: var(--fs-base); }
+    .search { position: relative; flex: 0 1 280px; margin-left: auto; }
+    .search svg { position: absolute; left: 14px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%); color: var(--faint); pointer-events: none; }
+    .search input { width: 100%; height: 44px; padding: 0 14px 0 42px; border: 0; border-radius: 14px; background: var(--ctl); box-shadow: var(--ctl-edge); color: var(--text); font: inherit; font-size: var(--fs-base); transition: box-shadow 200ms var(--ease); }
     .search input::placeholder { color: var(--faint); }
     .search input:focus { outline: none; box-shadow: 0 0 0 2px var(--accent); }
-    .sort select { height: 40px; padding: 0 32px 0 12px; border: 1px solid var(--field-border); border-radius: var(--r-sm); background: var(--surface-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2367757b' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 9px center / 14px; color: var(--text); font: inherit; font-size: 0.9rem; appearance: none; -webkit-appearance: none; cursor: pointer; }
+    .sort select { height: 44px; padding: 0 34px 0 14px; border: 0; border-radius: 14px; box-shadow: var(--ctl-edge); background: var(--ctl) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2367757b' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 9px center / 14px; color: var(--text); font: inherit; font-size: 0.9rem; appearance: none; -webkit-appearance: none; cursor: pointer; }
     .sort select:focus { outline: none; box-shadow: 0 0 0 2px var(--accent); }
     .sort select:disabled { opacity: 0.5; cursor: default; }
     .cols button { all: unset; cursor: pointer; text-align: inherit; }
@@ -78,9 +81,9 @@
     .board.sort-messages .num.xp, .board.sort-voice .num.xp { color: var(--muted); font-weight: 400; }
     .board.grid.sort-messages .num.msgs, .board.grid.sort-voice .num.voice { display: block; }
     .board.grid.sort-messages .num.xp, .board.grid.sort-voice .num.xp { display: none; }
-    .views { display: flex; gap: 2px; padding: 2px; border-radius: var(--r-sm); background: var(--surface-2); }
-    .views button { width: 38px; height: 36px; display: grid; place-items: center; border: 0; border-radius: var(--r-xs); background: none; color: var(--faint); cursor: pointer; }
-    .views button[aria-pressed="true"] { color: var(--text); background: var(--hover); }
+    .views { display: flex; gap: 2px; padding: 4px; border-radius: 14px; background: var(--ctl); box-shadow: var(--ctl-edge); }
+    .views button { width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 10px; background: none; color: var(--faint); cursor: pointer; transition: color 200ms var(--ease), background-color 200ms var(--ease); }
+    .views button[aria-pressed="true"] { color: var(--text); background: var(--raised); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07); }
     .views svg { width: 16px; height: 16px; }
 
     .layout { display: grid; gap: 24px; }
@@ -274,7 +277,7 @@
     .board.grid .empty, .board.grid .skeleton { grid-column: 1 / -1; margin: 0; }
 
     /* Moje miejsce */
-    .me-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border: 0; border-radius: var(--r-sm); background: var(--surface-2); color: var(--text); font-weight: 500; cursor: pointer; }
+    .me-btn { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border: 0; border-radius: 14px; background: var(--surface); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06); color: var(--text); font-weight: 500; cursor: pointer; }
     .me-btn svg { width: 16px; height: 16px; color: var(--accent); }
     .me-tag { flex: none; align-self: center; color: var(--accent); font-size: var(--fs-sm); font-weight: 600; line-height: 18px; }
     .row.me { box-shadow: inset 3px 0 0 var(--accent); }
@@ -329,10 +332,10 @@
     .more:disabled { opacity: 0.6; cursor: default; }
 
     @media (hover: hover) {
-      .tab:not([aria-selected="true"]):hover { color: var(--text); background: var(--surface-2); }
+      .tab:not([aria-selected="true"]):hover { color: var(--text); }
       .row:hover { background: var(--hover); }
       .views button:hover { color: var(--text); }
-      .me-btn:hover { background: var(--hover); }
+      .me-btn:hover { background: var(--raised); }
       .more:hover { background: var(--hover); }
       .board.grid .row:hover { background: var(--hover); }
       .arch-p:hover { background: var(--hover); }
@@ -342,7 +345,7 @@
 
     /* ---------- Boczny panel ---------- */
     .side { display: grid; gap: 16px; }
-    @media (min-width: 980px) { .side { position: sticky; top: 156px; } }
+    @media (min-width: 980px) { .side { position: sticky; top: 88px; } }
     .info { display: grid; gap: 16px; }
     .card { padding: 24px 24px; border: 1px solid var(--panel-edge); border-radius: var(--radius); background: var(--panel); box-shadow: var(--panel-shadow); }
     .card h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; font-size: var(--fs-base); }
@@ -675,7 +678,7 @@
     }
     body.ev-page .blob.b1 { background: var(--evc); opacity: calc(0.08 + var(--evk) * 0.17); }
     body.ev-page .blob.b2 { background: var(--evc2); opacity: calc(0.05 + var(--evk) * 0.12); }
-    body.ev-page :is(.card, .table, .toolbar) {
+    body.ev-page :is(.card, .table) {
       box-shadow:
         inset 0 1px 0 color-mix(in srgb, var(--evc) calc(var(--evk) * 35%), rgba(255, 255, 255, 0.03)),
         0 14px 32px -24px rgba(0, 0, 0, 0.9),
@@ -724,7 +727,7 @@
     .dc-const path { fill: none; stroke: rgba(255, 240, 200, 0.4); stroke-width: 1; stroke-dasharray: 3 4; }
     .dc-const circle { fill: #fff6d6; animation: dc-tw 3.2s ease-in-out infinite; }
     @keyframes dc-tw { 50% { opacity: 0.3; } }
-    body.ev-page[data-ev="stars"] :is(.table, .card, .toolbar) { background-image: var(--dc-stars); }
+    body.ev-page[data-ev="stars"] :is(.table, .card) { background-image: var(--dc-stars); }
 
     /* Neon: siatka synthwave, neonowe ramki, migoczący tytuł */
     .dc-grid {
@@ -739,7 +742,7 @@
       background-size: 64px 64px; animation: dc-grid 1.8s linear infinite;
     }
     @keyframes dc-grid { to { transform: translateY(64px); } }
-    body.ev-page[data-ev="neon"] :is(.toolbar, .table, .card) {
+    body.ev-page[data-ev="neon"] :is(.table, .card) {
       border-color: color-mix(in srgb, var(--evc) calc(30% + var(--evk) * 50%), transparent);
       box-shadow: 0 0 calc(var(--evk) * 16px) color-mix(in srgb, var(--evc) calc(var(--evk) * 55%), transparent), inset 0 0 calc(var(--evk) * 12px) color-mix(in srgb, var(--evc) calc(var(--evk) * 22%), transparent);
     }
@@ -822,8 +825,8 @@
     body.ev-page[data-ev="storm"].ev-flash .dc-sky i { filter: brightness(1.45); transition: none; }
     @keyframes dc-drift { from { transform: translateX(-2.5%); } to { transform: translateX(2.5%); } }
     body.ev-page[data-ev="storm"] .bg::before { content: ''; position: absolute; inset: 0; z-index: 1; background: rgba(4, 6, 16, calc(var(--evk) * 0.35)); }
-    body.ev-page[data-ev="storm"] :is(.toolbar, .table, .card, .event) { transition: border-color 0.25s, box-shadow 0.25s; }
-    body.ev-page[data-ev="storm"].ev-flash :is(.toolbar, .table, .card, .event) { border-color: rgba(214, 224, 255, 0.85); box-shadow: 0 0 34px -6px rgba(200, 214, 255, 0.55); }
+    body.ev-page[data-ev="storm"] :is(.table, .card, .event) { transition: border-color 0.25s, box-shadow 0.25s; }
+    body.ev-page[data-ev="storm"].ev-flash :is(.table, .card, .event) { border-color: rgba(214, 224, 255, 0.85); box-shadow: 0 0 34px -6px rgba(200, 214, 255, 0.55); }
 
     /* Bąbelki: tafla wody u góry, promienie światła, refleksy wody (kaustyka) */
     .dc-caustic { position: absolute; inset: 0; overflow: hidden; opacity: calc(0.07 + var(--evk) * 0.18); }
@@ -1005,7 +1008,7 @@
 
     <section class="event" id="event" hidden aria-label="Wydarzenie XP"></section>
 
-    <nav class="toolbar" aria-label="Ranking" data-nav-hidden-top="hide">
+    <nav class="toolbar" aria-label="Ranking">
       <div class="tabs" role="tablist">
         <button class="tab" role="tab" aria-selected="true" data-period="all">Cały czas</button>
         <button class="tab" role="tab" aria-selected="false" data-period="week"><span class="tl">Ten tydzień</span><span class="ts">Tydzień</span></button>
@@ -1042,7 +1045,7 @@
         <button type="button" class="more" id="more" hidden>Pokaż więcej</button>
       </section>
 
-      <aside class="side" id="side" data-nav-hidden-top="12">
+      <aside class="side" id="side">
         <section class="profile" id="profile" hidden aria-label="Profil"></section>
         <div class="info">
           <section class="card" id="card-highlights" hidden>
@@ -14747,6 +14750,29 @@
   <script src="vendor/gsap.min.js"></script>
   <script src="vendor/ScrollTrigger.min.js"></script>
   <script src="vendor/lenis.min.js"></script>
+  <script>
+    // Pasek filtrów: podświetlenie wybranej zakładki przesuwa się płynnie do nowej zakładki (także gdy zmienia się
+    // szerokość zakładek albo pojawia zakładka „Wydarzenie”).
+    (() => {
+      const tabs = document.querySelector('.toolbar .tabs');
+      if (!tabs) return;
+      const ink = document.createElement('span');
+      ink.className = 'ink';
+      ink.setAttribute('aria-hidden', 'true');
+      tabs.prepend(ink);
+      const place = () => {
+        const tab = tabs.querySelector('.tab[aria-selected="true"]:not([hidden])');
+        ink.style.opacity = tab ? '1' : '0';
+        if (!tab) return;
+        ink.style.width = `${tab.offsetWidth}px`;
+        ink.style.transform = `translateX(${tab.offsetLeft}px)`;
+      };
+      new MutationObserver(place).observe(tabs, { subtree: true, attributes: true, attributeFilter: ['aria-selected', 'hidden'] });
+      if ('ResizeObserver' in window) new ResizeObserver(place).observe(tabs);
+      place();
+      requestAnimationFrame(() => requestAnimationFrame(() => tabs.classList.add('ink-ready')));
+    })();
+  </script>
   <script src="motion.js?v=dev"></script>
   <script>
     // Ruch jak na stronie głównej (motion.js): baner zwija się do kolumny przy przewijaniu, tytuł wjeżdża

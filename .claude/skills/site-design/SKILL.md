@@ -110,10 +110,12 @@ Do not stack a second full-page background on a page.
   dark blurred glass, no coloured fills or lines; the current page is brighter text with a filled accent icon.
   It moves with the scroll (motion.js, transform only): scrolling down hides it slower than the page (40% of the
   scrolled distance), a small scroll down does not hide it, 12 px of scrolling up glides it fully back (0.3 s), and
-  a half-hidden bar finishes to the nearer end when scrolling stops. Sticky parts move with it
-  (`data-nav-hidden-top`): the ranking filter bar (same glass as the top bar) hides and returns together with it,
-  the ranking side column rises to 12 px. On the landing and events pages only the top bar moves. Keyboard focus
-  inside it keeps it shown. The owner rejected the earlier narrowing capsule (layout transition, not smooth).
+  a half-hidden bar finishes to the nearer end when scrolling stops. Only the top bar moves on every page
+  (`data-nav-hidden-top` can still make a sticky part follow it, nothing uses it now). Keyboard focus inside it
+  keeps it shown. The owner rejected the earlier narrowing capsule (layout transition, not smooth).
+- Ranking filter bar: part of the page (scrolls with it, never sticky or floating; the owner disliked two floating
+  bars). One layer: controls sit straight on the page, no panel behind them; all 44 px high, `--surface` with a
+  1 px inner edge, 14 px radius; the selected period has a raised highlight that slides between tabs.
 - Full-width banner (`img/banner.webp` 3840×2160 from the owner, `srcset` 960/1600/2400/3840). The owner can set
   the icon and a separate banner for the landing, ranking and events pages in the panel (Ustawienia → Wygląd
   strony, best 3840×2160 / icon 512×512); pages read them from `/public/site` in `motion.js`. On scroll the image
