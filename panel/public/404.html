@@ -11,9 +11,10 @@
       // enho.pl: /, GitHub Pages: /Entuzjasci-Hopkostki/.
       var root = /\.github\.io$/.test(location.hostname) ? '/' + location.pathname.split('/')[1] + '/' : '/';
       var path = location.pathname.slice(root.length);
-      // Adres bez .html (np. /event albo /Ranking) → plik .html tej strony, z resztą adresu (#…, ?… z logowania).
-      var page = /^(event|ranking|panel)\/?$/i.exec(path);
-      if (page) location.replace(root + page[1].toLowerCase() + '.html' + location.search + location.hash);
+      // Adres bez .html (np. /event, /Ranking, /info) → plik .html tej strony, z resztą adresu (#…, ?… z logowania).
+      var page = /^(event|ranking|panel|informacje|info)\/?$/i.exec(path);
+      var name = page && page[1].toLowerCase();
+      if (name) location.replace(root + (name === 'info' ? 'informacje' : name) + '.html' + location.search + location.hash);
       // Każdy inny zły adres (np. /oo) → .../404, żeby w pasku było widać, że takiej strony nie ma (prośba
       // właściciela). replace: przycisk Wstecz nie wraca na zły adres. Do przejścia strona się nie pokazuje.
       else if (!/^404(\.html)?$/.test(path)) {
@@ -90,6 +91,7 @@
       <ul class="site-links">
         <li><a href="ranking"><svg class="i" aria-hidden="true"><use href="icons.svg#trophy"></use></svg>Ranking</a></li>
         <li><a href="event"><svg class="i" aria-hidden="true"><use href="icons.svg#calendar-dots"></use></svg>Eventy</a></li>
+        <li><a href="informacje"><svg class="i" aria-hidden="true"><use href="icons.svg#info"></use></svg><span class="nav-long">Informacje</span><span class="nav-short">Info</span></a></li>
         <li><a class="nav-join" href="https://discord.gg/FuqNCJhVYs" rel="noopener">Dołącz</a></li>
       </ul>
     </div>

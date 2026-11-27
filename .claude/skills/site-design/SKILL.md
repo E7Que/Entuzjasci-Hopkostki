@@ -121,8 +121,13 @@ jumps when it resizes. Scroll-linked drift ignores height-only resizes for the s
 
 ## Page frame
 
-- Same top bar on every page (brand, Ranking, Eventy, "Dołącz" button): floats 12 px from the top over the banner as
-  dark blurred glass, no coloured fills or lines; the current page is brighter text with a filled accent icon.
+- Same top bar on every page (brand, Ranking, Eventy, Informacje, "Dołącz" button): floats 12 px from the top over
+  the banner as dark blurred glass, no coloured fills or lines; the current page is brighter text with a filled
+  accent icon (`*-fill` symbol in icons.svg). On phones "Informacje" reads "Info" (`.nav-long` / `.nav-short`),
+  links get tighter padding under 375 px and drop their icons under 341 px so all three fit.
+- Informacje (`informacje.html`, `/informacje`, `/info`): for now an "under construction" page styled exactly
+  like the 404 page (same layout, background, scroll lock), only the text differs; `noindex` until it has content.
+  The owner will give its real content later.
   It moves with the scroll (motion.js, transform only): scrolling down hides it slower than the page (40% of the
   scrolled distance), a small scroll down does not hide it, 12 px of scrolling up glides it fully back (0.3 s), and
   a half-hidden bar finishes to the nearer end when scrolling stops. Only the top bar moves on every page

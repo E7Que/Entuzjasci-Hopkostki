@@ -157,6 +157,8 @@ html { scroll-padding-top: 96px; }
 .site-links a[aria-current='page'] { color: var(--text); }
 .site-links a[aria-current='page'] .i { color: var(--accent); }
 .site-links .nav-join { min-height: 40px; margin-left: var(--sp-2); padding: 0 var(--sp-4); background: var(--accent); color: var(--on-accent); font-size: var(--fs-sm); font-weight: 600; }
+/* Zakładka z długą nazwą: na telefonie krótsza wersja (np. „Info” zamiast „Informacje”), żeby pasek się mieścił. */
+.nav-short { display: none; }
 
 /* Baner strony na całą szerokość ekranu (ranking, eventy; na stronie głównej z efektem przewijania). */
 body { overflow-x: clip; }
@@ -296,9 +298,18 @@ html.embed .page-bg { display: none; }
   .site-brand span { display: none; }
   .site-links a { padding: 0 var(--sp-3); }
   .site-links .nav-join { display: none; }
+  .nav-long { display: none; }
+  .nav-short { display: inline; }
   .btn-big { width: 100%; }
   .star { display: flex; width: 100%; }
   .star > .btn { flex: 1; }
+}
+/* Trzy zakładki na wąskim telefonie: ciaśniej (360 px), a przy 320 px same nazwy bez ikon. */
+@media (max-width: 374px) {
+  .site-links a { padding: 0 var(--sp-2); }
+}
+@media (max-width: 340px) {
+  .site-links a .i { display: none; }
 }
 
 /* Tryb wymuszonych kolorów (Windows) zdejmuje cienie: krawędzie zostają dzięki ramkom. */

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="pl" data-page="info">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Informacje - Entuzjaści Hopkostki</title>
+  <meta name="description" content="Informacje o serwerze Entuzjaści Hopkostki - strona w budowie.">
+  <!-- Strona w budowie: bez indeksowania, dopóki nie ma treści. -->
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="site.css?v=dev">
+  <style>
+    /* Informacje: strona w budowie w stylu strony 404 (prośba właściciela), dopóki nie powstanie treść.
+       Style i skrypt blokady przewijania jak w 404.html. Zasady: .claude/skills/site-design. */
+    /* Strona mieści się na jednym ekranie i nie da się jej przewijać (prośba właściciela). Body to kolumna na całą
+       wysokość ekranu (min-height: 100dvh z site.css), treść wypełnia miejsce między paskiem a stopką i stoi na
+       środku. Skrypt na dole blokuje przewijanie (też gumowe odbicie na telefonie), gdy wszystko się mieści; na
+       bardzo niskim ekranie (np. telefon poziomo) przewijanie zostaje, żeby przyciski i stopka były osiągalne. */
+    body { display: flex; flex-direction: column; }
+    main.below-nav { flex: 1 0 auto; display: flex; flex-direction: column; padding-top: 84px; }
+    .lost { flex: 1 0 auto; display: flex; flex-direction: column; justify-content: center; padding: var(--sp-8) 0; }
+    html.no-scroll { overflow: hidden; overscroll-behavior: none; }
+    .lost h1 { max-width: 680px; font-size: var(--fs-5xl); line-height: 1.1; }
+    .lost p.lead { max-width: 560px; margin: var(--sp-4) 0 var(--sp-8); color: var(--muted); font-size: var(--fs-lg); line-height: 1.55; }
+    .lost .cta-row { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
+    .site-foot { margin-top: 0; }
+    /* Lekka ciemna warstwa nad chromem w tle trzyma czytelność tekstu. */
+    .lost-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgb(5 11 11 / 0.85) 0%, rgb(5 11 11 / 0.7) 55%, rgb(5 11 11 / 0.15) 100%); }
+    .lost p.lead { color: var(--text); }
+    /* Stopka leży też na jasnym chromie (prawa strona tła jest najmniej przyciemniona): ciemna poświata pod
+       tekstem trzyma czytelność bez dokładania paska na dole. */
+    .site-foot { text-shadow: 0 0 2px rgb(5 11 11 / 0.9), 0 1px 10px rgb(5 11 11 / 0.85); }
+    @media (max-width: 640px) {
+      .lost h1 { font-size: var(--fs-4xl); }
+      .lost .cta-row .btn { flex: 1 1 100%; }
+    }
+    /* Niższy telefon (np. iPhone SE, iPhone 13, mniejsze Androidy): ciaśniej, żeby całość mieściła się bez
+       przewijania. Ranking i Eventy są już przyciskami wyżej, więc w stopce zostaje tylko Panel moderacji. */
+    @media (max-width: 640px) and (max-height: 760px) {
+      main.below-nav { padding-top: 80px; }
+      .lost { padding: var(--sp-4) 0; }
+      .lost p.lead { margin: var(--sp-3) 0 var(--sp-6); }
+      .lost .cta-row { gap: var(--sp-2); }
+      .lost .cta-row .btn-big:not(.btn-primary) { min-height: 44px; border-radius: var(--r-sm); font-size: var(--fs-base); }
+      .site-foot { padding: var(--sp-4) 0; }
+      .site-foot nav a:not([href="panel"]) { display: none; }
+    }
+    /* Bardzo wąski telefon (320 px): trochę mniejszy tytuł, żeby wszystko zmieściło się na ekranie. */
+    @media (max-width: 340px) {
+      .lost h1 { font-size: var(--fs-3xl); }
+    }
+    /* Telefon poziomo albo bardzo niskie okno: mniej odstępów, przyciski zostają w rzędzie. */
+    @media (max-height: 480px) {
+      main.below-nav { padding-top: 80px; }
+      .lost { padding: var(--sp-2) 0; }
+      .lost p.lead { margin: var(--sp-2) 0 var(--sp-4); }
+      .site-foot { padding: var(--sp-3) 0; }
+      .site-foot nav a:not([href="panel"]) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#tresc">Przejdź do treści</a>
+  <!-- Tło jak na stronie 404 (wybór właściciela, plik „tło 2”): płynny chrom w cyjanie z banera (React Bits LiquidChrome). -->
+  <div class="page-bg lost-bg" aria-hidden="true" data-rb="LiquidChrome" data-props='{"color":"#7af0f2","speed":0.25,"amplitude":0.35,"frequencyX":3,"frequencyY":3,"detail":5,"thickness":1,"depth":1.2,"roughness":0.2,"exposure":1.15,"interactive":true,"rippleStrength":1.2,"rippleSize":1,"tilt":1,"maxDevicePixelRatio":1.5}'></div>
+  <header class="site-nav">
+    <div class="wrap">
+      <a class="site-brand" href="./" translate="no"><img src="img/icon.webp" alt="" width="32" height="32"><span>Entuzjaści Hopkostki</span></a>
+      <ul class="site-links">
+        <li><a href="ranking"><svg class="i" aria-hidden="true"><use href="icons.svg#trophy"></use></svg>Ranking</a></li>
+        <li><a href="event"><svg class="i" aria-hidden="true"><use href="icons.svg#calendar-dots"></use></svg>Eventy</a></li>
+        <li><a href="informacje" aria-current="page"><svg class="i" aria-hidden="true"><use href="icons.svg#info-fill"></use></svg><span class="nav-long">Informacje</span><span class="nav-short">Info</span></a></li>
+        <li><a class="nav-join" href="https://discord.gg/FuqNCJhVYs" rel="noopener">Dołącz</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <main class="wrap below-nav" id="tresc" tabindex="-1">
+    <section class="lost" aria-labelledby="lost-h">
+      <h1 id="lost-h">Strona w budowie</h1>
+      <p class="lead">Wkrótce znajdziesz tu informacje o serwerze. Ta strona jeszcze powstaje, a na razie możesz zajrzeć tutaj:</p>
+      <div class="cta-row">
+        <a class="btn btn-primary btn-big" href="./">Wróć na stronę główną</a>
+        <a class="btn btn-big" href="ranking"><svg class="i" aria-hidden="true"><use href="icons.svg#trophy"></use></svg>Ranking poziomów</a>
+        <a class="btn btn-big btn-quiet" href="event"><svg class="i" aria-hidden="true"><use href="icons.svg#calendar-dots"></use></svg>Eventy serwera</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <span translate="no">© <span data-year>2026</span> Entuzjaści Hopkostki</span>
+      <nav aria-label="Strony">
+        <a href="ranking">Ranking poziomów</a>
+        <a href="event">Eventy serwera</a>
+        <a href="panel">Panel moderacji</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="vendor/gsap.min.js"></script>
+  <script src="vendor/ScrollTrigger.min.js"></script>
+  <script src="motion.js?v=dev"></script>
+  <script>
+    // Ten sam ruch co na innych stronach: tytuł wjeżdża słowo po słowie, potem opis i przyciski (bez płynnego przewijania).
+    window.Motion?.init({ title: '.lost h1', intro: '.lost .lead, .lost .cta-row', magnet: '.lost .btn-primary' });
+    // Wszystko mieści się na ekranie (najwyżej bez dolnego odstępu stopki): przewijanie zablokowane.
+    // Za niski ekran: przewijanie zostaje, żeby przyciski i stopka były osiągalne.
+    const lockScroll = () => {
+      const root = document.documentElement;
+      const spare = parseFloat(getComputedStyle(document.querySelector('.site-foot')).paddingBottom) || 0;
+      const fits = root.scrollHeight - window.innerHeight <= spare;
+      root.classList.toggle('no-scroll', fits);
+      if (fits && window.scrollY) window.scrollTo(0, 0);
+    };
+    lockScroll();
+    addEventListener('resize', lockScroll);
+    addEventListener('load', lockScroll);
+    document.fonts?.ready.then(lockScroll);
+  </script>
+  <script src="rb.js?v=dev" defer></script>
+  <script src="rb-chrome.js?v=dev" defer></script>
+</body>
+</html>
