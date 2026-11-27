@@ -406,6 +406,7 @@
   }
 
   let lenis = null;
+  let navSync = null; // przesuwanie paska nawigacji razem z przewijaniem (ustawiane niżej)
   // init({ banner, title, intro, reveal, headings, spot, magnet, column }): wszystko opcjonalne.
   function init(opts = {}) {
     if (root.classList.contains('embed')) return; // ranking w okienku Discorda zostaje statyczny
@@ -417,6 +418,7 @@
       if (window.Lenis && !lenis) {
         lenis = new Lenis({ lerp: 0.08, smoothWheel: true, wheelMultiplier: 0.9, anchors: true });
         lenis.on('scroll', ScrollTrigger.update);
+        if (navSync) lenis.on('scroll', navSync);
         gsap.ticker.add((time) => lenis.raf(time * 1000));
         gsap.ticker.lagSmoothing(0);
         const skip = $('.skip');
@@ -546,17 +548,107 @@
   // Rok w stopce („© 2026 Entuzjaści Hopkostki”) zawsze bieżący.
   document.querySelectorAll('[data-year]').forEach((el) => { el.textContent = String(new Date().getFullYear()); });
 
-  // Pasek nawigacji: po zjechaniu z góry strony zwija się w kapsułę (przejścia w site.css), na górze wraca.
-  // Próg z zapasem (w dół 48 px, z powrotem 16 px), żeby przy samej górze nie migał.
-  if (document.querySelector('.site-nav') && !root.classList.contains('embed')) {
-    let scrolled = false;
-    const onScroll = () => {
-      const y = window.scrollY;
-      const next = scrolled ? y > 16 : y > 48;
-      if (next !== scrolled) root.classList.toggle('nav-scrolled', (scrolled = next));
+  // Pasek nawigacji jedzie razem z przewijaniem: w dół chowa się dokładnie o tyle, o ile przewinięto (najwyżej o swoją
+  // wysokość z cieniem), w górę od razu zaczyna wracać, a gdy przewijanie stanie w połowie, dojeżdża do końca. Przy
+  // samej górze strony nie chowa się bardziej, niż przewinięto. Przyklejone części stron (data-nav-stick: pasek
+  // filtrów rankingu, kolumny boczne, liczba = odstęp pod paskiem filtrów) zajmują jego miejsce, gdy go nie ma.
+  // Pasek rusza się tylko przez transform, więc płynnie; z Lenisem w tej samej klatce co strona (init).
+  const nav = document.querySelector('.site-nav');
+  if (nav && !root.classList.contains('embed')) {
+    const bar = nav.querySelector('.wrap') ?? nav;
+    const sticks = [...document.querySelectorAll('[data-nav-stick]')];
+    let bottom = 72; // dolna krawędź pokazanego paska
+    let shift = 0; // o ile pasek jest schowany (px)
+    let lastY = Math.max(0, window.scrollY);
+    let dir = 0; // kierunek ostatniego ruchu: 1 w dół, -1 w górę
+    let travel = 0; // ile przewinięto w tym kierunku
+    let idle = 0;
+    let tween = 0;
+    let goal = null; // dokąd jedzie płynne dokończenie (0 = pokaż, inaczej schowaj)
+    let pinned = false; // fokus z klawiatury w pasku
+    const apply = () => {
+      nav.style.transform = shift > 0.01 ? `translate3d(0, ${(-shift).toFixed(2)}px, 0)` : '';
+      const s = Math.min(shift, bottom);
+      for (const el of sticks) el.style.top = `${(bottom + 12 + Number(el.dataset.navStick || 0) - s).toFixed(2)}px`;
     };
-    onScroll();
-    addEventListener('scroll', onScroll, { passive: true });
+    // Najwyżej o wysokość paska z cieniem, a przy samej górze strony nie bardziej, niż przewinięto.
+    const room = (y) => Math.min(bottom + 20, y);
+    const stop = () => {
+      if (tween) cancelAnimationFrame(tween);
+      tween = 0;
+      goal = null;
+    };
+    // Płynne dokończenie ruchu (0,28 s, wyhamowanie), z miejsca, w którym pasek akurat jest.
+    const glide = (to) => {
+      if (goal === to) return;
+      stop();
+      if (reduce) {
+        shift = to;
+        apply();
+        return;
+      }
+      goal = to;
+      const from = shift;
+      const t0 = performance.now();
+      const step = (now) => {
+        const t = Math.min(1, (now - t0) / 280);
+        shift = from + (to - from) * (1 - Math.pow(1 - t, 3));
+        apply();
+        if (t < 1) tween = requestAnimationFrame(step);
+        else stop();
+      };
+      tween = requestAnimationFrame(step);
+    };
+    const measure = () => {
+      bottom = bar.getBoundingClientRect().bottom + shift;
+      apply();
+    };
+    // Przewijanie ustało z paskiem w połowie: dokończ w stronę ostatniego ruchu (przy samej górze zawsze pokaż).
+    const settle = () => {
+      const y = Math.max(0, window.scrollY);
+      const max = room(y);
+      if (pinned || goal !== null || shift <= 0 || shift >= max) return;
+      glide(dir > 0 && y > bottom + 20 ? max : 0);
+    };
+    navSync = () => {
+      const y = Math.max(0, window.scrollY);
+      const dy = y - lastY;
+      lastY = y;
+      if (!dy || pinned) return;
+      const d = Math.sign(dy);
+      if (d !== dir) {
+        dir = d;
+        travel = 0;
+      }
+      travel += Math.abs(dy);
+      // Kawałek w górę (12 px): pasek od razu wjeżdża cały, nie czekając, aż płynne przewijanie się zatrzyma.
+      if (dir < 0 && travel > 12) {
+        if (shift > 0) glide(0);
+        return;
+      }
+      if (goal !== null) stop();
+      // W dół (i pierwsze piksele w górę): pasek jedzie dokładnie o tyle, o ile przewinięto.
+      shift = Math.min(Math.max(shift + dy, 0), room(y));
+      apply();
+      // Ogon płynnego przewijania (ułamki piksela) nie przedłuża czekania na dokończenie.
+      if (Math.abs(dy) >= 1) {
+        clearTimeout(idle);
+        idle = setTimeout(settle, 120);
+      }
+    };
+    addEventListener('scroll', navSync, { passive: true });
+    addEventListener('resize', measure);
+    // Tab na link w schowanym pasku: pasek wraca i zostaje, dopóki fokus jest w nim.
+    nav.addEventListener('focusin', () => {
+      pinned = true;
+      stop();
+      shift = 0;
+      apply();
+    });
+    nav.addEventListener('focusout', (event) => {
+      if (!nav.contains(event.relatedTarget)) pinned = false;
+    });
+    measure();
   }
 
   window.Motion = { on: ON, init, rise, reveal, count, refresh, splitWords, spotlight, magnet, tilt, sparks, scrub, paint, eventColors, stagger, accordion, recomposite, get site() { return siteLook; }, get lenis() { return lenis; } };

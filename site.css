@@ -148,17 +148,10 @@ html { scroll-padding-top: 96px; }
 .below-nav { padding-top: 96px; }
 .site-brand { display: inline-flex; align-items: center; gap: var(--sp-3); color: var(--text); text-decoration: none; font-family: var(--display); font-weight: 600; font-size: var(--fs-base); }
 .site-brand img { width: 32px; height: 32px; border-radius: 50%; outline: 1px solid var(--img-edge); outline-offset: -1px; }
-/* Po zjechaniu z góry strony pasek zwija się w węższą kapsułę z gęstszym szkłem, odrobinę bliżej krawędzi
-   (klasa nav-scrolled z motion.js); na górze strony wraca nad baner na pełną szerokość. Przyklejone elementy stron
-   (pasek rankingu, kolumny boczne) jadą za nim przez --nav-stick. */
-:root { --nav-stick: 84px; }
-html.nav-scrolled { --nav-stick: 72px; }
-.site-nav { transition: translate 500ms var(--ease); }
-.site-nav .wrap { transition: max-width 500ms var(--ease), min-height 500ms var(--ease), background-color 500ms var(--ease), box-shadow 500ms var(--ease); }
-.site-brand img { transition: scale 500ms var(--ease); }
-html.nav-scrolled .site-nav { translate: 0 -4px; }
-html.nav-scrolled .site-nav .wrap { max-width: 780px; min-height: 52px; background-color: color-mix(in srgb, var(--bg) 86%, transparent); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1), 0 18px 44px -12px rgb(0 0 0 / 0.9); }
-html.nav-scrolled .site-brand img { scale: 0.875; }
+/* Pasek jedzie razem z przewijaniem (motion.js): w dół chowa się o tyle, o ile przewinięto, w górę od razu wraca,
+   a zatrzymany w połowie dojeżdża do końca. Tylko transform, więc płynnie. Przyklejone części stron
+   (data-nav-stick) zajmują jego miejsce, gdy go nie ma. */
+.site-nav { will-change: transform; }
 .site-links { display: flex; align-items: center; gap: var(--sp-1); margin: 0; padding: 0; list-style: none; }
 .site-links a { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: 40px; padding: 0 var(--sp-4); border-radius: var(--r-sm); color: var(--muted); font-weight: 500; text-decoration: none; transition: background-color 200ms var(--ease), color 200ms var(--ease); }
 .site-links a[aria-current='page'] { color: var(--text); }
@@ -312,7 +305,7 @@ html.embed .page-bg { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :root, .btn, .btn::after, .site-links a, .tilt, .site-nav, .site-nav .wrap, .site-brand img, .toolbar, .side { transition: none; }
+  :root, .btn, .btn::after, .site-links a, .tilt { transition: none; }
   .glow i, .star > i { animation: none; }
   .star > i { display: none; }
 }
