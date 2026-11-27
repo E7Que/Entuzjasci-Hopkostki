@@ -91,18 +91,23 @@ panels as AI slop). Only the events page (`/event`) recolours itself with the se
 
 - Landing: Particles (owner's "tło 1"), stronger than the file (more points and links, calm cursor, no field
   rotation so it does not drift sideways), with drifting glows.
-- Ranking: the landing's Particles ("space", same colours) plus a dimmed LightPillar (owner's pick) beside the
-  content. The pillar moves sideways through its `offset` prop, never by moving the element (a shifted canvas left a
-  green strip at the edge). It starts under the banner, blends in `screen` mode and drifts up slightly on scroll
-  (`data-drift`) without leaving the screen. LightRays, Galaxy and GridScan were rejected.
-- Events: Aurora in shades of the selected event's main colour, at half opacity so text stays readable. It fades
-  in inside the banner's fading bottom (`--flow-in` mask, no hard top edge) and scrolls with the page. The whole
-  page (background, cards, fields, accents) takes the event's hue. Owner may still swap the aurora.
+- Ranking: the landing's Particles ("space", same colours) plus two dimmed LightPillars (owner's pick), one on
+  each side of the content: left in `--accent` / `--glow-3` (cyan), right in `--accent-2` / `--glow-2`
+  (greener), mirrored (`pillarRotation`, `twist`) and at a different `rotationSpeed` so they never move in step.
+  Pillars move sideways through their `offset` prop (-0.7 / 0.7), never by moving the element (a shifted canvas
+  left a green strip at the edge), and have no edge fade (`fade: 0`, owner found it ugly). They start under the
+  banner, blend in `screen` mode and drift up slightly on scroll (`data-drift`) without leaving the screen.
+  LightRays, Galaxy and GridScan were rejected.
+- Events: the landing's Particles and glows in the selected event's colours (they read `--accent`, `--accent-2`
+  and `--glow-*`, which `Motion.paint` sets, and refresh on `rb:theme`), plus an Aurora in shades of the event's
+  main colour, at half opacity so text stays readable. The aurora fades in inside the banner's fading bottom
+  (`--flow-in` mask, no hard top edge) and scrolls with the page. The whole page (background, cards, fields,
+  accents) takes the event's hue. Owner may still swap the aurora.
 - 404: LiquidChrome (owner's pick, "tło 2") in the banner's cyan, darker on the left behind the text. No Scanner
   band at the bottom (owner removed it there).
 - Bottom of the landing, ranking and events pages: Scanner waves (owner's "tło 4") in `var(--accent)` /
   `var(--accent-2)`, from above the last section down to the end of the page (`.page-scan`, `data-from`).
-Do not stack a second full-page background on a page.
+Do not stack full-page backgrounds beyond the combinations above (all were the owner's requests).
 Backgrounds pinned to the screen (`.page-bg`, `.particles-bg`, `.glow`) use `top: 0; height: 100lvh`, never
 `inset: 0`: on phones the hiding address bar otherwise uncovers a black strip at the bottom and the background
 jumps when it resizes. Scroll-linked drift ignores height-only resizes for the same reason.

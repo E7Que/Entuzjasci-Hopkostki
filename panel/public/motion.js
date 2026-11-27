@@ -489,6 +489,7 @@
     for (let t = 0.05; ratio(out, against) < min && t <= 1; t += 0.05) out = mixRgb(c, [255, 255, 255], t);
     return out;
   };
+  let themeSettle = 0;
   function paint(colors) {
     const st = root.style;
     if (!colors || !isHex(colors[0])) {
@@ -523,6 +524,10 @@
       st.setProperty('--glow-3', rgbHex(mixRgb(hexRgb(c1), PAGE_BG, 0.55)));
     }
     document.dispatchEvent(new Event('rb:theme'));
+    // Po zdjęciu kolorów eventu tła (rb.js, particles.js) czytają barwy z getComputedStyle, a te jeszcze płynnie
+    // wracają do domyślnych (do 1,4 s). Drugie zdarzenie po przejściu daje im już kolory strony, nie eventu.
+    clearTimeout(themeSettle);
+    if (!st.getPropertyValue('--accent')) themeSettle = setTimeout(() => document.dispatchEvent(new Event('rb:theme')), 1500);
   }
 
   // ---------- Ikona i banery z panelu (Ustawienia → Wygląd strony) ----------

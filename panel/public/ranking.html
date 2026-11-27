@@ -970,10 +970,13 @@
 </head>
 <body>
   <a class="skip" href="#tresc">Przejdź do treści</a>
-  <!-- Tło rankingu: gwiazdy z połączeniami jak na stronie głównej (particles.js, kolory strony) i słup światła
-       (wybór właściciela, React Bits LightPillar) z boku treści. Słup przesuwa w bok sam shader („offset”), jest
-       przygaszony, zaczyna się pod banerem i lekko jedzie w górę przy przewijaniu (data-drift), nie znikając z ekranu. -->
+  <!-- Tło rankingu: gwiazdy z połączeniami jak na stronie głównej (particles.js, kolory strony) i dwa słupy światła
+       (wybór właściciela, React Bits LightPillar) po bokach treści: lewy turkusowy, prawy zielonkawy, w lustrzanym
+       odbiciu (obrót, skręt) i z innym tempem, żeby nie szły równo. Słupy przesuwa w bok sam shader („offset”), są
+       przygaszone, bez wygaszania krawędzi, zaczynają się pod banerem i lekko jadą w górę przy przewijaniu
+       (data-drift), nie znikając z ekranu. -->
   <div class="page-bg pillar" aria-hidden="true" data-drift="0.12" data-rb="LightPillar" data-props='{"topColor":"var(--accent)","bottomColor":"var(--glow-3)","intensity":0.5,"rotationSpeed":0.22,"flow":0.8,"interactive":true,"clickPulse":true,"glowAmount":0.0018,"bloom":0.35,"pillarWidth":3.4,"pillarHeight":0.4,"pillarRotation":10,"twist":0.35,"detail":4,"noiseIntensity":0.3,"fade":0,"offset":-0.7}'></div>
+  <div class="page-bg pillar" aria-hidden="true" data-drift="0.12" data-rb="LightPillar" data-props='{"topColor":"var(--accent-2)","bottomColor":"var(--glow-2)","intensity":0.5,"rotationSpeed":0.17,"flow":0.8,"interactive":true,"clickPulse":true,"glowAmount":0.0018,"bloom":0.35,"pillarWidth":3.4,"pillarHeight":0.4,"pillarRotation":-10,"twist":-0.35,"detail":4,"noiseIntensity":0.3,"fade":0,"offset":0.7}'></div>
   <header class="site-nav">
     <div class="wrap">
       <a class="site-brand" href="./" translate="no"><img src="img/icon.webp" alt="" width="32" height="32"><span>Entuzjaści Hopkostki</span></a>
