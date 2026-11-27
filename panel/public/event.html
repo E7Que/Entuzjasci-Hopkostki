@@ -41,7 +41,7 @@
 
     /* ---------- Boczny panel ---------- */
     .side { display: grid; gap: 16px; }
-    @media (min-width: 980px) { .side { position: sticky; top: 88px; } }
+    @media (min-width: 980px) { .side { position: sticky; top: calc(var(--nav-stick, 84px) + 4px); transition: top 500ms var(--ease); } }
     .card { padding: 24px 24px; border: 1px solid var(--panel-edge); border-radius: var(--r); background: var(--panel); box-shadow: var(--panel-shadow); }
     .card h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; font-size: var(--fs-lg); }
     .card h2 .i { color: var(--accent); }

@@ -108,6 +108,8 @@ Do not stack a second full-page background on a page.
 
 - Same top bar on every page (brand, Ranking, Eventy, "Dołącz" button): floats 12 px from the top over the banner as
   dark blurred glass, no coloured fills or lines; the current page is brighter text with a filled accent icon.
+  Once the page is scrolled (past 48 px, back under 16 px) it eases into a narrower 780 px capsule with denser
+  glass, 4 px higher (`html.nav-scrolled`); sticky parts of pages follow it through `--nav-stick`.
 - Full-width banner (`img/banner.webp` 3840×2160 from the owner, `srcset` 960/1600/2400/3840). The owner can set
   the icon and a separate banner for the landing, ranking and events pages in the panel (Ustawienia → Wygląd
   strony, best 3840×2160 / icon 512×512); pages read them from `/public/site` in `motion.js`. On scroll the image
