@@ -272,10 +272,14 @@
     const ctx = canvas.getContext('2d');
     const list = [];
     let raf = 0;
+    // Rozmiar na ekranie = rozmiar okna w pikselach CSS, a bufor gęstszy (ekrany o dużej gęstości). Bez rozmiaru
+    // w CSS płótno wyświetla się w rozmiarze bufora (na telefonie 2-3 razy większe) i iskry wypadają obok palca.
     const fit = () => {
       const dpr = Math.min(devicePixelRatio || 1, 2);
-      canvas.width = innerWidth * dpr;
-      canvas.height = innerHeight * dpr;
+      canvas.width = Math.round(innerWidth * dpr);
+      canvas.height = Math.round(innerHeight * dpr);
+      canvas.style.width = `${innerWidth}px`;
+      canvas.style.height = `${innerHeight}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     fit();
