@@ -1489,13 +1489,24 @@
 
     function renderMeta(data) {
       const t = data.totals ?? {};
-      const short = (n) => (n >= 10000 ? compact.format(n) : fmt(n));
+      // Skrót („361,2 tys.”, „1,2 mln”) w trakcie odliczania ma tę samą jednostkę i tyle miejsc po przecinku co wynik
+      // końcowy: nie znika „,0” (np. „257 tys.” po „256,9 tys.”) ani nie przeskakuje „998 tys.” w „1 mln”, więc liczba
+      // nie zmienia szerokości i nie skraca się na końcu.
+      const short = (end) => {
+        if (end < 10000) return fmt;
+        const [, head, suffix] = /^([\d\s,.]*\d)(.*)$/.exec(compact.format(end)) ?? [];
+        if (!suffix) return (n) => (n >= 10000 ? compact.format(n) : fmt(n));
+        const unit = end >= 1e9 ? 1e9 : end >= 1e6 ? 1e6 : 1e3;
+        const digits = head.includes(',') ? 1 : 0;
+        const num = new Intl.NumberFormat('pl-PL', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+        return (n) => (n >= 10000 ? `${num.format(n / unit)}${suffix}` : fmt(n));
+      };
       // Liczby odliczają od zera, gdy są widoczne (React Bits CountUp w motion.js); bez niego po prostu się pojawiają.
       const countTo = (sel, n, f) => (window.Motion ? Motion.count($(sel), n, f) : ($(sel).textContent = f(n)));
       const whole = (f) => (n) => f(Math.round(n));
       countTo('[data-total="members"]', t.members ?? 0, whole(fmt));
-      countTo('[data-total="xp"]', t.xp ?? 0, whole(short));
-      countTo('[data-total="messages"]', t.messages ?? 0, whole(short));
+      countTo('[data-total="xp"]', t.xp ?? 0, whole(short(t.xp ?? 0)));
+      countTo('[data-total="messages"]', t.messages ?? 0, whole(short(t.messages ?? 0)));
       countTo('[data-total="voice"]', Math.round((t.voiceMinutes ?? 0) / 60), (n) => `${fmt(Math.round(n))} h`);
 
       const hl = data.highlights ?? {};
