@@ -128,7 +128,7 @@
     shown.style.display = 'inline-block';
     shown.style.textAlign = 'right';
     shown.textContent = format(end);
-    shown.style.minWidth = `${Math.ceil(shown.getBoundingClientRect().width)}px`;
+    shown.style.minWidth = `${shown.getBoundingClientRect().width}px`;
     shown.textContent = format(from);
     const run = () => {
       const t0 = performance.now();
