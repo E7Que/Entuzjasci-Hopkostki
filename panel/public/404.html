@@ -6,14 +6,23 @@
   <title>Nie ma takiej strony - Entuzjaści Hopkostki</title>
   <meta name="robots" content="noindex">
   <script>
-    // Adres bez .html (np. /event albo /ranking) → plik .html tej strony, z resztą adresu (#…, ?…).
     (function () {
-      var m = /^(.*\/)(event|ranking|panel)\/?$/.exec(location.pathname);
-      if (m) location.replace(m[1] + m[2] + '.html' + location.search + location.hash);
-      // Ta strona odpowiada na każdy zły adres, też głęboki (/a/b/c): linki i pliki liczone od katalogu strony
-      // (enho.pl: /, GitHub Pages: /Entuzjasci-Hopkostki/).
+      // GitHub Pages pokazuje tę stronę pod każdym złym adresem, też głębokim (/a/b/c). Katalog strony:
+      // enho.pl: /, GitHub Pages: /Entuzjasci-Hopkostki/.
+      var root = /\.github\.io$/.test(location.hostname) ? '/' + location.pathname.split('/')[1] + '/' : '/';
+      var path = location.pathname.slice(root.length);
+      // Adres bez .html (np. /event albo /Ranking) → plik .html tej strony, z resztą adresu (#…, ?… z logowania).
+      var page = /^(event|ranking|panel)\/?$/i.exec(path);
+      if (page) location.replace(root + page[1].toLowerCase() + '.html' + location.search + location.hash);
+      // Każdy inny zły adres (np. /oo) → .../404, żeby w pasku było widać, że takiej strony nie ma (prośba
+      // właściciela). replace: przycisk Wstecz nie wraca na zły adres. Do przejścia strona się nie pokazuje.
+      else if (!/^404(\.html)?$/.test(path)) {
+        document.documentElement.style.visibility = 'hidden';
+        location.replace(root + '404');
+      }
+      // Linki i pliki liczone od katalogu strony, nie od złego adresu.
       var base = document.createElement('base');
-      base.href = /\.github\.io$/.test(location.hostname) ? '/' + location.pathname.split('/')[1] + '/' : '/';
+      base.href = root;
       document.head.appendChild(base);
     })();
   </script>

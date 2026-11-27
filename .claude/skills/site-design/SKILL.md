@@ -109,7 +109,9 @@ panels as AI slop). Only the events page (`/event`) recolours itself with the se
   whenever everything fits, at most minus the footer's bottom padding. Short phones get a tighter layout (smaller
   secondary buttons, footer keeps only the panel link, the others are buttons above), landscape phones get tighter
   spacing, and only a screen still too low for the content falls back to scrolling. Footer text has a dark halo
-  for legibility over the bright chrome.
+  for legibility over the bright chrome. Any unknown address (e.g. `/oo`) is replaced with `.../404` (owner's
+  request, `location.replace` in the head script, page hidden until it moves); `/event`, `/ranking`, `/panel`
+  (any letter case, with `?`/`#` kept) still go to their `.html` pages.
 - Bottom of the landing, ranking and events pages: Scanner waves (owner's "tło 4") in `var(--accent)` /
   `var(--accent-2)`, from above the last section down to the end of the page (`.page-scan`, `data-from`).
 Do not stack full-page backgrounds beyond the combinations above (all were the owner's requests).
