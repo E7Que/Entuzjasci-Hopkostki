@@ -546,5 +546,18 @@
   // Rok w stopce („© 2026 Entuzjaści Hopkostki”) zawsze bieżący.
   document.querySelectorAll('[data-year]').forEach((el) => { el.textContent = String(new Date().getFullYear()); });
 
+  // Pasek nawigacji: po zjechaniu z góry strony zwija się w kapsułę (przejścia w site.css), na górze wraca.
+  // Próg z zapasem (w dół 48 px, z powrotem 16 px), żeby przy samej górze nie migał.
+  if (document.querySelector('.site-nav') && !root.classList.contains('embed')) {
+    let scrolled = false;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const next = scrolled ? y > 16 : y > 48;
+      if (next !== scrolled) root.classList.toggle('nav-scrolled', (scrolled = next));
+    };
+    onScroll();
+    addEventListener('scroll', onScroll, { passive: true });
+  }
+
   window.Motion = { on: ON, init, rise, reveal, count, refresh, splitWords, spotlight, magnet, tilt, sparks, scrub, paint, eventColors, stagger, accordion, recomposite, get site() { return siteLook; }, get lenis() { return lenis; } };
 })();

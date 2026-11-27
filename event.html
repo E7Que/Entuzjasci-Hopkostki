@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="site.css?v=b9857a6">
+  <link rel="stylesheet" href="site.css?v=c883b7e">
   <link rel="stylesheet" href="vendor/lenis.css">
   <style>
     [hidden] { display: none !important; }
@@ -41,7 +41,7 @@
 
     /* ---------- Boczny panel ---------- */
     .side { display: grid; gap: 16px; }
-    @media (min-width: 980px) { .side { position: sticky; top: 88px; } }
+    @media (min-width: 980px) { .side { position: sticky; top: calc(var(--nav-stick, 84px) + 4px); transition: top 500ms var(--ease); } }
     .card { padding: 24px 24px; border: 1px solid var(--panel-edge); border-radius: var(--r); background: var(--panel); box-shadow: var(--panel-shadow); }
     .card h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; font-size: var(--fs-lg); }
     .card h2 .i { color: var(--accent); }
@@ -913,7 +913,7 @@
   <script src="vendor/gsap.min.js"></script>
   <script src="vendor/ScrollTrigger.min.js"></script>
   <script src="vendor/lenis.min.js"></script>
-  <script src="motion.js?v=b9857a6"></script>
+  <script src="motion.js?v=c883b7e"></script>
   <script>
     // Ruch jak na stronie głównej (motion.js): baner zwija się do kolumny przy przewijaniu, tytuł wjeżdża
     // słowo po słowie, eventy i karty z boku wjeżdżają od dołu, a karta pod kursorem dostaje światło (React Bits).
@@ -926,8 +926,8 @@
     });
     if (ctPainted) ctPaintPage(ctPainted);
   </script>
-  <script src="rb.js?v=b9857a6" defer></script>
-  <script src="rb-aurora.js?v=b9857a6" defer></script>
-  <script src="rb-scanner.js?v=b9857a6" defer></script>
+  <script src="rb.js?v=c883b7e" defer></script>
+  <script src="rb-aurora.js?v=c883b7e" defer></script>
+  <script src="rb-scanner.js?v=c883b7e" defer></script>
 </body>
 </html>
