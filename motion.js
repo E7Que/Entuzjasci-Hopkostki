@@ -423,6 +423,7 @@
     if (root.classList.contains('embed')) return; // ranking w okienku Discorda zostaje statyczny
     if (ON) {
       gsap.registerPlugin(ScrollTrigger);
+      ScrollTrigger.config({ ignoreMobileResize: true });
       gsap.defaults({ ease: 'power3.out', duration: 0.85 });
       root.classList.add('has-motion');
       // Płynne przewijanie zsynchronizowane z ScrollTriggerem. Klawiatura i kotwice działają jak zwykle.
