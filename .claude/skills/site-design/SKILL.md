@@ -137,7 +137,7 @@ jumps when it resizes. Scroll-linked drift ignores height-only resizes for the s
   (`/public/guild`; no names, no bots, no one hidden from the ranking; top members only as a fallback), a big
   title, the member and online count, the main button and "Zobacz ranking", over the bottom waves. The counts
   (under the hero button and in the invite) refresh every 30 s and count from the old number to the new one; a new
-  face pops in at the front.
+  face pops in on the right. Faces run oldest (left, underneath) to newest (right, on top).
 - FAQ answers open and close with a height animation (`Motion.accordion`), native behaviour under reduced motion.
 - `motion.js` gives every public page the same motion: title words rise on load, section headings rise and
   sections slide up once, numbers count up (whole numbers, fixed width), the card under the cursor gets a light

@@ -436,8 +436,8 @@
       shownCounts = true;
     }
 
-    // Końcowe zaproszenie: awatary osób, które ostatnio dołączyły (bot pomija osoby ukryte w rankingu). Nowa osoba
-    // wskakuje na początek rzędu.
+    // Końcowe zaproszenie: awatary osób, które ostatnio dołączyły (bot pomija osoby ukryte w rankingu). Najnowsza osoba
+    // stoi z prawej, na wierzchu (każdy kolejny awatar przykrywa poprzedni), i tam wskakuje ktoś, kto właśnie dołączył.
     let facesKey = '';
     function renderFaces(list) {
       const urls = (list ?? []).map((p) => p?.avatar).filter((u) => /^https:\/\/cdn\.discordapp\.com\//.test(u ?? '')).slice(0, 5);
@@ -445,7 +445,8 @@
       if (!urls.length || key === facesKey) return;
       const before = facesKey ? new Set(facesKey.split(' ')) : null;
       facesKey = key;
-      $('#end-faces').innerHTML = urls
+      // Bot podaje od najnowszej; na stronie od najstarszej (z lewej, pod spodem) do najnowszej (z prawej, z przodu).
+      $('#end-faces').innerHTML = [...urls].reverse()
         .map((u) => `<img${before && !before.has(u) ? ' class="new"' : ''} src="${esc(u)}" alt="" width="48" height="48" loading="lazy" onerror="this.remove()">`)
         .join('');
     }
