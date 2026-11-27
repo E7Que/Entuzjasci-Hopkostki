@@ -1567,6 +1567,13 @@ export function createStore(query, { configTtlMs = 10_000 } = {}) {
       return { xp: Number(row.xp), level: row.level };
     },
 
+    // Które z podanych osób ukryły się na publicznej stronie rankingu (awatary nowych osób na stronie głównej).
+    async hiddenLevelUsers(userIds) {
+      if (!userIds.length) return [];
+      const rows = await query('select user_id from bot.levels where hidden and user_id = any($1::text[])', [userIds]);
+      return rows.map((r) => r.user_id);
+    },
+
     // Ukrycie (albo pokazanie) osoby na publicznej stronie rankingu - także zanim zdobędzie XP.
     async setLevelHidden(userId, hidden) {
       await query(

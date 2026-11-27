@@ -14,6 +14,7 @@ import { onMessageAfk } from './community.js';
 import { onMessageLevels, onReactionLevels, onMemberLeaveLevels } from './levels.js';
 import { onMessageAutomod, onMemberJoinAutomod } from './automod.js';
 import { onMessageTicketClaim } from './tickets.js';
+import { forgetNewcomers } from './publicGuild.js';
 
 const QUERY = '/?v=10&encoding=json';
 // GUILDS (lista osób na kanałach głosowych przy logowaniu) + GUILD_VOICE_STATES (wejścia/wyjścia z kanałów)
@@ -315,12 +316,14 @@ async function connectOnce(bot, { WebSocketImpl, deadline, margin, status }) {
           } else if (packet.t === 'GUILD_MEMBER_ADD') {
             track(onMemberJoin(bot, packet.d));
             track(onMemberJoinAutomod(bot, packet.d));
+            track(forgetNewcomers(bot));
           } else if (packet.t === 'GUILD_MEMBER_UPDATE') {
             track(onMemberUpdate(bot, packet.d));
             track(onMemberUpdateLog(bot, packet.d));
           } else if (packet.t === 'GUILD_MEMBER_REMOVE') {
             track(onMemberLeave(bot, packet.d));
             track(onMemberLeaveLevels(bot, packet.d));
+            track(forgetNewcomers(bot));
           } else if (packet.t === 'MESSAGE_REACTION_ADD') {
             track(onReactionLevels(bot, packet.d));
           }

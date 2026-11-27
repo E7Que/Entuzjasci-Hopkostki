@@ -239,7 +239,12 @@ html.embed .glow { display: none; }
 /* Baner z paralaksą (motion.js): obraz przesuwa się wolniej niż strona i ciemnieje (--shade), po wczytaniu
    odsłania się od góry (--intro). Bez JS i przy ograniczonym ruchu stoi w miejscu. */
 .scrub { --intro: 0; --shade: 0; clip-path: inset(0 0 calc(var(--intro) * 100%) 0); }
-.scrub::after { content: ''; position: absolute; inset: 0; background: rgb(6 11 23 / var(--shade)); pointer-events: none; }
+.scrub::after { content: ''; position: absolute; inset: 0; background: var(--bg); opacity: var(--shade); pointer-events: none; will-change: opacity; }
+/* Baner powoli „oddycha”. Klasę dodaje motion.js dopiero po odsłonięciu banera: animacja uruchomiona pod zasłoną
+   zostaje w Chrome na głównym wątku i tnie się, a ta idzie płynnie na kompozytorze. */
+.breathe { transform-origin: 50% 40%; animation: banner-breathe 24s cubic-bezier(0.37, 0, 0.63, 1) infinite alternate; }
+@keyframes banner-breathe { to { scale: 1.07; translate: 0 -1.2%; } }
+@media (prefers-reduced-motion: reduce) { .breathe { animation: none; } }
 .scrub > img { will-change: transform; }
 /* Dół każdego banera wygasa w tło strony, więc nie ma ostrej krawędzi. Wysokość banera bez zmian. */
 .banner.bleed, .hero-media { -webkit-mask-image: linear-gradient(#000 62%, transparent); mask-image: linear-gradient(#000 62%, transparent); }
@@ -271,8 +276,12 @@ html.embed .page-scan { display: none; }
 .page-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
 .page-bg > canvas, .page-scan > canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 html.embed .page-bg { display: none; }
-@media (min-width: 980px) { .page-bg.pillar { left: -13vw; right: 13vw; } }
-.page-bg.flow { position: absolute; inset: auto 0 auto 0; height: 130vh; -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); }
+/* Słup światła w rankingu: na całą szerokość ekranu (w bok przesuwa go sam shader, prop „offset”, więc nie ma
+   pasa przy krawędzi), trochę wyższy od ekranu, bo przy przewijaniu lekko jedzie w górę (data-drift w motion.js).
+   Czarne tło canvasa znika w trybie screen, więc pod słupem widać gwiazdy z tła strony. */
+.page-bg.pillar { bottom: auto; height: 125vh; mix-blend-mode: screen; will-change: transform; }
+/* Tło, które zaczyna się w zanikającym dole banera i przewija się ze stroną: góra wchodzi miękko (bez krawędzi). */
+.page-bg.flow { position: absolute; inset: auto 0 auto 0; height: 130vh; -webkit-mask-image: linear-gradient(transparent, #000 var(--flow-in, 160px), #000 70%, transparent); mask-image: linear-gradient(transparent, #000 var(--flow-in, 160px), #000 70%, transparent); }
 
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 

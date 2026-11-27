@@ -34,10 +34,8 @@
       position: relative; width: 100vw; margin-left: calc(50% - 50vw); height: clamp(300px, 56vw, 78vh); overflow: hidden; background: var(--surface);
     }
     .hero-banner { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 42%; transform-origin: 50% 40%; }
-    /* Baner powoli „oddycha” (osobne właściwości scale/translate, więc nie gryzie się z efektem przewijania). */
-    .hero-banner { animation: breathe 22s ease-in-out infinite alternate; }
-    @keyframes breathe { to { scale: 1.06; translate: 0 -1.5%; } }
-    @media (prefers-reduced-motion: reduce) { .hero-banner { animation: none; } }
+    /* Powolny „oddech” banera: klasa .breathe z site.css (osobne właściwości scale/translate, więc nie gryzie się
+       z efektem przewijania); motion.js dodaje ją po odsłonięciu banera, żeby animacja szła płynnie na kompozytorze. */
     /* Nazwa serwera wyjeżdża słowo po słowie spod maski (motion.js, React Bits MaskedHeading). */
     .hero-body { padding: 0; }
     .hero h1 { max-width: 760px; margin-top: var(--sp-12); font-size: clamp(2.25rem, 4.6vw, 3.75rem); font-weight: 800; line-height: 1.05; }
@@ -101,8 +99,9 @@
     .faq details + details { margin-top: var(--sp-2); }
     .faq summary { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-4) var(--sp-6); border-radius: var(--r-sm); background: var(--surface); box-shadow: var(--shadow-sm); font-weight: 600; cursor: pointer; list-style: none; transition: background-color 200ms var(--ease); }
     .faq summary::-webkit-details-marker { display: none; }
-    .faq summary .i { color: var(--faint); transition: transform 200ms var(--ease); }
+    .faq summary .i { color: var(--faint); transition: transform 320ms var(--ease); }
     .faq details[open] summary .i { transform: rotate(180deg); }
+    .faq details.closing summary .i { transform: none; }
     .faq .answer { padding: var(--sp-4) var(--sp-6) var(--sp-2); color: var(--muted); }
     .faq .answer p { margin: 0 0 var(--sp-2); }
     .faq .answer b { color: var(--text); font-weight: 600; }
@@ -119,6 +118,10 @@
     .end-faces img, .end-faces span { width: 48px; height: 48px; margin-left: -12px; border-radius: 50%; box-shadow: 0 0 0 3px var(--bg); object-fit: cover; }
     .end-faces :first-child { margin-left: 0; }
     .end-faces span { display: grid; place-items: center; background: var(--raised); color: var(--text); font-weight: 700; }
+    /* Ktoś właśnie dołączył: jego awatar wskakuje na początek rzędu. */
+    .end-faces img.new { animation: face-in 700ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+    @keyframes face-in { from { opacity: 0; scale: 0.4; } }
+    @media (prefers-reduced-motion: reduce) { .end-faces img.new { animation: none; } }
 
     @media (hover: hover) {
       .top-list li:hover { background: var(--raised); }
@@ -391,10 +394,12 @@
       }
       const top = (board?.entries ?? []).slice(0, 3);
       if (!top.length) return;
-      // Końcowe zaproszenie: avatary osób z topki („dołącz do nich”).
-      $('#end-faces').innerHTML = (board?.entries ?? []).slice(0, 5).map((p) => (p.avatar
-        ? `<img src="${esc(p.avatar)}" alt="" width="48" height="48" loading="lazy" onerror="this.remove()">`
-        : `<span>${esc((p.name ?? '?').slice(0, 1).toUpperCase())}</span>`)).join('');
+      // Końcowe zaproszenie: gdy bot nie podał osób, które ostatnio dołączyły, awatary osób z topki.
+      if (!facesKey) {
+        $('#end-faces').innerHTML = (board?.entries ?? []).slice(0, 5).map((p) => (p.avatar
+          ? `<img src="${esc(p.avatar)}" alt="" width="48" height="48" loading="lazy" onerror="this.remove()">`
+          : `<span>${esc((p.name ?? '?').slice(0, 1).toUpperCase())}</span>`)).join('');
+      }
       $('#top').innerHTML = top.map((p, i) => row(p, i, week)).join('');
       // Avatar, który się nie wczytał (np. usunięty), zastępuje pierwsza litera nazwy.
       $('#top').querySelectorAll('img.av').forEach((img) => {
@@ -409,15 +414,48 @@
       $('#top-block').hidden = false;
     }
 
-    function renderMembers(board) {
-      const g = board?.guild;
+    // Liczba osób i osób online (pod przyciskiem i w końcowym zaproszeniu). Strona pyta bota co pół minuty, a zmiana
+    // odlicza się od poprzedniej wartości: liczby stoją w stałych elementach, więc odliczanie zna poprzednią liczbę.
+    let shownCounts = false;
+    function renderMembers(g) {
       if (!g?.memberCount) return;
-      const online = g.onlineCount ? `, <span class="online" aria-hidden="true"></span><b>${num(g.onlineCount)}</b> teraz online` : '';
-      $('#members').innerHTML = `<b>${num(g.memberCount)}</b> ${plural(g.memberCount, 'osoba', 'osoby', 'osób')} na serwerze${online}`;
-      document.querySelectorAll('#members b').forEach((b) => window.Motion?.count(b, Number(b.textContent.replace(/\D/g, '')), num));
-      // Końcowe zaproszenie: ile osób już jest na serwerze i ile teraz online.
-      const lead = `${num(g.memberCount)} ${plural(g.memberCount, 'osoba już tu jest', 'osoby już tu są', 'osób już tu jest')}${g.onlineCount ? `, ${num(g.onlineCount)} teraz online` : ''}. Dołączenie nic nie kosztuje.`;
-      $('#end-lead').textContent = lead;
+      const box = $('#members');
+      if (!box.querySelector('[data-n]')) {
+        box.innerHTML = '<b data-n="members"></b> <span data-w="members"></span> na serwerze<span data-online hidden>, <span class="online" aria-hidden="true"></span><b data-n="online"></b> teraz online</span>';
+        $('#end-lead').innerHTML = '<span data-n="members"></span> <span data-w="lead"></span><span data-online hidden>, <span data-n="online"></span> teraz online</span>. Dołączenie nic nie kosztuje.';
+      }
+      const set = (el, n) => (window.Motion?.count ? window.Motion.count(el, n, num) : (el.textContent = num(n)));
+      const online = Number(g.onlineCount) || 0;
+      document.querySelectorAll('#members [data-n="members"], #end-lead [data-n="members"]').forEach((el) => set(el, g.memberCount));
+      $('#members [data-w="members"]').textContent = plural(g.memberCount, 'osoba', 'osoby', 'osób');
+      $('#end-lead [data-w="lead"]').textContent = plural(g.memberCount, 'osoba już tu jest', 'osoby już tu są', 'osób już tu jest');
+      document.querySelectorAll('#members [data-online], #end-lead [data-online]').forEach((el) => { el.hidden = !online; });
+      if (online) document.querySelectorAll('#members [data-n="online"], #end-lead [data-n="online"]').forEach((el) => set(el, online));
+      // Kolejne zmiany bez ogłaszania (czytnik ekranu nie powtarza liczb co pół minuty).
+      if (shownCounts) box.setAttribute('aria-live', 'off');
+      shownCounts = true;
+    }
+
+    // Końcowe zaproszenie: awatary osób, które ostatnio dołączyły (bot pomija osoby ukryte w rankingu). Nowa osoba
+    // wskakuje na początek rzędu.
+    let facesKey = '';
+    function renderFaces(list) {
+      const urls = (list ?? []).map((p) => p?.avatar).filter((u) => /^https:\/\/cdn\.discordapp\.com\//.test(u ?? '')).slice(0, 5);
+      const key = urls.join(' ');
+      if (!urls.length || key === facesKey) return;
+      const before = facesKey ? new Set(facesKey.split(' ')) : null;
+      facesKey = key;
+      $('#end-faces').innerHTML = urls
+        .map((u) => `<img${before && !before.has(u) ? ' class="new"' : ''} src="${esc(u)}" alt="" width="48" height="48" loading="lazy" onerror="this.remove()">`)
+        .join('');
+    }
+
+    async function pollGuild() {
+      if (document.hidden) return;
+      const g = await get('guild').catch(() => null);
+      if (!g) return;
+      renderMembers(g);
+      renderFaces(g.newcomers);
     }
 
     // Odpowiedzi w pytaniach z prawdziwych ustawień bota (stawki XP, role za poziomy).
@@ -452,6 +490,7 @@
       magnet: '.star',
       tilt: '.now-grid > .card:not(.sk-card), .steps > li',
     });
+    window.Motion?.accordion('.faq details');
 
     // Hasło: słowa zapalają się po kolei, gdy przewijasz przez sekcję (w obie strony).
     if (MOTION) {
@@ -464,11 +503,16 @@
       lit.forEach((w, i) => tl.to(w, { color: w.classList.contains('hl') ? 'var(--accent)' : 'var(--text)', filter: 'blur(0px)', duration: 1, ease: 'none' }, i * 0.6));
     }
     (async () => {
-      const [board, contests] = await Promise.all([
+      const [board, contests, guild] = await Promise.all([
         get('leaderboard?period=week&limit=3').catch(() => null),
         get('contests').catch(() => null),
+        get('guild').catch(() => null),
       ]);
-      renderMembers(board);
+      renderMembers(guild?.memberCount ? guild : board?.guild);
+      renderFaces(guild?.newcomers);
+      // Na żywo: co pół minuty (gdy karta jest na wierzchu) świeże liczby i awatary nowych osób.
+      setInterval(pollGuild, 30_000);
+      document.addEventListener('visibilitychange', pollGuild);
       renderNow(contests, board);
       renderFaq(board);
       await renderTop(board);

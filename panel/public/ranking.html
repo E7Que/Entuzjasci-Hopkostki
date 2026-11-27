@@ -971,8 +971,10 @@
 </head>
 <body>
   <a class="skip" href="#tresc">Przejdź do treści</a>
-  <!-- Tło rankingu (wybór właściciela): słup światła w kolorach banera (React Bits LightPillar), przesunięty za podium. -->
-  <div class="page-bg pillar" aria-hidden="true" data-rb="LightPillar" data-props='{"topColor":"#28e9ea","bottomColor":"#166f94","intensity":0.9,"rotationSpeed":0.25,"flow":0.9,"interactive":true,"clickPulse":true,"glowAmount":0.002,"bloom":0.55,"pillarWidth":2.6,"pillarHeight":0.4,"pillarRotation":12,"twist":0.35,"detail":4,"noiseIntensity":0.4,"fade":0.15}'></div>
+  <!-- Tło rankingu: gwiazdy z połączeniami jak na stronie głównej (particles.js, kolory strony) i słup światła
+       (wybór właściciela, React Bits LightPillar) z boku treści. Słup przesuwa w bok sam shader („offset”), jest
+       przygaszony, zaczyna się pod banerem i lekko jedzie w górę przy przewijaniu (data-drift), nie znikając z ekranu. -->
+  <div class="page-bg pillar" aria-hidden="true" data-drift="0.12" data-rb="LightPillar" data-props='{"topColor":"var(--accent)","bottomColor":"var(--glow-3)","intensity":0.5,"rotationSpeed":0.22,"flow":0.8,"interactive":true,"clickPulse":true,"glowAmount":0.0018,"bloom":0.35,"pillarWidth":3.4,"pillarHeight":0.4,"pillarRotation":10,"twist":0.35,"detail":4,"noiseIntensity":0.3,"fade":0.06,"offset":-0.7}'></div>
   <header class="site-nav">
     <div class="wrap">
       <a class="site-brand" href="./" translate="no"><img src="img/icon.webp" alt="" width="32" height="32"><span>Entuzjaści Hopkostki</span></a>
@@ -14759,6 +14761,7 @@
       tilt: '.top3 .top',
     });
   </script>
+  <script src="particles.js?v=dev" defer></script>
   <script src="rb.js?v=dev" defer></script>
   <script src="rb-pillar.js?v=dev" defer></script>
   <script src="rb-scanner.js?v=dev" defer></script>

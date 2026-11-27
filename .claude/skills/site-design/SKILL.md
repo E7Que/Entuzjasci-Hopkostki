@@ -91,13 +91,17 @@ panels as AI slop). Only the events page (`/event`) recolours itself with the se
 
 - Landing: Particles (owner's "tło 1"), stronger than the file (more points and links, calm cursor, no field
   rotation so it does not drift sideways), with drifting glows.
-- Ranking: LightPillar (owner's pick), banner colours, shifted behind the podium on wide screens.
-  LightRays, Galaxy and GridScan were rejected.
-- Events: Aurora in shades of the selected event's main colour; it starts under the banner and scrolls with the
-  page. The whole page (background, cards, fields, accents) takes the event's hue. Owner may still swap the aurora.
-- 404: LiquidChrome (owner's pick, "tło 2") in the banner's cyan, darker on the left behind the text.
-- Bottom of every page: Scanner waves (owner's "tło 4") in `var(--accent)` / `var(--accent-2)`, from above the
-  last section down to the end of the page (`.page-scan`, `data-from`).
+- Ranking: the landing's Particles ("space", same colours) plus a dimmed LightPillar (owner's pick) beside the
+  content. The pillar moves sideways through its `offset` prop, never by moving the element (a shifted canvas left a
+  green strip at the edge). It starts under the banner, blends in `screen` mode and drifts up slightly on scroll
+  (`data-drift`) without leaving the screen. LightRays, Galaxy and GridScan were rejected.
+- Events: Aurora in shades of the selected event's main colour, at half opacity so text stays readable. It fades
+  in inside the banner's fading bottom (`--flow-in` mask, no hard top edge) and scrolls with the page. The whole
+  page (background, cards, fields, accents) takes the event's hue. Owner may still swap the aurora.
+- 404: LiquidChrome (owner's pick, "tło 2") in the banner's cyan, darker on the left behind the text. No Scanner
+  band at the bottom (owner removed it there).
+- Bottom of the landing, ranking and events pages: Scanner waves (owner's "tło 4") in `var(--accent)` /
+  `var(--accent-2)`, from above the last section down to the end of the page (`.page-scan`, `data-from`).
 Do not stack a second full-page background on a page.
 
 ## Page frame
@@ -109,9 +113,15 @@ Do not stack a second full-page background on a page.
   strony, best 3840×2160 / icon 512×512); pages read them from `/public/site` in `motion.js`. On scroll the image
   moves slower than the page (parallax, landing only), zooms out slightly and darkens. It never shrinks into a box.
   Every banner fades into the page at the bottom (mask), without getting taller. Ranking and events banners are a
-  flat strip (best 3840 × 1200) and do not move on scroll.
-- The landing ends with a big centred invite (no banner behind it): avatars of the top members, a big title, the
-  member and online count, the main button and "Zobacz ranking", over the bottom waves.
+  flat strip (best 3840 × 1200) and do not move on scroll; they come in with a slight zoom-out. Every banner then
+  "breathes" (slow zoom, `.breathe`), added only after the banner is revealed: a CSS animation that starts under a
+  GSAP curtain stays on Chrome's main thread and stutters (`Motion.recomposite` restarts such animations).
+- The landing ends with a big centred invite (no banner behind it): avatars of the people who joined most recently
+  (`/public/guild`; no names, no bots, no one hidden from the ranking; top members only as a fallback), a big
+  title, the member and online count, the main button and "Zobacz ranking", over the bottom waves. The counts
+  (under the hero button and in the invite) refresh every 30 s and count from the old number to the new one; a new
+  face pops in at the front.
+- FAQ answers open and close with a height animation (`Motion.accordion`), native behaviour under reduced motion.
 - `motion.js` gives every public page the same motion: title words rise on load, section headings rise and
   sections slide up once, numbers count up (whole numbers, fixed width), the card under the cursor gets a light
   and tilts slightly, main buttons have a moving star border, a glare and a slight magnet pull, clicks spark.

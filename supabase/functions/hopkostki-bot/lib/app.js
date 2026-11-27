@@ -19,6 +19,7 @@ import { AccessError, PANEL_SITE, PANEL_URL, PASSWORD_AUTH, SITE_ORIGINS, authen
 import { RateLimitError, clientIp, clientKey, guardLogin, loginFailed, loginOk } from './loginGuard.js';
 import { verifyDiscordRequest, ed25519Supported, safeEqual } from './verify.js';
 import { ContestError, MemberAuthError, endMemberSession, exchangeMemberLink, exchangeOAuthCode, joinContest, leaveContest, publicContests } from './contests.js';
+import { publicGuild } from './publicGuild.js';
 
 // Supabase nie serwuje stron HTML z funkcji Edge (text/html zamienia na text/plain), więc sama strona
 // panelu stoi na GitHub Pages (PANEL_SITE w access.js), a tutaj zostaje jej API. Zapytania stron bot
@@ -263,6 +264,10 @@ export function createHandler(bot, { waitUntil = (promise) => promise } = {}) {
         const site = (await bot.store.getConfig()).site ?? {};
         const look = { icon: site.icon || '', banners: { home: site.bannerHome || '', ranking: site.bannerRanking || '', events: site.bannerEvents || '' } };
         return json(look, 200, { ...cors, 'Cache-Control': 'public, max-age=60' });
+      }
+      // Strona główna: liczba osób i online (strona odświeża je na żywo) i awatary osób, które ostatnio dołączyły.
+      if (request.method === 'GET' && route === '/public/guild') {
+        return json(await publicGuild(bot), 200, { ...cors, 'Cache-Control': 'public, max-age=15' });
       }
       if (request.method === 'GET' && route === '/public/archive') {
         return json((await publicArchive(bot)) ?? { enabled: false }, 200, cors);

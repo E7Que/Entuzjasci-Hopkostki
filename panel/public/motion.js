@@ -76,6 +76,22 @@
   // AnimatedContent: element wjeżdża 40 px od dołu i z przezroczystości, raz. Elementy, które wjeżdżają
   // jednocześnie, idą po kolei (co 0,08 s).
   const seen = new WeakSet();
+  // Animacje CSS, które ruszyły, gdy element był jeszcze schowany pod wejściem GSAP (opacity 0, visibility hidden,
+  // clip-path na 100%), Chrome liczy na głównym wątku do końca i tną się przy obciążeniu. Po odsłonięciu startują
+  // jeszcze raz od tego samego miejsca, więc idą płynnie na kompozytorze.
+  function recomposite(targets) {
+    if (typeof CSSAnimation === 'undefined') return;
+    for (const el of $$(targets)) {
+      for (const a of el.getAnimations?.({ subtree: true }) ?? []) {
+        if (!(a instanceof CSSAnimation) || a.playState !== 'running') continue;
+        const t = a.currentTime;
+        a.cancel();
+        a.currentTime = t;
+        a.play();
+      }
+    }
+  }
+
   function reveal(targets, { y = 40, stagger = 0.08 } = {}) {
     const els = $$(targets).filter((el) => el && !seen.has(el));
     if (!els.length) return;
@@ -87,7 +103,7 @@
       once: true,
       onEnter: (batch) => gsap.to(batch, {
         autoAlpha: 1, y: 0, duration: 0.8, ease: 'power3.out', stagger, overwrite: true,
-        clearProps: 'transform,opacity,visibility',
+        clearProps: 'transform,opacity,visibility', onComplete: () => recomposite(batch),
       }),
     });
     refresh();
@@ -296,16 +312,89 @@
 
   // Baner przez całą szerokość: przy przewijaniu obraz przesuwa się wolniej niż strona (paralaksa), lekko się oddala
   // i ciemnieje; baner zostaje na całą szerokość. Po wczytaniu odsłania się od góry.
+  // Bez paralaksy (ranking, eventy): baner nie jedzie przy przewijaniu, tylko wjeżdża z lekkim przybliżeniem.
+  // Na każdej stronie po odsłonięciu obraz powoli „oddycha” (klasa .breathe w site.css).
   function scrub(target, { intro = true, parallax = true } = {}) {
     const el = $(target);
     if (!ON || !el) return null;
     el.classList.add('scrub');
-    if (!parallax) return intro ? gsap.fromTo(el, { '--intro': 1 }, { '--intro': 0, duration: 1, ease: 'power4.out', delay: 0.1 }) : null;
     const img = el.querySelector('img');
-    const trigger = { trigger: el, start: 'top top', end: 'bottom top', scrub: true };
-    if (img) gsap.fromTo(img, { yPercent: 0, scale: 1.08 }, { yPercent: 24, scale: 1, ease: 'none', scrollTrigger: trigger });
-    gsap.fromTo(el, { '--shade': 0 }, { '--shade': 0.65, ease: 'none', scrollTrigger: { ...trigger } });
-    return intro ? gsap.fromTo(el, { '--intro': 1 }, { '--intro': 0, duration: 1, ease: 'power4.out', delay: 0.1 }) : null;
+    const settle = () => {
+      img?.classList.add('breathe');
+      recomposite(el);
+    };
+    if (parallax) {
+      const trigger = { trigger: el, start: 'top top', end: 'bottom top', scrub: true };
+      if (img) gsap.fromTo(img, { yPercent: 0, scale: 1.08 }, { yPercent: 24, scale: 1, ease: 'none', scrollTrigger: trigger });
+      gsap.fromTo(el, { '--shade': 0 }, { '--shade': 0.65, ease: 'none', scrollTrigger: { ...trigger } });
+    } else if (img) {
+      gsap.fromTo(img, { scale: 1.14 }, { scale: 1, duration: 1.8, ease: 'power3.out', delay: 0.1, clearProps: 'transform' });
+    }
+    if (!intro) {
+      settle();
+      return null;
+    }
+    return gsap.fromTo(el, { '--intro': 1 }, { '--intro': 0, duration: 1, ease: 'power4.out', delay: 0.1, onComplete: settle });
+  }
+
+  // Tło, które lekko jedzie w górę razem ze stroną, ale nie ucieka z ekranu: data-drift="0.12" to ułamek
+  // przewinięcia, najwyżej o tyle, o ile element jest wyższy od ekranu.
+  function drift() {
+    const els = $$('[data-drift]');
+    if (!els.length || reduce) return;
+    let room = [];
+    let raf = 0;
+    const measure = () => { room = els.map((el) => Math.max(0, el.offsetHeight - window.innerHeight)); };
+    const update = () => {
+      raf = 0;
+      els.forEach((el, i) => {
+        const y = Math.min(room[i], window.scrollY * (Number(el.dataset.drift) || 0.1));
+        el.style.transform = `translate3d(0, ${-y.toFixed(1)}px, 0)`;
+      });
+    };
+    measure();
+    update();
+    addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(update); }, { passive: true });
+    addEventListener('resize', () => { measure(); update(); });
+  }
+
+  // Pytania (<details>): odpowiedź płynnie się rozwija i zwija zamiast skakać. Przy ograniczonym ruchu zwykłe działanie.
+  function accordion(selector) {
+    const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
+    for (const d of $$(selector)) {
+      const summary = d.querySelector('summary');
+      const body = summary?.nextElementSibling;
+      if (!body || 'accordion' in d.dataset) continue;
+      d.dataset.accordion = '';
+      let anim = null;
+      const done = () => {
+        anim = null;
+        body.style.overflow = '';
+      };
+      summary.addEventListener('click', (event) => {
+        if (reduce || !body.animate) return;
+        event.preventDefault();
+        const closing = d.open && !d.classList.contains('closing');
+        const from = anim ? body.getBoundingClientRect().height : d.open ? body.offsetHeight : 0;
+        anim?.cancel();
+        body.style.overflow = 'hidden';
+        if (closing) {
+          d.classList.add('closing');
+          anim = body.animate({ height: [`${from}px`, '0px'], opacity: [1, 0] }, { duration: 320, easing: ease });
+          anim.onfinish = () => {
+            d.open = false;
+            d.classList.remove('closing');
+            done();
+          };
+        } else {
+          d.classList.remove('closing');
+          d.open = true;
+          const to = body.offsetHeight;
+          anim = body.animate({ height: [`${from}px`, `${to}px`], opacity: [from ? 1 : 0, 1] }, { duration: 420, easing: ease });
+          anim.onfinish = done;
+        }
+      });
+    }
   }
 
   let lenis = null;
@@ -330,7 +419,7 @@
       if (opts.title) rise(opts.title, { delay: opts.banner ? 0.35 : 0.1 });
       const intro = $$(opts.intro ?? []);
       if (intro.length) {
-        gsap.fromTo(intro, { y: 24, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.8, stagger: 0.08, delay: opts.title ? 0.75 : 0.2, clearProps: 'transform,opacity,visibility' });
+        gsap.fromTo(intro, { y: 24, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.8, stagger: 0.08, delay: opts.title ? 0.75 : 0.2, clearProps: 'transform,opacity,visibility', onComplete: () => recomposite(intro) });
       }
       $$(opts.headings ?? []).forEach((h) => rise(h, { scroll: true, stagger: 0.06 }));
       if (opts.reveal) reveal(opts.reveal);
@@ -338,6 +427,7 @@
       if ('ResizeObserver' in window) new ResizeObserver(refresh).observe(document.body);
       addEventListener('load', refresh);
     }
+    drift();
     if (opts.spot) spotlight(opts.spot);
     if (opts.magnet) magnet(opts.magnet);
     if (opts.tilt) tilt(opts.tilt);
@@ -448,5 +538,5 @@
   // Rok w stopce („© 2026 Entuzjaści Hopkostki”) zawsze bieżący.
   document.querySelectorAll('[data-year]').forEach((el) => { el.textContent = String(new Date().getFullYear()); });
 
-  window.Motion = { on: ON, init, rise, reveal, count, refresh, splitWords, spotlight, magnet, tilt, sparks, scrub, paint, eventColors, stagger, get site() { return siteLook; }, get lenis() { return lenis; } };
+  window.Motion = { on: ON, init, rise, reveal, count, refresh, splitWords, spotlight, magnet, tilt, sparks, scrub, paint, eventColors, stagger, accordion, recomposite, get site() { return siteLook; }, get lenis() { return lenis; } };
 })();
