@@ -431,8 +431,10 @@
       gsap.defaults({ ease: 'power3.out', duration: 0.85 });
       root.classList.add('has-motion');
       // Płynne przewijanie zsynchronizowane z ScrollTriggerem. Klawiatura i kotwice działają jak zwykle.
+      // allowNestedScroll: elementy z własnym przewijaniem (panel osoby, archiwum zwycięzców) przewijają się kółkiem
+      // same, zamiast oddawać je stronie (bez tego Lenis przewijał stronę, a panel stał w miejscu).
       if (window.Lenis && !lenis) {
-        lenis = new Lenis({ lerp: 0.08, smoothWheel: true, wheelMultiplier: 0.9, anchors: true });
+        lenis = new Lenis({ lerp: 0.08, smoothWheel: true, wheelMultiplier: 0.9, anchors: true, allowNestedScroll: true });
         lenis.on('scroll', ScrollTrigger.update);
         if (navSync) lenis.on('scroll', navSync);
         gsap.ticker.add((time) => lenis.raf(time * 1000));
