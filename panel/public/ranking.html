@@ -687,7 +687,7 @@
 
     /* ---------- Dekoracje, które ma tylko dany efekt ---------- */
     .ev-deco { pointer-events: none; }
-    .ev-deco.back { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
+    .ev-deco.back { position: fixed; top: 0; left: 0; right: 0; height: 100vh; height: 100lvh; z-index: 0; overflow: hidden; }
     .ev-deco.front { position: fixed; inset: 0; z-index: 15; overflow: hidden; }
     .ev-deco.top { position: absolute; left: 16px; right: 16px; top: 20px; height: 0; z-index: 2; overflow: visible; }
     @media (max-width: 720px) { .ev-deco.top { top: 12px; } }

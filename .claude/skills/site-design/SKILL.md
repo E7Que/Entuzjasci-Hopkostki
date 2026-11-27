@@ -103,6 +103,9 @@ panels as AI slop). Only the events page (`/event`) recolours itself with the se
 - Bottom of the landing, ranking and events pages: Scanner waves (owner's "tło 4") in `var(--accent)` /
   `var(--accent-2)`, from above the last section down to the end of the page (`.page-scan`, `data-from`).
 Do not stack a second full-page background on a page.
+Backgrounds pinned to the screen (`.page-bg`, `.particles-bg`, `.glow`) use `top: 0; height: 100lvh`, never
+`inset: 0`: on phones the hiding address bar otherwise uncovers a black strip at the bottom and the background
+jumps when it resizes. Scroll-linked drift ignores height-only resizes for the same reason.
 
 ## Page frame
 
