@@ -55,7 +55,7 @@
     /* ---------- Pasek ---------- */
     .toolbar {
       position: sticky; top: 84px; z-index: 5; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-      margin: 32px 0 24px; padding: 8px; border: 1px solid var(--panel-edge); border-radius: var(--r); background: color-mix(in srgb, var(--surface) 88%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: var(--panel-shadow);
+      margin: 32px 0 24px; padding: 8px; border: 1px solid transparent; border-radius: 16px; background: color-mix(in srgb, var(--bg) 62%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07), 0 16px 40px -16px rgb(0 0 0 / 0.8);
     }
     .tabs { display: flex; gap: 4px; flex: 1 1 auto; }
     .tab { min-height: 40px; padding: 0 16px; border: 0; border-radius: var(--r-sm); background: none; color: var(--muted); font-weight: 500; cursor: pointer; }
@@ -1005,7 +1005,7 @@
 
     <section class="event" id="event" hidden aria-label="Wydarzenie XP"></section>
 
-    <nav class="toolbar" aria-label="Ranking" data-nav-stick="0">
+    <nav class="toolbar" aria-label="Ranking" data-nav-hidden-top="hide">
       <div class="tabs" role="tablist">
         <button class="tab" role="tab" aria-selected="true" data-period="all">Cały czas</button>
         <button class="tab" role="tab" aria-selected="false" data-period="week"><span class="tl">Ten tydzień</span><span class="ts">Tydzień</span></button>
@@ -1042,7 +1042,7 @@
         <button type="button" class="more" id="more" hidden>Pokaż więcej</button>
       </section>
 
-      <aside class="side" id="side" data-nav-stick="72">
+      <aside class="side" id="side" data-nav-hidden-top="12">
         <section class="profile" id="profile" hidden aria-label="Profil"></section>
         <div class="info">
           <section class="card" id="card-highlights" hidden>
@@ -14753,7 +14753,6 @@
     // słowo po słowie, liczby w nagłówku odliczają, lista i karty z boku wjeżdżają od dołu (React Bits).
     window.Motion?.init({
       banner: '.banner.bleed',
-      bannerParallax: false,
       title: 'main h1',
       intro: '.totals > div',
       reveal: '.toolbar, .table, .side .info > .card:not([hidden])',

@@ -108,17 +108,18 @@ Do not stack a second full-page background on a page.
 
 - Same top bar on every page (brand, Ranking, Eventy, "Dołącz" button): floats 12 px from the top over the banner as
   dark blurred glass, no coloured fills or lines; the current page is brighter text with a filled accent icon.
-  It moves with the scroll (motion.js, transform only): scrolling down hides it by exactly the scrolled distance,
-  12 px of scrolling up glides it fully back (0.28 s), and a half-hidden bar finishes in the last direction when
-  scrolling stops. Sticky parts of pages (`data-nav-stick`: the ranking filter bar, side columns) take its place
-  while it is hidden. Keyboard focus inside it keeps it shown. The owner rejected the earlier narrowing capsule
-  (layout transition, not smooth).
+  It moves with the scroll (motion.js, transform only): scrolling down hides it slower than the page (40% of the
+  scrolled distance), a small scroll down does not hide it, 12 px of scrolling up glides it fully back (0.3 s), and
+  a half-hidden bar finishes to the nearer end when scrolling stops. Sticky parts move with it
+  (`data-nav-hidden-top`): the ranking filter bar (same glass as the top bar) hides and returns together with it,
+  the ranking side column rises to 12 px. On the landing and events pages only the top bar moves. Keyboard focus
+  inside it keeps it shown. The owner rejected the earlier narrowing capsule (layout transition, not smooth).
 - Full-width banner (`img/banner.webp` 3840×2160 from the owner, `srcset` 960/1600/2400/3840). The owner can set
   the icon and a separate banner for the landing, ranking and events pages in the panel (Ustawienia → Wygląd
   strony, best 3840×2160 / icon 512×512); pages read them from `/public/site` in `motion.js`. On scroll the image
-  moves slower than the page (parallax, landing only), zooms out slightly and darkens. It never shrinks into a box.
+  moves slower than the page (parallax), zooms out slightly and darkens, on every page with a banner. It never shrinks into a box.
   Every banner fades into the page at the bottom (mask), without getting taller. Ranking and events banners are a
-  flat strip (best 3840 × 1200) and do not move on scroll; they come in with a slight zoom-out. Every banner then
+  flat strip (best 3840 × 1200) with the same scroll motion as the landing (owner asked for it back). Every banner then
   "breathes" (slow zoom, `.breathe`), added only after the banner is revealed: a CSS animation that starts under a
   GSAP curtain stays on Chrome's main thread and stutters (`Motion.recomposite` restarts such animations).
 - The landing ends with a big centred invite (no banner behind it): avatars of the people who joined most recently
