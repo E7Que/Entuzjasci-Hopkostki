@@ -249,7 +249,7 @@ html.embed .glow { display: none; }
 .breathe { transform-origin: 50% 40%; animation: banner-breathe 24s cubic-bezier(0.37, 0, 0.63, 1) infinite alternate; }
 @keyframes banner-breathe { to { scale: 1.07; translate: 0 -1.2%; } }
 @media (prefers-reduced-motion: reduce) { .breathe { animation: none; } }
-.scrub > img { will-change: transform; }
+.scrub img { will-change: transform; }
 /* Dół każdego banera wygasa w tło strony, więc nie ma ostrej krawędzi. Wysokość banera bez zmian. */
 .banner.bleed, .hero-media { -webkit-mask-image: linear-gradient(#000 62%, transparent); mask-image: linear-gradient(#000 62%, transparent); }
 

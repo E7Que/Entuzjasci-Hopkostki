@@ -31,6 +31,7 @@
     .banner { position: relative; height: clamp(280px, 42vw, 640px); overflow: hidden; background: var(--surface); }
     .banner img { width: 100%; height: 100%; object-fit: cover; object-position: center 45%; outline: 1px solid var(--img-edge); outline-offset: -1px; transition: opacity 300ms var(--ease); }
     .banner img.swap { opacity: 0; }
+    .banner-in { position: absolute; inset: 0; }
     .head { position: relative; z-index: 1; display: flex; align-items: flex-end; gap: 16px; padding: var(--sp-8) 0 0; }
     h1 { font-size: var(--fs-4xl); }
 
@@ -252,7 +253,7 @@
 
   <main class="wrap" id="tresc">
     <header>
-      <div class="banner bleed"><img id="banner-img" src="img/banner.webp" srcset="img/banner-960.webp 960w, img/banner-1600.webp 1600w, img/banner-2400.webp 2400w, img/banner-3840.webp 3840w" sizes="100vw" alt="" width="1600" height="900" fetchpriority="high"></div>
+      <div class="banner bleed"><div class="banner-in"><img id="banner-img" src="img/banner.webp" srcset="img/banner-960.webp 960w, img/banner-1600.webp 1600w, img/banner-2400.webp 2400w, img/banner-3840.webp 3840w" sizes="100vw" alt="" width="1600" height="900" fetchpriority="high"></div></div>
       <div class="head">
         <h1>Eventy serwera</h1>
       </div>
@@ -855,6 +856,13 @@
           else img.setAttribute('srcset', DEFAULT_SRCSET);
           img.src = src;
           img.classList.remove('swap');
+          // Nowy baner (własny baner eventu albo zmiana eventu) wjeżdża z przybliżenia, jak przy wejściu na stronę.
+          if (!reduceMotion.matches) {
+            img.closest('.banner-in')?.animate(
+              [{ transform: 'scale(1.14)', filter: 'brightness(1.25)' }, { transform: 'scale(1)', filter: 'brightness(1)' }],
+              { duration: 1500, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+            );
+          }
         }, reduceMotion.matches ? 0 : 220);
       };
       if (!own && DEFAULT_SRCSET) { next.sizes = '100vw'; next.srcset = DEFAULT_SRCSET; }
