@@ -358,9 +358,12 @@
     addEventListener('resize', () => { measure(); update(); });
   }
 
-  // Pytania (<details>): odpowiedź płynnie się rozwija i zwija zamiast skakać. Przy ograniczonym ruchu zwykłe działanie.
+  // Pytania (<details>): odpowiedź płynnie się rozwija i zwija zamiast skakać. Animujemy wysokość razem z odstępami
+  // (padding), bo przy box-sizing: border-box sama wysokość zatrzymuje się na odstępach i na końcu zostaje skok.
+  // Przy ograniczonym ruchu zwykłe działanie.
   function accordion(selector) {
-    const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
+    const OPEN = { duration: 380, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' };
+    const CLOSE = { duration: 300, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' };
     for (const d of $$(selector)) {
       const summary = d.querySelector('summary');
       const body = summary?.nextElementSibling;
@@ -375,12 +378,16 @@
         if (reduce || !body.animate) return;
         event.preventDefault();
         const closing = d.open && !d.classList.contains('closing');
-        const from = anim ? body.getBoundingClientRect().height : d.open ? body.offsetHeight : 0;
+        // Stan w tej chwili (także w połowie poprzedniej animacji) - stąd rusza następna, bez przeskoku.
+        const cs = getComputedStyle(body);
+        const now = d.open
+          ? { height: `${body.getBoundingClientRect().height}px`, paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom, opacity: cs.opacity }
+          : { height: '0px', paddingTop: '0px', paddingBottom: '0px', opacity: '0' };
         anim?.cancel();
         body.style.overflow = 'hidden';
         if (closing) {
           d.classList.add('closing');
-          anim = body.animate({ height: [`${from}px`, '0px'], opacity: [1, 0] }, { duration: 320, easing: ease });
+          anim = body.animate([now, { height: '0px', paddingTop: '0px', paddingBottom: '0px', opacity: '0' }], CLOSE);
           anim.onfinish = () => {
             d.open = false;
             d.classList.remove('closing');
@@ -389,8 +396,9 @@
         } else {
           d.classList.remove('closing');
           d.open = true;
-          const to = body.offsetHeight;
-          anim = body.animate({ height: [`${from}px`, `${to}px`], opacity: [from ? 1 : 0, 1] }, { duration: 420, easing: ease });
+          const full = getComputedStyle(body);
+          const end = { height: `${body.offsetHeight}px`, paddingTop: full.paddingTop, paddingBottom: full.paddingBottom, opacity: '1' };
+          anim = body.animate([now, end], OPEN);
           anim.onfinish = done;
         }
       });
