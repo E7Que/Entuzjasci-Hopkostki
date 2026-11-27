@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="site.css?v=482313e">
+  <link rel="stylesheet" href="site.css?v=c2ce436">
   <link rel="stylesheet" href="vendor/lenis.css">
   <style>
     /* Kolory, fonty, tło i górny pasek: site.css. Tu tylko nazwy używane przez tę stronę. */
@@ -687,7 +687,7 @@
 
     /* ---------- Dekoracje, które ma tylko dany efekt ---------- */
     .ev-deco { pointer-events: none; }
-    .ev-deco.back { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
+    .ev-deco.back { position: fixed; top: 0; left: 0; right: 0; height: 100vh; height: 100lvh; z-index: 0; overflow: hidden; }
     .ev-deco.front { position: fixed; inset: 0; z-index: 15; overflow: hidden; }
     .ev-deco.top { position: absolute; left: 16px; right: 16px; top: 20px; height: 0; z-index: 2; overflow: visible; }
     @media (max-width: 720px) { .ev-deco.top { top: 12px; } }
@@ -14816,7 +14816,7 @@
       requestAnimationFrame(() => requestAnimationFrame(() => tabs.classList.add('ink-ready')));
     })();
   </script>
-  <script src="motion.js?v=482313e"></script>
+  <script src="motion.js?v=c2ce436"></script>
   <script>
     // Ruch jak na stronie głównej (motion.js): baner zwija się do kolumny przy przewijaniu, tytuł wjeżdża
     // słowo po słowie, liczby w nagłówku odliczają, lista i karty z boku wjeżdżają od dołu (React Bits).
@@ -14829,9 +14829,9 @@
       tilt: '.top3 .top',
     });
   </script>
-  <script src="particles.js?v=482313e" defer></script>
-  <script src="rb.js?v=482313e" defer></script>
-  <script src="rb-pillar.js?v=482313e" defer></script>
-  <script src="rb-scanner.js?v=482313e" defer></script>
+  <script src="particles.js?v=c2ce436" defer></script>
+  <script src="rb.js?v=c2ce436" defer></script>
+  <script src="rb-pillar.js?v=c2ce436" defer></script>
+  <script src="rb-scanner.js?v=c2ce436" defer></script>
 </body>
 </html>

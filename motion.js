@@ -344,7 +344,12 @@
     if (!els.length || reduce) return;
     let room = [];
     let raf = 0;
-    const measure = () => { room = els.map((el) => Math.max(0, el.offsetHeight - window.innerHeight)); };
+    // Wysokość dużego ekranu (pasek adresu telefonu schowany) - stała, gdy pasek adresu się chowa i wraca.
+    const probe = document.createElement('div');
+    probe.setAttribute('aria-hidden', 'true');
+    probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:100vh;height:100lvh;visibility:hidden;pointer-events:none';
+    document.body.append(probe);
+    const measure = () => { room = els.map((el) => Math.max(0, el.offsetHeight - (probe.offsetHeight || window.innerHeight))); };
     const update = () => {
       raf = 0;
       els.forEach((el, i) => {
@@ -355,7 +360,13 @@
     measure();
     update();
     addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(update); }, { passive: true });
-    addEventListener('resize', () => { measure(); update(); });
+    let width = window.innerWidth;
+    addEventListener('resize', () => {
+      if (window.innerWidth === width) return; // sam pasek adresu: rozmiary tła się nie zmieniają
+      width = window.innerWidth;
+      measure();
+      update();
+    });
   }
 
   // Pytania (<details>): odpowiedź płynnie się rozwija i zwija zamiast skakać. Animujemy wysokość razem z odstępami

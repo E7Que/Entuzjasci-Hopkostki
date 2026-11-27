@@ -218,12 +218,14 @@ body { overflow-x: clip; }
 
 /* Tło: grafit #171b23 i pole punktów z React Bits Particles (particles.js, WebGL2): punkty migoczą, łączą się liniami,
    uciekają przed kursorem, a kliknięcie puszcza falę. Płótno leży pod treścią i nie łapie kliknięć. */
-.particles-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+/* Tła przypięte do ekranu: wysokość dużego ekranu telefonu (pasek adresu schowany, lvh), więc chowanie paska
+   adresu nie odsłania czarnego pasa na dole, a tło nie doskakuje (jego rozmiar się nie zmienia). */
+.particles-bg { position: fixed; top: 0; left: 0; right: 0; height: 100vh; height: 100lvh; z-index: -1; overflow: hidden; pointer-events: none; }
 .particles-bg canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 html.embed .particles-bg { display: none; }
 /* Kolor w tle: trzy miękkie plamy światła w kolorach banera (cyjan, niebieski, magenta) powoli dryfują
    za treścią. Wstawia je particles.js; bez JS tło zostaje grafitowe. */
-.glow { position: fixed; inset: 0; z-index: -2; overflow: hidden; pointer-events: none; }
+.glow { position: fixed; top: 0; left: 0; right: 0; height: 100vh; height: 100lvh; z-index: -2; overflow: hidden; pointer-events: none; }
 .glow i { position: absolute; width: 64vmax; height: 64vmax; border-radius: 50%; opacity: 0.42; will-change: transform; }
 .glow i:nth-child(1) { left: -18vmax; top: -22vmax; background: radial-gradient(circle, var(--glow-1) 0%, transparent 62%); animation: glow-a 30s ease-in-out infinite alternate; }
 .glow i:nth-child(2) { right: -24vmax; top: 18vh; background: radial-gradient(circle, var(--glow-2) 0%, transparent 62%); opacity: 0.36; animation: glow-b 38s ease-in-out infinite alternate; }
@@ -277,13 +279,13 @@ html.embed .page-scan { display: none; }
 .sparks { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
 
 /* Tło całej podstrony z React Bits (rb.js): LightRays w rankingu, Aurora na eventach, FaultyTerminal na 404. */
-.page-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+.page-bg { position: fixed; top: 0; left: 0; right: 0; height: 100vh; height: 100lvh; z-index: -1; pointer-events: none; }
 .page-bg > canvas, .page-scan > canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 html.embed .page-bg { display: none; }
 /* Słup światła w rankingu: na całą szerokość ekranu (w bok przesuwa go sam shader, prop „offset”, więc nie ma
    pasa przy krawędzi), trochę wyższy od ekranu, bo przy przewijaniu lekko jedzie w górę (data-drift w motion.js).
    Czarne tło canvasa znika w trybie screen, więc pod słupem widać gwiazdy z tła strony. */
-.page-bg.pillar { bottom: auto; height: 125vh; mix-blend-mode: screen; will-change: transform; }
+.page-bg.pillar { height: 125vh; height: 125lvh; mix-blend-mode: screen; will-change: transform; }
 /* Tło, które zaczyna się w zanikającym dole banera i przewija się ze stroną: góra wchodzi miękko (bez krawędzi). */
 .page-bg.flow { position: absolute; inset: auto 0 auto 0; height: 130vh; -webkit-mask-image: linear-gradient(transparent, #000 var(--flow-in, 160px), #000 70%, transparent); mask-image: linear-gradient(transparent, #000 var(--flow-in, 160px), #000 70%, transparent); }
 
