@@ -133,6 +133,9 @@ jumps when it resizes. Scroll-linked drift ignores height-only resizes for the s
   a half-hidden bar finishes to the nearer end when scrolling stops. Only the top bar moves on every page
   (`data-nav-hidden-top` can still make a sticky part follow it, nothing uses it now). Keyboard focus inside it
   keeps it shown. The owner rejected the earlier narrowing capsule (layout transition, not smooth).
+- Inner scroll areas (person panel, winners archive) must take the mouse wheel themselves: Lenis runs with
+  `allowNestedScroll`, and the person panel also has `data-lenis-prevent` so the page under it never moves
+  (its CSS has `overscroll-behavior: contain`). Without these Lenis scrolled the page and the panel stood still.
 - Ranking person panel (profile): a plain site card. Top: the person's Discord banner, or their blurred avatar,
   fading into the card like page banners. Avatar without the Discord cut-out border; the Discord avatar frame is
   120% of the image, centred (same as in the list). No Nitro tag. Section headings with Phosphor icons like the side
